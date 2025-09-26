@@ -1,0 +1,34 @@
+{
+  "cursos": [
+    {
+      "id": 1,
+      "nombre": "Matemáticas Básicas",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": ["Álgebra", "Cálculo", "Geometría"],
+      "materiales": {
+        "pdfs": ["Sílabo Matemáticas.pdf", "Ejercicios Resueltos.pdf"],
+        "videos": ["Introducción al Álgebra", "Derivadas Básicas"]
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Programación I",
+      "carrera": "Ingeniería de Software",
+      "temas": ["Python", "Estructuras de Datos", "POO"],
+      "materiales": {
+        "pdfs": ["Guía de Python.pdf", "Ejemplos de Código.pdf"],
+        "videos": ["Instalación de Python", "Clases y Objetos"]
+      }
+    },
+    {
+      "id": 3,
+      "nombre": "Base de Datos",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": ["SQL", "Modelo Relacional", "Normalización"],
+      "materiales": {
+        "pdfs": ["Apuntes de SQL.pdf", "Ejercicios BD.pdf"],
+        "videos": ["Introducción a SQL", "Consultas Avanzadas"]
+      }
+    }
+  ]
+}
