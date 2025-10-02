@@ -4,30 +4,400 @@
       "id": 1,
       "nombre": "Matemáticas Básicas",
       "carrera": "Ingeniería de Sistemas",
-      "temas": ["Álgebra", "Cálculo", "Geometría"],
+      "temas": [
+        "Álgebra",
+        "Cálculo",
+        "Geometría"
+      ],
       "materiales": {
-        "pdfs": ["Sílabo Matemáticas.pdf", "Ejercicios Resueltos.pdf"],
-        "videos": ["Introducción al Álgebra", "Derivadas Básicas"]
+        "pdfs": [
+          "Sílabo Matemáticas.pdf",
+          "Ejercicios Resueltos.pdf"
+        ],
+        "videos": [
+          "Introducción al Álgebra",
+          "Derivadas Básicas"
+        ]
       }
     },
     {
       "id": 2,
       "nombre": "Programación I",
       "carrera": "Ingeniería de Software",
-      "temas": ["Python", "Estructuras de Datos", "POO"],
+      "temas": [
+        "Python",
+        "Estructuras de Datos",
+        "POO"
+      ],
       "materiales": {
-        "pdfs": ["Guía de Python.pdf", "Ejemplos de Código.pdf"],
-        "videos": ["Instalación de Python", "Clases y Objetos"]
+        "pdfs": [
+          "Guía de Python.pdf",
+          "Ejemplos de Código.pdf"
+        ],
+        "videos": [
+          "Instalación de Python",
+          "Clases y Objetos"
+        ]
       }
     },
     {
       "id": 3,
       "nombre": "Base de Datos",
       "carrera": "Ingeniería de Sistemas",
-      "temas": ["SQL", "Modelo Relacional", "Normalización"],
+      "temas": [
+        "SQL",
+        "Modelo Relacional",
+        "Normalización"
+      ],
       "materiales": {
-        "pdfs": ["Apuntes de SQL.pdf", "Ejercicios BD.pdf"],
-        "videos": ["Introducción a SQL", "Consultas Avanzadas"]
+        "pdfs": [
+          "Apuntes de SQL.pdf",
+          "Ejercicios BD.pdf"
+        ],
+        "videos": [
+          "Introducción a SQL",
+          "Consultas Avanzadas"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "nombre": "Redes de Computadoras",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Protocolos",
+        "Modelos OSI",
+        "Seguridad en Redes"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Fundamentos de Redes.pdf",
+          "Redes Seguras.pdf"
+        ],
+        "videos": [
+          "Introducción a las Redes",
+          "Configuración de Router"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "nombre": "Algoritmos y Estructuras de Datos",
+      "carrera": "Ingeniería de Software",
+      "temas": [
+        "Ordenación",
+        "Listas Enlazadas",
+        "Árboles Binarios"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Teoría de Algoritmos.pdf",
+          "Ejercicios Resueltos.pdf"
+        ],
+        "videos": [
+          "Ordenamiento por Burbuja",
+          "Árboles Binarios de Búsqueda"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "nombre": "Física I",
+      "carrera": "Ingeniería Mecánica",
+      "temas": [
+        "Cinemática",
+        "Ley de Newton",
+        "Trabajo y Energía"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Física Básica.pdf",
+          "Ejercicios de Cinemática.pdf"
+        ],
+        "videos": [
+          "Movimiento Rectilíneo Uniforme",
+          "Ley de Newton"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "nombre": "Estadística Aplicada",
+      "carrera": "Ingeniería Industrial",
+      "temas": [
+        "Probabilidad",
+        "Distribuciones",
+        "Regresión"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Estadística para Ingenieros.pdf",
+          "Ejercicios de Probabilidad.pdf"
+        ],
+        "videos": [
+          "Distribuciones Normales",
+          "Regresión Lineal"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "nombre": "Sistemas Operativos",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Gestión de Procesos",
+        "Memoria",
+        "Sistemas de Archivos"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Conceptos de Sistemas Operativos.pdf",
+          "Prácticas de SO.pdf"
+        ],
+        "videos": [
+          "Proceso en ejecución",
+          "Memoria Virtual"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "nombre": "Arquitectura de Computadoras",
+      "carrera": "Ingeniería Electrónica",
+      "temas": [
+        "Microprocesadores",
+        "Memoria Caché",
+        "Bus de Datos"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Introducción a la Arquitectura.pdf",
+          "Microprocesadores.pdf"
+        ],
+        "videos": [
+          "Arquitectura RISC vs CISC",
+          "Memoria Caché"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "nombre": "Teoría de Circuitos Eléctricos",
+      "carrera": "Ingeniería Eléctrica",
+      "temas": [
+        "Ley de Ohm",
+        "Circuitos Resistivos",
+        "Análisis de Circuitos"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Circuitos Eléctricos.pdf",
+          "Ejercicios de Circuitos.pdf"
+        ],
+        "videos": [
+          "Ley de Ohm",
+          "Análisis de Circuitos en Serie"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "nombre": "Matemáticas Avanzadas",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Ecuaciones Diferenciales",
+        "Transformadas de Laplace",
+        "Series de Fourier"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Ecuaciones Diferenciales.pdf",
+          "Transformadas de Laplace.pdf"
+        ],
+        "videos": [
+          "Solución de Ecuaciones Diferenciales",
+          "Series de Fourier"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "nombre": "Fundamentos de Ciberseguridad",
+      "carrera": "Ingeniería en Informática",
+      "temas": [
+        "Criptografía",
+        "Firewall",
+        "Seguridad en Redes"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Ciberseguridad Básica.pdf",
+          "Criptografía.pdf"
+        ],
+        "videos": [
+          "Principios de Criptografía",
+          "Configuración de Firewall"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "nombre": "Ingeniería de Software II",
+      "carrera": "Ingeniería de Software",
+      "temas": [
+        "Patrones de Diseño",
+        "Arquitectura de Software",
+        "Desarrollo Ágil"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Patrones de Diseño en Software.pdf",
+          "Arquitectura de Software.pdf"
+        ],
+        "videos": [
+          "Patrones de Diseño",
+          "Metodologías Ágiles"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "nombre": "Inteligencia Artificial",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Aprendizaje Supervisado",
+        "Redes Neuronales",
+        "Algoritmos Genéticos"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Introducción a la IA.pdf",
+          "Redes Neuronales.pdf"
+        ],
+        "videos": [
+          "Redes Neuronales Convolucionales",
+          "Algoritmos Genéticos"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "nombre": "Análisis de Señales",
+      "carrera": "Ingeniería Electrónica",
+      "temas": [
+        "Transformadas de Fourier",
+        "Filtros Digitales",
+        "Modulación"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Análisis de Señales.pdf",
+          "Filtros Digitales.pdf"
+        ],
+        "videos": [
+          "Transformada de Fourier",
+          "Filtros en el Dominio de la Frecuencia"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "nombre": "Electromagnetismo",
+      "carrera": "Ingeniería Eléctrica",
+      "temas": [
+        "Ley de Gauss",
+        "Campos Electromagnéticos",
+        "Ondas Electromagnéticas"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Electromagnetismo Básico.pdf",
+          "Campos Electromagnéticos.pdf"
+        ],
+        "videos": [
+          "Ley de Gauss",
+          "Ondas Electromagnéticas"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "nombre": "Control de Sistemas",
+      "carrera": "Ingeniería en Control",
+      "temas": [
+        "Sistemas Dinámicos",
+        "Teoría de Control",
+        "Control PID"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Control de Sistemas.pdf",
+          "Control PID.pdf"
+        ],
+        "videos": [
+          "Sistemas Dinámicos",
+          "Control PID en la Práctica"
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "nombre": "Diseño de Interfaces de Usuario",
+      "carrera": "Ingeniería de Software",
+      "temas": [
+        "Usabilidad",
+        "Diseño Centrado en el Usuario",
+        "Prototipos Interactivos"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Diseño de Interfaces.pdf",
+          "Prototipos Interactivos.pdf"
+        ],
+        "videos": [
+          "Principios de Usabilidad",
+          "Herramientas para Prototipos"
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "nombre": "Teoría de Control Moderno",
+      "carrera": "Ingeniería Electrónica",
+      "temas": [
+        "Control Óptimo",
+        "Sistemas Multivariables",
+        "Teoría de Estabilidad"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Control Moderno.pdf",
+          "Teoría de Estabilidad.pdf"
+        ],
+        "videos": [
+          "Control Óptimo",
+          "Sistemas Multivariables"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "nombre": "Simulación de Sistemas",
+      "carrera": "Ingeniería Industrial",
+      "temas": [
+        "Modelado de Sistemas",
+        "Simulación Discreta",
+        "Simulación Estocástica"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Simulación de Sistemas.pdf",
+          "Modelado de Sistemas.pdf"
+        ],
+        "videos": [
+          "Introducción a la Simulación",
+          "Simulación Discreta en la Práctica"
+        ]
       }
     }
   ]

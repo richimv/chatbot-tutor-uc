@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Cursos</title>
+  <link rel="stylesheet" href="/css/style.css"> <!-- usa tu CSS existente -->
+</head>
+<body>
+  <h1>Gestión de Cursos</h1>
+
+  <!-- Formulario para agregar curso -->
+  <form action="/cursos" method="POST">
+    <input type="text" name="nombre" placeholder="Nombre del curso" required>
+    <input type="text" name="descripcion" placeholder="Descripción" required>
+    <button type="submit">Agregar Curso</button>
+  </form>
+
+  <hr>
+
+  <!-- Listado de cursos -->
+  <h2>Cursos registrados</h2>
+  <ul>
+    <% cursos.forEach((curso, index) => { %>
+      <li>
+        <%= curso.nombre %> - <%= curso.descripcion %>
+        <form action="/cursos/<%= index %>/edit" method="POST" style="display:inline;">
+          <input type="text" name="nombre" value="<%= curso.nombre %>" required>
+          <input type="text" name="descripcion" value="<%= curso.descripcion %>" required>
+          <button type="submit">Editar</button>
+        </form>
+        <form action="/cursos/<%= index %>/delete" method="POST" style="display:inline;">
+          <button type="submit">Eliminar</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
+
+  <br>
+  <a href="/">Volver a inicio</a>
+</body>
+</html>

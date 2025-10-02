@@ -6,17 +6,38 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Menú hamburguesa -->
+    <nav class="navbar">
+        <div class="menu-container">
+            <button id="menu-toggle" class="menu-btn">☰</button>
+            <div id="menu-options" class="menu-options">
+                <a href="cursos.html" class="menu-link">➕ Agregar Curso</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
         <h1>🔍 Buscador de Cursos - PMV1</h1>
         <p>Este es el primer prototipo de nuestra base de conocimientos</p>
         
+        <!-- Buscador de cursos -->
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Ej: Matemáticas, Python, SQL...">
-            <button onclick="buscarCursos()">Buscar</button>
+            <button id="searchButton">Buscar</button>
         </div>
         
         <div id="resultados"></div>
     </div>
+
     <script src="script.js"></script>
+    <script>
+        // Toggle menú hamburguesa
+        const menuToggle = document.getElementById("menu-toggle");
+        const menuOptions = document.getElementById("menu-options");
+
+        menuToggle.addEventListener("click", () => {
+            menuOptions.classList.toggle("active");
+        });
+    </script>
 </body>
 </html>

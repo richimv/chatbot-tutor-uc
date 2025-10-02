@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administración de Cursos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Administración de Cursos</h1>
+        <p>Aquí puedes agregar, editar, actualizar y eliminar cursos.</p>
+
+        <!-- Formulario para agregar un curso -->
+        <div id="add-course-form-container">
+            <h2>➕ Agregar un nuevo curso</h2>
+            <form id="add-course-form">
+                <label for="nombre">Nombre del curso:</label>
+                <input type="text" id="nombre" name="nombre" required>
+
+                <label for="carrera">Carrera:</label>
+                <input type="text" id="carrera" name="carrera" required>
+
+                <label for="temas">Temas (separados por comas):</label>
+                <input type="text" id="temas" name="temas" required>
+
+                <label for="pdfs">PDFs (separados por comas):</label>
+                <input type="text" id="pdfs" name="pdfs">
+
+                <label for="videos">Videos (separados por comas):</label>
+                <input type="text" id="videos" name="videos">
+
+                <button type="submit">Agregar Curso</button>
+            </form>
+        </div>
+
+        <!-- Tabla para listar y administrar cursos -->
+        <div id="course-list-container">
+            <h2>📋 Lista de Cursos</h2>
+            <table id="course-list">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Carrera</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Aquí se cargarán los cursos dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="admin.js"></script>
+</body>
+</html>

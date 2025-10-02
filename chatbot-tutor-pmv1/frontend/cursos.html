@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Cursos</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #save-button {
+            background-color: #28a745;
+            color: white;
+        }
+        #save-button:hover {
+            background-color: #218838;
+        }
+        .curso {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .curso h3 {
+            margin: 0 0 5px;
+        }
+        .acciones {
+            margin-top: 10px;
+        }
+        .acciones button {
+            margin-right: 10px;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        .editar {
+            background: #ffc107;
+            color: black;
+        }
+        .editar:hover {
+            background: #e0a800;
+        }
+        .eliminar {
+            background: #dc3545;
+            color: white;
+        }
+        .eliminar:hover {
+            background: #c82333;
+        }
+        a {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Gestión de Cursos</h1>
+        <a href="index.html">⬅ Volver al inicio</a>
+
+        <!-- Formulario para agregar/editar -->
+        <h2 id="form-title">➕ Agregar Curso</h2>
+        <form id="course-form">
+            <input type="hidden" id="cursoId">
+
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" required>
+
+            <label for="carrera">Carrera:</label>
+            <input type="text" id="carrera" required>
+
+            <label for="temas">Temas (separados por comas):</label>
+            <input type="text" id="temas" required>
+
+            <label for="pdfs">PDFs (separados por comas):</label>
+            <input type="text" id="pdfs">
+
+            <label for="videos">Videos (separados por comas):</label>
+            <input type="text" id="videos">
+
+            <button type="submit" id="save-button">Guardar Curso</button>
+        </form>
+
+        <!-- Listado de cursos -->
+        <h2>📖 Lista de Cursos</h2>
+        <div id="lista-cursos"></div>
+    </div>
+
+    <script src="cursos.js"></script>
+</body>
+</html>
