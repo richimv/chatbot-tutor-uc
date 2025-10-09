@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot Tutor - PMV1</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="./app.js"></script>
+
+    <style>
+        /* 🔹 Estilo mejorado solo para el menú hamburguesa */
+        .menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-btn {
+            font-size: 26px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .menu-btn:hover {
+            background: #34495e;
+        }
+
+        .menu-options {
+            display: none;
+            position: absolute;
+            top: 50px; /* Espacio debajo del botón */
+            right: 0;
+            background-color: #2c3e50;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            flex-direction: column;
+            gap: 10px; /* 🔹 separación entre botones */
+            z-index: 1000;
+        }
+
+        .menu-options.active {
+            display: flex;
+        }
+
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            background: #34495e;
+            transition: background 0.3s;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .menu-link:hover {
+            background: #3c5a72;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú hamburguesa -->
+    <nav class="navbar">
+        <div class="menu-container">
+            <button id="menu-toggle" class="menu-btn">☰</button>
+            <div id="menu-options" class="menu-options">
+                <a href="cursos.html" class="menu-link">➕ Agregar Curso</a>
+                <a href="historial.html" class="menu-link">📈 Historial y Predicciones</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="container">
+        <h1>🔍 Buscador de Cursos - PMV1</h1>
+        <p>Este es el primer prototipo de nuestra base de conocimientos</p>
+        
+        <!-- Buscador de cursos -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Ej: Matemáticas, Python, SQL...">
+            <button id="searchButton">Buscar</button>
+        </div>
+        
+        <!-- Resultados -->
+        <div id="resultados"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        // Toggle menú hamburguesa
+        const menuToggle = document.getElementById("menu-toggle");
+        const menuOptions = document.getElementById("menu-options");
+
+        menuToggle.addEventListener("click", () => {
+            menuOptions.classList.toggle("active");
+        });
+    </script>
+</body>
+</html>

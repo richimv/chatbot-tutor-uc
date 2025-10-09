@@ -1,0 +1,273 @@
+/* Estilo general */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Buscador */
+.search-box {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+input {
+    padding: 12px;
+    width: 300px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+button {
+    padding: 12px 24px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    transition: all 0.3s;
+}
+
+/* Resultados de cursos */
+.curso {
+    border-left: 5px solid #007bff;
+    padding: 20px;
+    margin: 15px 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.curso h3 {
+    color: #007bff;
+    margin-top: 0;
+}
+
+.materiales {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+/* ==========================
+   Menú hamburguesa mejorado
+   ========================== */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #1e1e2f;
+    padding: 12px 20px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.menu-container {
+    position: relative;
+}
+
+.menu-btn {
+    font-size: 26px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.3s ease;
+    z-index: 1100;
+}
+
+.menu-btn:hover {
+    transform: scale(1.2);
+    color: #3f51b5;
+}
+
+.menu-options {
+    position: absolute;
+    top: 55px;
+    left: 0;
+    background: rgba(30, 30, 47, 0.98);
+    border-radius: 10px;
+    padding: 20px 15px; /* antes 10px */
+    display: none;
+    flex-direction: column;
+    gap: 15px; /* antes 8px */
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+    animation: fadeIn 0.3s ease;
+    min-width: 220px;
+    z-index: 1050;
+}
+
+.menu-options.active {
+    display: flex;
+}
+
+.menu-link {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    background: #3f51b5;
+    padding: 12px 15px; /* más alto */
+    border-radius: 8px;
+    transition: background 0.3s ease, transform 0.2s;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-link:hover {
+    background: #5c6bc0;
+    transform: scale(1.05);
+}
+
+/* Animación */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Empujar contenido hacia abajo por navbar */
+.container {
+    margin-top: 90px;
+}
+
+/* Formularios */
+form {
+    margin-top: 20px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+form button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    input {
+        width: 100%;
+    }
+
+    button {
+        width: 100%;
+        margin: 10px 0 0 0;
+    }
+
+    /* Menú estilo slide para móviles */
+    .menu-options {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        height: 100%;
+        width: 240px; /* un poco más ancho */
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 100px;
+        border-radius: 0;
+        transition: left 0.3s ease;
+        background: #1e1e2f;
+        gap: 20px; /* más separación */
+    }
+
+    .menu-options.active {
+        left: 0;
+    }
+
+    .menu-link {
+        display: block;
+        margin: 10px 20px;
+        text-align: left;
+        font-size: 18px;
+    }
+}
+
+/* Tabla de cursos */
+#course-list {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#course-list th, #course-list td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#course-list th {
+    background-color: #007bff;
+    color: white;
+}
+
+#course-list tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#course-list tr:hover {
+    background-color: #f1f1f1;
+}
