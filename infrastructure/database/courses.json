@@ -1,0 +1,77 @@
+[
+  {
+    "id": "1",
+    "nombre": "Programación I",
+    "carrera": "Ingeniería de Sistemas",
+    "docente": "Dr. Alan Turing",
+    "temas": [
+      "Introducción a la Programación",
+      "Algoritmos",
+      "Estructuras de Datos",
+      "Python"
+    ],
+    "materiales": {
+      "pdfs": [
+        {
+          "name": "Introduccion_Python.pdf",
+          "url": "/path/to/Introduccion_Python.pdf"
+        }
+      ]
+    },
+    "horario": "Lunes y Miércoles 10:00 - 12:00"
+  },
+  {
+    "id": "2",
+    "nombre": "Cálculo Diferencial",
+    "carrera": "Ingeniería Civil",
+    "docente": "Dra. Ada Lovelace",
+    "temas": [
+      "Límites",
+      "Derivadas"
+    ],
+    "materiales": {
+      "pdfs": [
+        {
+          "name": "Calculo_Diferencial.pdf",
+          "url": "https://drive.google.com/file/d/1hoO__3DRj5eBHj4TSDS-RyZfCLxT0X7-/view?usp=sharing"
+        }
+      ]
+    },
+    "horario": "Martes y Jueves 08:00 - 10:00"
+  },
+  {
+    "id": "1761185574299",
+    "nombre": "Cálculo Integral",
+    "carrera": "Ingeniería de Sistemas",
+    "temas": [
+      "Íntegral",
+      "Integral",
+      "integral"
+    ],
+    "materiales": {
+      "pdfs": [
+        {
+          "name": "Teorema_Fundamental.pdf",
+          "url": "/path/to/Teorema_Fundamental.pdf"
+        }
+      ]
+    }
+  },
+  {
+    "id": "1761195479269",
+    "nombre": "Economia",
+    "carrera": "Ingenieria Empresarial",
+    "temas": [
+      "tasa de interes",
+      "mercado"
+    ],
+    "materiales": {
+      "pdfs": [
+        {
+          "name": "Libro Economia Avanzada 7ma Edicion.",
+          "url": "https://drive.google.com/file/d/1hoO__3DRj5eBHj4TSDS-RyZfCLxT0X7-/view?usp=drive_link"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "cursos": [
+    {
+      "id": 1,
+      "nombre": "Matemáticas Básicas",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Álgebra",
+        "Cálculo",
+        "Geometría"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Sílabo Matemáticas.pdf",
+          "Ejercicios Resueltos.pdf"
+        ],
+        "videos": [
+          "Introducción al Álgebra",
+          "Derivadas Básicas"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Programación I",
+      "carrera": "Ingeniería de Software",
+      "temas": [
+        "Python",
+        "Estructuras de Datos",
+        "POO"
+      ],
+      "materiales": {
+        "pdfs": [
+          "Guía de Python.pdf",
+          "Ejemplos de Código.pdf"
+        ],
+        "videos": [
+          "Instalación de Python",
+          "Clases y Objetos"
+        ]
+      }
+    },
+    {
+      "id": "1760576400033",
+      "nombre": "Economia",
+      "carrera": "Ingenieria Empresarial",
+      "temas": [
+        "Mercado"
+      ],
+      "materiales": {
+        "pdfs": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1760629351702",
+      "nombre": "Conmutación y Enrutamiento",
+      "carrera": "Ingeniería de Sistemas",
+      "temas": [
+        "Redes Redundantes",
+        "Enrutamiento Dinámico"
+      ],
+      "materiales": {
+        "pdfs": [],
+        "videos": []
+      }
+    }
+  ]
+}

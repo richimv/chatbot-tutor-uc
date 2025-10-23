@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Tutor UC - PMV1</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1>🤖 Chatbot Tutor UC</h1>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">🔍 Buscar</a>
+                <a href="/admin" class="nav-link">⚙️ Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <h2>Base de Conocimientos Académicos</h2>
+            <p>Encuentra cursos, materiales y recursos de aprendizaje con IA</p>
+        </header>
+
+        <section class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" 
+                       placeholder="Buscar cursos, temas, carreras... Ej: Matemáticas, Python, SQL">
+                <button id="searchButton" class="btn-primary">🔍 Buscar</button>
+            </div>
+        </section>
+
+        <section class="results-section">
+            <div id="resultsContainer" class="results-container">
+                <!-- Resultados dinámicos -->
+            </div>
+        </section>
+    </main>
+
+    <!-- CARGAR COMPONENTES EN ORDEN CORRECTO -->
+    <script src="components/search.js"></script>
+    <script src="components/chat.js"></script>
+    <script src="app.js"></script>
+
+     <!-- ✅ SCRIPT DE INICIALIZACIÓN ADICIONAL -->
+    <script>
+        // Verificar que todo cargó correctamente
+        window.addEventListener('load', function() {
+            console.log('🏁 Página completamente cargada');
+            if (window.chatComponent) {
+                console.log('✅ ChatComponent está disponible');
+            } else {
+                console.error('❌ ChatComponent NO se inicializó');
+            }
+        });
+    </script>
+    
+</body>
+</html>
