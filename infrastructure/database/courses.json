@@ -8,7 +8,8 @@
       "Introducción a la Programación",
       "Algoritmos",
       "Estructuras de Datos",
-      "Python"
+      "Python",
+      "POO"
     ],
     "materiales": {
       "pdfs": [
@@ -59,11 +60,11 @@
   },
   {
     "id": "1761195479269",
-    "nombre": "Economia",
+    "nombre": "Economía",
     "carrera": "Ingenieria Empresarial",
     "temas": [
-      "tasa de interes",
-      "mercado"
+      "Tasa de interés",
+      "Mercado"
     ],
     "materiales": {
       "pdfs": [
@@ -73,5 +74,168 @@
         }
       ]
     }
+  },
+  {
+    "id": "1762000000001",
+    "nombre": "Cálculo I",
+    "carrera": "Ingeniería Civil",
+    "docente": "Dr. Isaac Newton",
+    "temas": [
+      "Límites y Continuidad",
+      "Derivadas",
+      "Aplicaciones de la Derivada",
+      "Regla de L'Hôpital"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Lunes y Miércoles 14:00 - 16:00"
+  },
+  {
+    "id": "1762000000002",
+    "nombre": "Cálculo I",
+    "carrera": "Ingeniería Mecatrónica",
+    "docente": "Dr. Isaac Newton",
+    "temas": [
+      "Límites y Continuidad",
+      "Derivadas",
+      "Coordenadas Polares",
+      "Vectores en el plano"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Martes y Jueves 16:00 - 18:00"
+  },
+  {
+    "id": "1762000000003",
+    "nombre": "Matemática Avanzada",
+    "carrera": "Ingeniería Empresarial",
+    "docente": "Dra. Sofia Kovalevskaya",
+    "temas": [
+      "Optimización de funciones",
+      "Derivadas Parciales",
+      "Modelos Matemáticos para negocios",
+      "Programación Lineal"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Viernes 10:00 - 13:00"
+  },
+  {
+    "id": "1762000000004",
+    "nombre": "Matemática Financiera",
+    "carrera": "Contabilidad",
+    "docente": "Lic. Luca Pacioli",
+    "temas": [
+      "Interés Simple",
+      "Interés Compuesto",
+      "Anualidades",
+      "Tasa de Interés Efectiva",
+      "Amortización"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Lunes 18:00 - 20:00"
+  },
+  {
+    "id": "1762000000005",
+    "nombre": "Derecho Constitucional",
+    "carrera": "Derecho",
+    "docente": "Dr. Hans Kelsen",
+    "temas": [
+      "Derechos Fundamentales",
+      "Garantías Constitucionales",
+      "Estructura del Estado",
+      "Control de Constitucionalidad"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Miércoles 08:00 - 10:00"
+  },
+  {
+    "id": "1762000000006",
+    "nombre": "Psicología Organizacional",
+    "carrera": "Psicología",
+    "docente": "Mg. Elton Mayo",
+    "temas": [
+      "Comportamiento Organizacional",
+      "Liderazgo",
+      "Motivación en el trabajo",
+      "Clima Laboral"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Jueves 11:00 - 13:00"
+  },
+  {
+    "id": "1762000000007",
+    "nombre": "Redes y Comunicaciones",
+    "carrera": "Ingeniería de Sistemas",
+    "docente": "Ing. Vint Cerf",
+    "temas": [
+      "Modelo OSI",
+      "Protocolo TCP/IP",
+      "Enrutamiento estático y dinámico",
+      "Seguridad de Redes"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Viernes 16:00 - 18:00"
+  },
+  {
+    "id": "1762000000008",
+    "nombre": "Marketing Digital",
+    "carrera": "Administración y Marketing",
+    "docente": "Lic. Philip Kotler",
+    "temas": [
+      "SEO",
+      "SEM",
+      "Marketing en Redes Sociales",
+      "Email Marketing",
+      "Analítica Web"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Martes 19:00 - 21:00"
+  },
+  {
+    "id": "1762000000009",
+    "nombre": "Estadística Descriptiva",
+    "carrera": "Ingeniería Industrial",
+    "docente": "Dra. Florence Nightingale",
+    "temas": [
+      "Medidas de tendencia central",
+      "Probabilidad",
+      "Distribuciones de Frecuencia",
+      "Muestreo"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Sábado 09:00 - 12:00"
+  },
+  {
+    "id": "1762000000010",
+    "nombre": "Algoritmos y Estructuras de Datos",
+    "carrera": "Ingeniería de Software",
+    "docente": "Dr. Donald Knuth",
+    "temas": [
+      "Complejidad Algorítmica",
+      "Listas Enlazadas",
+      "Árboles y Grafos",
+      "Algoritmos de Búsqueda",
+      "Ordenamiento"
+    ],
+    "materiales": {
+      "pdfs": []
+    },
+    "horario": "Lunes y Jueves 08:00 - 10:00"
   }
 ]

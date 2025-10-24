@@ -1,123 +1,49 @@
 const CourseRepository = require('../repositories/courseRepository');
-const AnalyticsRepository = require('../repositories/analyticsRepository');
+const PythonMLService = require('./pythonMLService'); // ✅ Importamos el nuevo servicio
 
 class RecommendationService {
-    constructor(courseRepository) { // ✅ CORRECCIÓN: Aceptar courseRepository como dependencia
-        this.courseRepo = courseRepository;
-        this.analyticsRepo = new AnalyticsRepository();
-        
-        // Mapeo de relaciones entre conceptos
-        this.conceptRelations = {
-            'python': ['programación', 'algoritmos', 'estructuras de datos', 'poo', 'web development'],
-            'java': ['programación', 'poo', 'android', 'aplicaciones empresariales'],
-            'matemáticas': ['cálculo', 'álgebra', 'estadística', 'física', 'lógica'],
-            'cálculo': ['matemáticas', 'derivadas', 'integrales', 'física'],
-            'base de datos': ['sql', 'modelado', 'normalización', 'big data', 'data mining'],
-            'redes': ['protocolos', 'seguridad', 'internet', 'comunicaciones', 'osi'],
-            'inteligencia artificial': ['machine learning', 'redes neuronales', 'python', 'algoritmos'],
-            'programación': ['python', 'java', 'c++', 'algoritmos', 'estructuras de datos']
-        };
+    constructor(courseRepository) {
+        this.courseRepository = courseRepository;
     }
 
-    // Generar recomendaciones basadas en consulta actual
-    async generateRecommendations(query, currentResults) {
-        const allCourses = await this.courseRepo.findAll();
-        const recommendations = new Set();
-        const searchTrends = await this.analyticsRepo.getSearchTrends(10);
+    /**
+     * Genera un mensaje de sugerencia inteligente basado en la consulta y los resultados directos.
+     * Ahora obtiene las sugerencias del servicio de ML en Python.
+     * @param {string} query La consulta original del usuario.
+     * @param {Array<object>} directResults Los cursos encontrados directamente por la búsqueda.
+     * @returns {Promise<string>} Un mensaje con sugerencias formateado en Markdown.
+     */
+    async getSuggestionMessage(query, directResults) {
+        const directResultIds = directResults.map(c => c.id);
 
-        // 1. Recomendaciones por conceptos relacionados
-        await this.addConceptBasedRecommendations(query, currentResults, recommendations);
-        
-        // 2. Recomendaciones por tendencias populares
-        await this.addTrendBasedRecommendations(searchTrends, currentResults, recommendations);
-        
-        // 3. Recomendaciones por carrera
-        this.addCareerBasedRecommendations(currentResults, allCourses, recommendations);
+        // 1. ✅ Llamar al servicio de Python para obtener todas las recomendaciones
+        const recommendations = await PythonMLService.getRecommendations(query, directResultIds);
 
-        return Array.from(recommendations).slice(0, 4); // Máximo 4 recomendaciones
-    }
+        let suggestions = [];
 
-    // Recomendaciones basadas en conceptos relacionados
-    async addConceptBasedRecommendations(query, allCourses, currentResults, recommendations) {
-        const normalizedQuery = this.courseRepo._normalizeText(query);
-        // Usar un bucle for...of para poder usar await
-        for (const [concept, relatedConcepts] of Object.entries(this.conceptRelations)) {
-            if (normalizedQuery.includes(concept)) {
-                for (const relatedConcept of relatedConcepts) {
-                    const foundCourses = await this.courseRepo.search(relatedConcept);
-                    foundCourses.forEach(course => {
-                        if (!this.isAlreadyInResults(course, currentResults)) {
-                            recommendations.add(course);
-                        }
-                    });
-                }
-            }
+        // 2. ✅ Formatear las sugerencias recibidas del servicio de Python
+        if (recommendations.relatedCourses && recommendations.relatedCourses.length > 0) {
+            suggestions.push(`Cursos que también podrían interesarte: **${recommendations.relatedCourses.join(', ')}**`);
         }
-    }
 
-    // Recomendaciones basadas en tendencias
-    async addTrendBasedRecommendations(trends, currentResults, recommendations) {
-        // Usar un bucle for...of para poder usar await
-        for (const trend of trends) {
-            const foundCourses = await this.courseRepo.search(trend.query);
-            foundCourses.forEach(foundCourse => {
-                if (!this.isAlreadyInResults(foundCourse, currentResults) && trend.count > 2) {
-                    recommendations.add(foundCourse);
-                }
-            });
+        if (recommendations.relatedTopics && recommendations.relatedTopics.length > 0) {
+            suggestions.push(`Temas que puedes explorar: **${recommendations.relatedTopics.join(', ')}**`);
         }
-    }
 
-    // Recomendaciones por carrera
-    addCareerBasedRecommendations(currentResults, allCourses, recommendations) {
-        if (currentResults.length > 0) {
-            const mainCareer = currentResults[0].carrera;
-            allCourses.forEach(course => {
-                if (course.carrera === mainCareer && 
-                    !this.isAlreadyInResults(course, currentResults)) {
-                    recommendations.add(course);
-                }
-            });
-        };
-    }
+        if (recommendations.popularCourse && recommendations.popularCourse.predictedCourse && recommendations.popularCourse.confidence > 0.6) {
+            suggestions.push(`El curso más buscado actualmente es: **${recommendations.popularCourse.predictedCourse}**`);
+        }
 
-    // Verificar si el curso ya está en resultados
-    isAlreadyInResults(course, currentResults) {
-        return currentResults.some(result => result.id === course.id);
-    }
+        if (recommendations.popularTopic && recommendations.popularTopic.predictedTopic && recommendations.popularTopic.confidence > 0.6) {
+            suggestions.push(`Un tema muy popular es: **${recommendations.popularTopic.predictedTopic}**`);
+        }
 
-    // Generar mensaje de sugerencias
-    async getSuggestionMessage(query, results) {
-        if (results.length === 0) return '';
-
-        const recommendations = await this.generateRecommendations(query, results);
-        
-        if (recommendations.length === 0) return '';
-
-        const suggestionText = recommendations.map(course => 
-            `• **${course.nombre}** - ${course.carrera}`
-        ).join('\n');
-
-        return `\n\n💡 **Basado en tu búsqueda, también te podría interesar:**\n${suggestionText}`;
-    }
-
-    // Obtener cursos frecuentemente buscados juntos
-    async getFrequentlySearchedTogether(courseName) {
-        const trends = await this.analyticsRepo.getSearchTrends(20);
-        const relatedCourses = new Set();
-        
-        trends.forEach(trend => {
-            if (trend.query.toLowerCase().includes(courseName.toLowerCase())) {
-                // Buscar otros cursos en la misma tendencia
-                trends.forEach(otherTrend => {
-                    if (otherTrend.query !== trend.query && otherTrend.count > 1) {
-                        relatedCourses.add(otherTrend.query);
-                    }
-                });
-            }
-        });
-
-        return Array.from(relatedCourses).slice(0, 3);
+        // 3. ✅ Devolver el mensaje final
+        if (suggestions.length > 0) {
+            return suggestions.join('. ');
+        } else {
+            return "Explora nuestros cursos o pregunta al Tutor IA.";
+        }
     }
 }
 

@@ -620,7 +620,7 @@ async sendMessage() {
     }
 }
 
-    // ✅ MÉTODO AÑADIDO: Para abrir el chat y hacer una pregunta desde otros componentes
+    // MÉTODO AÑADIDO: Para abrir el chat y hacer una pregunta desde otros componentes
     openAndAsk(question) {
         if (!this.isOpen) {
             this.toggleChat();
@@ -628,7 +628,8 @@ async sendMessage() {
         const input = document.getElementById('chatbot-input');
         if (input) {
             input.value = question;
-            this.sendMessage();
+            // Pequeño delay para asegurar que la UI está lista antes de enviar
+            setTimeout(() => this.sendMessage(), 300);
         }
     }
 

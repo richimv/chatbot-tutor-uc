@@ -1,5 +1,6 @@
 const AnalyticsRepository = require('../repositories/analyticsRepository');
 const CourseRepository = require('../repositories/courseRepository');
+const PythonMLService = require('./pythonMLService'); // ✅ Importamos el nuevo servicio
 
 class AnalyticsService {
     constructor() {
@@ -38,59 +39,33 @@ class AnalyticsService {
 
     // PREDICCIÓN DE CURSO MÁS BUSCADO
     async predictPopularCourse() {
-        const trends = await this.analyticsRepo.getSearchTrends(20);
-        const courses = await this.courseRepo.findAll();
-        
-        if (trends.length === 0) {
-            return {
-                predictedCourse: 'Programación I', // Default
-                confidence: 0.5,
-                reason: 'Sin datos suficientes, curso por defecto',
-                searchCount: 0
-            };
-        }
+        // ✅ Delegamos la lógica al servicio de Python.
+        // Pasamos un query vacío porque solo nos interesa la predicción general.
+        const recommendations = await PythonMLService.getRecommendations('', []);
+        return recommendations.popularCourse || { predictedCourse: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
+    }
 
-        // Análisis de correlación entre búsquedas y cursos
-        const courseScores = {};
-        
-        for (const trend of trends) {
-            const foundCourses = await this.courseRepo.search(trend.query);
-            foundCourses.forEach(course => {
-                courseScores[course.nombre] = (courseScores[course.nombre] || 0) + trend.count;
-            });
-        }
-
-        // Encontrar curso con mayor score
-        let topCourse = { nombre: '', score: 0 };
-        Object.entries(courseScores).forEach(([nombre, score]) => {
-            if (score > topCourse.score) {
-                topCourse = { nombre, score };
-            }
-        });
-
-        const confidence = Math.min(topCourse.score / 50, 0.95); // Máximo 95% de confianza
-
-        return {
-            predictedCourse: topCourse.nombre || 'Programación I',
-            confidence: confidence,
-            searchCount: topCourse.score,
-            reason: `Basado en ${topCourse.score} búsquedas relacionadas este mes`,
-            trendingQueries: trends.slice(0, 5)
-        };
+    // ✅ NUEVO: PREDICCIÓN DE TEMA MÁS BUSCADO
+    async predictPopularTopic() {
+        // ✅ Delegamos la lógica al servicio de Python.
+        const recommendations = await PythonMLService.getRecommendations('', []);
+        return recommendations.popularTopic || { predictedTopic: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
     }
 
     // Obtener analytics completos
     async getCompleteAnalytics() {
-        const [searchTrends, chatAnalytics, popularCourse] = await Promise.all([
+        const [searchTrends, chatAnalytics, popularCourse, popularTopic] = await Promise.all([
             this.analyticsRepo.getSearchTrends(10),
             this.analyticsRepo.getChatAnalytics(),
-            this.predictPopularCourse()
+            this.predictPopularCourse(), // Esta función ahora llama al servicio de Python
+            this.predictPopularTopic()  // Esta también
         ]);
 
         return {
             searchTrends,
             chatAnalytics,
             popularCourse,
+            popularTopic, // ✅ Devolvemos el tema popular
             timestamp: new Date().toISOString()
         };
     }

@@ -48,8 +48,8 @@ class SearchComponent {
     displayResults(searchData) {
         const { results, suggestions, totalResults, searchQuery, isEducationalQuery } = searchData;
 
-        // ✅ LÓGICA MEJORADA PARA "NO HAY RESULTADOS"
-        if (results.length === 0 && isEducationalQuery) {
+        // LÓGICA MEJORADA PARA "NO HAY RESULTADOS"
+        if (results.length === 0 && isEducationalQuery) { // Si es pregunta teórica y no hay documentos
             // Si no hay resultados pero es una pregunta teórica, sugerir el chatbot.
             this.resultsContainer.innerHTML = `
                 <div class="no-results">
@@ -64,7 +64,7 @@ class SearchComponent {
                 </div>
             `;
             return;
-        } else if (results.length === 0) {
+        } else if (results.length === 0) { // Si no es pregunta teórica y no hay documentos
             // Si no hay resultados y no es teórica, mostrar mensaje estándar.
             this.resultsContainer.innerHTML = `
                 <div class="no-results">

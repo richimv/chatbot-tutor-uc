@@ -13,3 +13,6 @@ infrastructure/database/analytics.json
 
 # Archivos del sistema operativo
 .DS_Store
+
+# Entornos virtuales de Python
+/venv/

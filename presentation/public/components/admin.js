@@ -435,6 +435,23 @@ class AdminManager {
                         </div>
                     </div>
                 </div>
+                
+                <!-- ✅ NUEVO: Predicción de Tema Popular -->
+                <div class="prediction-card topic-prediction">
+                    <h4>Tema Más Buscado (Concepto)</h4>
+                    <div class="prediction-content">
+                        <div class="prediction-main">
+                            <span class="course-name">${analytics.popularTopic.predictedTopic}</span>
+                            <span class="confidence-badge" style="background: ${this.getConfidenceColor(analytics.popularTopic.confidence)}">
+                                ${(analytics.popularTopic.confidence * 100).toFixed(1)}% confianza
+                            </span>
+                        </div>
+                        <p class="prediction-reason">${analytics.popularTopic.reason}</p>
+                        <div class="prediction-stats">
+                            <span>📊 ${analytics.popularTopic.searchCount} búsquedas relacionadas</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Tendencias de Búsqueda -->
                 <div class="analytics-section">
@@ -577,6 +594,12 @@ const analyticsStyles = `
             border: 1px solid #bae6fd;
             border-radius: 12px;
             padding: 1.5rem;
+        }
+        
+        /* ✅ NUEVO: Estilo para la tarjeta de tema */
+        .topic-prediction {
+            background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+            border-color: #fde047;
         }
 
         .prediction-card h4 {

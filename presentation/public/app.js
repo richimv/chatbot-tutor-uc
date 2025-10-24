@@ -53,11 +53,11 @@ class ChatbotTutorApp {
             }
         };
 
-        // ✅ NUEVA FUNCIÓN para preguntas teóricas
+        // NUEVA FUNCIÓN para preguntas teóricas desde la búsqueda
         window.askAboutTopic = (topic) => {
             if (this.components.chat) {
-                // No añade "el curso de"
-                this.components.chat.openAndAsk(topic);
+                const question = `Explícame qué es ${topic}`;
+                this.components.chat.openAndAsk(question);
             } else {
                 alert('El chatbot no está disponible en este momento.');
             }
@@ -65,8 +65,7 @@ class ChatbotTutorApp {
     }
 }
 
-// ✅ CORREGIDO: Se elimina la inicialización duplicada.
-// La clase ChatbotTutorApp se encargará de todo.
-document.addEventListener('DOMContentLoaded', function() {
+// ✅ INICIALIZACIÓN CENTRALIZADA: Iniciar la aplicación cuando el DOM esté listo.
+document.addEventListener('DOMContentLoaded', () => {
     window.tutorApp = new ChatbotTutorApp();
 });

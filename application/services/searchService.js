@@ -31,30 +31,28 @@ class SearchService {
             // GENERAR SUGERENCIAS INTELIGENTES
             const suggestions = await this.recommendationService.getSuggestionMessage(query, results);
             
-            // ✅ LÓGICA REFACTORIZADA: Determinar la intención primero, independientemente de los resultados.
+            // Determinar la intención para saber si es una pregunta teórica.
             const intent = this.analyticsService.inferIntentFromQuery(query);
             const isEducationalQuery = (intent === 'duda_teorica' || intent === 'consulta_general');
 
             // Si la búsqueda inicial no arrojó resultados, intentar una búsqueda más amplia por concepto.
             if (results.length === 0) {
-                console.log('🧠 Búsqueda educativa detectada. Intentando búsqueda por concepto...');
+                console.log('🧠 No se encontraron resultados directos. Intentando búsqueda por concepto...');
                 
-                // ✅ LÓGICA REFACTORIZADA: Extraer el concepto clave de forma más robusta.
-                const fillerWords = [
+                // Palabras de relleno a ignorar para extraer el concepto principal.
+                const fillerWords = new Set([
                     'quiero', 'ejercicios', 'libro', 'libros', 'sobre', 'para', 'que', 'sirve', 'una', 'un', 'el', 'la', 'los', 'las', 
                     'qué', 'es', 'explicame', 'cómo', 'funciona', 'necesito', 'información', 'dame', 'acerca', 'del', 'tema'
-                ];
+                ]);
                 
                 const words = query.toLowerCase().split(' ');
-                const conceptWords = words.filter(word => !fillerWords.includes(word));
+                const conceptWords = words.filter(word => !fillerWords.has(word));
                 const concept = conceptWords.join(' ').trim();
-                
-                console.log(`💡 Concepto extraído: "${concept}"`);
-                
+
                 if (concept) {
+                    console.log(`💡 Concepto extraído: "${concept}". Realizando nueva búsqueda.`);
                     // Realizar una segunda búsqueda solo con el concepto clave.
-                    const relatedCourses = await this.courseRepository.search(concept);
-                    results = relatedCourses; // Usar estos resultados si se encuentran.
+                    results = await this.courseRepository.search(concept);
                 }
             }
 
@@ -63,7 +61,6 @@ class SearchService {
                 suggestions,
                 totalResults: results.length,
                 searchQuery: query,
-                // La bandera ahora es verdadera si la intención es educativa, incluso si se encontraron cursos.
                 isEducationalQuery,
                 timestamp: new Date().toISOString()
             };
