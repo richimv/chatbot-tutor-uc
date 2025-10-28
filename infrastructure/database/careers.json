@@ -1,0 +1,107 @@
+[
+  {
+    "id": "CAREER_A",
+    "name": "Ingeniería de Software",
+    "curriculumUrl": "/mallas/ing-software.pdf"
+  },
+  {
+    "id": "CAREER_B",
+    "name": "Ciencia de la Computación",
+    "curriculumUrl": "/mallas/ciencia-computacion.pdf"
+  },
+  {
+    "id": "CAREER_C",
+    "name": "Ingeniería Civil",
+    "curriculumUrl": "/mallas/ing-civil.pdf"
+  },
+  {
+    "id": "CAREER_D",
+    "name": "Arquitectura",
+    "curriculumUrl": "/mallas/arquitectura.pdf"
+  },
+  {
+    "id": "CAREER_E",
+    "name": "Derecho",
+    "curriculumUrl": "/mallas/derecho.pdf"
+  },
+  {
+    "id": "CAREER_F",
+    "name": "Psicología",
+    "curriculumUrl": "/mallas/psicologia.pdf"
+  },
+  {
+    "id": "CAREER_G",
+    "name": "Medicina Humana",
+    "curriculumUrl": "/mallas/medicina.pdf"
+  },
+  {
+    "id": "CAREER_H",
+    "name": "Administración de Empresas",
+    "curriculumUrl": "/mallas/administracion.pdf"
+  },
+  {
+    "id": "CAREER_I",
+    "name": "Marketing",
+    "curriculumUrl": "/mallas/marketing.pdf"
+  },
+  {
+    "id": "CAREER_J",
+    "name": "Economía",
+    "curriculumUrl": "/mallas/economia.pdf"
+  },
+  {
+    "id": "CAREER_K",
+    "name": "Contabilidad",
+    "curriculumUrl": "/mallas/contabilidad.pdf"
+  },
+  {
+    "id": "CAREER_L",
+    "name": "Ingeniería Industrial",
+    "curriculumUrl": "/mallas/ing-industrial.pdf"
+  },
+  {
+    "id": "CAREER_M",
+    "name": "Ingeniería de Minas",
+    "curriculumUrl": "/mallas/ing-minas.pdf"
+  },
+  {
+    "id": "CAREER_N",
+    "name": "Diseño Gráfico",
+    "curriculumUrl": "/mallas/diseno-grafico.pdf"
+  },
+  {
+    "id": "CAREER_O",
+    "name": "Comunicaciones",
+    "curriculumUrl": "/mallas/comunicaciones.pdf"
+  },
+  {
+    "id": "CAREER_P",
+    "name": "Educación Primaria",
+    "curriculumUrl": "/mallas/educacion.pdf"
+  },
+  {
+    "id": "CAREER_Q",
+    "name": "Ingeniería Mecatrónica",
+    "curriculumUrl": "/mallas/ing-mecatronica.pdf"
+  },
+  {
+    "id": "CAREER_R",
+    "name": "Nutrición y Dietética",
+    "curriculumUrl": "/mallas/nutricion.pdf"
+  },
+  {
+    "id": "CAREER_S",
+    "name": "Enfermería",
+    "curriculumUrl": "/mallas/enfermeria.pdf"
+  },
+  {
+    "id": "CAREER_T",
+    "name": "Turismo y Hotelería",
+    "curriculumUrl": "/mallas/turismo.pdf"
+  },
+  {
+    "id": "CAREER_1761522204053",
+    "name": "Religión",
+    "curriculumUrl": ""
+  }
+]

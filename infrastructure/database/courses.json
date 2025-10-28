@@ -1,241 +1,382 @@
 [
   {
-    "id": "1",
-    "nombre": "Programación I",
-    "carrera": "Ingeniería de Sistemas",
-    "docente": "Dr. Alan Turing",
-    "temas": [
-      "Introducción a la Programación",
-      "Algoritmos",
-      "Estructuras de Datos",
-      "Python",
-      "POO"
-    ],
-    "materiales": {
-      "pdfs": [
-        {
-          "name": "Introduccion_Python.pdf",
-          "url": "/path/to/Introduccion_Python.pdf"
-        }
-      ]
-    },
-    "horario": "Lunes y Miércoles 10:00 - 12:00"
+    "id": "COURSE_101",
+    "code": "MAT123",
+    "name": "Cálculo I",
+    "description": "Curso fundamental de cálculo diferencial e integral, enfocado en límites, derivadas e integrales de una variable.",
+    "topicIds": [
+      "TOPIC_001",
+      "TOPIC_002",
+      "TOPIC_003",
+      "TOPIC_004"
+    ]
   },
   {
-    "id": "2",
-    "nombre": "Cálculo Diferencial",
-    "carrera": "Ingeniería Civil",
-    "docente": "Dra. Ada Lovelace",
-    "temas": [
-      "Límites",
-      "Derivadas"
-    ],
-    "materiales": {
-      "pdfs": [
-        {
-          "name": "Calculo_Diferencial.pdf",
-          "url": "https://drive.google.com/file/d/1hoO__3DRj5eBHj4TSDS-RyZfCLxT0X7-/view?usp=sharing"
-        }
-      ]
-    },
-    "horario": "Martes y Jueves 08:00 - 10:00"
+    "id": "COURSE_102",
+    "code": "CS101",
+    "name": "Introducción a la Programación",
+    "description": "Conceptos básicos de programación utilizando Python. Cubre variables, control de flujo, funciones y estructuras de datos.",
+    "topicIds": [
+      "TOPIC_005",
+      "TOPIC_006",
+      "TOPIC_007",
+      "TOPIC_008"
+    ]
   },
   {
-    "id": "1761185574299",
-    "nombre": "Cálculo Integral",
-    "carrera": "Ingeniería de Sistemas",
-    "temas": [
-      "Íntegral",
-      "Integral",
-      "integral"
-    ],
-    "materiales": {
-      "pdfs": [
-        {
-          "name": "Teorema_Fundamental.pdf",
-          "url": "/path/to/Teorema_Fundamental.pdf"
-        }
-      ]
-    }
+    "id": "COURSE_103",
+    "code": "DB201",
+    "name": "Bases de Datos",
+    "description": "Diseño y gestión de bases de datos relacionales. Se enfoca en el modelo entidad-relación y SQL.",
+    "topicIds": [
+      "TOPIC_009",
+      "TOPIC_010",
+      "TOPIC_011",
+      "TOPIC_012"
+    ]
   },
   {
-    "id": "1761195479269",
-    "nombre": "Economía",
-    "carrera": "Ingenieria Empresarial",
-    "temas": [
-      "Tasa de interés",
-      "Mercado"
-    ],
-    "materiales": {
-      "pdfs": [
-        {
-          "name": "Libro Economia Avanzada 7ma Edicion.",
-          "url": "https://drive.google.com/file/d/1hoO__3DRj5eBHj4TSDS-RyZfCLxT0X7-/view?usp=drive_link"
-        }
-      ]
-    }
+    "id": "COURSE_104",
+    "code": "MAT234",
+    "name": "Cálculo II",
+    "description": "Cálculo en varias variables, integrales múltiples y cálculo vectorial.",
+    "topicIds": [
+      "TOPIC_013",
+      "TOPIC_014",
+      "TOPIC_015",
+      "TOPIC_016"
+    ]
   },
   {
-    "id": "1762000000001",
-    "nombre": "Cálculo I",
-    "carrera": "Ingeniería Civil",
-    "docente": "Dr. Isaac Newton",
-    "temas": [
-      "Límites y Continuidad",
-      "Derivadas",
-      "Aplicaciones de la Derivada",
-      "Regla de L'Hôpital"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Lunes y Miércoles 14:00 - 16:00"
+    "id": "COURSE_105",
+    "code": "PHY101",
+    "name": "Física I",
+    "description": "Mecánica clásica, leyes de Newton, trabajo y energía.",
+    "topicIds": [
+      "TOPIC_017",
+      "TOPIC_018",
+      "TOPIC_019",
+      "TOPIC_020"
+    ]
   },
   {
-    "id": "1762000000002",
-    "nombre": "Cálculo I",
-    "carrera": "Ingeniería Mecatrónica",
-    "docente": "Dr. Isaac Newton",
-    "temas": [
-      "Límites y Continuidad",
-      "Derivadas",
-      "Coordenadas Polares",
-      "Vectores en el plano"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Martes y Jueves 16:00 - 18:00"
+    "id": "COURSE_106",
+    "code": "CS202",
+    "name": "Estructuras de Datos Avanzadas",
+    "description": "Análisis y diseño de estructuras de datos complejas como árboles, grafos y tablas hash.",
+    "topicIds": [
+      "TOPIC_021",
+      "TOPIC_022",
+      "TOPIC_023",
+      "TOPIC_024"
+    ]
   },
   {
-    "id": "1762000000003",
-    "nombre": "Matemática Avanzada",
-    "carrera": "Ingeniería Empresarial",
-    "docente": "Dra. Sofia Kovalevskaya",
-    "temas": [
-      "Optimización de funciones",
-      "Derivadas Parciales",
-      "Modelos Matemáticos para negocios",
-      "Programación Lineal"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Viernes 10:00 - 13:00"
+    "id": "COURSE_107",
+    "code": "HIS101",
+    "name": "Historia Universal",
+    "description": "Un recorrido por los principales hitos de la historia de la humanidad.",
+    "topicIds": [
+      "TOPIC_025",
+      "TOPIC_026",
+      "TOPIC_027",
+      "TOPIC_028"
+    ]
   },
   {
-    "id": "1762000000004",
-    "nombre": "Matemática Financiera",
-    "carrera": "Contabilidad",
-    "docente": "Lic. Luca Pacioli",
-    "temas": [
-      "Interés Simple",
-      "Interés Compuesto",
-      "Anualidades",
-      "Tasa de Interés Efectiva",
-      "Amortización"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Lunes 18:00 - 20:00"
+    "id": "COURSE_108",
+    "code": "ECO101",
+    "name": "Microeconomía",
+    "description": "Estudio del comportamiento de los agentes económicos individuales.",
+    "topicIds": [
+      "TOPIC_029",
+      "TOPIC_030",
+      "TOPIC_031",
+      "TOPIC_032"
+    ]
   },
   {
-    "id": "1762000000005",
-    "nombre": "Derecho Constitucional",
-    "carrera": "Derecho",
-    "docente": "Dr. Hans Kelsen",
-    "temas": [
-      "Derechos Fundamentales",
-      "Garantías Constitucionales",
-      "Estructura del Estado",
-      "Control de Constitucionalidad"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Miércoles 08:00 - 10:00"
+    "id": "COURSE_109",
+    "code": "LAW101",
+    "name": "Introducción al Derecho",
+    "description": "Principios fundamentales del sistema legal y las fuentes del derecho.",
+    "topicIds": [
+      "TOPIC_033",
+      "TOPIC_034",
+      "TOPIC_035",
+      "TOPIC_036"
+    ]
   },
   {
-    "id": "1762000000006",
-    "nombre": "Psicología Organizacional",
-    "carrera": "Psicología",
-    "docente": "Mg. Elton Mayo",
-    "temas": [
-      "Comportamiento Organizacional",
-      "Liderazgo",
-      "Motivación en el trabajo",
-      "Clima Laboral"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Jueves 11:00 - 13:00"
+    "id": "COURSE_110",
+    "code": "ART101",
+    "name": "Dibujo Arquitectónico",
+    "description": "Técnicas de representación gráfica para proyectos de arquitectura.",
+    "topicIds": [
+      "TOPIC_037",
+      "TOPIC_038",
+      "TOPIC_039",
+      "TOPIC_040"
+    ]
   },
   {
-    "id": "1762000000007",
-    "nombre": "Redes y Comunicaciones",
-    "carrera": "Ingeniería de Sistemas",
-    "docente": "Ing. Vint Cerf",
-    "temas": [
-      "Modelo OSI",
-      "Protocolo TCP/IP",
-      "Enrutamiento estático y dinámico",
-      "Seguridad de Redes"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Viernes 16:00 - 18:00"
+    "id": "COURSE_111",
+    "code": "MKT201",
+    "name": "Fundamentos de Marketing",
+    "description": "Conceptos clave del marketing, investigación de mercados y comportamiento del consumidor.",
+    "topicIds": [
+      "TOPIC_041",
+      "TOPIC_042",
+      "TOPIC_043",
+      "TOPIC_044"
+    ]
   },
   {
-    "id": "1762000000008",
-    "nombre": "Marketing Digital",
-    "carrera": "Administración y Marketing",
-    "docente": "Lic. Philip Kotler",
-    "temas": [
-      "SEO",
-      "SEM",
-      "Marketing en Redes Sociales",
-      "Email Marketing",
-      "Analítica Web"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Martes 19:00 - 21:00"
+    "id": "COURSE_112",
+    "code": "PSY101",
+    "name": "Psicología General",
+    "description": "Introducción a las principales corrientes y áreas de la psicología.",
+    "topicIds": [
+      "TOPIC_045",
+      "TOPIC_046",
+      "TOPIC_047",
+      "TOPIC_048"
+    ]
   },
   {
-    "id": "1762000000009",
-    "nombre": "Estadística Descriptiva",
-    "carrera": "Ingeniería Industrial",
-    "docente": "Dra. Florence Nightingale",
-    "temas": [
-      "Medidas de tendencia central",
-      "Probabilidad",
-      "Distribuciones de Frecuencia",
-      "Muestreo"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Sábado 09:00 - 12:00"
+    "id": "COURSE_113",
+    "code": "MED101",
+    "name": "Anatomía Humana",
+    "description": "Estudio de la estructura del cuerpo humano y sus sistemas.",
+    "topicIds": [
+      "TOPIC_049",
+      "TOPIC_050",
+      "TOPIC_051",
+      "TOPIC_052"
+    ]
   },
   {
-    "id": "1762000000010",
-    "nombre": "Algoritmos y Estructuras de Datos",
-    "carrera": "Ingeniería de Software",
-    "docente": "Dr. Donald Knuth",
-    "temas": [
-      "Complejidad Algorítmica",
-      "Listas Enlazadas",
-      "Árboles y Grafos",
-      "Algoritmos de Búsqueda",
-      "Ordenamiento"
-    ],
-    "materiales": {
-      "pdfs": []
-    },
-    "horario": "Lunes y Jueves 08:00 - 10:00"
+    "id": "COURSE_114",
+    "code": "COM101",
+    "name": "Teoría de la Comunicación",
+    "description": "Modelos y teorías que explican el proceso de la comunicación humana.",
+    "topicIds": [
+      "TOPIC_053",
+      "TOPIC_054",
+      "TOPIC_055",
+      "TOPIC_056"
+    ]
+  },
+  {
+    "id": "COURSE_115",
+    "code": "EDU101",
+    "name": "Didáctica General",
+    "description": "Principios y métodos para la enseñanza y el aprendizaje.",
+    "topicIds": [
+      "TOPIC_057",
+      "TOPIC_058",
+      "TOPIC_059",
+      "TOPIC_060"
+    ]
+  },
+  {
+    "id": "COURSE_116",
+    "code": "FIN301",
+    "name": "Finanzas Corporativas",
+    "description": "Decisiones de inversión y financiamiento en la empresa.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_118",
+    "code": "CHM101",
+    "name": "Química General",
+    "description": "Principios básicos de la química, estructura atómica y enlaces.",
+    "topicIds": [
+      "TOPIC_082",
+      "TOPIC_084"
+    ]
+  },
+  {
+    "id": "COURSE_119",
+    "code": "CS301",
+    "name": "Sistemas Operativos",
+    "description": "Gestión de procesos, memoria y sistemas de archivos.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_120",
+    "code": "CS305",
+    "name": "Redes de Computadoras",
+    "description": "Principios de redes, protocolos y modelo OSI.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_121",
+    "code": "PHI101",
+    "name": "Introducción a la Filosofía",
+    "description": "Grandes preguntas y pensadores de la filosofía occidental.",
+    "topicIds": [
+      "TOPIC_095",
+      "TOPIC_096",
+      "TOPIC_097",
+      "TOPIC_098"
+    ]
+  },
+  {
+    "id": "COURSE_122",
+    "code": "GEO101",
+    "name": "Geografía Humana",
+    "description": "Interacción entre las sociedades humanas y el espacio geográfico.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_123",
+    "code": "MAT301",
+    "name": "Estadística y Probabilidades",
+    "description": "Análisis de datos, probabilidad y distribuciones.",
+    "topicIds": [
+      "TOPIC_091",
+      "TOPIC_092",
+      "TOPIC_093"
+    ]
+  },
+  {
+    "id": "COURSE_124",
+    "code": "ENG101",
+    "name": "Inglés Básico",
+    "description": "Fundamentos del idioma inglés para la comunicación básica.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_125",
+    "code": "LIT101",
+    "name": "Literatura Hispanoamericana",
+    "description": "Obras y autores representativos de la literatura en español.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_126",
+    "code": "ACC201",
+    "name": "Contabilidad de Costos",
+    "description": "Sistemas de costeo y su aplicación en la toma de decisiones.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_127",
+    "code": "CIV202",
+    "name": "Resistencia de Materiales",
+    "description": "Comportamiento de los cuerpos sólidos sometidos a esfuerzos.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_128",
+    "code": "ELE101",
+    "name": "Circuitos Eléctricos I",
+    "description": "Análisis de circuitos de corriente continua y alterna.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_129",
+    "code": "MEC201",
+    "name": "Termodinámica",
+    "description": "Leyes de la termodinámica y su aplicación en sistemas de ingeniería.",
+    "topicIds": [
+      "TOPIC_076"
+    ]
+  },
+  {
+    "id": "COURSE_130",
+    "code": "IND301",
+    "name": "Investigación de Operaciones",
+    "description": "Modelado matemático para la optimización de sistemas.",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_131",
+    "code": "MCT101",
+    "name": "Introducción a la Mecatrónica",
+    "description": "Fundamentos de la sinergia entre mecánica, electrónica y software.",
+    "topicIds": [
+      "TOPIC_101",
+      "TOPIC_102",
+      "TOPIC_103"
+    ]
+  },
+  {
+    "id": "COURSE_132",
+    "code": "NUT101",
+    "name": "Nutrición Básica",
+    "description": "Principios de la nutrición humana y clasificación de alimentos.",
+    "topicIds": [
+      "TOPIC_105",
+      "TOPIC_106"
+    ]
+  },
+  {
+    "id": "COURSE_133",
+    "code": "ENF101",
+    "name": "Fundamentos de Enfermería",
+    "description": "Bases teóricas y prácticas del cuidado del paciente.",
+    "topicIds": [
+      "TOPIC_109",
+      "TOPIC_110",
+      "TOPIC_112"
+    ]
+  },
+  {
+    "id": "COURSE_134",
+    "code": "TUR101",
+    "name": "Gestión de Destinos Turísticos",
+    "description": "Planificación y marketing de destinos turísticos sostenibles.",
+    "topicIds": [
+      "TOPIC_113",
+      "TOPIC_114",
+      "TOPIC_115"
+    ]
+  },
+  {
+    "id": "COURSE_135",
+    "code": "MAT124",
+    "name": "Álgebra Lineal",
+    "description": "Vectores, matrices, espacios vectoriales y transformaciones lineales.",
+    "topicIds": [
+      "TOPIC_117",
+      "TOPIC_118"
+    ]
+  },
+  {
+    "id": "COURSE_136",
+    "code": "WEB101",
+    "name": "Desarrollo Web Frontend",
+    "description": "Creación de interfaces web interactivas con HTML, CSS y JavaScript.",
+    "topicIds": [
+      "TOPIC_120"
+    ]
+  },
+  {
+    "id": "COURSE_1761522313608",
+    "name": "Teología I",
+    "code": "TEO1",
+    "description": "Estudio de la teología",
+    "topicIds": []
+  },
+  {
+    "id": "COURSE_1761531929693",
+    "name": "Economía I",
+    "code": "ECO01",
+    "description": "Economía basica para estudiantes universitarios.",
+    "topicIds": [
+      "TOPIC_1761531750111"
+    ]
+  },
+  {
+    "id": "COURSE_1761538139102",
+    "name": "Matemática I",
+    "code": "MAT01",
+    "description": "Matematicá basica para estudiantes.",
+    "topicIds": [
+      "TOPIC_1761538150709",
+      "TOPIC_1761538253249"
+    ]
   }
 ]

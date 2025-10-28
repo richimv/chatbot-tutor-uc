@@ -1,0 +1,620 @@
+[
+  {
+    "id": "TOPIC_001",
+    "name": "Límites",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_002",
+    "name": "Derivadas",
+    "resources": {
+      "pdfs": [
+        {
+          "name": "Guía de Derivadas",
+          "url": "/pdfs/calc1-derivadas.pdf"
+        }
+      ],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_003",
+    "name": "Integrales",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_004",
+    "name": "Teorema Fundamental del Cálculo",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_005",
+    "name": "Python",
+    "resources": {
+      "pdfs": [
+        {
+          "name": "Intro a Python",
+          "url": "/pdfs/python-intro.pdf"
+        }
+      ],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_006",
+    "name": "Algoritmos",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_007",
+    "name": "Estructuras de Datos"
+  },
+  {
+    "id": "TOPIC_008",
+    "name": "Funciones"
+  },
+  {
+    "id": "TOPIC_009",
+    "name": "SQL"
+  },
+  {
+    "id": "TOPIC_010",
+    "name": "Modelo Relacional"
+  },
+  {
+    "id": "TOPIC_011",
+    "name": "Normalización"
+  },
+  {
+    "id": "TOPIC_012",
+    "name": "Consultas"
+  },
+  {
+    "id": "TOPIC_013",
+    "name": "Integrales Dobles"
+  },
+  {
+    "id": "TOPIC_014",
+    "name": "Integrales Triples"
+  },
+  {
+    "id": "TOPIC_015",
+    "name": "Vectores"
+  },
+  {
+    "id": "TOPIC_016",
+    "name": "Teorema de Green"
+  },
+  {
+    "id": "TOPIC_017",
+    "name": "Cinemática"
+  },
+  {
+    "id": "TOPIC_018",
+    "name": "Dinámica"
+  },
+  {
+    "id": "TOPIC_019",
+    "name": "Energía"
+  },
+  {
+    "id": "TOPIC_020",
+    "name": "Momento Lineal"
+  },
+  {
+    "id": "TOPIC_021",
+    "name": "Árboles Binarios"
+  },
+  {
+    "id": "TOPIC_022",
+    "name": "Grafos"
+  },
+  {
+    "id": "TOPIC_023",
+    "name": "Algoritmos de Ordenamiento"
+  },
+  {
+    "id": "TOPIC_024",
+    "name": "Complejidad Algorítmica"
+  },
+  {
+    "id": "TOPIC_025",
+    "name": "Antigüedad"
+  },
+  {
+    "id": "TOPIC_026",
+    "name": "Edad Media"
+  },
+  {
+    "id": "TOPIC_027",
+    "name": "Renacimiento"
+  },
+  {
+    "id": "TOPIC_028",
+    "name": "Revolución Industrial"
+  },
+  {
+    "id": "TOPIC_029",
+    "name": "Oferta y Demanda"
+  },
+  {
+    "id": "TOPIC_030",
+    "name": "Teoría del Consumidor"
+  },
+  {
+    "id": "TOPIC_031",
+    "name": "Competencia Perfecta"
+  },
+  {
+    "id": "TOPIC_032",
+    "name": "Monopolio"
+  },
+  {
+    "id": "TOPIC_033",
+    "name": "Normas Jurídicas"
+  },
+  {
+    "id": "TOPIC_034",
+    "name": "Fuentes del Derecho"
+  },
+  {
+    "id": "TOPIC_035",
+    "name": "Derechos Fundamentales"
+  },
+  {
+    "id": "TOPIC_036",
+    "name": "Organización del Estado"
+  },
+  {
+    "id": "TOPIC_037",
+    "name": "Proyecciones"
+  },
+  {
+    "id": "TOPIC_038",
+    "name": "Perspectiva"
+  },
+  {
+    "id": "TOPIC_039",
+    "name": "Croquis"
+  },
+  {
+    "id": "TOPIC_040",
+    "name": "AutoCAD"
+  },
+  {
+    "id": "TOPIC_041",
+    "name": "Marketing Mix"
+  },
+  {
+    "id": "TOPIC_042",
+    "name": "Segmentación de Mercado"
+  },
+  {
+    "id": "TOPIC_043",
+    "name": "Branding"
+  },
+  {
+    "id": "TOPIC_044",
+    "name": "Publicidad"
+  },
+  {
+    "id": "TOPIC_045",
+    "name": "Conductismo"
+  },
+  {
+    "id": "TOPIC_046",
+    "name": "Psicoanálisis"
+  },
+  {
+    "id": "TOPIC_047",
+    "name": "Cognitivismo"
+  },
+  {
+    "id": "TOPIC_048",
+    "name": "Psicología Social"
+  },
+  {
+    "id": "TOPIC_049",
+    "name": "Sistema Óseo"
+  },
+  {
+    "id": "TOPIC_050",
+    "name": "Sistema Muscular"
+  },
+  {
+    "id": "TOPIC_051",
+    "name": "Sistema Nervioso"
+  },
+  {
+    "id": "TOPIC_052",
+    "name": "Sistema Circulatorio"
+  },
+  {
+    "id": "TOPIC_053",
+    "name": "Modelo de Shannon"
+  },
+  {
+    "id": "TOPIC_054",
+    "name": "Semiótica"
+  },
+  {
+    "id": "TOPIC_055",
+    "name": "Comunicación de Masas"
+  },
+  {
+    "id": "TOPIC_056",
+    "name": "Comunicación Interpersonal"
+  },
+  {
+    "id": "TOPIC_057",
+    "name": "Planificación Curricular"
+  },
+  {
+    "id": "TOPIC_058",
+    "name": "Estrategias de Enseñanza"
+  },
+  {
+    "id": "TOPIC_059",
+    "name": "Evaluación del Aprendizaje"
+  },
+  {
+    "id": "TOPIC_060",
+    "name": "Recursos Didácticos"
+  },
+  {
+    "id": "TOPIC_061",
+    "name": "Variables"
+  },
+  {
+    "id": "TOPIC_062",
+    "name": "Bucles"
+  },
+  {
+    "id": "TOPIC_063",
+    "name": "Condicionales"
+  },
+  {
+    "id": "TOPIC_064",
+    "name": "Clases y Objetos"
+  },
+  {
+    "id": "TOPIC_065",
+    "name": "Herencia"
+  },
+  {
+    "id": "TOPIC_066",
+    "name": "Polimorfismo"
+  },
+  {
+    "id": "TOPIC_067",
+    "name": "Encapsulamiento"
+  },
+  {
+    "id": "TOPIC_068",
+    "name": "Abstracción"
+  },
+  {
+    "id": "TOPIC_069",
+    "name": "Punteros"
+  },
+  {
+    "id": "TOPIC_070",
+    "name": "Gestión de Memoria"
+  },
+  {
+    "id": "TOPIC_071",
+    "name": "Recursividad"
+  },
+  {
+    "id": "TOPIC_072",
+    "name": "Programación Dinámica"
+  },
+  {
+    "id": "TOPIC_073",
+    "name": "Listas Enlazadas"
+  },
+  {
+    "id": "TOPIC_074",
+    "name": "Pilas"
+  },
+  {
+    "id": "TOPIC_075",
+    "name": "Colas"
+  },
+  {
+    "id": "TOPIC_076",
+    "name": "Termodinámica"
+  },
+  {
+    "id": "TOPIC_077",
+    "name": "Electromagnetismo"
+  },
+  {
+    "id": "TOPIC_078",
+    "name": "Óptica"
+  },
+  {
+    "id": "TOPIC_079",
+    "name": "Física Cuántica"
+  },
+  {
+    "id": "TOPIC_080",
+    "name": "Relatividad"
+  },
+  {
+    "id": "TOPIC_081",
+    "name": "Química Orgánica"
+  },
+  {
+    "id": "TOPIC_082",
+    "name": "Química Inorgánica"
+  },
+  {
+    "id": "TOPIC_083",
+    "name": "Bioquímica"
+  },
+  {
+    "id": "TOPIC_084",
+    "name": "Estequiometría"
+  },
+  {
+    "id": "TOPIC_085",
+    "name": "Células"
+  },
+  {
+    "id": "TOPIC_086",
+    "name": "Genética"
+  },
+  {
+    "id": "TOPIC_087",
+    "name": "Evolución"
+  },
+  {
+    "id": "TOPIC_088",
+    "name": "Ecología"
+  },
+  {
+    "id": "TOPIC_089",
+    "name": "Macroeconomía"
+  },
+  {
+    "id": "TOPIC_090",
+    "name": "Finanzas Públicas"
+  },
+  {
+    "id": "TOPIC_091",
+    "name": "Estadística Descriptiva"
+  },
+  {
+    "id": "TOPIC_092",
+    "name": "Probabilidad"
+  },
+  {
+    "id": "TOPIC_093",
+    "name": "Inferencia Estadística"
+  },
+  {
+    "id": "TOPIC_094",
+    "name": "Regresión Lineal"
+  },
+  {
+    "id": "TOPIC_095",
+    "name": "Filosofía Antigua"
+  },
+  {
+    "id": "TOPIC_096",
+    "name": "Filosofía Moderna"
+  },
+  {
+    "id": "TOPIC_097",
+    "name": "Ética"
+  },
+  {
+    "id": "TOPIC_098",
+    "name": "Lógica"
+  },
+  {
+    "id": "TOPIC_099",
+    "name": "Redes Neuronales"
+  },
+  {
+    "id": "TOPIC_100",
+    "name": "Inteligencia Artificial"
+  },
+  {
+    "id": "TOPIC_101",
+    "name": "Robótica",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_102",
+    "name": "Control Automático",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_103",
+    "name": "Sensores y Actuadores",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_104",
+    "name": "Visión por Computadora",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_105",
+    "name": "Nutrición Clínica",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_106",
+    "name": "Bromatología",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_107",
+    "name": "Dietoterapia",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_108",
+    "name": "Salud Pública",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_109",
+    "name": "Cuidados de Enfermería",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_110",
+    "name": "Farmacología Clínica",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_111",
+    "name": "Epidemiología",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_112",
+    "name": "Gestión de Servicios de Salud",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_113",
+    "name": "Gestión Hotelera",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_114",
+    "name": "Marketing Turístico",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_115",
+    "name": "Ecoturismo",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_116",
+    "name": "Gastronomía",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_117",
+    "name": "Álgebra Lineal",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_118",
+    "name": "Ecuaciones Diferenciales",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_119",
+    "name": "Programación Orientada a Objetos",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_120",
+    "name": "Desarrollo Web Frontend",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_1761531750111",
+    "name": "Tasa de Interés",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_1761538150709",
+    "name": "Funciones Lineales",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  },
+  {
+    "id": "TOPIC_1761538253249",
+    "name": "Matrices lineales",
+    "resources": {
+      "pdfs": [],
+      "links": []
+    }
+  }
+]

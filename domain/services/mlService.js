@@ -56,22 +56,18 @@ class MLService {
 
             // 1. Instrucción de sistema: Ahora le decimos que use la herramienta.
             const systemInstruction = {
-                role: 'user', // ✅ CORRECCIÓN: Cambiar 'system' por 'user' para compatibilidad.
-                parts: [{ text: `Eres "Tutor IA UC", un asistente educativo experto de la Universidad Continental.
-                Tu propósito es responder las preguntas de los estudiantes de forma amable, precisa y académica.
-                **Regla Crítica:** Para responder preguntas sobre cursos, docentes, horarios o materiales específicos de la universidad, DEBES usar la herramienta 'getCourseDetails'. No inventes información sobre la universidad.
-                
-                Además de responder, debes clasificar la intención principal de la pregunta del usuario.
-                Las intenciones posibles son: [consulta_horario, solicitar_material, duda_teorica, consulta_evaluacion, consulta_administrativa, consulta_general].
-                
-                Tu respuesta final DEBE ser un objeto JSON válido con la siguiente estructura exacta, sin texto adicional antes o después:
+                role: 'user',
+                parts: [{ text: `Eres "Tutor IA UC", un asistente experto de la Universidad Continental. Tu propósito es ayudar a los estudiantes.
+                **Regla Crítica:** Para obtener información sobre cursos, docentes, horarios o materiales, DEBES usar la herramienta 'getCourseDetails'. No inventes información.
+                **Formato de Salida Obligatorio:** Tu respuesta final DEBE ser un único objeto JSON válido, sin texto adicional.
+                El JSON debe tener esta estructura:
                 {
-                  "intencion": "la_intencion_que_clasificaste",
-                  "confianza": 0.9,
-                  "respuesta": "tu_respuesta_amable_y_detallada_a_la_pregunta_del_usuario",
-                  "sugerencias": ["sugerencia de seguimiento 1", "sugerencia de seguimiento 2"]
-                }
-                `}]
+                  "intencion": "[consulta_horario|solicitar_material|duda_teorica|consulta_evaluacion|consulta_administrativa|consulta_general]",
+                  "confianza": 0.9, // Tu confianza en la clasificación de la intención
+                  "respuesta": "Tu respuesta amable y detallada aquí.",
+                  "sugerencias": ["Sugerencia 1", "Sugerencia 2"]
+                }`
+                }]
             };
 
             // 2. Formatear el historial y empezar la sesión de chat.
@@ -126,6 +122,35 @@ class MLService {
                 confianza: 1.0,
                 respuesta: 'Lo siento, estoy teniendo problemas para conectarme con mi cerebro de IA en este momento. Por favor, intenta de nuevo en unos instantes.'
             };
+        }
+    }
+
+    /**
+     * Genera una descripción concisa y académica para un tema específico.
+     * @param {string} topicName - El nombre del tema.
+     * @returns {Promise<string>} La descripción generada.
+     */
+    static async generateTopicDescription(topicName) {
+        console.log(`🤖 MLService: Generando descripción para el tema: "${topicName}"`);
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const prompt = `Como un experto académico, explica brevemente (en 2 o 3 frases) de qué trata el tema "${topicName}" en un contexto universitario. Sé claro y conciso.`;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const description = response.text();
+            
+            if (!description) {
+                throw new Error("La respuesta de la IA estaba vacía.");
+            }
+
+            console.log(`✅ Descripción generada para "${topicName}"`);
+            return description;
+
+        } catch (error) {
+            console.error(`❌ Error en MLService al generar descripción para "${topicName}":`, error);
+            // Devolver un mensaje de error genérico si la IA falla
+            return "No se pudo generar una descripción en este momento. Inténtalo de nuevo más tarde.";
         }
     }
 

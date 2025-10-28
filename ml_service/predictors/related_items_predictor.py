@@ -31,7 +31,8 @@ def get_related_courses(query, direct_results_ids, courses_df):
     
     course_scores = {}
     for _, course in candidate_courses.iterrows():
-        course_content_text = normalize_text(course['nombre'] + ' ' + ' '.join(course.get('temas', [])))
+        # ✅ CORRECTION: Use 'name' and 'topics'
+        course_content_text = normalize_text(course['name'] + ' ' + ' '.join(course.get('topics', [])))
         course_keywords = {stemmer.stem(w) for w in course_content_text.split() if w}
         
         # Calcular puntuación por palabras clave en común
@@ -43,7 +44,7 @@ def get_related_courses(query, direct_results_ids, courses_df):
             score += len(query_keywords)
 
         if score > 0:
-            course_scores[course['nombre']] = score
+            course_scores[course['name']] = score
     
     # Ordenar por puntuación y devolver los 2 mejores
     sorted_courses = sorted(course_scores.items(), key=lambda item: item[1], reverse=True)
@@ -61,7 +62,8 @@ def get_related_topics(query, direct_results_ids, courses_df):
     direct_courses_df = courses_df[courses_df['id'].isin(direct_results_ids)]
     topics_from_direct_results = set()
     for _, course in direct_courses_df.iterrows():
-        for topic in course.get('temas', []):
+        # ✅ CORRECTION: Use 'topics'
+        for topic in course.get('topics', []):
             # Añadir tema si no es redundante con la búsqueda original
             if normalize_text(topic) not in normalized_query_for_matching:
                 topics_from_direct_results.add(topic)

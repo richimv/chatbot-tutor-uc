@@ -10,7 +10,8 @@ def predict(courses_df, trends_df):
     if trends_df.empty or courses_df.empty:
         return {"predictedTopic": None, "confidence": 0, "reason": "Sin datos suficientes", "searchCount": 0}
 
-    all_course_names_normalized = set(courses_df['nombre'].apply(normalize_text))
+    # ✅ CORRECTION: The column is 'name', not 'nombre'
+    all_course_names_normalized = set(courses_df['name'].apply(normalize_text))
 
     topic_scores = {}
     # Palabras comunes a ignorar en las búsquedas para encontrar "temas"

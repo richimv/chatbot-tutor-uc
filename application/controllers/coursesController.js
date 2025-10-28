@@ -1,98 +1,130 @@
 const SearchService = require('../services/searchService');
 const AnalyticsService = require('../../domain/services/analyticsService');
+const AdminService = require('../services/adminService'); // Importar el nuevo servicio
+const MLService = require('../../domain/services/mlService');
 
-// ✅ CORRECCIÓN: Instanciar AnalyticsService aquí y pasarlo como dependencia
 const analyticsService = new AnalyticsService();
 const searchService = new SearchService(analyticsService);
+const adminService = new AdminService(); // Instanciar el servicio de admin
 
 class CoursesController {
     async getAllCourses(req, res) {
+        // Este método sigue siendo útil para obtener la lista completa sin formato de búsqueda
         try {
             const courses = await searchService.getAllCourses();
-            console.log('📤 Controlador: Enviando todos los cursos');
             res.json(courses);
         } catch (error) {
-            console.error('❌ Controlador Error:', error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ error: 'Error al obtener los cursos' });
         }
     }
 
     async searchCourses(req, res) {
         try {
-            const query = req.query.q || '';
-            // ✅ CORRECCIÓN: Llamar al servicio y devolver su resultado completo.
-            // El servicio ya se encarga de registrar la analítica y detectar la intención.
-            const searchResults = await searchService.searchCourses(query);
-            console.log(`🔎 Controlador: Búsqueda "${query}" - ${searchResults.totalResults} resultados`);
-            res.json(searchResults); // Ahora devuelve objeto con resultados + sugerencias
-            
+            const query = req.query.q;
+            const results = await searchService.searchCourses(query);
+            res.json(results);
         } catch (error) {
             console.error('❌ Controlador Error búsqueda:', error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ error: 'Error al buscar cursos' });
         }
     }
 
-    async getCourseById(req, res) {
+    async getCareers(req, res) {
         try {
-            const course = await searchService.getCourseById(req.params.id);
-            res.json(course);
+            const careers = await adminService.getAll('career');
+            res.json(careers);
         } catch (error) {
-            console.error('❌ Controlador Error obteniendo curso:', error);
-            res.status(404).json({ error: error.message });
+            res.status(500).json({ error: 'Error al obtener las carreras' });
         }
     }
 
-    async addCourse(req, res) {
+    async getCourses(req, res) {
         try {
-            const newCourse = await searchService.addCourse(req.body);
-            console.log('✅ Controlador: Curso agregado:', newCourse.nombre);
-            res.status(201).json({ 
-                message: 'Curso agregado exitosamente', 
-                curso: newCourse 
-            });
+            const courses = await adminService.getAll('course');
+            res.json(courses);
         } catch (error) {
-            console.error('❌ Controlador Error agregando curso:', error);
+            res.status(500).json({ error: 'Error al obtener los cursos base' });
+        }
+    }
+
+    async getSections(req, res) {
+        try {
+            const sections = await adminService.getAll('section');
+            res.json(sections);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener las secciones' });
+        }
+    }
+
+    async getInstructors(req, res) {
+        try {
+            const instructors = await adminService.getAll('instructor');
+            res.json(instructors);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener los docentes' });
+        }
+    }
+
+    async getTopics(req, res) {
+        try {
+            const topics = await adminService.getAll('topic');
+            res.json(topics);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener los temas' });
+        }
+    }
+
+    async getBooks(req, res) {
+        try {
+            const books = await adminService.getAll('book'); // ✅ CORREGIDO: Usar adminService
+            res.json(books);
+        } catch (error) {
+            res.status(500).json({ message: 'Error al obtener los libros' });
+        }
+    }
+
+    async getTopicDescription(req, res) {
+        try {
+            const { id } = req.params;
+            const topic = await adminService.getById('topic', id);
+            if (!topic) {
+                return res.status(404).json({ error: 'Tema no encontrado' });
+            }
+            const description = await MLService.generateTopicDescription(topic.name);
+            res.json({ description });
+        } catch (error) {
+            res.status(500).json({ error: 'Error al generar la descripción del tema' });
+        }
+    }
+
+    // --- Métodos CRUD Genéricos para el Panel de Administración ---
+
+    async createEntity(req, res, entityType) {
+        try {
+            const newItem = await adminService.create(entityType, req.body);
+            res.status(201).json(newItem);
+        } catch (error) {
             res.status(400).json({ error: error.message });
         }
     }
 
-    async updateCourse(req, res) {
+    async updateEntity(req, res, entityType) {
         try {
-            const updatedCourse = await searchService.updateCourse(req.params.id, req.body);
-            console.log('✏️ Controlador: Curso actualizado:', updatedCourse.nombre);
-            res.json({ 
-                message: 'Curso actualizado exitosamente', 
-                curso: updatedCourse 
-            });
+            const { id } = req.params;
+            const updatedItem = await adminService.update(entityType, id, req.body);
+            res.json(updatedItem);
         } catch (error) {
-            console.error('❌ Controlador Error actualizando curso:', error);
             res.status(400).json({ error: error.message });
         }
     }
 
-    async deleteCourse(req, res) {
+    async deleteEntity(req, res, entityType) {
         try {
-            const deletedCourse = await searchService.deleteCourse(req.params.id);
-            console.log('🗑️ Controlador: Curso eliminado:', deletedCourse.nombre);
-            res.json({ 
-                message: 'Curso eliminado exitosamente', 
-                curso: deletedCourse 
-            });
+            const { id } = req.params;
+            await adminService.delete(entityType, id);
+            res.status(204).send(); // 204 No Content
         } catch (error) {
-            console.error('❌ Controlador Error eliminando curso:', error);
-            res.status(404).json({ error: error.message });
-        }
-    }
-
-    // NUEVO: Obtener analytics de búsquedas
-    async getSearchAnalytics(req, res) {
-        try {
-            const analytics = await searchService.getSearchAnalytics();
-            console.log('📊 Controlador: Enviando analytics');
-            res.json(analytics);
-        } catch (error) {
-            console.error('❌ Controlador Error analytics:', error);
-            res.status(500).json({ error: error.message });
+            res.status(400).json({ error: error.message });
         }
     }
 }

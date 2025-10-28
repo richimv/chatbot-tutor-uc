@@ -1,0 +1,102 @@
+[
+  {
+    "id": "INST_01",
+    "name": "Ana Torres",
+    "email": "ana.torres@uc.edu"
+  },
+  {
+    "id": "INST_02",
+    "name": "Carlos Vega",
+    "email": "carlos.vega@uc.edu"
+  },
+  {
+    "id": "INST_03",
+    "name": "Laura Méndez",
+    "email": "laura.mendez@uc.edu"
+  },
+  {
+    "id": "INST_04",
+    "name": "Javier Ríos",
+    "email": "javier.rios@uc.edu"
+  },
+  {
+    "id": "INST_05",
+    "name": "Sofía Castillo",
+    "email": "sofia.castillo@uc.edu"
+  },
+  {
+    "id": "INST_06",
+    "name": "Marcos Flores",
+    "email": "marcos.flores@uc.edu"
+  },
+  {
+    "id": "INST_07",
+    "name": "Elena Paredes",
+    "email": "elena.paredes@uc.edu"
+  },
+  {
+    "id": "INST_08",
+    "name": "Diego Soto",
+    "email": "diego.soto@uc.edu"
+  },
+  {
+    "id": "INST_09",
+    "name": "Valeria Luna",
+    "email": "valeria.luna@uc.edu"
+  },
+  {
+    "id": "INST_10",
+    "name": "Ricardo Solano",
+    "email": "ricardo.solano@uc.edu"
+  },
+  {
+    "id": "INST_11",
+    "name": "Gabriela Rojas",
+    "email": "gabriela.rojas@uc.edu"
+  },
+  {
+    "id": "INST_12",
+    "name": "Fernando Morales",
+    "email": "fernando.morales@uc.edu"
+  },
+  {
+    "id": "INST_13",
+    "name": "Patricia Guzman",
+    "email": "patricia.guzman@uc.edu"
+  },
+  {
+    "id": "INST_14",
+    "name": "Jorge Navarro",
+    "email": "jorge.navarro@uc.edu"
+  },
+  {
+    "id": "INST_15",
+    "name": "Monica Salazar",
+    "email": "monica.salazar@uc.edu"
+  },
+  {
+    "id": "INST_16",
+    "name": "Alberto Ponce",
+    "email": "alberto.ponce@uc.edu"
+  },
+  {
+    "id": "INST_17",
+    "name": "Claudia Mendoza",
+    "email": "claudia.mendoza@uc.edu"
+  },
+  {
+    "id": "INST_18",
+    "name": "Roberto Acuña",
+    "email": "roberto.acuna@uc.edu"
+  },
+  {
+    "id": "INST_19",
+    "name": "Daniela Herrera",
+    "email": "daniela.herrera@uc.edu"
+  },
+  {
+    "id": "INST_20",
+    "name": "Oscar Vidal",
+    "email": "oscar.vidal@uc.edu"
+  }
+]

@@ -3,275 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administración - Chatbot Tutor UC</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .admin-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .admin-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .admin-nav {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 1rem;
-        }
-
-        .nav-tab {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .nav-tab.active {
-            background: #2563eb;
-            color: white;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .form-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #d97706;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .courses-table {
-            width: 100%;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .courses-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .courses-table th,
-        .courses-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .courses-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .courses-table tr:hover {
-            background: #f9fafb;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .action-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .search-box {
-            margin-bottom: 1.5rem;
-        }
-    </style>
+    <title>Gestión de Cursos - Chatbot Tutor UC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- ✅ CORRECCIÓN: Añadir Font Awesome para que se vean los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
+    <link rel="icon" href="assets/logo.png" type="image/png">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <h1>🤖 Chatbot Tutor UC</h1>
-            <div class="nav-links">
-                <a href="/" class="nav-link">🔍 Buscar</a>
-                <a href="/admin" class="nav-link active">⚙️ Admin</a>
-            </div>
+    <header class="admin-header">
+        <!-- ✅ ESTRUCTURA UNIFICADA -->
+        <div class="logo">
+            <h1>Panel de Gestión</h1>
         </div>
-    </nav>
-
-    <div class="admin-container">
-        <div class="admin-header">
-            <h2>Panel de Administración</h2>
-            <p>Gestiona cursos, temas y materiales académicos</p>
+        <div class="header-nav">
+            <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="#stats" id="stats-link" class="nav-link">📊 Estadísticas</a>
         </div>
+    </header>
 
-        <div class="admin-nav">
-            <button class="nav-tab active" data-tab="courses">📚 Gestión de Cursos</button>
-            <button class="nav-tab" data-tab="add-course">➕ Agregar Curso</button>
-            <button class="nav-tab" data-tab="stats">📊 Estadísticas</button>
-        </div>
-
-        <!-- Pestaña: Gestión de Cursos -->
-        <div id="courses-tab" class="tab-content active">
-            <div class="search-box">
-                <input type="text" id="adminSearch" placeholder="Buscar cursos..." style="width: 300px;">
-                <button onclick="searchCourses()" class="btn-primary">🔍 Buscar</button>
-            </div>
-
-            <div class="courses-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Carrera</th>
-                            <th>Temas</th>
-                            <th>Materiales</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="coursesTableBody">
-                        <!-- Cursos cargados dinámicamente -->
-                    </tbody>
-                </table>
-                <div id="emptyState" class="empty-state hidden">
-                    <h3>📭 No hay cursos</h3>
-                    <p>Agrega tu primer curso para comenzar</p>
-                </div>
-            </div>
+    <div class="admin-container" id="admin-main-container">
+        <!-- ✅ NUEVO: Navegación por Pestañas -->
+        <div class="admin-tabs">
+            <button class="tab-link active" data-tab="tab-sections">Secciones (CarrerasUC)</button>
+            <button class="tab-link" data-tab="tab-careers">Carreras</button>
+            <button class="tab-link" data-tab="tab-courses">Cursos Base</button>
+            <button class="tab-link" data-tab="tab-instructors">Docentes</button>
+            <button class="tab-link" data-tab="tab-topics">Temas</button>
+            <button class="tab-link" data-tab="tab-books">Libros</button>
         </div>
 
-        <!-- Pestaña: Agregar/Editar Curso -->
-        <div id="add-course-tab" class="tab-content">
-            <div class="form-container">
-                <h3 id="formTitle">Agregar Nuevo Curso</h3>
-                <form id="courseForm" class="course-form">
-                    <div class="form-group">
-                        <label for="course-name">Nombre del Curso</label>
-                        <input type="text" id="course-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="course-career">Carrera</label>
-                        <input type="text" id="course-career" list="careers-datalist" required>
-                        <datalist id="careers-datalist"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="course-topics">Temas (separados por coma)</label>
-                        <input type="text" id="course-topics" list="topics-datalist" required>
-                        <datalist id="topics-datalist"></datalist>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Materiales (PDFs)</label>
-                        <div id="pdf-list">
-                            <!-- Los campos de PDF se generarán aquí dinámicamente -->
-                        </div>
-                        <button type="button" id="addPdfBtn" class="btn-secondary" style="margin-top: 10px;">+ Añadir otro PDF</button>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" id="submitBtn" class="btn-primary">💾 Guardar Curso</button>
-                        <button type="button" id="cancelEdit" class="btn-secondary hidden">Cancelar Edición</button>
-                    </div>
-                </form>
-            </div>
+        <!-- Contenido de las Pestañas -->
+        <div id="tab-sections" class="tab-content active">
+            <p class="loading-state">Cargando secciones...</p>
         </div>
+        <div id="tab-careers" class="tab-content">
+            <p class="loading-state">Cargando carreras...</p>
+        </div>
+        <div id="tab-courses" class="tab-content"></div>
+        <div id="tab-instructors" class="tab-content"></div>
+        <div id="tab-topics" class="tab-content"></div>
+        <div id="tab-books" class="tab-content"></div>
 
-        <!-- Pestaña: Estadísticas -->
-        <div id="stats-tab" class="tab-content">
-            <div class="form-container">
-                <h3>📊 Estadísticas del Sistema</h3>
-                <div id="statsContent">
-                    <p>Cargando estadísticas...</p>
-                </div>
-            </div>
+        <div id="stats-container" class="hidden">
+            <!-- Contenido de estadísticas se cargará aquí -->
         </div>
     </div>
 
-    <script src="components/admin.js"></script>
+    <!-- Modal Genérico Rediseñado -->
+    <div id="generic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Título del Modal</h2>
+                <button class="modal-close-btn" onclick="window.adminManager.closeGenericModal()">×</button>
+            </div>
+            <form id="generic-form">
+                <div class="modal-body" id="generic-form-fields">
+                    <!-- Los campos del formulario se inyectan aquí -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="generic-cancel-btn" class="btn-secondary" onclick="window.adminManager.closeGenericModal()">Cancelar</button>
+                    <button type="submit" id="generic-save-btn" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/ui/components.js"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
+    <script src="js/admin.js"></script> <!-- Cargar después de sus dependencias -->
 </body>
 </html>

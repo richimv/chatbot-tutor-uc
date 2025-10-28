@@ -29,15 +29,22 @@ def get_recommendations(query, direct_results_ids, courses_df, trends_df):
     if not popular_course.get("predictedCourse"):
         first_course = courses_df.iloc[0]
         popular_course = {
-            "predictedCourse": first_course['nombre'],
+            # ✅ CORRECCIÓN: El DataFrame usa 'name', no 'nombre'.
+            "predictedCourse": first_course['name'],
             "confidence": 0.1, # Confianza baja para indicar que es un fallback
             "reason": "Sugerencia por defecto."
         }
 
+    # ✅ CORRECCIÓN: Usar 'topics' en lugar de 'temas' y manejar el caso de que esté vacío.
     popular_topic = popular_topic_predictor.predict(courses_df, trends_df)
     # --- Fallback para Tema Popular ---
     if not popular_topic.get("predictedTopic"):
-        first_topic = courses_df.iloc[0]['temas'][0] if 'temas' in courses_df.iloc[0] and courses_df.iloc[0]['temas'] else "Conceptos Básicos"
+        first_course_topics = courses_df.iloc[0].get('topics', [])
+        if first_course_topics:
+            first_topic = first_course_topics[0]
+        else:
+            first_topic = "Conceptos Básicos"
+            
         popular_topic["predictedTopic"] = first_topic.capitalize()
         popular_topic["reason"] = "Sugerencia por defecto."
         popular_topic["confidence"] = 0.1

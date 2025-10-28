@@ -1,0 +1,434 @@
+[
+  {
+    "id": "SECTION_S24_001",
+    "courseId": "COURSE_101",
+    "careerIds": [
+      "CAREER_A",
+      "CAREER_C"
+    ],
+    "instructorId": "INST_01",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "10:00",
+        "endTime": "12:00",
+        "room": "A-101"
+      },
+      {
+        "day": "Miércoles",
+        "startTime": "10:00",
+        "endTime": "12:00",
+        "room": "A-101"
+      }
+    ],
+    "syllabusUrl": "/pdfs/calc1-syllabus.pdf"
+  },
+  {
+    "id": "SECTION_S24_002",
+    "courseId": "COURSE_102",
+    "careerIds": [
+      "CAREER_A",
+      "CAREER_B"
+    ],
+    "instructorId": "INST_02",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Martes",
+        "startTime": "08:00",
+        "endTime": "10:00",
+        "room": "Lab-C1"
+      },
+      {
+        "day": "Jueves",
+        "startTime": "08:00",
+        "endTime": "10:00",
+        "room": "Lab-C1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_003",
+    "courseId": "COURSE_103",
+    "careerIds": [
+      "CAREER_A"
+    ],
+    "instructorId": "INST_03",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Viernes",
+        "startTime": "14:00",
+        "endTime": "17:00",
+        "room": "Lab-C2"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_004",
+    "courseId": "COURSE_104",
+    "careerIds": [
+      "CAREER_C"
+    ],
+    "instructorId": "INST_01",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "14:00",
+        "endTime": "16:00",
+        "room": "B-201"
+      },
+      {
+        "day": "Miércoles",
+        "startTime": "14:00",
+        "endTime": "16:00",
+        "room": "B-201"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_005",
+    "courseId": "COURSE_105",
+    "careerIds": [
+      "CAREER_C",
+      "CAREER_L",
+      "CAREER_M"
+    ],
+    "instructorId": "INST_04",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Martes",
+        "startTime": "11:00",
+        "endTime": "13:00",
+        "room": "F-105"
+      },
+      {
+        "day": "Jueves",
+        "startTime": "11:00",
+        "endTime": "13:00",
+        "room": "F-105"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_006",
+    "courseId": "COURSE_106",
+    "careerIds": [
+      "CAREER_B"
+    ],
+    "instructorId": "INST_05",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "08:00",
+        "endTime": "10:00",
+        "room": "Lab-C3"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_007",
+    "courseId": "COURSE_109",
+    "careerIds": [
+      "CAREER_E"
+    ],
+    "instructorId": "INST_06",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Miércoles",
+        "startTime": "18:00",
+        "endTime": "21:00",
+        "room": "D-301"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_008",
+    "courseId": "COURSE_110",
+    "careerIds": [
+      "CAREER_D"
+    ],
+    "instructorId": "INST_07",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Martes",
+        "startTime": "15:00",
+        "endTime": "18:00",
+        "room": "Taller-A1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_009",
+    "courseId": "COURSE_111",
+    "careerIds": [
+      "CAREER_I",
+      "CAREER_H"
+    ],
+    "instructorId": "INST_08",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Jueves",
+        "startTime": "19:00",
+        "endTime": "22:00",
+        "room": "H-101"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_010",
+    "courseId": "COURSE_112",
+    "careerIds": [
+      "CAREER_F"
+    ],
+    "instructorId": "INST_09",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "16:00",
+        "endTime": "18:00",
+        "room": "P-202"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_011",
+    "courseId": "COURSE_113",
+    "careerIds": [
+      "CAREER_G"
+    ],
+    "instructorId": "INST_10",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Viernes",
+        "startTime": "07:00",
+        "endTime": "10:00",
+        "room": "Anfiteatro-M1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_012",
+    "courseId": "COURSE_117",
+    "careerIds": [
+      "CAREER_A",
+      "CAREER_B",
+      "CAREER_C",
+      "CAREER_L"
+    ],
+    "instructorId": "INST_11",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Martes",
+        "startTime": "14:00",
+        "endTime": "16:00",
+        "room": "B-202"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_013",
+    "courseId": "COURSE_118",
+    "careerIds": [
+      "CAREER_M",
+      "CAREER_G"
+    ],
+    "instructorId": "INST_12",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Miércoles",
+        "startTime": "08:00",
+        "endTime": "10:00",
+        "room": "Lab-Q1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_014",
+    "courseId": "COURSE_121",
+    "careerIds": [
+      "CAREER_E",
+      "CAREER_F",
+      "CAREER_P"
+    ],
+    "instructorId": "INST_13",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Jueves",
+        "startTime": "16:00",
+        "endTime": "18:00",
+        "room": "H-303"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_015",
+    "courseId": "COURSE_123",
+    "careerIds": [
+      "CAREER_H",
+      "CAREER_J",
+      "CAREER_K"
+    ],
+    "instructorId": "INST_14",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "19:00",
+        "endTime": "22:00",
+        "room": "E-101"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_016",
+    "courseId": "COURSE_129",
+    "careerIds": [
+      "CAREER_L",
+      "CAREER_M"
+    ],
+    "instructorId": "INST_15",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Martes",
+        "startTime": "07:00",
+        "endTime": "09:00",
+        "room": "M-101"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_017",
+    "courseId": "COURSE_131",
+    "careerIds": [
+      "CAREER_Q"
+    ],
+    "instructorId": "INST_16",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Miércoles",
+        "startTime": "11:00",
+        "endTime": "13:00",
+        "room": "Lab-R1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_018",
+    "courseId": "COURSE_132",
+    "careerIds": [
+      "CAREER_R",
+      "CAREER_S"
+    ],
+    "instructorId": "INST_17",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Jueves",
+        "startTime": "09:00",
+        "endTime": "11:00",
+        "room": "S-101"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_019",
+    "courseId": "COURSE_133",
+    "careerIds": [
+      "CAREER_S"
+    ],
+    "instructorId": "INST_18",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Viernes",
+        "startTime": "14:00",
+        "endTime": "17:00",
+        "room": "S-102"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_S24_020",
+    "courseId": "COURSE_136",
+    "careerIds": [
+      "CAREER_A",
+      "CAREER_B",
+      "CAREER_N"
+    ],
+    "instructorId": "INST_20",
+    "semester": "2024-2",
+    "schedule": [
+      {
+        "day": "Lunes",
+        "startTime": "18:00",
+        "endTime": "21:00",
+        "room": "Lab-W1"
+      }
+    ],
+    "syllabusUrl": null
+  },
+  {
+    "id": "SECTION_1761522355839",
+    "courseId": "COURSE_1761522313608",
+    "careerIds": [
+      "CAREER_1761522204053"
+    ],
+    "instructorId": "INST_15",
+    "schedule": []
+  },
+  {
+    "id": "SECTION_1761532023557",
+    "courseId": "COURSE_1761531929693",
+    "careerIds": [
+      "CAREER_J"
+    ],
+    "instructorId": "INST_18",
+    "schedule": []
+  },
+  {
+    "id": "SECTION_1761538327334",
+    "courseId": "COURSE_1761538139102",
+    "careerIds": [
+      "CAREER_D",
+      "CAREER_G",
+      "CAREER_J",
+      "CAREER_K",
+      "CAREER_S"
+    ],
+    "instructorId": "INST_13",
+    "schedule": []
+  }
+]

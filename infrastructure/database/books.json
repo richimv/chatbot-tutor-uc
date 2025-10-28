@@ -1,0 +1,14 @@
+[
+  {
+    "id": "BOOK_001",
+    "title": "Cálculo: Trascendentes Tempranas",
+    "author": "James Stewart",
+    "url": "/books/stewart-calculus.pdf"
+  },
+  {
+    "id": "BOOK_002",
+    "title": "Estructuras de Datos con C++",
+    "author": "Joyanes Aguilar",
+    "url": "/books/joyanes-estructuras.pdf"
+  }
+]

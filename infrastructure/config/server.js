@@ -102,11 +102,40 @@ class Server {
     // Cursos (PMV1)
     this.app.get('/api/cursos', coursesController.getAllCourses);
     this.app.get('/api/buscar', coursesController.searchCourses);
-    // Las rutas de administración de cursos se mantienen para el panel de administración
-    this.app.get('/api/curso/:id', coursesController.getCourseById); 
-    this.app.post('/api/add-curso', coursesController.addCourse); 
-    this.app.put('/api/edit-curso/:id', coursesController.updateCourse); 
-    this.app.delete('/api/delete-curso/:id', coursesController.deleteCourse); 
+
+    // --- Rutas CRUD para el Panel de Administración ---
+    // GET (Leer todos)
+    this.app.get('/api/careers', coursesController.getCareers);
+    this.app.get('/api/courses', coursesController.getCourses);
+    this.app.get('/api/sections', coursesController.getSections);
+    this.app.get('/api/instructors', coursesController.getInstructors);
+    this.app.get('/api/topics', coursesController.getTopics);
+    this.app.get('/api/books', coursesController.getBooks); // ✅ AÑADIR ESTA LÍNEA
+
+    // ✅ NUEVA RUTA: Para obtener la descripción de un tema con IA
+    this.app.get('/api/topics/:id/description', coursesController.getTopicDescription);
+
+    // POST (Crear) y PUT (Actualizar)
+    this.app.post('/api/careers', (req, res) => coursesController.createEntity(req, res, 'career'));
+    this.app.put('/api/careers/:id', (req, res) => coursesController.updateEntity(req, res, 'career'));
+    this.app.post('/api/courses', (req, res) => coursesController.createEntity(req, res, 'course'));
+    this.app.put('/api/courses/:id', (req, res) => coursesController.updateEntity(req, res, 'course'));
+    this.app.post('/api/sections', (req, res) => coursesController.createEntity(req, res, 'section'));
+    this.app.put('/api/sections/:id', (req, res) => coursesController.updateEntity(req, res, 'section'));
+    this.app.post('/api/instructors', (req, res) => coursesController.createEntity(req, res, 'instructor'));
+    this.app.put('/api/instructors/:id', (req, res) => coursesController.updateEntity(req, res, 'instructor'));
+    this.app.post('/api/topics', (req, res) => coursesController.createEntity(req, res, 'topic'));
+    this.app.put('/api/topics/:id', (req, res) => coursesController.updateEntity(req, res, 'topic'));
+    this.app.post('/api/books', (req, res) => coursesController.createEntity(req, res, 'book'));
+    this.app.put('/api/books/:id', (req, res) => coursesController.updateEntity(req, res, 'book'));
+
+    // DELETE (Eliminar)
+    this.app.delete('/api/careers/:id', (req, res) => coursesController.deleteEntity(req, res, 'career'));
+    this.app.delete('/api/courses/:id', (req, res) => coursesController.deleteEntity(req, res, 'course'));
+    this.app.delete('/api/sections/:id', (req, res) => coursesController.deleteEntity(req, res, 'section'));
+    this.app.delete('/api/instructors/:id', (req, res) => coursesController.deleteEntity(req, res, 'instructor'));
+    this.app.delete('/api/topics/:id', (req, res) => coursesController.deleteEntity(req, res, 'topic'));
+    this.app.delete('/api/books/:id', (req, res) => coursesController.deleteEntity(req, res, 'book'));
 
     this.app.post('/api/train-model', chatController.trainModel);
 

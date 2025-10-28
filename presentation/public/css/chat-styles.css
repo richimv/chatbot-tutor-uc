@@ -1,0 +1,64 @@
+/* chat-styles.css */
+
+:root {
+    --bs-primary: #5865f2; /* Color de acento principal */
+    --bs-primary-rgb: 88, 101, 242;
+    --bs-light: #f8f9fa;
+    --bs-dark-gray: #343a40;
+    --user-message-bg: #e9ecef;
+    --user-message-text: #212529;
+    --border-radius-lg: 0.8rem;
+}
+
+body {
+    /* Evita que el contenido se oculte detrás de la barra de entrada en móviles */
+    padding-bottom: 80px; 
+}
+
+/* --- Área de Mensajes --- */
+#chat-window {
+    /* Permite el scroll suave */
+    scroll-behavior: smooth;
+}
+
+.message {
+    max-width: 75%;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--border-radius-lg);
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* Burbuja del Bot */
+.bot-message {
+    background-color: var(--bs-primary);
+    color: white;
+    border-bottom-left-radius: 0.2rem;
+}
+
+/* Burbuja del Usuario */
+.user-message {
+    background-color: var(--user-message-bg);
+    color: var(--user-message-text);
+    border-bottom-right-radius: 0.2rem;
+}
+
+/* Estilos para listas y negritas dentro de los mensajes */
+.message ul, .message ol {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+
+/* --- Barra de Entrada --- */
+#input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030; /* Asegura que esté por encima del contenido */
+}
+
+#chat-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}

@@ -14,16 +14,17 @@ def predict(courses_df, trends_df):
     trends_copy['normalized_query'] = trends_copy['query'].apply(normalize_text)
 
     for _, course in courses_df.iterrows():
-        course_name = course['nombre']
+        # ✅ CORRECTION: The column is 'name', not 'nombre'
+        course_name = course['name']
         normalized_course_name = normalize_text(course_name)
         
         # Puntuación por coincidencia con el nombre del curso (muy alta)
         name_matches = trends_copy[trends_copy['normalized_query'].str.contains(normalized_course_name, na=False)]
         score = name_matches['count'].sum() * 5  # Multiplicador alto para el nombre
 
-        # Puntuación por coincidencia con los temas del curso (menor)
-        if 'temas' in course and isinstance(course['temas'], list):
-            for topic in course['temas']:
+        # ✅ CORRECTION: The column is 'topics', not 'temas'
+        if 'topics' in course and isinstance(course['topics'], list):
+            for topic in course['topics']:
                 normalized_topic = normalize_text(topic)
                 if normalized_topic:
                     topic_matches = trends_copy[trends_copy['normalized_query'].str.contains(normalized_topic, na=False)]
