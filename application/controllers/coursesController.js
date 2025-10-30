@@ -1,11 +1,9 @@
 const SearchService = require('../services/searchService');
-const AnalyticsService = require('../../domain/services/analyticsService');
 const AdminService = require('../services/adminService'); // Importar el nuevo servicio
 const MLService = require('../../domain/services/mlService');
 
-const analyticsService = new AnalyticsService();
-const searchService = new SearchService(analyticsService);
-const adminService = new AdminService(); // Instanciar el servicio de admin
+const searchService = new SearchService();
+const adminService = new AdminService();
 
 class CoursesController {
     async getAllCourses(req, res) {
@@ -21,8 +19,13 @@ class CoursesController {
     async searchCourses(req, res) {
         try {
             const query = req.query.q;
-            const results = await searchService.searchCourses(query);
-            res.json(results);
+            if (!query) {
+                return res.status(400).json({ error: 'El parámetro de búsqueda "q" es requerido.' });
+            }
+
+            // El servicio de búsqueda ahora orquesta todo: búsqueda, analytics y recomendaciones.
+            const finalResponse = await searchService.searchCourses(query);
+            res.json(finalResponse);
         } catch (error) {
             console.error('❌ Controlador Error búsqueda:', error);
             res.status(500).json({ error: 'Error al buscar cursos' });
@@ -83,6 +86,21 @@ class CoursesController {
         }
     }
 
+    async getCourseDescription(req, res) {
+        try {
+            const { id } = req.params;
+            const course = await adminService.getById('course', id);
+            if (!course) {
+                return res.status(404).json({ error: 'Curso no encontrado' });
+            }
+            // Usamos el nuevo método del MLService
+            const description = await MLService.generateCourseDescription(course.name);
+            res.json({ description });
+        } catch (error) {
+            res.status(500).json({ error: 'Error al generar la descripción del curso' });
+        }
+    }
+
     async getTopicDescription(req, res) {
         try {
             const { id } = req.params;
@@ -102,6 +120,11 @@ class CoursesController {
     async createEntity(req, res, entityType) {
         try {
             const newItem = await adminService.create(entityType, req.body);
+            if (entityType === 'course' && !newItem.description) {
+                // Si es un curso y no tiene descripción (porque no se envió desde el frontend), generarla con IA
+                const generatedDescription = await MLService.generateCourseDescription(newItem.name);
+                await adminService.update(entityType, newItem.id, { description: generatedDescription });
+            }
             res.status(201).json(newItem);
         } catch (error) {
             res.status(400).json({ error: error.message });

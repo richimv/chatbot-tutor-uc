@@ -172,7 +172,7 @@ class SearchComponent {
         `;
     }
 
-    renderUnifiedCourseView(courseId) {
+    async renderUnifiedCourseView(courseId) {
         const course = this.allData.courses.find(c => c.id === courseId);
         if (!course) {
             this.browseContainer.innerHTML = `<p class="error-state">No se encontró el curso solicitado.</p>`;
@@ -211,7 +211,7 @@ class SearchComponent {
             `;
         }).join('');
 
-        // 6. Construir el HTML final
+        // 6. Construir el HTML inicial con un placeholder para la descripción
         this.browseContainer.innerHTML = `
             <div class="detail-navigation">
                 ${createBackButtonHTML()}
@@ -223,7 +223,9 @@ class SearchComponent {
                         ${allCareersForCourse.map(c => `<button class="course-badge" data-career-id="${c.id}">${c.name}</button>`).join('')}
                     </div>
                 </div>
-                <p class="course-description">${course.description || 'Sin descripción.'}</p>
+                <p class="course-description" id="dynamic-course-description">
+                    <span class="loading-text">Generando descripción con IA...</span>
+                </p>
 
                 <h3>Docentes y Horarios</h3>
                 <div class="sections-grid">${sectionsHTML || '<p>No hay secciones abiertas para este curso.</p>'}</div>
@@ -236,6 +238,21 @@ class SearchComponent {
                 ${createContextualChatButtonHTML('course', course.name)}
             </div>
         `;
+
+        // 7. Llamar a la API para obtener la descripción y actualizar el DOM
+        try {
+            const response = await fetch(`/api/courses/${courseId}/description`);
+            if (!response.ok) throw new Error('No se pudo generar la descripción.');
+            
+            const { description } = await response.json();
+            const descriptionElement = document.getElementById('dynamic-course-description');
+            if (descriptionElement) {
+                descriptionElement.innerHTML = description.replace(/\n/g, '<br>'); // Reemplazar saltos de línea por <br>
+            }
+        } catch (error) {
+            const descriptionElement = document.getElementById('dynamic-course-description');
+            if (descriptionElement) descriptionElement.innerHTML = '<span class="error-text">No se pudo cargar la descripción en este momento.</span>';
+        }
     }
 
     async renderTopicView(topicId) {
@@ -340,10 +357,23 @@ class SearchComponent {
     }
 
     displaySearchResults(searchData) {
-        const { results, suggestions, totalResults, searchQuery, isEducationalQuery } = searchData;
+        const { results, recommendations, totalResults, searchQuery, isEducationalQuery } = searchData;
 
         // LÓGICA MEJORADA PARA "NO HAY RESULTADOS"
-        if (results.length === 0 && isEducationalQuery) { // Si es pregunta teórica y no hay documentos
+        if (results.length === 0) {
+            // ✅ LÓGICA UNIFICADA: Si no hay resultados, mostrar recomendaciones y/o promos de chat.
+            this.resultsContainer.innerHTML = `
+                <div class="no-results-container">
+                    <div class="no-results-message">
+                        <h3>📭 No se encontraron cursos para "${searchQuery}"</h3>
+                        <p>Intenta con otros términos de búsqueda o revisa la ortografía.</p>
+                    </div>
+                    ${createRecommendationsSectionHTML(recommendations, this.searchInput)}
+                    ${isEducationalQuery ? createSpecificChatPromoHTML(searchQuery) : createChatPromoSectionHTML()}
+                </div>
+            `;
+            return;
+        } else if (results.length === 0 && isEducationalQuery) { // Si es pregunta teórica y no hay documentos
             // Si no hay resultados pero es una pregunta teórica, sugerir el chatbot.
             this.resultsContainer.innerHTML = `
                 <div class="no-results">
@@ -355,15 +385,6 @@ class SearchComponent {
                             💬 Preguntar al Tutor IA
                         </button>
                     </div>
-                </div>
-            `;
-            return;
-        } else if (results.length === 0) { // Si no es pregunta teórica y no hay documentos
-            // Si no hay resultados y no es teórica, mostrar mensaje estándar.
-            this.resultsContainer.innerHTML = `
-                <div class="no-results">
-                    <h3>📭 No se encontraron cursos para "${searchQuery}"</h3>
-                    <p>Intenta con otros términos de búsqueda o revisa la ortografía.</p>
                 </div>
             `;
             return;
@@ -381,9 +402,9 @@ class SearchComponent {
                         ${createBackButtonHTML()}
                     </div>
                     ${results.map(createSearchResultCardHTML).join('')}
+                    ${createRecommendationsSectionHTML(recommendations, this.searchInput)}
                 </div>
             </div>
-            ${createSuggestionsSectionHTML(suggestions)}
             ${isEducationalQuery ? createSpecificChatPromoHTML(searchQuery) : createChatPromoSectionHTML()}
         `;
 
@@ -434,3 +455,68 @@ class SearchComponent {
 
 // ✅ CORRECCIÓN: La inicialización ahora se hace desde app.js para un control centralizado.
 // document.addEventListener('DOMContentLoaded', () => new SearchComponent());
+
+/**
+ * Crea el HTML para la sección de recomendaciones de ML.
+ * @param {object} recommendations - Objeto con `relatedCourses` y `relatedTopics`.
+ * @param {HTMLElement} searchInputRef - Referencia al input de búsqueda para simular clics.
+ * @returns {string} El HTML de la sección.
+ */
+function createRecommendationsSectionHTML(recommendations, searchInputRef) {    
+    if (!recommendations || (!recommendations.relatedCourses?.length && !recommendations.relatedTopics?.length)) {
+        return ''; // No mostrar nada si no hay recomendaciones
+    }
+
+    // Adjuntar funciones al objeto window para que sean accesibles desde el HTML inline
+    window.handleCourseRecommendationClick = (query) => {
+        searchInputRef.value = query;
+        searchInputRef.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+    };
+    // La función window.askAboutTopic ya debería existir para el chatbot
+
+    const coursesHTML = (recommendations.relatedCourses || []).map(course => `
+        <div class="recommendation-card" onclick="window.handleCourseRecommendationClick('${course}')">
+            <div class="rec-icon">🎓</div>
+            <div class="rec-content">
+                <span class="rec-title">Curso Relacionado</span>
+                <span class="rec-text">${course}</span>
+            </div>
+            <div class="rec-arrow">›</div>
+        </div>
+    `).join('');
+
+    const topicsHTML = (recommendations.relatedTopics || []).map(topic => `
+        <div class="recommendation-card" onclick="window.askAboutTopic('${topic}')">
+            <div class="rec-icon">💡</div>
+            <div class="rec-content">
+                <span class="rec-title">Tema para Explorar</span>
+                <span class="rec-text">${topic}</span>
+            </div>
+            <div class="rec-arrow">›</div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="discover-more-section">
+            <h4 class="discover-title">Descubre más</h4>
+            <div class="recommendations-container">
+                ${coursesHTML}
+                ${topicsHTML}
+            </div>
+        </div>
+    `;
+}
+
+function createNoResultsViewHTML(searchQuery, recommendations, isEducationalQuery, searchInputRef) {
+    const recommendationsHTML = createRecommendationsSectionHTML(recommendations, searchInputRef);
+    const chatPromoHTML = isEducationalQuery ? createSpecificChatPromoHTML(searchQuery) : createChatPromoSectionHTML();
+    return `
+        <div class="discover-more-section">
+            <h4 class="discover-title">Descubre más</h4>
+            <div class="recommendations-container">
+                ${coursesHTML}
+                ${topicsHTML}
+            </div>
+        </div>
+    `;
+}

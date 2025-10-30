@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 import nltk
 
 # Usamos importaciones relativas para que Python encuentre los módulos dentro del paquete ml_service
-from .predictors import popular_course_predictor, popular_topic_predictor, related_items_predictor
+from .predictors import popular_course_predictor, popular_topic_predictor, related_course_predictor, related_topic_predictor
 from .utils import load_json_data
 
 app = Flask(__name__)
@@ -20,42 +20,18 @@ except LookupError:
 
 # --- Lógica de Negocio / ML ---
 
-def get_recommendations(query, direct_results_ids, courses_df, trends_df):
-    """Función principal que genera todas las recomendaciones y predicciones."""
-
-    # 1. Predicciones generales (no dependen de la consulta actual)
-    popular_course = popular_course_predictor.predict(courses_df, trends_df)
-    # --- Fallback para Curso Popular ---
-    if not popular_course.get("predictedCourse"):
-        first_course = courses_df.iloc[0]
-        popular_course = {
-            # ✅ CORRECCIÓN: El DataFrame usa 'name', no 'nombre'.
-            "predictedCourse": first_course['name'],
-            "confidence": 0.1, # Confianza baja para indicar que es un fallback
-            "reason": "Sugerencia por defecto."
+def get_contextual_recommendations(query, direct_results_ids, courses_df):
+    """Función optimizada que solo genera recomendaciones contextuales para la búsqueda del usuario."""
+    if courses_df.empty:
+        return {
+            "relatedCourses": [],
+            "relatedTopics": []
         }
 
-    # ✅ CORRECCIÓN: Usar 'topics' en lugar de 'temas' y manejar el caso de que esté vacío.
-    popular_topic = popular_topic_predictor.predict(courses_df, trends_df)
-    # --- Fallback para Tema Popular ---
-    if not popular_topic.get("predictedTopic"):
-        first_course_topics = courses_df.iloc[0].get('topics', [])
-        if first_course_topics:
-            first_topic = first_course_topics[0]
-        else:
-            first_topic = "Conceptos Básicos"
-            
-        popular_topic["predictedTopic"] = first_topic.capitalize()
-        popular_topic["reason"] = "Sugerencia por defecto."
-        popular_topic["confidence"] = 0.1
-
-    # 2. Recomendaciones contextuales (dependen de la consulta y resultados)
-    related_courses = related_items_predictor.get_related_courses(query, direct_results_ids, courses_df)
-    related_topics = related_items_predictor.get_related_topics(query, direct_results_ids, courses_df)
+    related_courses = related_course_predictor.predict(query, direct_results_ids, courses_df)
+    related_topics = related_topic_predictor.predict(query, courses_df)
 
     return {
-        "popularCourse": popular_course,
-        "popularTopic": popular_topic,
         "relatedCourses": related_courses,
         "relatedTopics": related_topics
     }
@@ -66,7 +42,7 @@ def get_recommendations(query, direct_results_ids, courses_df, trends_df):
 @app.route('/recommendations', methods=['POST'])
 def handle_recommendations():
     """
-    Endpoint que recibe una consulta y devuelve un paquete completo de recomendaciones.
+    Endpoint OPTIMIZADO que recibe una consulta y devuelve solo recomendaciones contextuales.
     """
     try:
         # Obtener datos de la petición
@@ -77,38 +53,86 @@ def handle_recommendations():
         # Rutas a los archivos de datos (relativas a la ubicación de app.py)
         base_path = os.path.dirname(__file__)
         courses_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'courses.json'))
-        analytics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'analytics.json'))
+        topics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'topics.json'))
 
         # Cargar los datos
-        courses_df = pd.DataFrame(load_json_data(courses_path) or [])
+        courses_list = load_json_data(courses_path) or []
+        topics_list = load_json_data(topics_path) or []
 
-        if courses_df.empty:
+        if not courses_list:
             return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
 
-        # Cargar los datos de analytics y procesar las tendencias
-        analytics_data = load_json_data(analytics_path)
-        search_history = analytics_data.get('searchHistory', [])
-
-        trends_counts = {}
-        for record in search_history:
-            q = record.get('query')
-            if q:
-                trends_counts[q] = trends_counts.get(q, 0) + 1
+        # --- LÓGICA DE ENRIQUECIMIENTO DE DATOS (VERSIÓN FINAL Y ROBUSTA) ---
+        # Este enfoque es más seguro que usar .apply en una columna que podría no existir en todas las filas.
+        if topics_list:
+            topics_map = {topic['id']: topic['name'] for topic in topics_list}
+            for course in courses_list:
+                topic_ids = course.get('topicIds', [])
+                # Se asegura de que 'topics' siempre sea una lista, incluso si no hay topicIds.
+                course['topics'] = [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
         
-        trends_list = [{'query': q, 'count': c} for q, c in trends_counts.items()]
-        trends_df = pd.DataFrame(trends_list)
-        
-        if trends_df.empty:
-            trends_df = pd.DataFrame(columns=['query', 'count'])
+        # Ahora creamos el DataFrame, garantizando que la columna 'topics' existe y tiene los datos correctos.
+        courses_df = pd.DataFrame(courses_list)
 
-        # Obtener las recomendaciones
-        recommendations = get_recommendations(query, direct_results_ids, courses_df, trends_df)
+        # Obtener solo las recomendaciones contextuales
+        recommendations = get_contextual_recommendations(query, direct_results_ids, courses_df)
 
         return jsonify(recommendations)
 
     except Exception as e:
         print(f"Error en /recommendations: {e}")
         return jsonify({"error": "Ocurrió un error interno en el servicio de ML."}), 500
+
+
+@app.route('/analytics/trends', methods=['GET'])
+def handle_analytics_trends():
+    """
+    NUEVO Endpoint para obtener predicciones de popularidad generales.
+    Este es un cálculo más pesado y no debe ser llamado en cada búsqueda de usuario.
+    """
+    try:
+        # Rutas a los archivos de datos
+        base_path = os.path.dirname(__file__)
+        courses_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'courses.json'))
+        topics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'topics.json'))
+        analytics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'analytics.json'))
+
+        # Cargar datos de cursos y temas
+        courses_df = pd.DataFrame(load_json_data(courses_path) or [])
+        topics_list = load_json_data(topics_path) or []
+
+        if courses_df.empty:
+            return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
+
+        # Enriquece el DataFrame de cursos con nombres de temas
+        topics_map = {topic['id']: topic['name'] for topic in topics_list}
+        def get_topic_names(ids):
+            if not isinstance(ids, list): return []
+            return [topics_map.get(id) for id in ids if id in topics_map]
+        courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
+
+        # Cargar y procesar datos de analytics para tendencias
+        analytics_data = load_json_data(analytics_path)
+        search_history = analytics_data.get('searchHistory', [])
+        trends_counts = {}
+        for record in search_history:
+            q = record.get('query')
+            if q: trends_counts[q] = trends_counts.get(q, 0) + 1
+        trends_list = [{'query': q, 'count': c} for q, c in trends_counts.items()]
+        trends_df = pd.DataFrame(trends_list) if trends_list else pd.DataFrame(columns=['query', 'count'])
+
+        # Calcular las predicciones de popularidad
+        popular_course = popular_course_predictor.predict(courses_df, trends_df)
+        popular_topic = popular_topic_predictor.predict(courses_df, trends_df)
+
+        return jsonify({
+            "popularCourse": popular_course,
+            "popularTopic": popular_topic
+        })
+
+    except Exception as e:
+        print(f"Error en /analytics/trends: {e}")
+        return jsonify({"error": "Ocurrió un error al procesar las tendencias."}), 500
 
 
 if __name__ == '__main__':

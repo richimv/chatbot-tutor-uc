@@ -39,17 +39,16 @@ class AnalyticsService {
 
     // PREDICCIÓN DE CURSO MÁS BUSCADO
     async predictPopularCourse() {
-        // ✅ Delegamos la lógica al servicio de Python.
-        // Pasamos un query vacío porque solo nos interesa la predicción general.
-        const recommendations = await PythonMLService.getRecommendations('', []);
-        return recommendations.popularCourse || { predictedCourse: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
+        // ✅ CORRECCIÓN FINAL: Llamar al endpoint de tendencias dedicado.
+        const trends = await PythonMLService.getTrends();
+        return trends.popularCourse || { predictedCourse: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
     }
 
     // ✅ NUEVO: PREDICCIÓN DE TEMA MÁS BUSCADO
     async predictPopularTopic() {
-        // ✅ Delegamos la lógica al servicio de Python.
-        const recommendations = await PythonMLService.getRecommendations('', []);
-        return recommendations.popularTopic || { predictedTopic: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
+        // ✅ CORRECCIÓN FINAL: Llamar al endpoint de tendencias dedicado.
+        const trends = await PythonMLService.getTrends();
+        return trends.popularTopic || { predictedTopic: 'N/A', confidence: 0, reason: 'Servicio ML no disponible' };
     }
 
     // Obtener analytics completos

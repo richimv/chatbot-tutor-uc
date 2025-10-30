@@ -1,5 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const CourseRepository = require('../repositories/courseRepository'); // Importar CourseRepository
+const path = require('path');
+const { spawn } = require('child_process');
+const fs = require('fs').promises;
 
 // === INICIO: VERIFICACIÓN DE API KEY ===
 const apiKey = process.env.GEMINI_API_KEY;
@@ -13,6 +16,10 @@ if (!apiKey) {
 // === FIN: VERIFICACIÓN DE API KEY ===
 
 const genAI = new GoogleGenerativeAI(apiKey);
+
+// --- Constantes para los scripts de Python ---
+const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
+const PREDICTORS_PATH = path.join(__dirname, '..', '..', 'ml_service', 'predictors');
 
 class MLService {
     /**
@@ -122,6 +129,102 @@ class MLService {
                 confianza: 1.0,
                 respuesta: 'Lo siento, estoy teniendo problemas para conectarme con mi cerebro de IA en este momento. Por favor, intenta de nuevo en unos instantes.'
             };
+        }
+    }
+
+    /**
+     * Obtiene recomendaciones de cursos y temas relacionados ejecutando scripts de Python.
+     * @param {string} query - La consulta de búsqueda del usuario.
+     * @param {string[]} directResultsIds - IDs de los cursos ya encontrados en la búsqueda directa.
+     * @returns {Promise<object>} Un objeto con `relatedCourses` y `relatedTopics`.
+     */
+    static async getRecommendations(query, directResultsIds = []) {
+        console.log(`🤖 MLService: Obteniendo recomendaciones para "${query}"`);
+        try {
+            const coursesDataPath = path.join(__dirname, '..', '..', 'infrastructure', 'database', 'courses.json');
+            const coursesData = JSON.parse(await fs.readFile(coursesDataPath, 'utf-8'));
+
+            // Ejecutar predictores contextuales en paralelo. Los predictores de popularidad ya no se llaman aquí.
+            const [relatedCourses, relatedTopics] = await Promise.all([
+                this._runPythonPredictor('related_course_predictor.py', { query, direct_results_ids: directResultsIds, courses: coursesData }),
+                this._runPythonPredictor('related_topic_predictor.py', { query, courses: coursesData })
+            ]);
+
+            return {
+                relatedCourses,
+                relatedTopics
+                // Ya no se devuelven popularCourses y popularTopics desde aquí.
+            };
+        } catch (error) {
+            console.error('❌ Error en MLService al obtener recomendaciones:', error);
+            return { relatedCourses: [], relatedTopics: [], popularCourses: [], popularTopics: null }; // Devolver vacío en caso de error
+        }
+    }
+
+    /**
+     * Helper para ejecutar un script de Python y obtener su salida JSON.
+     * @param {string} scriptName - Nombre del archivo del predictor.
+     * @param {object} data - Datos a enviar al script vía stdin.
+     * @returns {Promise<any>} El resultado JSON del script.
+     */
+    static _runPythonPredictor(scriptName, data) {
+        return new Promise((resolve, reject) => {
+            // ✅ SOLUCIÓN: Ejecutar como un módulo (-m) para resolver los imports relativos de Python.
+            // 1. Convertir la ruta del script a un nombre de módulo (e.g., ml_service.predictors.script_name)
+            const moduleName = `ml_service.predictors.${scriptName.replace('.py', '')}`;
+            
+            // 2. Establecer el directorio de trabajo en la raíz del proyecto para que Python encuentre el paquete 'ml_service'.
+            const projectRoot = path.join(__dirname, '..', '..');
+
+            const pythonProcess = spawn(PYTHON_PATH, ['-m', moduleName], {
+                cwd: projectRoot, // Directorio de trabajo
+                env: {
+                    ...process.env,
+                    // Asegurarse de que PYTHONPATH incluya la raíz del proyecto si es necesario.
+                    PYTHONPATH: projectRoot,
+                },
+            });
+
+            let result = '';
+            let error = '';
+
+            pythonProcess.stdout.on('data', (data) => { result += data.toString(); });
+            pythonProcess.stderr.on('data', (data) => { error += data.toString(); });
+
+            pythonProcess.on('close', (code) => {
+                if (code !== 0) return reject(new Error(`Script ${scriptName} falló con código ${code}: ${error}`));
+                try { resolve(JSON.parse(result)); } catch (e) { reject(new Error(`Error parseando JSON de ${scriptName}: ${e.message}`)); }
+            });
+
+            pythonProcess.stdin.write(JSON.stringify(data));
+            pythonProcess.stdin.end();
+        });
+    }
+
+    /**
+     * Genera una descripción concisa y académica para un curso específico.
+     * @param {string} courseName - El nombre del curso.
+     * @returns {Promise<string>} La descripción generada.
+     */
+    static async generateCourseDescription(courseName) {
+        console.log(`🤖 MLService: Generando descripción para el curso: "${courseName}"`);
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const prompt = `Como un experto académico y redactor de planes de estudio, crea una descripción atractiva y concisa (aproximadamente 3 a 4 frases) para el curso universitario llamado "${courseName}". La descripción debe explicar de qué trata el curso, sus objetivos principales y qué aprenderán los estudiantes. El tono debe ser profesional pero accesible.`;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const description = response.text();
+
+            if (!description) {
+                throw new Error("La respuesta de la IA estaba vacía.");
+            }
+
+            console.log(`✅ Descripción de curso generada para "${courseName}"`);
+            return description;
+        } catch (error) {
+            console.error(`❌ Error en MLService al generar descripción para el curso "${courseName}":`, error);
+            return "No se pudo generar una descripción en este momento. Inténtalo de nuevo más tarde.";
         }
     }
 

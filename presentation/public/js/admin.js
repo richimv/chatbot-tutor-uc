@@ -268,10 +268,9 @@ class AdminManager {
                 title.textContent = id ? 'Editar Curso Base' : 'Añadir Curso Base';
                 if (id) currentItem = this.allCourses.find(c => c.id === id);
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
-                    this.createFormGroup('text', 'generic-code', 'Código (*)', currentItem?.code || '', true) +
-                    this.createFormGroup('textarea', 'generic-desc', 'Descripción', currentItem?.description || '') +
-                    this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
+                             this.createFormGroup('text', 'generic-code', 'Código (*)', currentItem?.code || '', true) +
+                             this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
+                             this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
@@ -609,7 +608,7 @@ class AdminManager {
                     body = {
                         name: document.getElementById('generic-name').value,
                         code: document.getElementById('generic-code').value,
-                        description: document.getElementById('generic-desc').value,
+                        description: '', // Enviamos una descripción vacía, ya que se generará dinámicamente.
                         topicIds: selectedTopics,
                         bookIds: selectedBooks
                     };

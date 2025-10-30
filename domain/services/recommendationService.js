@@ -1,49 +1,78 @@
-const CourseRepository = require('../repositories/courseRepository');
-const PythonMLService = require('./pythonMLService'); // ✅ Importamos el nuevo servicio
+const { normalizeText } = require('../utils/textUtils');
+const Snowball = require('snowball'); // Usaremos una librería de stemming para JS
+
+const stemmer = new Snowball('Spanish');
+
+function getKeywords(text) {
+    const words = normalizeText(text).split(' ').filter(Boolean);
+    return new Set(words.map(word => {
+        stemmer.setCurrent(word);
+        stemmer.stem();
+        return stemmer.result;
+    }));
+}
 
 class RecommendationService {
-    constructor(courseRepository) {
-        this.courseRepository = courseRepository;
+
+    predictRelatedCourses(query, directResultsIds, allCourses) {
+        const queryKeywords = getKeywords(query);
+        if (queryKeywords.size === 0) return [];
+
+        const candidateCourses = allCourses.filter(c => !directResultsIds.includes(c.courseId));
+        const courseScores = {};
+
+        candidateCourses.forEach(course => {
+            const courseName = course.name || '';
+            const topicNames = course.topics || [];
+            const courseContentText = `${courseName} ${topicNames.join(' ')}`;
+            const courseKeywords = getKeywords(courseContentText);
+
+            const commonKeywords = new Set([...queryKeywords].filter(x => courseKeywords.has(x)));
+            let score = commonKeywords.size;
+
+            const nameKeywords = getKeywords(courseName);
+            if ([...queryKeywords].some(x => nameKeywords.has(x))) {
+                score += 5; // Bonus por coincidencia en el nombre
+            }
+
+            if (score > 0) {
+                courseScores[courseName] = score;
+            }
+        });
+
+        return Object.entries(courseScores)
+            .sort(([, a], [, b]) => b - a)
+            .map(([name]) => name)
+            .slice(0, 2);
     }
 
-    /**
-     * Genera un mensaje de sugerencia inteligente basado en la consulta y los resultados directos.
-     * Ahora obtiene las sugerencias del servicio de ML en Python.
-     * @param {string} query La consulta original del usuario.
-     * @param {Array<object>} directResults Los cursos encontrados directamente por la búsqueda.
-     * @returns {Promise<string>} Un mensaje con sugerencias formateado en Markdown.
-     */
-    async getSuggestionMessage(query, directResults) {
-        const directResultIds = directResults.map(c => c.id);
+    predictRelatedTopics(query, allCourses) {
+        const queryKeywords = getKeywords(query);
+        if (queryKeywords.size === 0) return [];
 
-        // 1. ✅ Llamar al servicio de Python para obtener todas las recomendaciones
-        const recommendations = await PythonMLService.getRecommendations(query, directResultIds);
+        const allTopics = new Set(allCourses.flatMap(c => c.topics || []));
+        const relatedTopics = new Set();
 
-        let suggestions = [];
+        allTopics.forEach(topic => {
+            const topicKeywords = getKeywords(topic);
+            if ([...queryKeywords].some(x => topicKeywords.has(x))) {
+                relatedTopics.add(topic);
+            }
+        });
 
-        // 2. ✅ Formatear las sugerencias recibidas del servicio de Python
-        if (recommendations.relatedCourses && recommendations.relatedCourses.length > 0) {
-            suggestions.push(`Cursos que también podrían interesarte: **${recommendations.relatedCourses.join(', ')}**`);
+        const normalizedQuery = normalizeText(query);
+        let finalTopics = [...relatedTopics];
+        if (finalTopics.length > 1) {
+            finalTopics = finalTopics.filter(t => normalizeText(t) !== normalizedQuery);
         }
 
-        if (recommendations.relatedTopics && recommendations.relatedTopics.length > 0) {
-            suggestions.push(`Temas que puedes explorar: **${recommendations.relatedTopics.join(', ')}**`);
-        }
+        return finalTopics.slice(0, 3);
+    }
 
-        if (recommendations.popularCourse && recommendations.popularCourse.predictedCourse && recommendations.popularCourse.confidence > 0.6) {
-            suggestions.push(`El curso más buscado actualmente es: **${recommendations.popularCourse.predictedCourse}**`);
-        }
-
-        if (recommendations.popularTopic && recommendations.popularTopic.predictedTopic && recommendations.popularTopic.confidence > 0.6) {
-            suggestions.push(`Un tema muy popular es: **${recommendations.popularTopic.predictedTopic}**`);
-        }
-
-        // 3. ✅ Devolver el mensaje final
-        if (suggestions.length > 0) {
-            return suggestions.join('. ');
-        } else {
-            return "Explora nuestros cursos o pregunta al Tutor IA.";
-        }
+    getRecommendations(query, directResultsIds, allCourses) {
+        const relatedCourses = this.predictRelatedCourses(query, directResultsIds, allCourses);
+        const relatedTopics = this.predictRelatedTopics(query, allCourses);
+        return { relatedCourses, relatedTopics };
     }
 }
 

@@ -207,8 +207,12 @@
     "id": "COURSE_120",
     "code": "CS305",
     "name": "Redes de Computadoras",
-    "description": "Principios de redes, protocolos y modelo OSI.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_1761800679127",
+      "TOPIC_1761800657825"
+    ],
+    "bookIds": []
   },
   {
     "id": "COURSE_121",
@@ -226,8 +230,14 @@
     "id": "COURSE_122",
     "code": "GEO101",
     "name": "Geografía Humana",
-    "description": "Interacción entre las sociedades humanas y el espacio geográfico.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_109",
+      "TOPIC_086",
+      "TOPIC_112",
+      "TOPIC_108"
+    ],
+    "bookIds": []
   },
   {
     "id": "COURSE_123",

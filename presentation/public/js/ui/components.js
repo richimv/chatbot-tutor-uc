@@ -38,10 +38,12 @@ function createFilterSidebarHTML(careers) {
 }
 
 function createSearchResultCardHTML(course) {
-    const careersHTML = (course.carreras || []).map(c => `<span class="course-badge-static">${c}</span>`).join('');
+    // ✅ CORRECCIÓN ARQUITECTURAL: El repositorio ahora envía 'careers' como un array de nombres.
+    const careersHTML = (course.careers || []).map(c => `<span class="course-badge-static">${c}</span>`).join('');
+
     return `
-        <a href="#" class="course-card-link" data-course-id="${course.courseId}" data-careers="${course.carreras.join(',')}" style="display: block;">
-            <h3>${course.nombre}</h3>
+        <a href="#" class="course-card-link" data-course-id="${course.courseId}" data-careers="${(course.careers || []).join(',')}" style="display: block;">
+            <h3>${course.name}</h3>
             <div class="course-badges">${careersHTML}</div>
         </a>
     `;
