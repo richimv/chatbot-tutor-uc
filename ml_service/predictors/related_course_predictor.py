@@ -17,28 +17,28 @@ def predict(query, direct_results_ids, courses_df):
         source_courses = courses_df[courses_df['id'].isin(direct_results_ids)]
         candidate_courses = courses_df[~courses_df['id'].isin(direct_results_ids)].copy()
 
-        # Calcular puntuación por temas y carreras compartidos
+        # --- Nivel 1: Búsqueda por Temas Compartidos (la señal más fuerte) ---
         source_topic_names = {normalize_text(t) for t in source_courses['topics'].explode().dropna()}
+        if source_topic_names:
+            candidate_courses['topic_score'] = candidate_courses['topics'].apply(
+                lambda topics: len(source_topic_names.intersection({normalize_text(t) for t in topics if isinstance(t, str)})) if isinstance(topics, list) else 0
+            )
+            top_topic_matches = candidate_courses[candidate_courses['topic_score'] > 0]
+            if not top_topic_matches.empty:
+                print("✅ Recomendación Nivel 1: Por temas compartidos.")
+                return top_topic_matches.sort_values('topic_score', ascending=False)['name'].head(2).tolist()
+
+        # --- Nivel 2: Búsqueda por Carreras Compartidas (si no hay temas en común) ---
         source_career_names = {normalize_text(c) for c in source_courses['careers'].explode().dropna()}
-
-        def calculate_score(row):
-            # Puntuación por temas compartidos (alta prioridad)
-            candidate_topics = {normalize_text(t) for t in row['topics'] if isinstance(t, str)}
-            topic_score = len(source_topic_names.intersection(candidate_topics)) * 5
-
-            # Puntuación por carreras compartidas (prioridad media)
-            candidate_careers = {normalize_text(c) for c in row['careers'] if isinstance(c, str)}
-            career_score = len(source_career_names.intersection(candidate_careers)) * 2
-            
-            return topic_score + career_score
-
-        candidate_courses['score'] = candidate_courses.apply(calculate_score, axis=1)
-        
-        top_matches = candidate_courses[candidate_courses['score'] > 0].sort_values('score', ascending=False)
-
-        if not top_matches.empty:
-            print(f"✅ Recomendación contextual encontrada. Puntuación máxima: {top_matches['score'].iloc[0]}")
-            return top_matches['name'].head(2).tolist()
+        if source_career_names:
+            candidate_courses['career_score'] = candidate_courses['careers'].apply(
+                lambda careers: len(source_career_names.intersection({normalize_text(c) for c in careers if isinstance(c, str)})) if isinstance(careers, list) else 0
+            )
+            top_career_matches = candidate_courses[candidate_courses['career_score'] > 0]
+            if not top_career_matches.empty:
+                print("✅ Recomendación Nivel 2: Por carreras compartidas.")
+                # Esto conectará "Programación" con "Desarrollo Web"
+                return top_career_matches.sort_values('career_score', ascending=False)['name'].head(2).tolist()
 
     # --- Estrategia de Respaldo (si no hay contexto o no se encontraron recomendaciones) ---
     print("⚠️ Usando estrategia de respaldo por palabras clave.")

@@ -53,12 +53,16 @@ def handle_recommendations():
         # Rutas a los archivos de datos (relativas a la ubicación de app.py)
         base_path = os.path.dirname(__file__)
         courses_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'courses.json'))
+        sections_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'sections.json'))
+        careers_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'careers.json'))
         topics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'topics.json'))
 
         # Cargar los datos
         courses_list = load_json_data(courses_path) or []
         topics_list = load_json_data(topics_path) or []
         # Nota: La información de carreras ya está unificada en el lado de Node.js, aquí solo la usamos.
+        sections_list = load_json_data(sections_path) or []
+        careers_list = load_json_data(careers_path) or []
 
         if not courses_list:
             return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
@@ -77,10 +81,24 @@ def handle_recommendations():
                 return [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
             # Usamos .apply() en la columna 'topicIds' para crear una NUEVA columna 'topics'.
             courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
-        
-        # Asegurarnos de que la columna 'careers' exista, aunque esté vacía, para evitar errores.
-        if 'careers' not in courses_df.columns:
-            courses_df['careers'] = [[] for _ in range(len(courses_df))]
+
+        # ✅ LÓGICA DE ENRIQUECIMIENTO DE DATOS: Añadir la columna 'careers'
+        if sections_list and careers_list:
+            sections_by_course_id = {}
+            for section in sections_list:
+                sections_by_course_id.setdefault(section.get('courseId'), []).append(section)
+            
+            careers_map = {career['id']: career['name'] for career in careers_list}
+
+            def get_course_careers(course_id):
+                course_sections = sections_by_course_id.get(course_id, [])
+                all_career_names = set()
+                for section in course_sections:
+                    for career_id in section.get('careerIds', []):
+                        if career_id in careers_map:
+                            all_career_names.add(careers_map[career_id])
+                return list(all_career_names)
+            courses_df['careers'] = courses_df['id'].apply(get_course_careers)
 
         # Obtener solo las recomendaciones contextuales
         recommendations = get_contextual_recommendations(query, direct_results_ids, courses_df)
@@ -103,12 +121,16 @@ def handle_analytics_trends():
         base_path = os.path.dirname(__file__)
         courses_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'courses.json'))
         topics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'topics.json'))
+        sections_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'sections.json'))
+        careers_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'careers.json'))
         analytics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'analytics.json'))
 
         # Cargar datos de cursos y temas
         courses_list = load_json_data(courses_path) or []
         topics_list = load_json_data(topics_path) or []
 
+        sections_list = load_json_data(sections_path) or []
+        careers_list = load_json_data(careers_path) or []
         if not courses_list:
             return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
 
@@ -121,6 +143,24 @@ def handle_analytics_trends():
                 if not isinstance(topic_ids, list): return []
                 return [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
             courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
+
+        # ✅ LÓGICA DE ENRIQUECIMIENTO DE DATOS: Añadir la columna 'careers' también para analytics
+        if sections_list and careers_list:
+            sections_by_course_id = {}
+            for section in sections_list:
+                sections_by_course_id.setdefault(section.get('courseId'), []).append(section)
+            
+            careers_map = {career['id']: career['name'] for career in careers_list}
+
+            def get_course_careers(course_id):
+                course_sections = sections_by_course_id.get(course_id, [])
+                all_career_names = set()
+                for section in course_sections:
+                    for career_id in section.get('careerIds', []):
+                        if career_id in careers_map:
+                            all_career_names.add(careers_map[career_id])
+                return list(all_career_names)
+            courses_df['careers'] = courses_df['id'].apply(get_course_careers)
 
         # Cargar y procesar datos de analytics para tendencias
         analytics_data = load_json_data(analytics_path)
