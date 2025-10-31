@@ -183,8 +183,12 @@
     "id": "COURSE_116",
     "code": "FIN301",
     "name": "Finanzas Corporativas",
-    "description": "Decisiones de inversión y financiamiento en la empresa.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_042"
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_118",
@@ -200,8 +204,16 @@
     "id": "COURSE_119",
     "code": "CS301",
     "name": "Sistemas Operativos",
-    "description": "Gestión de procesos, memoria y sistemas de archivos.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_070",
+      "TOPIC_1761914558941",
+      "TOPIC_1761914544211",
+      "TOPIC_104",
+      "TOPIC_1761914538063"
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_120",
@@ -232,12 +244,11 @@
     "name": "Geografía Humana",
     "description": "",
     "topicIds": [
-      "TOPIC_109",
       "TOPIC_086",
-      "TOPIC_112",
-      "TOPIC_108"
+      "TOPIC_112"
     ],
-    "bookIds": []
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_123",
@@ -268,8 +279,12 @@
     "id": "COURSE_126",
     "code": "ACC201",
     "name": "Contabilidad de Costos",
-    "description": "Sistemas de costeo y su aplicación en la toma de decisiones.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_089"
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_127",
@@ -282,8 +297,12 @@
     "id": "COURSE_128",
     "code": "ELE101",
     "name": "Circuitos Eléctricos I",
-    "description": "Análisis de circuitos de corriente continua y alterna.",
-    "topicIds": []
+    "description": "",
+    "topicIds": [
+      "TOPIC_077"
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_129",
@@ -293,13 +312,6 @@
     "topicIds": [
       "TOPIC_076"
     ]
-  },
-  {
-    "id": "COURSE_130",
-    "code": "IND301",
-    "name": "Investigación de Operaciones",
-    "description": "Modelado matemático para la optimización de sistemas.",
-    "topicIds": []
   },
   {
     "id": "COURSE_131",
@@ -358,10 +370,14 @@
     "id": "COURSE_136",
     "code": "WEB101",
     "name": "Desarrollo Web Frontend",
-    "description": "Creación de interfaces web interactivas con HTML, CSS y JavaScript.",
+    "description": "",
     "topicIds": [
-      "TOPIC_120"
-    ]
+      "TOPIC_1761918029100",
+      "TOPIC_120",
+      "TOPIC_1761918025640"
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_1761522313608",
@@ -374,10 +390,13 @@
     "id": "COURSE_1761531929693",
     "name": "Economía I",
     "code": "ECO01",
-    "description": "Economía basica para estudiantes universitarios.",
+    "description": "",
     "topicIds": [
+      "TOPIC_042",
       "TOPIC_1761531750111"
-    ]
+    ],
+    "bookIds": [],
+    "relatedCourseIds": []
   },
   {
     "id": "COURSE_1761538139102",

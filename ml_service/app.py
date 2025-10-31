@@ -29,7 +29,7 @@ def get_contextual_recommendations(query, direct_results_ids, courses_df):
         }
 
     related_courses = related_course_predictor.predict(query, direct_results_ids, courses_df)
-    related_topics = related_topic_predictor.predict(query, courses_df)
+    related_topics = related_topic_predictor.predict(query, direct_results_ids, courses_df)
 
     return {
         "relatedCourses": related_courses,
@@ -58,21 +58,29 @@ def handle_recommendations():
         # Cargar los datos
         courses_list = load_json_data(courses_path) or []
         topics_list = load_json_data(topics_path) or []
+        # Nota: La información de carreras ya está unificada en el lado de Node.js, aquí solo la usamos.
 
         if not courses_list:
             return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
 
+        # Convertir a DataFrame INMEDIATAMENTE para evitar mutar la lista original.
+        courses_df = pd.DataFrame(courses_list)
+
         # --- LÓGICA DE ENRIQUECIMIENTO DE DATOS (VERSIÓN FINAL Y ROBUSTA) ---
-        # Este enfoque es más seguro que usar .apply en una columna que podría no existir en todas las filas.
+        # Este enfoque es inmutable y seguro para un entorno de servidor.
+        # No modifica la 'courses_list' original cargada en memoria.
         if topics_list:
             topics_map = {topic['id']: topic['name'] for topic in topics_list}
-            for course in courses_list:
-                topic_ids = course.get('topicIds', [])
-                # Se asegura de que 'topics' siempre sea una lista, incluso si no hay topicIds.
-                course['topics'] = [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
+            # La función 'get_topic_names' se define localmente para asegurar que no haya cierres (closures) problemáticos.
+            def get_topic_names(topic_ids):
+                if not isinstance(topic_ids, list): return []
+                return [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
+            # Usamos .apply() en la columna 'topicIds' para crear una NUEVA columna 'topics'.
+            courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
         
-        # Ahora creamos el DataFrame, garantizando que la columna 'topics' existe y tiene los datos correctos.
-        courses_df = pd.DataFrame(courses_list)
+        # Asegurarnos de que la columna 'careers' exista, aunque esté vacía, para evitar errores.
+        if 'careers' not in courses_df.columns:
+            courses_df['careers'] = [[] for _ in range(len(courses_df))]
 
         # Obtener solo las recomendaciones contextuales
         recommendations = get_contextual_recommendations(query, direct_results_ids, courses_df)
@@ -98,18 +106,21 @@ def handle_analytics_trends():
         analytics_path = os.path.abspath(os.path.join(base_path, '..', 'infrastructure', 'database', 'analytics.json'))
 
         # Cargar datos de cursos y temas
-        courses_df = pd.DataFrame(load_json_data(courses_path) or [])
+        courses_list = load_json_data(courses_path) or []
         topics_list = load_json_data(topics_path) or []
 
-        if courses_df.empty:
+        if not courses_list:
             return jsonify({"error": "No se pudieron cargar los datos de los cursos."}), 500
 
-        # Enriquece el DataFrame de cursos con nombres de temas
-        topics_map = {topic['id']: topic['name'] for topic in topics_list}
-        def get_topic_names(ids):
-            if not isinstance(ids, list): return []
-            return [topics_map.get(id) for id in ids if id in topics_map]
-        courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
+        # ✅ SOLUCIÓN: Aplicar el mismo patrón de carga inmutable que en /recommendations.
+        # Esto evita la mutación de datos en memoria que causaba la contaminación.
+        courses_df = pd.DataFrame(courses_list)
+        if topics_list:
+            topics_map = {topic['id']: topic['name'] for topic in topics_list}
+            def get_topic_names(topic_ids):
+                if not isinstance(topic_ids, list): return []
+                return [topics_map.get(tid) for tid in topic_ids if tid in topics_map]
+            courses_df['topics'] = courses_df['topicIds'].apply(get_topic_names)
 
         # Cargar y procesar datos de analytics para tendencias
         analytics_data = load_json_data(analytics_path)

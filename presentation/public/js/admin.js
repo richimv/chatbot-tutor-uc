@@ -270,7 +270,8 @@ class AdminManager {
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
                              this.createFormGroup('text', 'generic-code', 'Código (*)', currentItem?.code || '', true) +
                              this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
-                             this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
+                             this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
+                             this.createCheckboxList('Cursos Relacionados (Recomendaciones)', 'generic-related-courses', this.allCourses, currentItem?.relatedCourseIds || []);
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
@@ -394,6 +395,7 @@ class AdminManager {
 
         this._liveSearchFilter('search-generic-topics', 'fieldset[data-name="generic-topics"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-generic-books', 'fieldset[data-name="generic-books"] .checkbox-list', '.checkbox-item', 'label');
+        this._liveSearchFilter('search-generic-related-courses', 'fieldset[data-name="generic-related-courses"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-section-career-select', 'fieldset[data-name="section-career-select"] .checkbox-list', '.checkbox-item', 'label');
     }
 
@@ -605,12 +607,14 @@ class AdminManager {
                 case 'course':
                     const selectedTopics = Array.from(document.querySelectorAll('input[name="generic-topics"]:checked')).map(cb => cb.value);
                     const selectedBooks = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
+                    const selectedRelatedCourses = Array.from(document.querySelectorAll('input[name="generic-related-courses"]:checked')).map(cb => cb.value);
                     body = {
                         name: document.getElementById('generic-name').value,
                         code: document.getElementById('generic-code').value,
                         description: '', // Enviamos una descripción vacía, ya que se generará dinámicamente.
                         topicIds: selectedTopics,
-                        bookIds: selectedBooks
+                        bookIds: selectedBooks,
+                        relatedCourseIds: selectedRelatedCourses
                     };
                     break;
                 case 'section':

@@ -1,8 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const CourseRepository = require('../repositories/courseRepository'); // Importar CourseRepository
-const path = require('path');
-const { spawn } = require('child_process');
-const fs = require('fs').promises;
+const PythonMLService = require('./pythonMLService'); // ✅ 1. Importar el servicio correcto
 
 // === INICIO: VERIFICACIÓN DE API KEY ===
 const apiKey = process.env.GEMINI_API_KEY;
@@ -16,10 +14,6 @@ if (!apiKey) {
 // === FIN: VERIFICACIÓN DE API KEY ===
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
-// --- Constantes para los scripts de Python ---
-const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
-const PREDICTORS_PATH = path.join(__dirname, '..', '..', 'ml_service', 'predictors');
 
 class MLService {
     /**
@@ -140,66 +134,19 @@ class MLService {
      */
     static async getRecommendations(query, directResultsIds = []) {
         console.log(`🤖 MLService: Obteniendo recomendaciones para "${query}"`);
+        // ✅ 2. Delegar la llamada al servicio de Python
         try {
-            const coursesDataPath = path.join(__dirname, '..', '..', 'infrastructure', 'database', 'courses.json');
-            const coursesData = JSON.parse(await fs.readFile(coursesDataPath, 'utf-8'));
-
-            // Ejecutar predictores contextuales en paralelo. Los predictores de popularidad ya no se llaman aquí.
-            const [relatedCourses, relatedTopics] = await Promise.all([
-                this._runPythonPredictor('related_course_predictor.py', { query, direct_results_ids: directResultsIds, courses: coursesData }),
-                this._runPythonPredictor('related_topic_predictor.py', { query, courses: coursesData })
-            ]);
-
-            return {
-                relatedCourses,
-                relatedTopics
-                // Ya no se devuelven popularCourses y popularTopics desde aquí.
-            };
+            // Usamos el método de pythonMLService que ya está preparado para llamar al endpoint /recommendations
+            const recommendations = await PythonMLService.getRecommendations(query, directResultsIds);
+            return recommendations; // El formato ya es { relatedCourses: [...], relatedTopics: [...] }
         } catch (error) {
             console.error('❌ Error en MLService al obtener recomendaciones:', error);
-            return { relatedCourses: [], relatedTopics: [], popularCourses: [], popularTopics: null }; // Devolver vacío en caso de error
+            // Devolver un objeto vacío con la estructura esperada en caso de error
+            return { relatedCourses: [], relatedTopics: [] };
         }
     }
 
-    /**
-     * Helper para ejecutar un script de Python y obtener su salida JSON.
-     * @param {string} scriptName - Nombre del archivo del predictor.
-     * @param {object} data - Datos a enviar al script vía stdin.
-     * @returns {Promise<any>} El resultado JSON del script.
-     */
-    static _runPythonPredictor(scriptName, data) {
-        return new Promise((resolve, reject) => {
-            // ✅ SOLUCIÓN: Ejecutar como un módulo (-m) para resolver los imports relativos de Python.
-            // 1. Convertir la ruta del script a un nombre de módulo (e.g., ml_service.predictors.script_name)
-            const moduleName = `ml_service.predictors.${scriptName.replace('.py', '')}`;
-            
-            // 2. Establecer el directorio de trabajo en la raíz del proyecto para que Python encuentre el paquete 'ml_service'.
-            const projectRoot = path.join(__dirname, '..', '..');
-
-            const pythonProcess = spawn(PYTHON_PATH, ['-m', moduleName], {
-                cwd: projectRoot, // Directorio de trabajo
-                env: {
-                    ...process.env,
-                    // Asegurarse de que PYTHONPATH incluya la raíz del proyecto si es necesario.
-                    PYTHONPATH: projectRoot,
-                },
-            });
-
-            let result = '';
-            let error = '';
-
-            pythonProcess.stdout.on('data', (data) => { result += data.toString(); });
-            pythonProcess.stderr.on('data', (data) => { error += data.toString(); });
-
-            pythonProcess.on('close', (code) => {
-                if (code !== 0) return reject(new Error(`Script ${scriptName} falló con código ${code}: ${error}`));
-                try { resolve(JSON.parse(result)); } catch (e) { reject(new Error(`Error parseando JSON de ${scriptName}: ${e.message}`)); }
-            });
-
-            pythonProcess.stdin.write(JSON.stringify(data));
-            pythonProcess.stdin.end();
-        });
-    }
+    // ✅ 3. El método _runPythonPredictor ya no es necesario y puede ser eliminado.
 
     /**
      * Genera una descripción concisa y académica para un curso específico.

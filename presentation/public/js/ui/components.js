@@ -49,17 +49,51 @@ function createSearchResultCardHTML(course) {
     `;
 }
 
-function createSuggestionsSectionHTML(suggestions) {
-    if (!suggestions) return '';
+/**
+ * Crea el HTML para la sección de recomendaciones de ML.
+ * @param {object} recommendations - Objeto con `relatedCourses` y `relatedTopics`.
+ * @param {HTMLElement} searchInputRef - Referencia al input de búsqueda para simular clics.
+ * @returns {string} El HTML de la sección.
+ */
+function createRecommendationsSectionHTML(recommendations, searchInputRef) {
+    if (!recommendations || (!recommendations.relatedCourses?.length && !recommendations.relatedTopics?.length)) {
+        return ''; // No mostrar nada si no hay recomendaciones
+    }
+
+    // Adjuntar funciones al objeto window para que sean accesibles desde el HTML inline
+    window.handleCourseRecommendationClick = (query) => {
+        searchInputRef.value = query;
+        // Simula presionar Enter para iniciar una nueva búsqueda
+        searchInputRef.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+    };
+    // La función window.askAboutTopic ya debería existir para el chatbot
+
+    const coursesHTML = (recommendations.relatedCourses || []).map(course => `
+        <div class="recommendation-card" onclick="window.handleCourseRecommendationClick('${course}')">
+            <div class="rec-icon">🎓</div>
+            <div class="rec-content">
+                <span class="rec-title">Curso Relacionado</span>
+                <span class="rec-text">${course}</span>
+            </div>
+            <div class="rec-arrow">›</div>
+        </div>
+    `).join('');
+
+    const topicsHTML = (recommendations.relatedTopics || []).map(topic => `
+        <div class="recommendation-card" onclick="window.askAboutTopic('${topic}')">
+            <div class="rec-icon">💡</div>
+            <div class="rec-content">
+                <span class="rec-title">Tema para Explorar</span>
+                <span class="rec-text">${topic}</span>
+            </div>
+            <div class="rec-arrow">›</div>
+        </div>
+    `).join('');
+
     return `
-        <div class="suggestions-section">
-            <div class="suggestions-header">
-                <h4>💡 Recomendaciones Inteligentes</h4>
-                <p>Basado en tu búsqueda y tendencias del sistema</p>
-            </div>
-            <div class="suggestions-content">
-                ${suggestions.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
-            </div>
+        <div class="discover-more-section">
+            <h4 class="discover-title">Descubre más</h4>
+            <div class="recommendations-container">${coursesHTML}${topicsHTML}</div>
         </div>
     `;
 }
