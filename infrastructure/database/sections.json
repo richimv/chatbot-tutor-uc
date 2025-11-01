@@ -430,5 +430,39 @@
     ],
     "instructorId": "INST_13",
     "schedule": []
+  },
+  {
+    "id": "SECTION_1761944335479",
+    "courseId": "COURSE_128",
+    "careerIds": [
+      "CAREER_Q"
+    ],
+    "instructorId": "INST_02",
+    "schedule": [
+      {
+        "day": "Marte",
+        "startTime": "15:20",
+        "endTime": "17:30",
+        "room": "",
+        "notes": ""
+      }
+    ]
+  },
+  {
+    "id": "SECTION_1761944496459",
+    "courseId": "COURSE_119",
+    "careerIds": [
+      "CAREER_A"
+    ],
+    "instructorId": "INST_19",
+    "schedule": [
+      {
+        "day": "Sabados",
+        "startTime": "09:00",
+        "endTime": "12:10",
+        "room": "",
+        "notes": ""
+      }
+    ]
   }
 ]

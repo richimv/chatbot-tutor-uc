@@ -380,13 +380,6 @@
     "relatedCourseIds": []
   },
   {
-    "id": "COURSE_1761522313608",
-    "name": "Teología I",
-    "code": "TEO1",
-    "description": "Estudio de la teología",
-    "topicIds": []
-  },
-  {
     "id": "COURSE_1761531929693",
     "name": "Economía I",
     "code": "ECO01",

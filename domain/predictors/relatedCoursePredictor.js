@@ -17,30 +17,47 @@ function predict(query, directResultsIds, allCourses) {
         return []; // Devolvemos un array vacío si no hay palabras clave
     }
 
-    // ✅ CORRECCIÓN FINAL: Usar la variable correcta 'enrichedCourses' que se recibe como parámetro.
+    // Si hay directResultsIds, significa que estamos en modo "recomendación" y debemos excluir esos cursos.
+    // Si no, estamos en modo "búsqueda ampliada" y consideramos todos los cursos.
     const candidateCourses = allCourses.filter(course => !directResultsIds.includes(course.id));
     
-    const courseScores = {};
-    for (const course of candidateCourses) {
-        const courseContentText = normalizeText(course.name + ' ' + (course.topics || []).join(' '));
-        const courseKeywords = new Set(courseContentText.split(' ').filter(w => w).map(w => stemmer.stem(w)));
-        
-        const intersection = new Set([...queryKeywords].filter(x => courseKeywords.has(x)));
-        let score = intersection.size;
-        
-        const isSubset = [...queryKeywords].every(kw => courseKeywords.has(kw));
-        if (isSubset) {
-            score += queryKeywords.size;
-        }
+    // --- LÓGICA DE BÚSQUEDA REHECHA DESDE CERO ---
 
-        if (score > 0) {
-            // Guardamos el nombre y la puntuación
-            courseScores[course.name] = { name: course.name, score: score };
-        }
+    // Filtro de Coincidencia Total (para búsquedas específicas como "ingenieria civil")
+    let filteredResults = candidateCourses.filter(course => {
+        const specificCareers = (course.careers || []).filter(career => !['tronco comun', 'ciclo basico', 'estudios generales'].includes(normalizeText(career)));
+        if (specificCareers.length === 0) return false;
+
+        const courseCareerStems = new Set(normalizeText(specificCareers.join(' ')).split(' ').filter(w => w).map(w => stemmer.stem(w)));
+        
+        // Devuelve true si TODAS las palabras clave de la búsqueda están presentes en las carreras del curso.
+        return [...queryKeywords].every(queryStem => 
+            [...courseCareerStems].some(careerStem => careerStem.startsWith(queryStem) || queryStem.startsWith(careerStem))
+        );
+    });
+
+    // Si el filtro estricto encontró resultados, los usamos.
+    if (filteredResults.length > 0) {
+        console.log('... Usando resultados de filtro estricto.');
+        return filteredResults.slice(0, 10);
     }
+
+    // Fallback: Filtro de Coincidencia Parcial (para búsquedas amplias como "ingenieria")
+    // Si el filtro estricto no arrojó nada, usamos una lógica más flexible.
+    console.log('... Usando resultados de filtro flexible.');
+    filteredResults = candidateCourses.filter(course => {
+        const courseNameStems = new Set(normalizeText(course.name).split(' ').filter(w => w).map(w => stemmer.stem(w)));
+        const specificCareers = (course.careers || []).filter(career => !['tronco comun', 'ciclo basico', 'estudios generales'].includes(normalizeText(career)));
+        const courseCareerStems = new Set(normalizeText(specificCareers.join(' ')).split(' ').filter(w => w).map(w => stemmer.stem(w)));
+
+        // Devuelve true si ALGUNA palabra clave de la búsqueda está presente en el nombre O en las carreras.
+        return [...queryKeywords].some(queryStem => 
+            [...courseNameStems].some(nameStem => nameStem.startsWith(queryStem) || queryStem.startsWith(nameStem)) ||
+            [...courseCareerStems].some(careerStem => careerStem.startsWith(queryStem) || queryStem.startsWith(careerStem))
+        );
+    });
     
-    // Ordenamos por puntuación y devolvemos el objeto completo
-    return Object.values(courseScores).sort((a, b) => b.score - a.score).slice(0, 2);
+    return filteredResults.slice(0, 10);
 }
 
 module.exports = { predict };

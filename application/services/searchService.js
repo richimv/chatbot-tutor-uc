@@ -1,11 +1,16 @@
 const CourseRepository = require('../../domain/repositories/courseRepository');
 const AnalyticsService = require('../../domain/services/analyticsService');
+const TopicRepository = require('../../domain/repositories/topicRepository'); // ✅ Importar TopicRepository
+const CareerRepository = require('../../domain/repositories/careerRepository'); // ✅ Importar CareerRepository
 const MLService = require('../../domain/services/mlService'); // ✅ 1. Importar MLService
+const relatedCoursePredictor = require('../../domain/predictors/relatedCoursePredictor'); // ✅ Importar el predictor JS
 
 class SearchService {
     constructor() {
         this.courseRepository = new CourseRepository();
         this.analyticsService = new AnalyticsService();
+        this.topicRepository = new TopicRepository(); // ✅ Instanciar TopicRepository
+        this.careerRepository = new CareerRepository(); // ✅ Instanciar CareerRepository
     }
 
     /**
@@ -16,8 +21,25 @@ class SearchService {
     async searchCourses(query) {
         console.log(`🚀 SearchService: Iniciando búsqueda para "${query}"`);
 
-        // 1. Realizar la búsqueda directa en la base de datos
-        const directResults = await this.courseRepository.search(query);
+        // ✅ PASO 1: Búsqueda Directa.
+        let directResults = await this.courseRepository.search(query);
+
+        // ✅ PASO 2: Búsqueda Ampliada (si la directa falla).
+        // Usamos la lógica del predictor JS para realizar una búsqueda por palabras clave en todos los cursos.
+        if (directResults.length === 0) {
+            console.log('... Búsqueda directa sin resultados. Intentando búsqueda ampliada.');
+            
+            // ✅ SOLUCIÓN FINAL: El courseRepository.findAll() ya nos da los datos enriquecidos.
+            // No es necesario reconstruir la lógica aquí.
+            const enrichedCourses = await this.courseRepository.findAll();
+
+            // La función predict ahora nos sirve como un motor de búsqueda por relevancia.
+            // Le pasamos un array de IDs vacío porque no hay contexto.
+            const lenientResults = relatedCoursePredictor.predict(query, [], enrichedCourses);
+            // Mapeamos los resultados para que tengan la misma estructura que los de la búsqueda directa.
+            directResults = lenientResults.map(course => enrichedCourses.find(c => c.name === course.name)).filter(Boolean);
+        }
+
         console.log(`🔍 Encontrados ${directResults.length} resultados directos.`);
 
         // 2. Registrar la búsqueda para analytics (sin esperar a que termine)

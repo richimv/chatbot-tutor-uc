@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const CourseRepository = require('../repositories/courseRepository'); // Importar CourseRepository
+const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository'); // ✅ 1. Importar el nuevo repositorio
 const PythonMLService = require('./pythonMLService'); // ✅ 1. Importar el servicio correcto
 
 // === INICIO: VERIFICACIÓN DE API KEY ===
@@ -14,6 +15,7 @@ if (!apiKey) {
 // === FIN: VERIFICACIÓN DE API KEY ===
 
 const genAI = new GoogleGenerativeAI(apiKey);
+const knowledgeBaseRepo = new KnowledgeBaseRepository(); // ✅ 2. Instanciar el repositorio
 
 class MLService {
     /**
@@ -25,6 +27,9 @@ class MLService {
      */
     static async classifyIntent(text, conversationHistory = []) {
         console.log('🤖 MLService: Generando respuesta con LLM para:', text);
+
+        // ✅ 3. Cargar la base de conocimiento local al inicio de la función.
+        const localKB = await knowledgeBaseRepo.load();
 
         try {
             // Instancia del repositorio de cursos para la herramienta
@@ -110,7 +115,10 @@ class MLService {
                 throw new Error(`La respuesta del LLM no contiene un JSON válido: ${responseText}`);
             }
             const jsonString = responseText.substring(jsonStart, jsonEnd + 1);
-            const parsedResult = JSON.parse(jsonString);
+            let parsedResult = JSON.parse(jsonString);
+
+            // ✅ 4. Aplicar la capa de validación ANTES de devolver el resultado.
+            parsedResult = this._validateResponseWithLocalKB(parsedResult, localKB);
             return parsedResult;
             
             // === FIN: LÓGICA DE CONVERSACIÓN CON HERRAMIENTAS ===
@@ -124,6 +132,40 @@ class MLService {
                 respuesta: 'Lo siento, estoy teniendo problemas para conectarme con mi cerebro de IA en este momento. Por favor, intenta de nuevo en unos instantes.'
             };
         }
+    }
+
+    /**
+     * ✅ NUEVO: Valida la respuesta de la IA contra la base de conocimiento local.
+     * @param {object} llmResponse - La respuesta parseada del LLM.
+     * @param {Set<string>} localKB - El conjunto de todas las entidades conocidas.
+     * @returns {object} La respuesta original o una respuesta de fallback si se detecta una alucinación.
+     * @private
+     */
+    static _validateResponseWithLocalKB(llmResponse, localKB) {
+        const responseText = llmResponse.respuesta || '';
+        
+        // Extraer posibles nombres de entidades de la respuesta (texto entre comillas o en mayúsculas).
+        const potentialEntities = (responseText.match(/"'["']/g) || [])
+            .map(e => e.replace(/["']/g, '').trim());
+
+        for (const entity of potentialEntities) {
+            const normalizedEntity = require('../utils/textUtils').normalizeText(entity);
+            if (normalizedEntity.length > 3 && !localKB.has(normalizedEntity)) {
+                // ¡Alucinación detectada! La entidad mencionada no existe.
+                console.warn(`🚫 ALUCINACIÓN DETECTADA: La IA mencionó "${entity}", que no existe en la base de conocimiento local.`);
+                
+                // Devolver una respuesta segura y honesta.
+                return {
+                    ...llmResponse, // Mantener la intención y confianza si es útil
+                    respuesta: `Mencionaste "${entity}", pero no tengo información sobre eso en mi base de datos. ¿Podrías reformular tu pregunta o preguntar sobre otro curso o tema?`,
+                    sugerencias: ["Ver lista de carreras", "Ver cursos de Ingeniería de Software"]
+                };
+            }
+        }
+
+        // Si todas las entidades son válidas, devolver la respuesta original.
+        console.log('✅ Respuesta validada con la base de conocimiento local. Sin alucinaciones.');
+        return llmResponse;
     }
 
     /**

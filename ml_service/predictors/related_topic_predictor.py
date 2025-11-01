@@ -21,26 +21,42 @@ def predict(query, direct_results_ids, courses_df):
         return []
 
     # --- Estrategia 1: Recomendaciones Contextuales (si hay resultados directos) ---
+    contextual_topics = []
     if direct_results_ids:
         source_courses = courses_df[courses_df['id'].isin(direct_results_ids)]
         if not source_courses.empty:
             # Usamos 'explode' para convertir la lista de listas de temas en una sola serie
             # y 'dropna' y 'unique' para obtener una lista limpia de nombres de temas.
             contextual_topics = source_courses['topics'].explode().dropna().unique().tolist()
-            if contextual_topics:
-                # Si encontramos temas contextuales, los devolvemos y terminamos.
-                return contextual_topics[:3]
+    
+    if contextual_topics:
+        return contextual_topics[:3]
 
     # --- Estrategia 2: Respaldo por Palabra Clave (si la Estrategia 1 falla) ---
-    recommended_topics = set()
+    # Ahora usamos un diccionario para guardar los temas y sus puntuaciones.
+    topic_scores = {}
     all_topics_flat = courses_df['topics'].explode().dropna().unique()
     
     for topic_name in all_topics_flat:
-        topic_keywords = {stemmer.stem(w) for w in normalize_text(topic_name).split() if w}
-        if query_keywords.intersection(topic_keywords): # Si hay coincidencia de palabras clave
-            recommended_topics.add(topic_name)
+        normalized_topic_name = normalize_text(topic_name)
+        # Evitar recomendar la propia consulta como tema.
+        if normalized_topic_name == normalized_query:
+            continue
 
-    # --- 4. Filtrado y Devolución ---
-    # Excluir temas que sean idénticos a la consulta para evitar redundancia.
-    final_topics = {t for t in recommended_topics if normalize_text(t) != normalized_query}
-    return list(final_topics)[:3]
+        topic_keywords = {stemmer.stem(w) for w in normalize_text(topic_name).split() if w}
+        
+        # Calcular puntuación basada en la intersección de palabras clave.
+        score = len(query_keywords.intersection(topic_keywords))
+
+        # ✅ MEJORA: Bonificación si la consulta es un subconjunto del nombre del tema.
+        # Ayuda a que "ingenieria" coincida con "Ingenieria de Software".
+        if query_keywords.issubset(topic_keywords):
+            score += 10
+        
+        if score > 0:
+            topic_scores[topic_name] = score
+
+    # --- 4. Ordenar y Devolver Resultados ---
+    # Aumentamos el límite a 5 para consultas amplias.
+    sorted_topics = sorted(topic_scores.items(), key=lambda item: item[1], reverse=True)
+    return [topic_name for topic_name, score in sorted_topics[:5]]
