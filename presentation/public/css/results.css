@@ -1,0 +1,191 @@
+/* --- Sección de Resultados de Búsqueda --- */
+.results-container {
+    position: relative; /* Para posicionar el botón de filtros */
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+/* Header de resultados */
+.search-header {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--border);
+}
+
+.search-header h3 {
+    color: var(--text-main);
+    margin-bottom: var(--spacing-sm);
+}
+
+.results-count {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* --- Estilos para las nuevas TARJETAS DE RESULTADOS DE BÚSQUEDA (simplificadas) --- */
+.course-card-link {
+    display: block;
+    background: var(--card-bg);
+    padding: var(--spacing-lg);
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.course-card-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border-left-color: var(--accent-hover);
+}
+.course-card-link h3 {
+    font-size: 1.2rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-main); /* Título en blanco */
+}
+.course-card-link .topic-list {
+    padding-top: 0; /* Reset para usar dentro de la tarjeta */
+}
+.course-card-link .topic-tag {
+    font-size: 0.75rem; /* Más pequeño para que quepa mejor */
+}
+
+/* --- Estilos para el Layout de Búsqueda con Filtros --- */
+.search-layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* ✅ MEJORA RESPONSIVE: Botón para abrir filtros en móvil */
+.filter-open-btn-container {
+    display: block; /* Visible en móvil */
+    margin-bottom: var(--spacing-lg);
+}
+#open-filter-modal-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ✅ MEJORA RESPONSIVE: Estilos para el modal de filtros */
+.filter-modal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+}
+.filter-modal-content {
+    background: var(--card-bg);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.filter-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+}
+.filter-modal-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+}
+
+.filter-sidebar {
+    /* ✅ CORRECCIÓN: Oculto por defecto en móvil, ya que se mostrará en el modal. */
+    display: none;
+}
+
+/* Contenedor para el contador de filtros y el botón de limpiar */
+.filter-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-sidebar h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--spacing-sm);
+}
+
+.filter-sidebar #career-filter-search {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: var(--spacing-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-main);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.filter-options {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem; /* Espacio para el scrollbar */
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-check label {
+    cursor: pointer;
+}
+
+.results-list {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr; /* Una columna por defecto */
+    gap: var(--spacing-lg);
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .filter-open-btn-container {
+        display: none; /* Ocultar el botón de filtros en escritorio */
+    }
+    .filter-sidebar {
+        /* En escritorio, el sidebar vuelve a su estado original */
+        display: block; 
+        width: 240px; 
+        flex-shrink: 0;
+        background: var(--card-bg);
+        padding: var(--spacing-md);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        align-self: flex-start;
+    }
+    .search-layout {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .results-list { 
+        /* En escritorio, la lista principal se convierte en una cuadrícula de 2 columnas */
+        grid-template-columns: repeat(2, 1fr);
+    }
+    /* ✅ SOLUCIÓN DEFINITIVA: Hacer que los elementos que NO son tarjetas de curso ocupen ambas columnas. */
+    .results-list > :not(.course-card-link) {
+        grid-column: 1 / -1; /* Ocupa desde la primera hasta la última columna */
+    }
+}

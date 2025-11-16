@@ -1,0 +1,44 @@
+/* --- Estilos para la sección de Exploración --- */
+.browse-title {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--border);
+}
+
+.browse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.browse-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    border-left: 4px solid var(--accent);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-main);
+}
+.browse-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+.browse-card h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 1.2rem;
+}
+.browse-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.browse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}

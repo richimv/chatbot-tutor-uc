@@ -1,0 +1,400 @@
+/* --- Componentes Reutilizables --- */
+
+/* Botones */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.back-button {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.back-button:hover {
+    background: var(--surface);
+    color: var(--text-main);
+}
+
+/* Badges y Tags */
+.topic-tag {
+    background: var(--surface-alt);
+    color: var(--accent);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+}
+
+.course-badge { 
+    background: var(--surface-alt); 
+    color: var(--text-muted); 
+    padding: 0.2rem 0.6rem; 
+    border-radius: 6px; 
+    font-size: 0.75rem; 
+    font-weight: 600; 
+    border: 1px solid var(--border); 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+}
+.course-badge:hover { 
+    background: var(--accent); 
+    color: white; 
+    border-color: var(--accent); 
+}
+
+.course-badge-static {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+}
+
+/* Items de Materiales */
+.material-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.material-item.pdf::before { content: '📄 '; }
+.material-item.link::before { content: '🔗 '; }
+
+.material-item:hover {
+    color: var(--text-main);
+    border-color: var(--accent);
+}
+
+/* Estados (Loading, Empty) */
+.no-results-container, .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.no-results-container h3, .empty-state h3 {
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Banner Promocional del Chat */
+.chat-promo-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    background: linear-gradient(110deg, var(--surface-alt) 0%, var(--card-bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ... (resto de los estilos del banner que ya tenías) ... */
+
+/* --- Botones de Navegación en el Chat --- */
+.chat-nav-button {
+    background: rgba(88, 101, 242, 0.15); /* Fondo sutil del color de acento */
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: var(--font-main);
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin: 0.25rem 0;
+}
+.chat-nav-button:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* ✅ MEJORA RESPONSIVE: Estilos para el banner en pantallas grandes */
+@media (min-width: 768px) {
+    .chat-promo-banner {
+        flex-direction: row; /* Cambia a layout horizontal */
+        justify-content: space-between; /* Distribuye el espacio */
+        text-align: left; /* Alinea el texto a la izquierda */
+        padding: 2rem 2.5rem;
+    }
+
+    .chat-promo-banner-icon {
+        font-size: 3.5rem;
+    }
+
+    .chat-promo-banner-content {
+        margin: 0 1.5rem; /* Añade espacio alrededor del texto */
+        flex: 1; /* Permite que el contenido de texto ocupe el espacio disponible */
+    }
+
+    .chat-promo-banner-text {
+        margin-bottom: 0; /* Quita el margen inferior en la vista de escritorio */
+        margin-left: 0; /* Asegura que no haya margen automático */
+        margin-right: 0;
+    }
+}
+
+/* =================================
+   Sección de Recomendaciones (Descubre más)
+   ================================= */
+
+.discover-more-section {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+}
+
+.discover-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--spacing-md);
+}
+
+.recommendations-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.recommendation-card {
+    display: flex;
+    align-items: center;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.recommendation-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-color: var(--accent);
+}
+
+.recommendation-card .rec-icon {
+    font-size: 1.8rem;
+    margin-right: var(--spacing-md);
+    line-height: 1;
+}
+
+.recommendation-card .rec-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.recommendation-card .rec-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recommendation-card .rec-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.recommendation-card .rec-arrow {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.recommendation-card:hover .rec-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+}
+
+/* =================================================== */
+/* == NUEVOS ESTILOS: Tarjeta de Promo Específica   == */
+/* =================================================== */
+
+.specific-promo-card {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2.5rem;
+    text-align: center;
+}
+
+.specific-promo-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 1rem 0;
+}
+
+.specific-promo-query {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0 auto 1rem auto;
+    max-width: 90%;
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 1rem;
+    word-wrap: break-word;
+}
+
+.specific-promo-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 1.5rem 0;
+}
+
+.specific-promo-cta {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    display: inline-flex; /* Para centrar el botón y su contenido */
+}
+
+/* =================================
+   Visor Modal de PDF
+   ================================= */
+
+.pdf-modal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+}
+
+.pdf-modal-content {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 90%;
+    height: 90%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden; /* Para que el iframe no se salga de los bordes redondeados */
+}
+
+.pdf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.pdf-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.pdf-modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.pdf-modal-body {
+    flex-grow: 1;
+    position: relative;
+}
+
+#pdf-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}

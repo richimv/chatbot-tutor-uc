@@ -1,0 +1,50 @@
+/* Variables y reset */
+:root {
+    /* Tema Oscuro (Principal) */
+    --bg-gradient: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
+    --surface: #242532;
+    --surface-alt: #2c2f41;
+    --card-bg: #2f3136;
+    --accent: #5865f2;
+    --accent-hover: #4752c4;
+    --text-main: #e0e0e0;
+    --text-muted: #b0b0b0;
+    --border: #3a3b3c;
+    --danger: #e74c3c;
+    --danger-hover: #c0392b;
+    --warning: #f1c40f;
+    --warning-hover: #d4ac0d;
+    --success: #2ecc71;
+    --success-hover: #27ae60;
+
+    /* Tema Claro (para componentes específicos como el chat) */
+    --bg-light: #f8fafc;
+    --surface-light: #ffffff;
+    --border-light: #e2e8f0;
+    --text-light-main: #1e293b;
+    --text-light-muted: #64748b;
+    --accent-light: #2563eb;
+    --accent-light-hover: #1d4ed8;
+
+    /* Tipografía y Espaciado */
+    --font-main: 'Inter', sans-serif;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-main);
+}
+
+body {
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    line-height: 1.6;
+}
+
+.hidden { display: none !important; }
