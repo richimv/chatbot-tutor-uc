@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tutor IA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="logo">
+            <h1>Dashboard de Estadísticas</h1>
+        </div>
+        <div class="header-nav">
+            <a href="/admin.html" class="nav-link" title="Ir al Panel de Gestión">
+                <i class="fas fa-tasks"></i> Gestión
+            </a>
+            <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
+                <i class="fas fa-home"></i>
+            </a>
+        </div>
+    </header>
+
+    <main id="dashboard-container" class="admin-container">
+        <div class="loading-state">Cargando estadísticas...</div>
+    </main>
+
+    <!-- ✅ SOLUCIÓN: Cargar los scripts en el orden correcto de dependencias. -->
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // ✅ REACTIVADO: Ahora que la cadena de dependencias está corregida, la protección funcionará.
+        window.sessionManager.initialize().then(() => { if (window.sessionManager.getUser()?.role !== 'admin') window.location.href = '/'; });
+    </script>
+</body>
+</html>

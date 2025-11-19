@@ -1,0 +1,236 @@
+/* --- Estilos para la sección de Exploración --- */
+.browse-title {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--border);
+}
+
+.browse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.browse-card {
+    background: var(--surface-alt);
+    border-radius: 12px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.browse-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    border-color: var(--accent);
+}
+
+.browse-card-icon {
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-right: var(--spacing-lg);
+    transition: transform 0.3s ease;
+}
+
+.browse-card:hover .browse-card-icon {
+    transform: scale(1.1);
+}
+
+.browse-card-content {
+    flex-grow: 1;
+}
+
+.browse-card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+.browse-card-cta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.3s ease, transform 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.browse-card-cta span {
+    display: none; /* Oculto por defecto */
+}
+
+.browse-card:hover .browse-card-cta span {
+    display: inline; /* Mostrar texto al hacer hover */
+}
+
+.browse-card:hover .browse-card-cta {
+    color: var(--accent);
+    transform: translateX(-5px);
+}
+
+.browse-card-cta i {
+    transition: transform 0.3s ease;
+}
+
+.browse-card:hover .browse-card-cta i {
+    transform: translateX(5px);
+}
+
+.browse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* --- ✅ NUEVO: Estilos para la vista de lista --- */
+.browse-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md); /* Aumentar el espacio para las tarjetas más grandes */
+}
+
+/* --- ✅ NUEVO: Estilos para tarjetas compactas en una lista --- */
+.browse-list .browse-card {
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    align-items: flex-start; /* Alinear items arriba para descripciones largas */
+}
+
+.browse-list .browse-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.browse-list .browse-card-icon {
+    font-size: 1.4rem; /* Un poco más grande */
+    margin-right: var(--spacing-md);
+    margin-top: 4px; /* Alinear con el título */
+}
+
+.browse-list .browse-card-title {
+    font-size: 1.05rem;
+    font-weight: 600; /* Más peso para el título */
+}
+
+.browse-list .browse-card-cta {
+    font-size: 0.9rem;
+    align-self: flex-end; /* Alinear la flecha a la derecha */
+}
+
+/* --- ✅ INICIO: Estilos mejorados para las tarjetas de Curso --- */
+
+.course-card {
+    padding: var(--spacing-lg);
+    align-items: center;
+    border-left: 4px solid var(--accent);
+    background: linear-gradient(145deg, var(--surface-alt), var(--surface));
+    /* Hereda display: flex de .browse-card */
+}
+
+.course-card:hover {
+    border-left-color: var(--accent-bright);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+
+.course-card .browse-card-icon {
+    font-size: 1.8rem;
+    color: var(--accent-bright);
+    background-color: var(--accent-dark);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.course-card .browse-card-content {
+    margin-left: var(--spacing-sm);
+    display: flex;
+    flex-direction: column; /* Apila título y código */
+    gap: 2px;
+}
+
+.course-card .browse-card-title {
+    font-size: 1.1rem; /* Ligeramente más pequeño que carrera para acomodar código */
+    font-weight: 600;
+    margin: 0;
+}
+
+.course-card-code {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 0; /* Reseteamos padding */
+    background-color: transparent; /* Sin fondo */
+    border-radius: 0;
+    border: none;
+}
+
+.course-card-description {
+    display: none; /* Nos aseguramos que la descripción no se muestre */
+}
+
+.course-card .browse-card-cta {
+    margin-left: auto; /* Empujar a la derecha */
+}
+
+/* --- ✅ FIN: Estilos mejorados para las tarjetas de Curso --- */
+
+/* --- ✅ INICIO: Estilos mejorados para las tarjetas de Carrera --- */
+
+/* Aumentamos el tamaño mínimo de las tarjetas en la cuadrícula para darles más espacio */
+.browse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg); /* Mayor separación */
+}
+
+.career-card {
+    /* Re-alineamos el contenido al centro verticalmente para un look más limpio */
+    padding: var(--spacing-lg);
+    align-items: center; /* Alinear el contenido al centro */
+    border-left: 4px solid var(--accent); /* Un borde distintivo */
+    background: linear-gradient(145deg, var(--surface-alt), var(--surface)); /* Un fondo sutil */
+}
+
+.career-card .browse-card-icon {
+    font-size: 1.8rem; /* Icono más grande */
+    color: var(--accent-bright);
+    background-color: var(--accent-dark);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Evitar que el icono se encoja */
+}
+
+.career-card .browse-card-content {
+    /* El contenido ahora tiene más espacio para respirar */
+    margin-left: var(--spacing-sm);
+}
+
+.career-card .browse-card-title {
+    font-size: 1.2rem; /* Título más grande y audaz */
+    font-weight: 600;
+}
+
+.career-card:hover {
+    border-left-color: var(--accent-bright); /* Resaltar el borde en hover */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+
+/* --- ✅ FIN: Estilos mejorados para las tarjetas de Carrera --- */

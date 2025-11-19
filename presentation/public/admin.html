@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Cursos - Chatbot Tutor UC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- ✅ NUEVA ESTRUCTURA CSS -->
+    <link rel="stylesheet" href="css/components.css"> <!-- ✅ SOLUCIÓN: Cargar los estilos de los componentes -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <!-- ✅ CORRECCIÓN: Añadir Font Awesome para que se vean los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    
+</head>
+<body>
+    <header class="admin-header">
+        <!-- ✅ ESTRUCTURA UNIFICADA -->
+        <div class="logo">
+            <h1>Panel de Gestión</h1>
+        </div>
+        <div class="header-nav">
+            <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
+                <i class="fas fa-home"></i>
+            </a>
+            <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
+            <a href="/dashboard.html" class="nav-link">📊 Estadísticas</a>
+        </div>
+    </header>
+
+    <div class="admin-container" id="admin-main-container">
+        <!-- ✅ NUEVO: Navegación por Pestañas -->
+        <div class="admin-tabs">
+            <button class="tab-link active" data-tab="tab-sections">Secciones (CarrerasUC)</button>
+            <button class="tab-link" data-tab="tab-careers">Carreras</button>
+            <button class="tab-link" data-tab="tab-courses">Cursos Base</button>
+            <button class="tab-link" data-tab="tab-instructors">Docentes</button>
+            <!-- ✅ SOLUCIÓN: Corregir el atributo data-tab y añadir el div faltante abajo. -->
+            <button class="tab-link" data-tab="tab-students">Alumnos</button>
+            <button class="tab-link" data-tab="tab-topics">Temas</button>
+            <button class="tab-link" data-tab="tab-books">Libros</button>
+        </div>
+
+        <!-- Contenido de las Pestañas -->
+        <div id="tab-sections" class="tab-content active">
+            <p class="loading-state">Cargando secciones...</p>
+        </div>
+        <div id="tab-careers" class="tab-content">
+            <p class="loading-state">Cargando carreras...</p>
+        </div>
+        <div id="tab-courses" class="tab-content"></div>
+        <div id="tab-instructors" class="tab-content"></div>
+        <div id="tab-students" class="tab-content"></div>
+        <div id="tab-topics" class="tab-content"></div>
+        <div id="tab-books" class="tab-content"></div>
+    </div>
+
+    <!-- Modal Genérico Rediseñado -->
+    <div id="generic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="generic-modal-title">Título del Modal</h2>
+                <button class="modal-close-btn modal-close" id="generic-modal-close-btn">×</button>
+            </div>
+            <form id="generic-form">
+                <div class="modal-body" id="generic-form-fields">
+                    <!-- Campos del formulario para Cursos -->
+                    <!-- Los campos se inyectarán dinámicamente con JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="generic-cancel-btn" class="btn-secondary" onclick="window.adminManager.closeGenericModal()">Cancelar</button>
+                    <button type="submit" id="generic-save-btn" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/ui/components.js"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
+    <script src="js/admin.js"></script> <!-- Cargar después de sus dependencias -->
+</body>
+</html>
