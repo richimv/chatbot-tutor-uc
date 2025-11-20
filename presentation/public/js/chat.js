@@ -7,6 +7,8 @@ class ChatComponent {
         // ✅ FASE III: El historial de mensajes se carga desde la API, no de localStorage.
         this.messages = [];
         this.conversations = [];
+        // ✅ NUEVO: Contador para generar IDs únicos de mensajes del bot para el feedback.
+        this.messageIdCounter = 0;
         this.init();
     }
 
@@ -234,9 +236,15 @@ Puedo ayudarte con:
                 const parentMessage = feedbackBtn.closest('.message');
                 const query = parentMessage.dataset.query;
                 const response = parentMessage.dataset.response;
+                const messageId = parentMessage.dataset.messageId; // Get the messageId
 
                 // Enviar feedback
                 AnalyticsApiService.recordFeedback(query, response, isHelpful);
+
+                // ✅ NUEVO: Guardar el feedback en localStorage
+                if (messageId) {
+                    localStorage.setItem(`feedback_${messageId}`, isHelpful ? 'liked' : 'disliked');
+                }
 
                 // Deshabilitar botones y mostrar agradecimiento
                 const feedbackContainer = feedbackBtn.parentElement;
@@ -434,16 +442,19 @@ async sendMessage() {
     }
 
     addMessage(text, sender, metadata = {}) {
-        // ✅ FASE III: El mensaje de bienvenida ya no se añade al historial.
-
         const messagesContainer = document.getElementById('chatbot-messages');
         
         const messageDiv = document.createElement('div');
-        // ✅ CORRECCIÓN: Tratar el mensaje de bienvenida como un mensaje normal del bot.
-        // Se le añade una clase 'welcome-message' para estilos específicos si es necesario,
-        // pero hereda los estilos base de 'message' y 'bot'.
         messageDiv.className = `message ${sender} ${metadata.isWelcome ? 'welcome-message' : ''}`;
         
+        let currentMessageId = null;
+        // ✅ NUEVO: Generar messageId para mensajes del bot (no de bienvenida)
+        if (sender === 'bot' && !metadata.isWelcome && this.activeConversationId) {
+            this.messageIdCounter++;
+            currentMessageId = `${this.activeConversationId}_${this.messageIdCounter}`;
+            messageDiv.dataset.messageId = currentMessageId;
+        }
+
         // ✅ NUEVO: Guardar la consulta y la respuesta en el elemento para el feedback.
         if (sender === 'bot' && !metadata.isWelcome) {
             messageDiv.dataset.query = this.messages.find(m => m.sender === 'user')?.content || 'N/A';
@@ -467,12 +478,18 @@ async sendMessage() {
         }
 
         // ✅ NUEVO: Añadir botones de feedback a los mensajes del bot (excepto el de bienvenida).
-        if (sender === 'bot' && !metadata.isWelcome) {
-            messageHTML += `
-                <div class="feedback-container">
-                    <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
-                    <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
-                </div>`;
+        // ✅ MEJORA: Verificar si ya se dio feedback para este mensaje.
+        if (sender === 'bot' && !metadata.isWelcome && currentMessageId) {
+            const feedbackStatus = localStorage.getItem(`feedback_${currentMessageId}`);
+            if (feedbackStatus) {
+                messageHTML += `<div class="feedback-container"><span class="feedback-thanks">¡Gracias por tu feedback!</span></div>`;
+            } else {
+                messageHTML += `
+                    <div class="feedback-container">
+                        <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
+                        <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
+                    </div>`;
+            }
         }
 
         messageDiv.innerHTML = messageHTML;
@@ -483,9 +500,12 @@ async sendMessage() {
 
         // ✅ FASE III: Añadir al historial local de mensajes.
         if (!metadata.isWelcome) {
-            this.messages.push({ sender, content: text, ...metadata });
+            const messageObject = { sender, content: text, ...metadata };
+            if (currentMessageId) {
+                messageObject.messageId = currentMessageId;
+            }
+            this.messages.push(messageObject);
         }
-        // Ya no se guarda en localStorage.
     }
 
     formatMessage(text) {
@@ -718,6 +738,7 @@ async sendMessage() {
         if (this.activeConversationId == conversationId) return;
 
         this.activeConversationId = conversationId;
+        this.messageIdCounter = 0; // Reset counter for new conversation
         const messagesContainer = document.getElementById('chatbot-messages');
         messagesContainer.innerHTML = '<div class="loading-state">Cargando chat...</div>';
 
@@ -741,6 +762,7 @@ async sendMessage() {
     startNewConversation() {
         this.activeConversationId = null;
         this.messages = [];
+        this.messageIdCounter = 0; // Reset counter for new conversation
         const messagesContainer = document.getElementById('chatbot-messages');
         messagesContainer.innerHTML = '';
         this.addWelcomeMessage();
