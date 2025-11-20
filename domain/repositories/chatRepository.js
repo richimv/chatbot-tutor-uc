@@ -60,9 +60,15 @@ class ChatRepository {
      */
     async getMessagesByConversationId(conversationId, userId) {
         const query = `
-            SELECT cm.id, cm.sender, cm.content, cm.created_at
+            SELECT 
+                cm.id, 
+                cm.sender, 
+                cm.content, 
+                cm.created_at,
+                f.is_helpful
             FROM chat_messages cm
             JOIN conversations c ON cm.conversation_id = c.id
+            LEFT JOIN feedback f ON cm.id = f.message_id AND f.user_id = c.user_id
             WHERE cm.conversation_id = $1 AND c.user_id = $2
             ORDER BY cm.created_at ASC;
         `;

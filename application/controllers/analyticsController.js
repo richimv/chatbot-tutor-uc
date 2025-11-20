@@ -53,13 +53,14 @@ class AnalyticsController {
 
     async recordFeedback(req, res) {
         try {
-            const { query, response, isHelpful } = req.body;
+            const { query, response, isHelpful, messageId } = req.body;
             // ✅ OBTENER EL ID DEL USUARIO DESDE EL TOKEN
             // El middleware 'auth' ya nos da el usuario en req.user.
             // ✅ 4. Usar la instancia correcta del repositorio que fue inyectada.
             const userRecord = req.user ? await this.userRepository.findById(req.user.id) : null;
-            await this.analyticsService.recordFeedback(query, response, isHelpful, userRecord ? userRecord.id : null);
-            res.status(200).json({ message: 'Feedback registrado.' });
+            await this.analyticsService.recordFeedback(query, response, isHelpful, userRecord ? userRecord.id : null, messageId);
+            // Se cambia a 204 No Content, que es más apropiado para una acción que no necesita devolver datos.
+            res.status(204).send();
         } catch (error) {
             console.error('❌ Error registrando feedback:', error);
             res.status(500).json({ error: 'Error al registrar el feedback.' });

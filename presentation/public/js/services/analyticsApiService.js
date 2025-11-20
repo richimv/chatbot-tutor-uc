@@ -6,7 +6,7 @@ class AnalyticsApiService {
      * @param {boolean} isHelpful - Si el usuario la marcó como útil.
      * @returns {Promise<void>}
      */
-    static async recordFeedback(query, response, isHelpful) {
+    static async recordFeedback(query, response, isHelpful, messageId) {
         const token = localStorage.getItem('authToken');
         // No es necesario un token para el feedback, pero es bueno tener el contexto del usuario si está logueado.
         const headers = {
@@ -20,7 +20,7 @@ class AnalyticsApiService {
             const res = await fetch('/api/analytics/feedback', {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({ query, response, isHelpful }),
+                body: JSON.stringify({ query, response, isHelpful, messageId }),
             });
             if (!res.ok) {
                 console.error('Error al enviar el feedback:', await res.text());

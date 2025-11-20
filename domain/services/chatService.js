@@ -34,12 +34,13 @@ class ChatService {
         const botResponse = await GeminiService.getChatResponse(messageText, history);
 
         // 5. Guardar la respuesta del bot en la base de datos.
-        await this.chatRepository.addMessage(convId, 'bot', botResponse.respuesta);
+        const savedBotMessage = await this.chatRepository.addMessage(convId, 'bot', botResponse.respuesta);
 
         // 6. Devolver la respuesta y el ID de la conversación (importante si era nueva).
         return {
             ...botResponse,
-            conversationId: convId
+            conversationId: convId,
+            messageId: savedBotMessage.id // ✅ NUEVO: Devolver el ID del mensaje del bot
         };
     }
 

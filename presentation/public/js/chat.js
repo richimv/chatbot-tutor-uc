@@ -238,13 +238,12 @@ Puedo ayudarte con:
                 const response = parentMessage.dataset.response;
                 const messageId = parentMessage.dataset.messageId; // Get the messageId
 
-                // Enviar feedback
-                AnalyticsApiService.recordFeedback(query, response, isHelpful);
+                // 1. ✅ MEJORA: Enviar el messageId a la API.
+                AnalyticsApiService.recordFeedback(query, response, isHelpful, messageId);
 
-                // ✅ NUEVO: Guardar el feedback en localStorage
-                if (messageId) {
-                    localStorage.setItem(`feedback_${messageId}`, isHelpful ? 'liked' : 'disliked');
-                }
+                // 2. ✅ SOLUCIÓN: Ya no guardamos en localStorage.
+                // La persistencia real la manejará el backend. La UI se actualizará
+                // al recibir la confirmación o al recargar la conversación.
 
                 // Deshabilitar botones y mostrar agradecimiento
                 const feedbackContainer = feedbackBtn.parentElement;
@@ -386,7 +385,7 @@ async sendMessage() {
         const wasNewConversation = !this.activeConversationId;
         this.activeConversationId = data.conversationId;
 
-        this.addMessage(data.respuesta, 'bot', data);
+        this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
         
         if (data.sugerencias && data.sugerencias.length > 0) {
             this.showFollowUpSuggestions(data.sugerencias);
@@ -448,11 +447,20 @@ async sendMessage() {
         messageDiv.className = `message ${sender} ${metadata.isWelcome ? 'welcome-message' : ''}`;
         
         let currentMessageId = null;
-        // ✅ NUEVO: Generar messageId para mensajes del bot (no de bienvenida)
-        if (sender === 'bot' && !metadata.isWelcome && this.activeConversationId) {
-            this.messageIdCounter++;
-            currentMessageId = `${this.activeConversationId}_${this.messageIdCounter}`;
-            messageDiv.dataset.messageId = currentMessageId;
+        
+        // ✅ SOLUCIÓN: unificar la asignación del ID.
+        // Los mensajes del historial vienen con `id`, los nuevos con `messageId`.
+        if (sender === 'bot' && !metadata.isWelcome) {
+            currentMessageId = metadata.id || metadata.messageId;
+            if (currentMessageId) {
+                messageDiv.dataset.messageId = currentMessageId;
+            } else {
+                // Fallback para mensajes de error locales que no tienen ID de la BD.
+                const conversationIdentifier = this.activeConversationId || 'temp';
+                this.messageIdCounter++;
+                currentMessageId = `${conversationIdentifier}_${this.messageIdCounter}`;
+                messageDiv.dataset.messageId = currentMessageId;
+            }
         }
 
         // ✅ NUEVO: Guardar la consulta y la respuesta en el elemento para el feedback.
@@ -478,14 +486,16 @@ async sendMessage() {
         }
 
         // ✅ NUEVO: Añadir botones de feedback a los mensajes del bot (excepto el de bienvenida).
-        // ✅ MEJORA: Verificar si ya se dio feedback para este mensaje.
+        // ✅ SOLUCIÓN DEFINITIVA: La decisión ahora se basa en la propiedad `feedbackGiven`
+        // que debería venir del servidor en el objeto `metadata`.
         if (sender === 'bot' && !metadata.isWelcome && currentMessageId) {
-            const feedbackStatus = localStorage.getItem(`feedback_${currentMessageId}`);
-            if (feedbackStatus) {
+            // ✅ SOLUCIÓN: La decisión ahora se basa en la propiedad `is_helpful` que viene del servidor.
+            // Esta puede ser true, false, o null.
+            if (metadata.is_helpful !== null && metadata.is_helpful !== undefined) { // Si el feedback ya fue dado (no es null/undefined)
                 messageHTML += `<div class="feedback-container"><span class="feedback-thanks">¡Gracias por tu feedback!</span></div>`;
             } else {
                 messageHTML += `
-                    <div class="feedback-container">
+                    <div class="feedback-container" data-message-id="${currentMessageId}">
                         <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
                         <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
                     </div>`;
@@ -750,7 +760,7 @@ async sendMessage() {
 
             this.messages = await response.json();
             messagesContainer.innerHTML = '';
-            this.messages.forEach(msg => this.addMessage(msg.content, msg.sender));
+            this.messages.forEach(msg => this.addMessage(msg.content, msg.sender, msg));
             this.renderConversationList(); // Re-renderizar para marcar la activa
 
         } catch (error) {

@@ -37,15 +37,35 @@ class AnalyticsService {
      * @param {string} response La respuesta que dio el chatbot.
      * @param {boolean} isHelpful Si el usuario marcó la respuesta como útil.
      * @param {number} [userId=null] El ID numérico del usuario de la tabla 'users'.
+     * @param {string} [messageId=null] El ID único del mensaje que recibe el feedback.
      */
-    async recordFeedback(query, response, isHelpful, userId = null) {
+    async recordFeedback(query, response, isHelpful, userId = null, messageId = null) {
         console.log(`📊 Registrando feedback en BD para la consulta: "${query}"`);
         try {
+            // ✅ NUEVO: Verificar si el messageId es un número válido antes de usarlo.
+            if (messageId) {
+                const parsedMessageId = parseInt(messageId, 10);
+                if (isNaN(parsedMessageId)) {
+                    console.warn(`⚠️ No se puede registrar el feedback: message_id "${messageId}" no es un número válido.`);
+                    return; // Salir de la función si el messageId no es un número.
+                }
+                // Usar el messageId parseado para la verificación y la inserción.
+                const messageExists = await db.query('SELECT 1 FROM chat_messages WHERE id = $1', [parsedMessageId]);
+                if (messageExists.rows.length === 0) {
+                    console.warn(`⚠️ No se puede registrar el feedback: message_id ${parsedMessageId} no existe en la tabla chat_messages.`);
+                    return; // Salir de la función si el messageId no es válido.
+                }
+                messageId = parsedMessageId; // Actualizar messageId con el valor parseado.
+            } else {
+                console.warn(`⚠️ No se puede registrar el feedback: message_id no proporcionado.`);
+                return; // Salir de la función si no hay messageId.
+            }
+
             const queryText = `
-                INSERT INTO feedback(query, response, is_helpful, user_id)
-                VALUES($1, $2, $3, $4)
+                INSERT INTO feedback(query, response, is_helpful, user_id, message_id)
+                VALUES($1, $2, $3, $4, $5)
             `;
-            const values = [query, response, isHelpful, userId];
+            const values = [query, response, isHelpful, userId, messageId];
             await db.query(queryText, values);
         } catch (error) {
             console.error('❌ Error al registrar el feedback en la base de datos:', error);

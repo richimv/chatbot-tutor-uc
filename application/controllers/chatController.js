@@ -93,7 +93,7 @@ class ChatController {
             const response = await this.enrichResponse(message, classification);
             
             // 4. Guardar la respuesta del bot en la BD.
-            await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
+            const botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
 
             // 5. REGISTRAR EN ANALYTICS (Lógica original)
             if (this.analyticsService) {
@@ -112,6 +112,8 @@ class ChatController {
                 ...response,
                 // Devolver siempre el ID de la conversación para que el frontend pueda continuarla.
                 conversationId: conversationId,
+                // ✅ NUEVO: Devolver el ID del mensaje del bot para el feedback.
+                messageId: botMessage.id,
                 timestamp: new Date().toISOString()
             });
 
