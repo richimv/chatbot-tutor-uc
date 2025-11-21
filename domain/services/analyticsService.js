@@ -103,14 +103,14 @@ class AnalyticsService {
 
         console.log('📊 Obteniendo KPIs del dashboard desde la BD...');
         const dateFilter = `created_at >= NOW() - INTERVAL '${days} days'`;
- 
+
         // ✅ MEJORA: Consultas más específicas y claras
         const totalSearchesQuery = `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`;
         const totalChatQueriesQuery = `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`;
         const educationalQueriesQuery = `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`;
         const totalFeedbacksQuery = `SELECT COUNT(*) FROM feedback WHERE ${dateFilter}`;
         const positiveFeedbacksQuery = `SELECT COUNT(*) FROM feedback WHERE is_helpful = TRUE AND ${dateFilter}`;
-        
+
         const activeUsersQuery = `
             SELECT COUNT(DISTINCT user_id) 
             FROM (
@@ -131,7 +131,7 @@ class AnalyticsService {
 
         // ✅ PLAN DE EJECUCIÓN: Añadir consulta para total de usuarios (histórico)
         const totalUsersQuery = 'SELECT COUNT(*) FROM users';
- 
+
         const [
             totalSearchesRes,
             totalChatQueriesRes,
@@ -153,7 +153,7 @@ class AnalyticsService {
             db.query(topSearchesQuery),
             db.query(totalUsersQuery) // Ejecutar la nueva consulta
         ]);
- 
+
         const totalSearches = parseInt(totalSearchesRes.rows[0].count, 10);
         const totalChatQueries = parseInt(totalChatQueriesRes.rows[0].count, 10);
         const educationalQueries = parseInt(educationalQueriesRes.rows[0].count, 10);
@@ -163,7 +163,7 @@ class AnalyticsService {
         // ✅ SOLUCIÓN: Usar una función de flecha para preservar el contexto de `this`.
         const classifiedTopSearches = topSearchesRes.rows.map(term => ({
             ...term,
-            type: this._classifySearchTerm(term.query)
+            type: this.classifySearchTerm(term.query)
         }));
 
         return {
@@ -171,7 +171,7 @@ class AnalyticsService {
             totalSearches: totalSearches, // Búsquedas en la barra principal
             totalChatQueries: totalChatQueries, // Consultas iniciadas en el chatbot
             chatAdoptionRate: totalInteractions > 0 ? ((totalChatQueries / totalInteractions) * 100).toFixed(1) : 0,
-            
+
             educationalQueryPercentage: totalInteractions > 0 ? ((educationalQueries / totalInteractions) * 100).toFixed(1) : 0,
             totalFeedbacks: parseInt(totalFeedbacksRes.rows[0].count, 10),
             positiveFeedbacks: parseInt(positiveFeedbacksRes.rows[0].count, 10),
@@ -181,54 +181,73 @@ class AnalyticsService {
                 total: parseInt(totalUsersRes.rows[0].count, 10)
             },
             totalChatMessages: parseInt(totalChatMessagesRes.rows[0].count, 10),
-            topSearches: classifiedTopSearches // La consulta ya limita a 5
+            topSearches: classifiedTopSearches,
+
+            // ✅ MEJORA: Distribución real basada en TODAS las búsquedas del periodo
+            categoryDistribution: await this.getCategoryDistribution(days),
+
+            // ✅ NUEVO: Listas Top 5 Específicas
+            topCareers: await this.getTopViewedEntities('career', days),
+            topCourses: await this.getTopViewedEntities('course', days),
+            topTopics: await this.getTopViewedEntities('topic', days),
+
+            // ✅ MEJORA: Buscar docentes en un pool más grande de búsquedas (Top 100)
+            topInstructors: this.getTopInstructorsFromSearches(await this.getTopSearchesRaw(days, 100)),
+
+            // ✅ NUEVO INSIGHT: Búsquedas sin resultados (Oportunidades de contenido)
+            zeroResultSearches: await this.getZeroResultSearches(days)
         };
     }
 
     /**
-     * Clasifica un término de búsqueda comparándolo con la base de conocimiento.
-     * @private
+     * Clasifica un término de búsqueda en una de las categorías principales.
+     * @param {string} query Término de búsqueda.
+     * @returns {string} 'Curso', 'Tema', 'Carrera', 'Docente' o 'General'.
      */
-    _classifySearchTerm(query) {
+    classifySearchTerm(query) {
         const normalizedQuery = query.toLowerCase().trim();
-        if (normalizedQuery.length < 3) return 'General'; // Evitar clasificar palabras muy cortas
-        
-        // --- ✅ SOLUCIÓN DEFINITIVA: Clasificación por Puntuación de Especificidad ---
-        const scores = { Curso: 0, Tema: 0, Carrera: 0, Docente: 0 };
 
-        // Función auxiliar para comprobar y puntuar
+        // Si es muy corto, es General
+        if (normalizedQuery.length < 3) return 'General';
+
+        const scores = {
+            Curso: 0,
+            Tema: 0,
+            Carrera: 0,
+            Docente: 0
+        };
+
+        // Función auxiliar para puntuar coincidencias
         const scoreCategory = (category, nameSet) => {
             for (const name of nameSet) {
-                if (name === normalizedQuery) { // Coincidencia exacta
-                    scores[category] = Math.max(scores[category], 3);
-                    return; // Máxima puntuación, no necesita seguir buscando en este set
+                if (name === normalizedQuery) {
+                    scores[category] = Math.max(scores[category], 3); // Coincidencia exacta
+                    return; // Ya encontramos la mejor coincidencia posible
                 }
-                if (name.startsWith(normalizedQuery)) { // La entidad empieza con la búsqueda
-                    scores[category] = Math.max(scores[category], 2);
+                if (name.startsWith(normalizedQuery)) {
+                    scores[category] = Math.max(scores[category], 2); // Empieza con
                 }
-                if (name.includes(normalizedQuery)) { // La búsqueda está contenida en la entidad
-                    scores[category] = Math.max(scores[category], 1);
+                if (name.includes(normalizedQuery)) {
+                    scores[category] = Math.max(scores[category], 1); // Contiene
                 }
             }
         };
 
-        // Puntuar todas las categorías
         scoreCategory('Curso', this.knowledgeBaseRepo.courseNames);
         scoreCategory('Tema', this.knowledgeBaseRepo.topicNames);
         scoreCategory('Carrera', this.knowledgeBaseRepo.careerNames);
         scoreCategory('Docente', this.knowledgeBaseRepo.instructorNames);
 
-        // Encontrar la puntuación más alta
+        // Encontrar la categoría con mayor puntuación
         const maxScore = Math.max(...Object.values(scores));
 
-        // Si ninguna categoría puntuó, es 'General'
         if (maxScore === 0) return 'General';
 
-        // Orden de prioridad para desempates (si varios tienen la misma puntuación máxima)
+        // Resolver empates con prioridad
         const priorityOrder = ['Curso', 'Tema', 'Carrera', 'Docente'];
         for (const category of priorityOrder) {
             if (scores[category] === maxScore) {
-                return category; // Devolver la primera categoría que tenga la máxima puntuación
+                return category;
             }
         }
 
@@ -285,30 +304,163 @@ class AnalyticsService {
     }
 
     /**
+     * ✅ NUEVO: Obtiene las entidades más vistas de un tipo específico.
+     * Realiza un JOIN con la tabla correspondiente para obtener el nombre.
+     */
+    async getTopViewedEntities(type, days = 30) {
+        let tableName = '';
+        let nameField = 'name';
+
+        // Determinar la tabla y el campo de nombre según el tipo
+        switch (type) {
+            case 'career': tableName = 'careers'; break;
+            case 'course': tableName = 'courses'; break;
+            case 'topic': tableName = 'topics'; break;
+            default: return [];
+        }
+
+        const query = `
+            SELECT t.${nameField} as name, COUNT(pv.id) as count, t.id
+            FROM page_views pv
+            JOIN ${tableName} t ON pv.entity_id = t.id
+            WHERE pv.entity_type = $1 
+            AND pv.created_at >= NOW() - INTERVAL '${days} days'
+            GROUP BY t.id, t.${nameField}
+            ORDER BY count DESC
+            LIMIT 5;
+        `;
+
+        try {
+            const res = await db.query(query, [type]);
+            return res.rows;
+        } catch (error) {
+            console.error(`❌ Error obteniendo top ${type}:`, error);
+            return [];
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Extrae los docentes más buscados del historial de búsqueda.
+     * Como no hay "páginas de docente", usamos las búsquedas clasificadas como 'Docente'.
+     */
+    getTopInstructorsFromSearches(rawTerms) {
+        if (!rawTerms || !Array.isArray(rawTerms)) return [];
+
+        // 1. Clasificar los términos al vuelo
+        const classifiedTerms = rawTerms.map(term => ({
+            ...term,
+            type: this.classifySearchTerm(term.query)
+        }));
+
+        // 2. Filtrar los términos que han sido clasificados como 'Docente'
+        const instructorTerms = classifiedTerms.filter(term => term.type === 'Docente');
+
+        // Si tenemos suficientes, devolvemos el Top 5
+        if (instructorTerms.length >= 5) {
+            return instructorTerms.slice(0, 5);
+        }
+
+        // 3. Fallback: Si el clasificador no encontró suficientes (quizás por nombres parciales),
+        // intentamos buscar coincidencias directas en los rawTerms contra la lista de instructores.
+        // Usamos un Set para evitar duplicados con los ya encontrados.
+        const foundQueries = new Set(instructorTerms.map(t => t.query));
+        const potentialInstructors = [...instructorTerms];
+
+        for (const term of rawTerms) {
+            if (foundQueries.has(term.query)) continue; // Ya lo tenemos
+
+            // Verificar si el término de búsqueda coincide con algún instructor conocido
+            const isInstructor = Array.from(this.knowledgeBaseRepo.instructorNames).some(name =>
+                name.includes(term.query.toLowerCase()) || term.query.toLowerCase().includes(name)
+            );
+
+            if (isInstructor) {
+                potentialInstructors.push({
+                    query: term.query,
+                    count: term.count,
+                    type: 'Docente'
+                });
+                foundQueries.add(term.query);
+            }
+        }
+
+        return potentialInstructors.slice(0, 5);
+    }
+
+    /**
+     * ✅ NUEVO: Obtiene las búsquedas crudas (sin clasificar) para análisis profundo.
+     */
+    async getTopSearchesRaw(days = 30, limit = 100) {
+        const query = `
+            SELECT query, COUNT(*) as count 
+            FROM search_history 
+            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            GROUP BY query 
+            ORDER BY count DESC
+            LIMIT $1`;
+        const res = await db.query(query, [limit]);
+        return res.rows;
+    }
+
+    /**
+     * ✅ NUEVO: Calcula la distribución de categorías sobre TODAS las búsquedas.
+     */
+    async getCategoryDistribution(days = 30) {
+        // Obtenemos una muestra grande representativa
+        const searches = await this.getTopSearchesRaw(days, 500);
+        const distribution = { Curso: 0, Tema: 0, Carrera: 0, Docente: 0, General: 0 };
+
+        searches.forEach(item => {
+            const type = this.classifySearchTerm(item.query);
+            distribution[type] += parseInt(item.count, 10);
+        });
+
+        return distribution;
+    }
+
+    /**
+     * ✅ NUEVO INSIGHT: Obtiene búsquedas que no arrojaron resultados.
+     * Esto indica qué contenido buscan los usuarios y no encuentran.
+     */
+    async getZeroResultSearches(days = 30) {
+        const query = `
+            SELECT query, COUNT(*) as count
+            FROM search_history
+            WHERE results_count = 0
+            AND created_at >= NOW() - INTERVAL '${days} days'
+            GROUP BY query
+            ORDER BY count DESC
+            LIMIT 5;
+        `;
+        const res = await db.query(query);
+        return res.rows;
+    }
+
+    /**
      * Obtiene todos los datos de analítica para el servicio de ML.
      * Esta función reemplaza la lectura directa del archivo JSON por parte de Python.
      * @returns {Promise<object>}
      */
-async getAnalyticsForML() {
-    try {
-        const searchHistoryRes = await db.query('SELECT query, results_count, created_at FROM search_history ORDER BY created_at DESC LIMIT 1000');
-        const feedbackRes = await db.query('SELECT query, response, is_helpful, created_at FROM feedback ORDER BY created_at DESC LIMIT 1000');
+    async getAnalyticsForML() {
+        try {
+            const searchHistoryRes = await db.query('SELECT query, results_count, created_at FROM search_history ORDER BY created_at DESC LIMIT 1000');
+            const feedbackRes = await db.query('SELECT query, response, is_helpful, created_at FROM feedback ORDER BY created_at DESC LIMIT 1000');
 
-        return {
-            searchHistory: searchHistoryRes.rows,
-            feedback: feedbackRes.rows
-        };
-    } catch (error) {
-        console.error('❌ Error al obtener datos de analítica para ML:', error);
-        return { searchHistory: [], feedback: [] };
+            return {
+                searchHistory: searchHistoryRes.rows,
+                feedback: feedbackRes.rows
+            };
+        } catch (error) {
+            console.error('❌ Error al obtener datos de analítica para ML:', error);
+            return { searchHistory: [], feedback: [] };
+        }
     }
-}
 
-/**
- * ✅ MEJORA: Obtiene las predicciones de tendencias desde el servicio de Python.
- * @returns {Promise<object>}
- */
-async predictPopularCourse() {
+    /**
+     * ✅ MEJORA: Obtiene las predicciones de tendencias desde el servicio de Python.
+     * @returns {Promise<object>}
+     */
+    async predictPopularCourse() {
         console.log('🤖 Obteniendo predicciones de tendencias desde el servicio de Python ML...');
         try {
             return await PythonMLService.getTrends();

@@ -42,7 +42,7 @@ class SearchService {
 
         // 1. Determinar la intención de la búsqueda
         const isEducationalQuery = this.isEducationalQuery(query);
-        
+
         // ✅ LÓGICA RESTAURADA Y SIMPLIFICADA: Se realiza una única llamada a la base de datos.
         // La función `search_courses` ahora es lo suficientemente robusta para manejar búsquedas
         // de cursos, temas y docentes de forma correcta.
@@ -68,7 +68,7 @@ class SearchService {
             console.log('... Búsqueda sin resultados. Realizando búsqueda ampliada para un concepto.');
             finalResults = relatedCoursePredictor.predict(query, [], allDataForPredictor);
         }
-        
+
         // 3. Obtener recomendaciones del servicio de ML.
         // Se le pasa la consulta y los IDs de los resultados directos para que tenga contexto.
         let recommendations;
@@ -83,7 +83,7 @@ class SearchService {
             console.warn(`⚠️ El servicio de ML de Python no está disponible o falló: ${mlError.message}. Usando predictor de JS como fallback.`);
             // El fallback de JS también genera recomendaciones basadas en la consulta.
             // ✅ REFACTOR: Reutilizar los datos ya cargados.
-            
+
             // ✅ MEJORA UX: Si el ML falló, mostramos las mejores coincidencias aunque ya estén en los resultados.
             // Para ello, llamamos al predictor con una lista de exclusión vacía.
             // Esto asegura que el usuario siempre vea alguna recomendación de curso.
@@ -107,25 +107,28 @@ class SearchService {
     }
 
     isEducationalQuery(query) {
-        // ✅ SOLUCIÓN: Ampliar la lista de palabras clave para detectar más tipos de preguntas conceptuales.
-        // Esto asegura que frases como "podrías decirme el concepto de..." o "cuál es la historia de..."
-        // se marquen correctamente como 'isEducationalQuery'.
+        // 1. Comprobar palabras clave de preguntas (intención explícita de aprender)
         const educationalKeywords = [
-            'que es', 
-            'como funciona', 
-            'explica', 
-            'explicame', 
-            'dime que es',
-            'diferencia entre', 
-            'definicion de', 
-            'concepto de', 
-            'historia de', 
-            'cual es', 
-            'cuales son', 
-            'podrias decirme', 
-            'quisiera saber'];
+            'que es', 'como funciona', 'explica', 'explicame', 'dime que es',
+            'diferencia entre', 'definicion de', 'concepto de', 'historia de',
+            'cual es', 'cuales son', 'podrias decirme', 'quisiera saber'
+        ];
         const normalizedQuery = normalizeText(query);
-        return educationalKeywords.some(keyword => normalizedQuery.startsWith(keyword));
+        const hasQuestionKeyword = educationalKeywords.some(keyword => normalizedQuery.startsWith(keyword));
+
+        if (hasQuestionKeyword) return true;
+
+        // 2. ✅ MEJORA: Comprobar si la búsqueda coincide con una entidad educativa conocida.
+        // Si el usuario busca "Calculo 1" o "Profesor X", es una consulta educativa.
+        if (this.analyticsService && this.analyticsService.classifySearchTerm) {
+            const classification = this.analyticsService.classifySearchTerm(query);
+            // Si NO es 'General', significa que es un Curso, Tema, Carrera o Docente -> Es Educativo.
+            if (classification !== 'General') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

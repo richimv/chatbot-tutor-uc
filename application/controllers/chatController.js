@@ -14,7 +14,7 @@ class ChatController {
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.chatService = chatService;
         console.log('✅ ChatController inicializado correctamente');
-        
+
         // Bindeo explícito para mantener el contexto
         this.processMessage = this.processMessage.bind(this);
         this.trainModel = this.trainModel.bind(this);
@@ -40,7 +40,7 @@ class ChatController {
             const { message } = req.body;
             let { conversationId } = req.body; // 'let' porque puede ser creado.
             const userId = req.user.id; // Obtenido del token JWT.
-            
+
             if (!message || message.trim() === '') {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
@@ -91,13 +91,22 @@ class ChatController {
             }
 
             const response = await this.enrichResponse(message, classification);
-            
+
             // 4. Guardar la respuesta del bot en la BD.
             const botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
 
             // 5. REGISTRAR EN ANALYTICS (Lógica original)
             if (this.analyticsService) {
-                const isEducational = response.intencion === 'duda_teorica' || response.intencion === 'consulta_general';
+                // ✅ MEJORA: Ampliar la definición de "Consulta Educativa" para incluir horarios, material y evaluaciones.
+                const educationalIntents = [
+                    'duda_teorica',
+                    'consulta_general',
+                    'consulta_horario',
+                    'solicitar_material',
+                    'consulta_evaluacion'
+                ];
+                const isEducational = educationalIntents.includes(response.intencion);
+
                 await this.analyticsService.recordSearchWithIntent(
                     message,
                     [], // No hay "resultados" directos en una conversación de chat
@@ -119,7 +128,7 @@ class ChatController {
 
         } catch (error) {
             console.error('❌ Error en ChatController.processMessage:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 error: 'Error al procesar el mensaje',
                 respuesta: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta nuevamente.'
             });
@@ -214,7 +223,7 @@ class ChatController {
             sugerencias: await this.generateChatSuggestions(intencion, llmResult)
         };
     }
-    
+
     // findRelevantCourses ya no es necesario aquí, la lógica de búsqueda de cursos
     // se maneja directamente en mlService a través de la herramienta getCourseDetails
     // que llama a CourseRepository.
@@ -261,9 +270,9 @@ class ChatController {
             res.json(result);
         } catch (error) {
             console.error('❌ Error entrenando modelo:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 error: 'Error entrenando el modelo',
-                detalles: error.message 
+                detalles: error.message
             });
         }
     }

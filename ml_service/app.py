@@ -35,7 +35,7 @@ def handle_recommendations():
 
         # ✅ SOLUCIÓN: Cargar datos del catálogo desde la API de Node.js
         try:
-            print("🧠 ML Service: Obteniendo datos del catálogo desde la API de Node.js...")
+            print("ML Service: Obteniendo datos del catálogo desde la API de Node.js...")
             courses_res = requests.get(f"{NODE_API_URL}/api/courses")
             topics_res = requests.get(f"{NODE_API_URL}/api/topics")
             sections_res = requests.get(f"{NODE_API_URL}/api/sections")
@@ -111,7 +111,7 @@ def handle_analytics_trends():
     try:
         # ✅ SOLUCIÓN: Cargar datos del catálogo desde la API de Node.js
         try:
-            print("🧠 ML Service (Trends): Obteniendo datos del catálogo desde la API de Node.js...")
+            print("ML Service (Trends): Obteniendo datos del catalogo desde la API de Node.js...")
             courses_res = requests.get(f"{NODE_API_URL}/api/courses")
             topics_res = requests.get(f"{NODE_API_URL}/api/topics")
             sections_res = requests.get(f"{NODE_API_URL}/api/sections")
@@ -147,6 +147,8 @@ def handle_analytics_trends():
 
         # ✅ SOLUCIÓN: Aplicar el mismo patrón de carga inmutable que en /recommendations.
         courses_df = pd.DataFrame(courses_list)
+        topics_df = pd.DataFrame(topics_list if topics_list else []) # ✅ FIX: Definir topics_df aquí también
+
         if topics_list:
             topics_map = {topic['id']: topic['name'] for topic in topics_list}
             def get_topic_names(topic_ids):
@@ -173,7 +175,7 @@ def handle_analytics_trends():
 
         # Calcular las predicciones de popularidad
         popular_course = popular_course_predictor.predict(courses_df, trends_df)
-        popular_topic = popular_topic_predictor.predict(courses_df, trends_df)
+        popular_topic = popular_topic_predictor.predict(courses_df, trends_df, topics_df)
 
         return jsonify({
             "popularCourse": popular_course,
@@ -181,8 +183,10 @@ def handle_analytics_trends():
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error en /analytics/trends: {e}")
-        return jsonify({"error": "Ocurrió un error al procesar las tendencias."}), 500
+        return jsonify({"error": f"Ocurrió un error al procesar las tendencias: {str(e)}"}), 500
 
 
 if __name__ == '__main__':

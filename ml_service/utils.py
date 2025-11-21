@@ -14,5 +14,7 @@ def load_json_data(file_path):
 
 def normalize_text(text):
     """Normaliza el texto: minúsculas, sin acentos y sin caracteres especiales."""
+    if not isinstance(text, str):
+        return ""
     text = unidecode(text.lower())
     return re.sub(r'[^a-z0-9\s]', '', text)

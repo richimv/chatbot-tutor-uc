@@ -1,43 +1,44 @@
 # ml_service/predictors/popular_topic_predictor.py
-from ..utils import normalize_text
-import nltk
+import sys
+import json
 import pandas as pd
+import re # ✅ Importar re para expresiones regulares
+from ..utils import normalize_text
 
-def predict(courses_df, trends_df):
+def predict(courses_df, trends_df, topics_df):
     """
-    Predice el tema más popular basado en las tendencias de búsqueda,
-    excluyendo los nombres de los cursos.
+    Predice el tema emergente más popular basado en las tendencias de búsqueda.
+    Valida estrictamente contra la lista de temas existentes en la BD.
     """
-    if trends_df.empty or courses_df.empty:
+    if trends_df.empty or topics_df.empty:
         return {"predictedTopic": None, "confidence": 0, "reason": "Sin datos suficientes", "searchCount": 0}
 
-    # ✅ CORRECTION: The column is 'name', not 'nombre'
-    all_course_names_normalized = set(courses_df['name'].apply(normalize_text))
-
     topic_scores = {}
-    # Palabras comunes a ignorar en las búsquedas para encontrar "temas"
-    # ✅ MEJORA: Añadir más palabras de relleno para obtener temas más limpios.
-    filler_words = {
-        'quiero', 'ejercicios', 'libro', 'libros', 'sobre', 'para', 'que', 'sirve', 'una', 'un', 'el', 'la', 'los', 'las',
-        'que', 'es', 'explicame', 'como', 'funciona', 'necesito', 'informacion', 'dame', 'acerca', 'del', 'tema',
-        'qué', 'cómo', 'información', 'podrias', 'de', 'y', 'o', 'a', 'en', 'con', 'por', 'sin', 'ayuda', 'horario', 'docente'
-    }
+    trends_copy = trends_df.copy()
+    trends_copy['normalized_query'] = trends_copy['query'].apply(normalize_text)
 
-    # 1. Filtrar búsquedas que no son nombres de cursos
-    for _, trend in trends_df.iterrows():
-        normalized_query = normalize_text(trend['query'])
-        if normalized_query not in all_course_names_normalized:
-            # 2. Extraer conceptos (n-gramas), pero de forma más inteligente.
-            words = normalized_query.split()
-            if len(words) > 1: # Solo procesar si hay más de una palabra
-                # Generar bigramas (pares) y trigramas (tríos)
-                bigrams = [' '.join(gram) for gram in nltk.bigrams(words)]
-                trigrams = [' '.join(gram) for gram in nltk.ngrams(words, 3)]
-                
-                # Un concepto es válido si NO empieza o termina con una palabra de relleno.
-                for concept in bigrams + trigrams:
-                    if not concept.split()[0] in filler_words and not concept.split()[-1] in filler_words:
-                        topic_scores[concept] = topic_scores.get(concept, 0) + trend['count']
+    for _, topic in topics_df.iterrows():
+        topic_name = topic['name']
+        normalized_topic_name = normalize_text(topic_name)
+        
+        if not normalized_topic_name:
+            continue
+
+        # ✅ MEJORA CRÍTICA: Usar límites de palabra (\b) para evitar coincidencias parciales falsas.
+        # Ejemplo: Evita que el tema "Mac" coincida con la búsqueda "Macroeconomía".
+        # Solo coincidirá si la búsqueda contiene "Mac" como palabra completa.
+        try:
+            escaped_name = re.escape(normalized_topic_name)
+            pattern = fr"\b{escaped_name}\b"
+            name_matches = trends_copy[trends_copy['normalized_query'].str.contains(pattern, regex=True, na=False)]
+            score = name_matches['count'].sum() * 10
+        except Exception:
+            # Fallback seguro por si falla el regex
+            name_matches = trends_copy[trends_copy['normalized_query'].str.contains(normalized_topic_name, na=False)]
+            score = name_matches['count'].sum() * 5
+
+        if score > 0:
+            topic_scores[topic_name] = score
 
     if not topic_scores:
         return {"predictedTopic": None, "confidence": 0, "reason": "No se encontraron temas populares.", "searchCount": 0}
@@ -46,28 +47,27 @@ def predict(courses_df, trends_df):
     top_score = topic_scores[top_topic_name]
     total_score_sum = sum(topic_scores.values())
 
-    # --- Lógica de Confianza Definitiva (Softmax) ---
-    # Convierte las puntuaciones en una distribución de probabilidad.
+    # Calcular confianza (Softmax simplificado)
     if total_score_sum > 0:
-        max_score = max(topic_scores.values())
-        exp_scores = {name: pow(2.71828, score - max_score) for name, score in topic_scores.items()}
-        sum_exp_scores = sum(exp_scores.values())
-        confidence = exp_scores[top_topic_name] / sum_exp_scores
+        confidence = top_score / total_score_sum
     else:
         confidence = 0
 
-    # Contar las búsquedas que contienen el tema ganador
-    search_count = 0
-    if not trends_df.empty:
-        search_count = trends_df[trends_df['query'].str.contains(top_topic_name, case=False, na=False)]['count'].sum()
+    # Contar búsquedas reales para mostrar al usuario
+    normalized_top_topic = normalize_text(top_topic_name)
+    # Usar la misma lógica de conteo estricto para el reporte
+    try:
+        escaped_name = re.escape(normalized_top_topic)
+        pattern = fr"\b{escaped_name}\b"
+        search_count = trends_copy[trends_copy['normalized_query'].str.contains(pattern, regex=True, na=False)]['count'].sum()
+    except:
+        search_count = trends_copy[trends_copy['normalized_query'].str.contains(normalized_top_topic, na=False)]['count'].sum()
 
     result = {
-        "predictedTopic": top_topic_name.capitalize(),
-        "confidence": min(confidence, 0.90),
-        "reason": f"Basado en {top_score} menciones en búsquedas.",
+        "predictedTopic": top_topic_name,
+        "confidence": min(confidence + 0.2, 0.95), # Boost de confianza por ser un tema validado
+        "reason": f"Tendencia basada en {int(search_count)} búsquedas relacionadas.",
         "searchCount": int(search_count)
     }
 
-    # ✅ CORRECCIÓN FINAL: Limpiar cualquier posible valor NaN del diccionario de resultados.
-    # Esto convierte los NaN a None, que se serializa a 'null' en JSON.
     return {k: (v if pd.notna(v) else None) for k, v in result.items()}

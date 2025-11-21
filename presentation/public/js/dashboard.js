@@ -25,7 +25,7 @@ class DashboardManager {
         this.setupFilterListeners();
         await this.displayStatistics(7); // Cargar datos de los últimos 7 días por defecto
     }
-    
+
     setupFilterListeners() {
         document.querySelector('.date-filters').addEventListener('click', (e) => {
             if (e.target.classList.contains('date-filter-btn')) {
@@ -70,15 +70,19 @@ class DashboardManager {
                         </div>
                         <div class="chart-card">
                             <h3>Distribución de Búsquedas por Categoría</h3>
-                            <div class="chart-wrapper" style="height: 350px;">
+                            <div class="chart-wrapper">
                                 <canvas id="category-distribution-chart"></canvas>
                             </div>
                         </div>
-                        <div class="chart-card">
-                            <!-- ✅ RESTAURADO: Gráfico de barras para los 5 términos más buscados -->
-                            <h3>Top 5 Términos más buscados</h3>
-                            <div id="top-terms-chart-container" class="chart-wrapper" style="height: 300px;"></div>
-                        </div>
+                        <!-- ✅ RESTAURADO: Contenedor para el gráfico de Top Términos -->
+                        <div class="chart-card" id="top-terms-chart-container"></div>
+                    </div>
+                    
+                    <!-- ✅ NUEVO: Sección de Top 5 Listas -->
+                    <div class="top-lists-section">
+                        <h3 class="section-title">Top 5 Más Solicitados</h3>
+                        <div class="top-lists-container" id="top-lists-container"></div>
+                    </div>
                     </div>
                     <div class="insights-container">
                         <!-- ✅ MEJORA: Dos tarjetas separadas para las predicciones -->
@@ -94,11 +98,13 @@ class DashboardManager {
             `;
 
             this.renderKpiCards(kpiData);
-            this.renderTotalTrendsChart(totalTrends); // ✅ RESTAURADO
-            this.renderCategoryDistributionChart(kpiData.topSearches); // ✅ NUEVO: Dona de categorías
-            this.renderTopTermsChart(kpiData.topSearches); // ✅ RESTAURADO: Renderizar el gráfico de barras
-            this.renderPredictionCards(predictionsData); // ✅ CORRECCIÓN: Llamar a la nueva función
+            this.renderTotalTrendsChart(totalTrends);
+            this.renderCategoryDistributionChart(kpiData.categoryDistribution); // ✅ MEJORA: Usar la nueva distribución calculada
+            this.renderTopTermsChart(kpiData.topSearches); // ✅ RESTAURADO: Gráfico de barras Top 10
+            this.renderTopLists(kpiData);
+            this.renderPredictionCards(predictionsData);
             this.renderFeedbackTable(feedbackData);
+            this.renderZeroResults(kpiData.zeroResultSearches); // ✅ NUEVO INSIGHT
         } catch (error) {
             console.error('❌ Error al cargar las estadísticas:', error);
             this.container.innerHTML = `<p class="error-state">No se pudieron cargar las estadísticas. ${error.message}</p>`;
@@ -108,7 +114,7 @@ class DashboardManager {
     renderKpiCards(data) {
         const container = document.getElementById('kpi-cards');
         const positiveFeedbackRate = data.totalFeedbacks > 0 ? ((data.positiveFeedbacks / data.totalFeedbacks) * 100).toFixed(1) : '0.0';
-        
+
         // ✅ MEJORA: Añadir iconos a las tarjetas de KPI
         container.innerHTML = `
             <!-- ✅ KPI Unificados y Claros -->
@@ -185,22 +191,18 @@ class DashboardManager {
         });
     }
 
-    // ✅ NUEVO: Gráfico de dona para la distribución por categoría.
-    renderCategoryDistributionChart(topTerms) {
+    // ✅ MEJORA: Gráfico de dona usando la distribución calculada en backend
+    renderCategoryDistributionChart(distribution) {
         const ctx = document.getElementById('category-distribution-chart').getContext('2d');
-        if (!topTerms || topTerms.length === 0) {
-            ctx.canvas.parentElement.innerHTML = '<p class="empty-state-small">No hay términos buscados en este período.</p>';
+
+        // Si no hay datos de distribución, mostrar estado vacío
+        if (!distribution || Object.values(distribution).reduce((a, b) => a + b, 0) === 0) {
+            ctx.canvas.parentElement.innerHTML = '<p class="empty-state-small">No hay datos suficientes.</p>';
             return;
         }
 
-        // 1. Agrupar y sumar conteos por tipo
-        const termsByType = topTerms.reduce((acc, term) => {
-            acc[term.type] = (acc[term.type] || 0) + parseInt(term.count, 10);
-            return acc;
-        }, {});
-
-        const categories = Object.keys(termsByType);
-        const counts = Object.values(termsByType);
+        const categories = Object.keys(distribution);
+        const counts = Object.values(distribution);
         const backgroundColors = [
             'rgba(52, 152, 219, 0.8)',  // Azul (Curso)
             'rgba(46, 204, 113, 0.8)',   // Verde (Tema)
@@ -214,16 +216,37 @@ class DashboardManager {
             data: {
                 labels: categories,
                 datasets: [{
-                    label: 'Nº de Búsquedas por Categoría',
+                    label: 'Nº de Búsquedas',
                     data: counts,
-                    backgroundColor: backgroundColors.slice(0, categories.length),
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                let value = context.raw;
+                                let total = context.chart._metasets[context.datasetIndex].total;
+                                let percentage = Math.round((value / total) * 100) + '%';
+                                return label + value + ' (' + percentage + ')';
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
-    // ✅ RESTAURADO: Gráfico de barras simple para los 5 términos más buscados.
+    // ✅ RESTAURADO: Gráfico de barras para los términos más buscados (Top 10)
     renderTopTermsChart(topTerms) {
         const container = document.getElementById('top-terms-chart-container');
         if (!topTerms || topTerms.length === 0) {
@@ -235,17 +258,21 @@ class DashboardManager {
         container.innerHTML = '<canvas id="top-terms-bar-chart"></canvas>';
         const ctx = document.getElementById('top-terms-bar-chart').getContext('2d');
 
+        // Tomar hasta 10 términos
+        const termsToShow = topTerms.slice(0, 10);
+
         this.charts.topTerms = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: topTerms.map(t => t.query),
+                labels: termsToShow.map(t => t.query),
                 datasets: [{
                     label: 'Nº de Búsquedas',
-                    data: topTerms.map(t => t.count),
-                    backgroundColor: 'rgba(88, 101, 242, 0.8)',
+                    data: termsToShow.map(t => t.count),
+                    backgroundColor: 'rgba(88, 101, 242, 0.6)',
                     borderColor: 'rgba(88, 101, 242, 1)',
                     borderWidth: 1,
-                    borderRadius: 4
+                    borderRadius: 4,
+                    hoverBackgroundColor: 'rgba(88, 101, 242, 0.8)'
                 }]
             },
             options: {
@@ -253,9 +280,44 @@ class DashboardManager {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true } }
+                scales: { x: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' } }, y: { grid: { display: false } } }
             }
         });
+    }
+
+    // ✅ RESTAURADO: Gráfico de barras simple para los 5 términos más buscados.
+    // ✅ NUEVO: Renderiza las 4 listas de Top 5
+    renderTopLists(data) {
+        const container = document.getElementById('top-lists-container');
+
+        const createListCard = (title, icon, items, type) => {
+            const listItems = items.map((item, index) => `
+                <li class="top-list-item">
+                    <span class="rank">#${index + 1}</span>
+                    <span class="name">${item.name || item.query}</span>
+                    <span class="count badge">${item.count} ${type === 'instructor' ? 'búsquedas' : 'vistas'}</span>
+                </li>
+            `).join('');
+
+            return `
+                <div class="top-list-card">
+                    <div class="card-header">
+                        <i class="fas ${icon}"></i>
+                        <h4>${title}</h4>
+                    </div>
+                    <ul class="top-list">
+                        ${items.length ? listItems : '<li class="empty-state-small">Sin datos suficientes</li>'}
+                    </ul>
+                </div>
+            `;
+        };
+
+        container.innerHTML = `
+            ${createListCard('Carreras', 'fa-graduation-cap', data.topCareers, 'career')}
+            ${createListCard('Cursos', 'fa-book', data.topCourses, 'course')}
+            ${createListCard('Temas', 'fa-lightbulb', data.topTopics, 'topic')}
+            ${createListCard('Docentes', 'fa-chalkboard-teacher', data.topInstructors, 'instructor')}
+        `;
     }
 
     // ✅ MEJORA: Función renombrada para manejar ambas predicciones
@@ -263,25 +325,77 @@ class DashboardManager {
         const courseCard = document.getElementById('popular-course-card');
         const topicCard = document.getElementById('popular-topic-card');
 
-        // ✅ SOLUCIÓN: Acceder a la propiedad correcta del objeto de predicción (ej: .predictedCourse).
-        // También mostramos la confianza de la predicción para un dashboard más completo.
-        const coursePrediction = data.popularCourse?.predictedCourse || 'No disponible';
-        const courseConfidence = data.popularCourse?.confidence ? `(Confianza: ${(data.popularCourse.confidence * 100).toFixed(0)}%)` : '';
+        const renderCardContent = (title, icon, predictionData, type) => {
+            const value = predictionData?.predictedCourse || predictionData?.predictedTopic || 'No disponible';
+            const confidence = predictionData?.confidence || 0;
+            const confidencePercent = (confidence * 100).toFixed(0);
+            const reason = predictionData?.reason || '';
 
-        const topicPrediction = data.popularTopic?.predictedTopic || 'No disponible';
-        const topicConfidence = data.popularTopic?.confidence ? `(Confianza: ${(data.popularTopic.confidence * 100).toFixed(0)}%)` : '';
+            // Color de la barra según confianza
+            let barColor = '#4caf50'; // Verde (Alto)
+            if (confidence < 0.7) barColor = '#ff9800'; // Naranja (Medio)
+            if (confidence < 0.4) barColor = '#f44336'; // Rojo (Bajo)
 
-        courseCard.innerHTML = `
-            <h3><i class="fas fa-brain"></i> Predicción ML</h3>
-            <p>Curso con mayor probabilidad de ser popular:</p>
-            <div class="predicted-value">${coursePrediction}</div>
-            <p class="prediction-confidence">${courseConfidence}</p>
-        `;
-        topicCard.innerHTML = `
-            <h3><i class="fas fa-lightbulb"></i> Predicción de Tema</h3>
-            <p>Tema emergente de mayor interés:</p>
-            <div class="predicted-value">${topicPrediction}</div>
-            <p class="prediction-confidence">${topicConfidence}</p>
+            return `
+                <h3><i class="fas ${icon}"></i> ${title}</h3>
+                <p class="prediction-subtitle">${type === 'course' ? 'Curso con mayor probabilidad de ser popular:' : 'Tema emergente de mayor interés:'}</p>
+                
+                <div class="predicted-value">${value}</div>
+                
+                ${value !== 'No disponible' ? `
+                    <div class="confidence-container" style="width: 80%; margin: 0.5rem auto;">
+                        <div class="confidence-label" style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.2rem;">
+                            <span>Confianza del modelo</span>
+                            <span>${confidencePercent}%</span>
+                        </div>
+                        <div class="confidence-bar-bg" style="background: rgba(255,255,255,0.2); height: 6px; border-radius: 3px;">
+                            <div class="confidence-bar-fill" style="width: ${confidencePercent}%; background: ${barColor}; height: 100%; border-radius: 3px; transition: width 1s ease;"></div>
+                        </div>
+                    </div>
+                    <p class="prediction-reason" style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.8rem; font-style: italic;">
+                        <i class="fas fa-info-circle"></i> ${reason}
+                    </p>
+                ` : ''}
+            `;
+        };
+
+        courseCard.innerHTML = renderCardContent('Predicción de Curso', 'fa-brain', data.popularCourse, 'course');
+        topicCard.innerHTML = renderCardContent('Predicción de Tema', 'fa-lightbulb', data.popularTopic, 'topic');
+    }
+
+    // ✅ NUEVO INSIGHT: Renderiza la lista de búsquedas sin resultados
+    renderZeroResults(data) {
+        // Crear el contenedor si no existe (se añadirá dinámicamente al grid)
+        let container = document.getElementById('zero-results-card');
+        if (!container) {
+            const insightsContainer = document.querySelector('.insights-container');
+            container = document.createElement('div');
+            container.id = 'zero-results-card';
+            container.className = 'feedback-table-card'; // Reutilizamos estilo
+            insightsContainer.appendChild(container);
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `
+                <h3><i class="fas fa-search-minus" style="color: var(--danger);"></i> Búsquedas Sin Resultados</h3>
+                <p class="empty-state-small">¡Excelente! Los usuarios encuentran todo lo que buscan.</p>
+            `;
+            return;
+        }
+
+        const listItems = data.map(item => `
+            <li class="zero-result-item">
+                <span class="query-text">"${item.query}"</span>
+                <span class="query-count">${item.count} veces</span>
+            </li>
+        `).join('');
+
+        container.innerHTML = `
+            <h3><i class="fas fa-search-minus" style="color: var(--danger);"></i> Oportunidades de Contenido</h3>
+            <p class="card-subtitle">Términos buscados que no arrojaron resultados:</p>
+            <ul class="zero-results-list">
+                ${listItems}
+            </ul>
         `;
     }
 
