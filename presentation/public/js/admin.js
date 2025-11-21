@@ -385,7 +385,7 @@ class AdminManager {
         // ✅ APLICAR ORDENAMIENTO
         const sortedCourses = this.sortData(this.allCourses, 'course', 'tab-courses');
         const itemsHTML = sortedCourses.map(course => createAdminItemCardHTML(course, 'course', course.code ? `(${course.code})` : '')).join('');
-        const content = this._createTabHeaderHTML('course', 'Añadir Curso Base', 'tab-courses') +
+        const content = this._createTabHeaderHTML('course', 'Añadir Curso', 'tab-courses') +
             (itemsHTML || '<p class="empty-state">No hay cursos base.</p>');
         container.innerHTML = content;
     }
@@ -454,20 +454,21 @@ class AdminManager {
                 break;
             // ...
             case 'course':
-                title.textContent = id ? 'Editar Curso Base' : 'Añadir Curso Base';
+                title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
                 if (id) currentItem = this.allCourses.find(c => c.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
                     this.createFormGroup('textarea', 'description', 'Descripción del Curso', currentItem?.description || '') +
                     this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
-                    this.createCheckboxList('Cursos Relacionados (Recomendaciones)', 'generic-related-courses', this.allCourses, currentItem?.relatedCourseIds || []);
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
                 if (id) currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', currentItem?.name || '', true) +
+                    this.createFormGroup('textarea', 'description', 'Descripción del Tema', currentItem?.description || '') +
                     // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
+                    '<div id="resources-container"></div>';
                 break;
             case 'section':
                 title.textContent = id ? 'Editar Sección' : 'Añadir Sección';
@@ -823,11 +824,12 @@ class AdminManager {
                     };
                     break;
                 case 'topic':
-                    // ✅ SOLUCIÓN: Enviar un array de IDs de libros/recursos.
-                    const selectedBooksForTopic = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
+                    // ✅ SOLUCIÓN: Enviar un array                case 'topic':
+                    const selectedBooksTopic = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
                     body = {
                         name: document.getElementById('generic-name').value,
-                        bookIds: selectedBooksForTopic
+                        description: document.querySelector('textarea[name="description"]')?.value || '',
+                        bookIds: selectedBooksTopic
                     };
                     break;
                 case 'book':
@@ -943,6 +945,7 @@ class AdminManager {
 
     renderTopicResources(resources) {
         const container = document.getElementById('resources-container');
+        if (!container) return; // ✅ SAFETY CHECK: Evitar crash si el contenedor no existe.
         container.innerHTML = '';
 
         // Renderizar PDFs existentes

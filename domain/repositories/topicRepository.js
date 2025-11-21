@@ -25,14 +25,14 @@ class TopicRepository {
 
     async create(topicData) {
         // ✅ SOLUCIÓN: La lógica de creación debe manejar la tabla de unión 'topic_resources'.
-        const { name, bookIds } = topicData; // 'bookIds' viene del formulario de admin.
+        const { name, description, bookIds } = topicData; // 'bookIds' viene del formulario de admin.
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
             // ✅ SOLUCIÓN TEMPORAL: Generar un 'topic_id' de texto para satisfacer la restricción NOT NULL.
             // La solución ideal es eliminar la columna 'topic_id' de la tabla 'topics' en la base de datos.
             const tempTopicId = `TOPIC_${Date.now()}`;
-            const topicRes = await client.query('INSERT INTO topics (topic_id, name) VALUES ($1, $2) RETURNING *', [tempTopicId, name]);
+            const topicRes = await client.query('INSERT INTO topics (topic_id, name, description) VALUES ($1, $2, $3) RETURNING *', [tempTopicId, name, description]);
             const newTopic = topicRes.rows[0];
 
             if (bookIds && bookIds.length > 0) {
@@ -53,12 +53,12 @@ class TopicRepository {
 
     async update(id, topicData) {
         // ✅ SOLUCIÓN: La lógica de actualización debe manejar la tabla de unión 'topic_resources'.
-        const { name, bookIds } = topicData;
+        const { name, description, bookIds } = topicData;
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
             // ✅ SOLUCIÓN: Eliminar la actualización de 'updated_at' porque la columna no existe en la tabla 'topics'.
-            const topicRes = await client.query('UPDATE topics SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+            const topicRes = await client.query('UPDATE topics SET name = $1, description = $2 WHERE id = $3 RETURNING *', [name, description, id]);
             const updatedTopic = topicRes.rows[0];
 
             await client.query('DELETE FROM topic_resources WHERE topic_id = $1', [id]); // Limpiar relaciones antiguas

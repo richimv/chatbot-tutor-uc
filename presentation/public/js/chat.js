@@ -96,7 +96,7 @@ class ChatComponent {
         document.body.insertAdjacentHTML('beforeend', chatHTML);
         this.loadChatStyles();
     }
-    
+
     loadChatStyles() {
         // Esta función ya no es necesaria, los estilos están en styles.css
         // Se mantiene la función vacía para no romper la llamada en init()
@@ -118,33 +118,33 @@ Puedo ayudarte con:
         }
     }
     setupEventListeners() {
-    const toggleBtn = document.getElementById('chatbot-toggle');
-    const closeBtn = document.getElementById('chatbot-close');
-    
-    console.log('🔄 Configurando event listeners...');
-    console.log('Toggle button:', toggleBtn);
-    console.log('Close button:', closeBtn);
+        const toggleBtn = document.getElementById('chatbot-toggle');
+        const closeBtn = document.getElementById('chatbot-close');
 
-    // BOTÓN FLOTANTE - Con delegación de eventos más robusta
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🎯 Botón toggle clickeado');
-            this.toggleChat();
-        });
-    } else {
-        console.error('❌ No se encontró el botón toggle');
-    }
+        console.log('🔄 Configurando event listeners...');
+        console.log('Toggle button:', toggleBtn);
+        console.log('Close button:', closeBtn);
 
-    // BOTÓN CERRAR
-    if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('🎯 Botón cerrar clickeado');
-            this.closeChat();
-        });
-    }
+        // BOTÓN FLOTANTE - Con delegación de eventos más robusta
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🎯 Botón toggle clickeado');
+                this.toggleChat();
+            });
+        } else {
+            console.error('❌ No se encontró el botón toggle');
+        }
+
+        // BOTÓN CERRAR
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🎯 Botón cerrar clickeado');
+                this.closeChat();
+            });
+        }
 
         // ✅ FASE III: Botón de "Nuevo Chat"
         const newChatBtn = document.getElementById('new-chat-btn');
@@ -167,91 +167,91 @@ Puedo ayudarte con:
                 document.getElementById('chatbot-container').classList.remove('history-open');
             });
         }
-    // ENVÍO DE MENSAJES
-    const sendBtn = document.getElementById('chatbot-send');
-    const input = document.getElementById('chatbot-input');
+        // ENVÍO DE MENSAJES
+        const sendBtn = document.getElementById('chatbot-send');
+        const input = document.getElementById('chatbot-input');
 
-    if (sendBtn && input) {
-        sendBtn.addEventListener('click', () => this.sendMessage());
-        
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
-    }
+        if (sendBtn && input) {
+            sendBtn.addEventListener('click', () => this.sendMessage());
 
-    // SUGERENCIAS RÁPIDAS - Usando delegación de eventos para mayor eficiencia
-    const suggestionsContainer = document.getElementById('chatbot-suggestions');
-    if (suggestionsContainer) {
-        suggestionsContainer.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Asegurarse de que el click fue en un botón de sugerencia
-            if (e.target && e.target.classList.contains('suggestion-btn')) {
-                const question = e.target.dataset.question || e.target.textContent;
-                console.log('🎯 Sugerencia seleccionada:', question);
-                if (input) {
-                    input.value = question;
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
                     this.sendMessage();
                 }
-            }
-        });
+            });
+        }
+
+        // SUGERENCIAS RÁPIDAS - Usando delegación de eventos para mayor eficiencia
+        const suggestionsContainer = document.getElementById('chatbot-suggestions');
+        if (suggestionsContainer) {
+            suggestionsContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Asegurarse de que el click fue en un botón de sugerencia
+                if (e.target && e.target.classList.contains('suggestion-btn')) {
+                    const question = e.target.dataset.question || e.target.textContent;
+                    console.log('🎯 Sugerencia seleccionada:', question);
+                    if (input) {
+                        input.value = question;
+                        this.sendMessage();
+                    }
+                }
+            });
+        }
+
+        // ✅ FASE III: Delegación de eventos para la lista de conversaciones
+        const conversationList = document.getElementById('conversation-list');
+        if (conversationList) {
+            conversationList.addEventListener('click', (e) => {
+                const conversationItem = e.target.closest('.conversation-item');
+                if (conversationItem) {
+                    // ✅ MEJORA: Manejar clic en el botón de editar.
+                    if (e.target.closest('.edit-conversation-btn')) {
+                        e.stopPropagation(); // Evitar que se cambie de conversación.
+                        this.enableTitleEditing(conversationItem);
+                        return;
+                    }
+
+                    // ✅ MEJORA: Manejar clic en el botón de eliminar.
+                    if (e.target.closest('.delete-conversation-btn')) {
+                        e.stopPropagation();
+                        this.handleDeleteConversation(conversationItem.dataset.id);
+                        return;
+                    }
+
+                    // En móvil, cerrar el panel de historial después de seleccionar un chat.
+                    if (window.innerWidth <= 750) {
+                        document.getElementById('chatbot-container').classList.remove('history-open');
+                    }
+                    this.switchConversation(conversationItem.dataset.id);
+                }
+            });
+
+            // ✅ NUEVO: Listener para los botones de feedback.
+            const messagesContainer = document.getElementById('chatbot-messages');
+            messagesContainer.addEventListener('click', (e) => {
+                const feedbackBtn = e.target.closest('.feedback-btn');
+                if (feedbackBtn && !feedbackBtn.disabled) {
+                    const isHelpful = feedbackBtn.dataset.helpful === 'true';
+                    const parentMessage = feedbackBtn.closest('.message');
+                    const query = parentMessage.dataset.query;
+                    const response = parentMessage.dataset.response;
+                    const messageId = parentMessage.dataset.messageId; // Get the messageId
+
+                    // 1. ✅ MEJORA: Enviar el messageId a la API.
+                    AnalyticsApiService.recordFeedback(query, response, isHelpful, messageId);
+
+                    // 2. ✅ SOLUCIÓN: Ya no guardamos en localStorage.
+                    // La persistencia real la manejará el backend. La UI se actualizará
+                    // al recibir la confirmación o al recargar la conversación.
+
+                    // Deshabilitar botones y mostrar agradecimiento
+                    const feedbackContainer = feedbackBtn.parentElement;
+                    feedbackContainer.innerHTML = '<span class="feedback-thanks">¡Gracias por tu feedback!</span>';
+                }
+            });
+        }
     }
-
-    // ✅ FASE III: Delegación de eventos para la lista de conversaciones
-    const conversationList = document.getElementById('conversation-list');
-    if (conversationList) {
-        conversationList.addEventListener('click', (e) => {
-            const conversationItem = e.target.closest('.conversation-item');
-            if (conversationItem) {
-                // ✅ MEJORA: Manejar clic en el botón de editar.
-                if (e.target.closest('.edit-conversation-btn')) {
-                    e.stopPropagation(); // Evitar que se cambie de conversación.
-                    this.enableTitleEditing(conversationItem);
-                    return;
-                }
-
-                // ✅ MEJORA: Manejar clic en el botón de eliminar.
-                if (e.target.closest('.delete-conversation-btn')) {
-                    e.stopPropagation();
-                    this.handleDeleteConversation(conversationItem.dataset.id);
-                    return;
-                }
-
-                // En móvil, cerrar el panel de historial después de seleccionar un chat.
-                if (window.innerWidth <= 750) {
-                    document.getElementById('chatbot-container').classList.remove('history-open');
-                }
-                this.switchConversation(conversationItem.dataset.id);
-            }
-        });
-
-        // ✅ NUEVO: Listener para los botones de feedback.
-        const messagesContainer = document.getElementById('chatbot-messages');
-        messagesContainer.addEventListener('click', (e) => {
-            const feedbackBtn = e.target.closest('.feedback-btn');
-            if (feedbackBtn && !feedbackBtn.disabled) {
-                const isHelpful = feedbackBtn.dataset.helpful === 'true';
-                const parentMessage = feedbackBtn.closest('.message');
-                const query = parentMessage.dataset.query;
-                const response = parentMessage.dataset.response;
-                const messageId = parentMessage.dataset.messageId; // Get the messageId
-
-                // 1. ✅ MEJORA: Enviar el messageId a la API.
-                AnalyticsApiService.recordFeedback(query, response, isHelpful, messageId);
-
-                // 2. ✅ SOLUCIÓN: Ya no guardamos en localStorage.
-                // La persistencia real la manejará el backend. La UI se actualizará
-                // al recibir la confirmación o al recargar la conversación.
-
-                // Deshabilitar botones y mostrar agradecimiento
-                const feedbackContainer = feedbackBtn.parentElement;
-                feedbackContainer.innerHTML = '<span class="feedback-thanks">¡Gracias por tu feedback!</span>';
-            }
-        });
-    }
-}
 
     toggleChat() {
         this.isOpen = !this.isOpen;
@@ -262,7 +262,7 @@ Puedo ayudarte con:
         // Actualizar atributos ARIA para accesibilidad
         container.setAttribute('aria-hidden', !this.isOpen);
         toggleBtn.setAttribute('aria-expanded', this.isOpen);
-        
+
         if (this.isOpen) {
             // ✅ CORRECCIÓN: Ocultar el botón flotante solo en vista móvil.
             if (window.innerWidth <= 750) {
@@ -282,150 +282,150 @@ Puedo ayudarte con:
 
     closeChat() {
         if (!this.isOpen) return;
-    
+
         // ✅ SOLUCIÓN DEFINITIVA DE ACCESIBILIDAD:
         // 1. Mover el foco explícitamente al botón de abrir. Esto es lo más importante.
         const toggleBtn = document.getElementById('chatbot-toggle');
         if (toggleBtn) toggleBtn.focus();
-    
+
         // 2. Ocultar el contenedor del chat.
         this.isOpen = false;
         const container = document.getElementById('chatbot-container');
         container.classList.remove('open');
         container.setAttribute('aria-hidden', 'true');
-    
+
         // 3. Asegurarse de que el botón de abrir esté visible y con el ARIA correcto.
         toggleBtn.setAttribute('aria-expanded', 'false');
         toggleBtn.setAttribute('aria-label', 'Abrir chat del Tutor IA');
         toggleBtn.style.display = 'block';
     }
 
-async sendMessage() {
-    const input = document.getElementById('chatbot-input');
-    const message = input.value.trim();
-    
-    if (!message) return;
+    async sendMessage() {
+        const input = document.getElementById('chatbot-input');
+        const message = input.value.trim();
 
-    console.log('💬 Enviando mensaje:', message);
+        if (!message) return;
 
-    if (this.isSending) {
-        console.log('⚠️ Mensaje ya en proceso, ignorando...');
-        return;
-    }
-    
-    this.isSending = true;
-    input.disabled = true;
-    document.getElementById('chatbot-send').disabled = true;
+        console.log('💬 Enviando mensaje:', message);
 
-    // ✅ TIMEOUT de seguridad (15 segundos). Más realista para peticiones a una IA que pueden tener "cold starts".
-    const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: El servidor tardó demasiado en responder')), 15000);
-    });
+        if (this.isSending) {
+            console.log('⚠️ Mensaje ya en proceso, ignorando...');
+            return;
+        }
 
-    try {
-        // Agregar mensaje del usuario
-        this.addMessage(message, 'user');
-        input.value = '';
+        this.isSending = true;
+        input.disabled = true;
+        document.getElementById('chatbot-send').disabled = true;
 
-        // Mostrar indicador de typing
-        this.showTypingIndicator();
-
-        console.log('📡 Enviando solicitud al servidor...');
-
-        // ✅ FASE III: El historial ya no se envía, solo el ID de la conversación activa.
-        const requestData = {
-            message: message,
-            conversationId: this.activeConversationId
-        };
-
-        console.log('📦 Datos enviados:', requestData);
-
-        const fetchPromise = fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify(requestData)
+        // ✅ TIMEOUT de seguridad (60 segundos). Aumentado para permitir operaciones complejas del LLM (múltiples tool calls).
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout: El servidor tardó demasiado en responder')), 60000);
         });
 
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        console.log('📡 Respuesta HTTP recibida:', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok
-        });
+        try {
+            // Agregar mensaje del usuario
+            this.addMessage(message, 'user');
+            input.value = '';
 
-        if (!response.ok) {
-            // Si el error es de autenticación, forzar logout
-            if (response.status === 401) {
-                this.addMessage('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.', 'bot');
-                window.sessionManager.logout();
-                return;
+            // Mostrar indicador de typing
+            this.showTypingIndicator();
+
+            console.log('📡 Enviando solicitud al servidor...');
+
+            // ✅ FASE III: El historial ya no se envía, solo el ID de la conversación activa.
+            const requestData = {
+                message: message,
+                conversationId: this.activeConversationId
+            };
+
+            console.log('📦 Datos enviados:', requestData);
+
+            const fetchPromise = fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+            console.log('📡 Respuesta HTTP recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                // Si el error es de autenticación, forzar logout
+                if (response.status === 401) {
+                    this.addMessage('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.', 'bot');
+                    window.sessionManager.logout();
+                    return;
+                }
+                let errorDetails = `Error HTTP: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorDetails += ` - ${JSON.stringify(errorData)}`;
+                } catch (e) {
+                    const textError = await response.text();
+                    errorDetails += ` - ${textError}`;
+                }
+                throw new Error(errorDetails);
             }
-            let errorDetails = `Error HTTP: ${response.status} ${response.statusText}`;
-            try {
-                const errorData = await response.json();
-                errorDetails += ` - ${JSON.stringify(errorData)}`;
-            } catch (e) {
-                const textError = await response.text();
-                errorDetails += ` - ${textError}`;
+
+            const data = await response.json();
+            this.hideTypingIndicator();
+
+            console.log('✅ Respuesta recibida del servidor:', data);
+
+            // ✅ FASE III: Actualizar el ID de la conversación si era una nueva.
+            const wasNewConversation = !this.activeConversationId;
+            this.activeConversationId = data.conversationId;
+
+            this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
+
+            if (data.sugerencias && data.sugerencias.length > 0) {
+                this.showFollowUpSuggestions(data.sugerencias);
             }
-            throw new Error(errorDetails);
+
+            // Si era una conversación nueva, recargar la lista para que aparezca.
+            if (wasNewConversation) {
+                await this.loadConversations();
+            }
+
+        } catch (error) {
+            console.error('❌ Error en sendMessage:', error);
+            this.hideTypingIndicator();
+
+            // ✅ MENSAJE DE ERROR ESPECÍFICO
+            let errorMessage = '❌ ';
+
+            if (error.message.includes('Timeout')) {
+                errorMessage += 'El servidor tardó demasiado en responder. ';
+            } else if (error.message.includes('400')) {
+                errorMessage += 'Error en la solicitud al servidor. ';
+            } else if (error.message.includes('HTTP')) {
+                errorMessage += `Error del servidor: ${error.message}. `;
+            } else {
+                errorMessage += 'Error de conexión. ';
+            }
+
+            errorMessage += 'Por favor, intenta nuevamente.';
+
+            this.addMessage(errorMessage, 'bot');
+        } finally {
+            // ✅ RESTABLECER ESTADO
+            this.isSending = false;
+            input.disabled = false;
+            document.getElementById('chatbot-send').disabled = false;
+            input.focus();
+
+            console.log('🔄 Estado restablecido, listo para nueva consulta');
         }
-
-        const data = await response.json();
-        this.hideTypingIndicator();
-
-        console.log('✅ Respuesta recibida del servidor:', data);
-
-        // ✅ FASE III: Actualizar el ID de la conversación si era una nueva.
-        const wasNewConversation = !this.activeConversationId;
-        this.activeConversationId = data.conversationId;
-
-        this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
-        
-        if (data.sugerencias && data.sugerencias.length > 0) {
-            this.showFollowUpSuggestions(data.sugerencias);
-        }
-
-        // Si era una conversación nueva, recargar la lista para que aparezca.
-        if (wasNewConversation) {
-            await this.loadConversations();
-        }
-
-    } catch (error) {
-        console.error('❌ Error en sendMessage:', error);
-        this.hideTypingIndicator();
-        
-        // ✅ MENSAJE DE ERROR ESPECÍFICO
-        let errorMessage = '❌ ';
-        
-        if (error.message.includes('Timeout')) {
-            errorMessage += 'El servidor tardó demasiado en responder. ';
-        } else if (error.message.includes('400')) {
-            errorMessage += 'Error en la solicitud al servidor. ';
-        } else if (error.message.includes('HTTP')) {
-            errorMessage += `Error del servidor: ${error.message}. `;
-        } else {
-            errorMessage += 'Error de conexión. ';
-        }
-        
-        errorMessage += 'Por favor, intenta nuevamente.';
-        
-        this.addMessage(errorMessage, 'bot');
-    } finally {
-        // ✅ RESTABLECER ESTADO
-        this.isSending = false;
-        input.disabled = false;
-        document.getElementById('chatbot-send').disabled = false;
-        input.focus();
-        
-        console.log('🔄 Estado restablecido, listo para nueva consulta');
     }
-}
 
     // MÉTODO AÑADIDO: Para abrir el chat y hacer una pregunta desde otros componentes
     openAndAsk(question) {
@@ -442,12 +442,12 @@ async sendMessage() {
 
     addMessage(text, sender, metadata = {}) {
         const messagesContainer = document.getElementById('chatbot-messages');
-        
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender} ${metadata.isWelcome ? 'welcome-message' : ''}`;
-        
+
         let currentMessageId = null;
-        
+
         // ✅ SOLUCIÓN: unificar la asignación del ID.
         // Los mensajes del historial vienen con `id`, los nuevos con `messageId`.
         if (sender === 'bot' && !metadata.isWelcome) {
@@ -504,7 +504,7 @@ async sendMessage() {
 
         messageDiv.innerHTML = messageHTML;
         messagesContainer.appendChild(messageDiv);
-        
+
         // Scroll to bottom
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
@@ -521,34 +521,30 @@ async sendMessage() {
     formatMessage(text) {
         // Expresión regular para detectar URLs (absolutas y relativas que empiezan con /)
         const urlRegex = /(https?:\/\/[^\s]+)|(\B\/[^\s]+)/g;
-        // ✅ SOLUCIÓN: La regex ahora captura el formato `* [ID] Texto` y `[ID] Texto`.
-        const navRegex = /\*?\s*\[(\d+)\]\s*([^\n<]+)/g;
+        // ✅ SOLUCIÓN: La regex ahora captura el formato `* [type:ID] Texto` y `[type:ID] Texto`.
+        // Soporta: [career:1], [course:2], [topic:3]
+        const navRegex = /\*?\s*\[(career|course|topic):(\d+)\]\s*([^\n<]+)/g;
 
         return text
             // ✅ MEJORA: Convertir URLs en enlaces clickeables.
-            // ✅ SOLUCIÓN: La regex de Markdown para enlaces es Texto.
             .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (match, linkText, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
             // ✅ NUEVO: Convertir enlaces de navegación internos en botones.
-            .replace(navRegex, (match, id, text) => {
+            .replace(navRegex, (match, type, id, text) => {
                 const numericId = parseInt(id, 10);
                 const trimmedText = text.trim();
+
+                // ✅ SOLUCIÓN: Minificar el string del onclick y añadir logs para depuración.
+                // Se usa 'window.searchComponent' directamente.
                 let functionCall = '';
 
-                // Heurística simple: si el texto contiene palabras clave de carrera, es una carrera.
-                const isCareer = /ingeniería|derecho|medicina|arquitectura|diseño|comunicac|contabilidad|economía|psicología|educación|marketing|administración|turismo|enfermería|nutrición/i.test(trimmedText);
-
-                if (isCareer) {
-                    functionCall = `
-                        window.chatComponent.closeChat();
-                        window.searchComponent.navigateTo(window.searchComponent.renderCoursesForCareer.bind(window.searchComponent), ${numericId});
-                    `;
-                } else {
-                    // Por defecto, asumimos que es un curso.
-                    functionCall = `
-                        window.chatComponent.closeChat();
-                        window.searchComponent.navigateTo(window.searchComponent.renderUnifiedCourseView.bind(window.searchComponent), ${numericId});
-                    `;
+                if (type === 'career') {
+                    functionCall = `console.log('Navegando a carrera ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderCoursesForCareer.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
+                } else if (type === 'course') {
+                    functionCall = `console.log('Navegando a curso ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderUnifiedCourseView.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
+                } else if (type === 'topic') {
+                    functionCall = `console.log('Navegando a tema ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderTopicView.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
                 }
+
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;
             })
             .replace(/^- (.*)$/gm, '<li>$1</li>') // Listas
@@ -559,7 +555,7 @@ async sendMessage() {
     showTypingIndicator() {
         const typingIndicator = document.getElementById('chatbot-typing');
         typingIndicator.style.display = 'flex';
-        
+
         const messagesContainer = document.getElementById('chatbot-messages');
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -652,7 +648,7 @@ async sendMessage() {
         input.type = 'text';
         input.value = currentTitle;
         input.className = 'conversation-title-input';
-        
+
         titleSpan.replaceWith(input);
         input.focus();
         input.select();
@@ -662,7 +658,7 @@ async sendMessage() {
             // Revertir a un span, incluso si no hay cambios.
             const newTitleSpan = document.createElement('span');
             newTitleSpan.className = 'conversation-title';
-            
+
             if (newTitle && newTitle !== currentTitle) {
                 newTitleSpan.textContent = newTitle; // Vista optimista
                 input.replaceWith(newTitleSpan);
