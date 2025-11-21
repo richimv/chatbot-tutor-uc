@@ -103,7 +103,7 @@ class AnalyticsController {
             res.status(500).json({ error: 'Error al obtener datos de analítica.' });
         }
     }
-    
+
 }
 
 module.exports = AnalyticsController; // ✅ CORRECCIÓN: Exportar la clase, no la instancia.

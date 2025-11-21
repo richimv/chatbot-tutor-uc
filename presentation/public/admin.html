@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,8 +16,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
     <link rel="icon" href="assets/logo.png" type="image/png">
-    
+
 </head>
+
 <body>
     <header class="admin-header">
         <!-- ✅ ESTRUCTURA UNIFICADA -->
@@ -27,6 +29,7 @@
             <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
                 <i class="fas fa-home"></i>
             </a>
+            <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <a href="/dashboard.html" class="nav-link">📊 Estadísticas</a>
         </div>
@@ -72,7 +75,8 @@
                     <!-- Los campos se inyectarán dinámicamente con JavaScript -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="generic-cancel-btn" class="btn-secondary" onclick="window.adminManager.closeGenericModal()">Cancelar</button>
+                    <button type="button" id="generic-cancel-btn" class="btn-secondary"
+                        onclick="window.adminManager.closeGenericModal()">Cancelar</button>
                     <button type="submit" id="generic-save-btn" class="btn-primary">Guardar</button>
                 </div>
             </form>
@@ -82,4 +86,5 @@
     <script src="js/ui/components.js"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
     <script src="js/admin.js"></script> <!-- Cargar después de sus dependencias -->
 </body>
+
 </html>

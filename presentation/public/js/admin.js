@@ -9,11 +9,23 @@ class AdminManager {
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
 
+        // Estado de ordenamiento
+        // ✅ NUEVO: Estado de ordenamiento por pestaña
+        this.tabSortState = {
+            'tab-sections': 'date-desc',
+            'tab-careers': 'date-desc',
+            'tab-courses': 'date-desc',
+            'tab-instructors': 'date-desc',
+            'tab-students': 'date-desc',
+            'tab-topics': 'date-desc',
+            'tab-books': 'date-desc'
+        };
+
         // Elementos del DOM
         this.sectionsContainer = document.getElementById('tab-sections');
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
-        
+
         // ✅ SOLUCIÓN: Bindeo explícito para el nuevo manejador de eventos.
         this.handleResetPassword = this.handleResetPassword.bind(this);
 
@@ -74,7 +86,7 @@ class AdminManager {
             if (e.target === this.genericModal || e.target.closest('.modal-close')) {
                 // Detenemos la propagación para que el listener global de app.js no interfiera.
                 // Esto asegura que solo admin.js controle el cierre de este modal específico.
-                e.stopPropagation(); 
+                e.stopPropagation();
                 this.closeGenericModal();
             }
         });
@@ -87,7 +99,7 @@ class AdminManager {
             if (dropdownToggle) {
                 e.stopPropagation(); // Evitar que el listener de cierre del modal interfiera.
                 const currentContainer = dropdownToggle.closest('.searchable-dropdown-container');
-                
+
                 // Cerrar todos los demás dropdowns abiertos en el modal.
                 this.genericModal.querySelectorAll('.searchable-dropdown-container.open').forEach(openContainer => {
                     if (openContainer !== currentContainer) {
@@ -99,7 +111,7 @@ class AdminManager {
 
                 // Abrir o cerrar el dropdown actual.
                 currentContainer.classList.toggle('open');
-                
+
                 if (!currentContainer.classList.contains('open')) {
                     // Si se acaba de cerrar, limpiar y desenfocar el input de búsqueda.
                     this._updateDropdownState(currentContainer); // ✅ SOLUCIÓN: Actualizar estado en lugar de limpiar.
@@ -119,19 +131,64 @@ class AdminManager {
         });
 
         // ✅ NUEVO: Listener centralizado para las barras de búsqueda de las pestañas.
-        // ✅ CORRECCIÓN: Usar 'input' en lugar de 'keyup' para una detección más fiable (incluye pegar texto).
+        // ✅ MEJORA UX: Debounce para evitar lag al escribir.
+        let searchTimeout;
         document.getElementById('admin-main-container').addEventListener('input', (e) => {
             if (e.target.classList.contains('admin-search-input')) {
-                const filter = e.target.value.toLowerCase();
-                const tabId = e.target.dataset.targetTab;
-                const tabContent = document.getElementById(tabId);
-                
-                // Seleccionar todas las tarjetas de item dentro de la pestaña activa.
-                const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
-                items.forEach(item => {
-                    const textContent = item.textContent.toLowerCase();
-                    item.style.display = textContent.includes(filter) ? '' : 'none';
-                });
+                clearTimeout(searchTimeout);
+                const input = e.target;
+
+                searchTimeout = setTimeout(() => {
+                    const filter = input.value.toLowerCase().trim(); // Trim para limpiar espacios
+                    const tabId = input.dataset.targetTab;
+                    const tabContent = document.getElementById(tabId);
+
+                    // Seleccionar todas las tarjetas de item dentro de la pestaña activa.
+                    const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
+
+                    items.forEach(item => {
+                        // ✅ MEJORA: Búsqueda más profunda (buscar en atributos data si existen, o solo texto visible)
+                        const textContent = item.textContent.toLowerCase();
+                        // Podríamos añadir búsqueda por ID o atributos específicos si fuera necesario
+                        const matches = textContent.includes(filter);
+
+                        item.style.display = matches ? '' : 'none';
+
+                        // Animación sutil de entrada (opcional)
+                        if (matches) {
+                            item.style.animation = 'fadeIn 0.2s ease-in-out';
+                        }
+                    });
+
+                    // Mostrar estado vacío si no hay resultados
+                    const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+                    let emptyState = tabContent.querySelector('.search-empty-state');
+
+                    if (visibleItems.length === 0 && filter !== '') {
+                        if (!emptyState) {
+                            emptyState = document.createElement('p');
+                            emptyState.className = 'search-empty-state empty-state';
+                            emptyState.textContent = `🔍 No se encontraron resultados para "${filter}"`;
+                            tabContent.appendChild(emptyState);
+                        } else {
+                            emptyState.textContent = `🔍 No se encontraron resultados para "${filter}"`;
+                            emptyState.style.display = 'block';
+                        }
+                    } else if (emptyState) {
+                        emptyState.style.display = 'none';
+                    }
+
+                }, 300); // 300ms de retraso (debounce)
+            }
+        });
+
+        // ✅ NUEVO: Listener delegado para los controles de ordenamiento en cada pestaña
+        document.getElementById('admin-main-container').addEventListener('change', (e) => {
+            if (e.target.classList.contains('tab-sort-select')) {
+                const tabId = e.target.dataset.tab;
+                this.tabSortState[tabId] = e.target.value;
+                // Re-renderizar la pestaña actual
+                this.switchTab(tabId);
             }
         });
 
@@ -160,6 +217,37 @@ class AdminManager {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         };
+    }
+
+    // ✅ NUEVO: Método de ordenamiento genérico
+    sortData(data, type = 'default', tabId) {
+        if (!data || !Array.isArray(data)) return [];
+
+        const sortOrder = this.tabSortState[tabId] || 'date-desc';
+
+        return [...data].sort((a, b) => {
+            switch (sortOrder) {
+                case 'alpha-asc':
+                    const nameA = (type === 'book' ? a.title : a.name) || '';
+                    const nameB = (type === 'book' ? b.title : b.name) || '';
+                    return nameA.localeCompare(nameB);
+                case 'alpha-desc':
+                    const nameADesc = (type === 'book' ? a.title : a.name) || '';
+                    const nameBDesc = (type === 'book' ? b.title : b.name) || '';
+                    return nameBDesc.localeCompare(nameADesc);
+                case 'date-asc':
+                    // ✅ SOLUCIÓN: Usar created_at si existe, sino usar ID como proxy (asumiendo serial/autoincrement)
+                    // Para usuarios (instructors/students) siempre hay created_at. Para otros, usamos ID.
+                    const dateA = a.created_at ? new Date(a.created_at).getTime() : (parseInt(a.id, 10) || 0);
+                    const dateB = b.created_at ? new Date(b.created_at).getTime() : (parseInt(b.id, 10) || 0);
+                    return dateA - dateB;
+                case 'date-desc':
+                default:
+                    const dateADesc = a.created_at ? new Date(a.created_at).getTime() : (parseInt(a.id, 10) || 0);
+                    const dateBDesc = b.created_at ? new Date(b.created_at).getTime() : (parseInt(b.id, 10) || 0);
+                    return dateBDesc - dateADesc;
+            }
+        });
     }
 
     async loadAllData() {
@@ -209,7 +297,10 @@ class AdminManager {
 
         // 1. Agrupar secciones por carrera
         const sectionsByCareer = new Map();
-        this.allSections.forEach(section => {
+        // ✅ APLICAR ORDENAMIENTO A LAS SECCIONES
+        const sortedSections = this.sortData(this.allSections, 'section', 'tab-sections');
+
+        sortedSections.forEach(section => {
             section.careerIds.forEach(careerId => {
                 if (!sectionsByCareer.has(careerId)) {
                     sectionsByCareer.set(careerId, []);
@@ -218,7 +309,7 @@ class AdminManager {
             });
         });
 
-        // 2. Ordenar carreras alfabéticamente por nombre
+        // 2. Ordenar carreras alfabéticamente por nombre (esto se mantiene igual para la agrupación)
         const sortedCareerIds = [...sectionsByCareer.keys()].sort((idA, idB) => {
             const careerA = this.allCareers.find(c => c.id === idA)?.name || '';
             const careerB = this.allCareers.find(c => c.id === idB)?.name || '';
@@ -281,50 +372,62 @@ class AdminManager {
 
     displayCareers() {
         const container = document.getElementById('tab-careers');
-        const itemsHTML = this.allCareers.map(career => createAdminItemCardHTML(career, 'career')).join('');
-        const content = this._createTabHeaderHTML('career', 'Añadir Carrera', 'tab-careers') + 
-                        (itemsHTML || '<p class="empty-state">No hay carreras.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedCareers = this.sortData(this.allCareers, 'career', 'tab-careers');
+        const itemsHTML = sortedCareers.map(career => createAdminItemCardHTML(career, 'career')).join('');
+        const content = this._createTabHeaderHTML('career', 'Añadir Carrera', 'tab-careers') +
+            (itemsHTML || '<p class="empty-state">No hay carreras.</p>');
         container.innerHTML = content;
     }
 
     displayBaseCourses() {
         const container = document.getElementById('tab-courses');
-        const itemsHTML = this.allCourses.map(course => createAdminItemCardHTML(course, 'course', `(${course.code})`)).join('');
-        const content = this._createTabHeaderHTML('course', 'Añadir Curso Base', 'tab-courses') + 
-                        (itemsHTML || '<p class="empty-state">No hay cursos base.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedCourses = this.sortData(this.allCourses, 'course', 'tab-courses');
+        const itemsHTML = sortedCourses.map(course => createAdminItemCardHTML(course, 'course', course.code ? `(${course.code})` : '')).join('');
+        const content = this._createTabHeaderHTML('course', 'Añadir Curso Base', 'tab-courses') +
+            (itemsHTML || '<p class="empty-state">No hay cursos base.</p>');
         container.innerHTML = content;
     }
 
     displayInstructors() {
         const container = document.getElementById('tab-instructors');
-        const itemsHTML = this.allInstructors.map(instructor => createAdminItemCardHTML(instructor, 'instructor', `(${instructor.email})`, true)).join('');
-        const content = this._createTabHeaderHTML('instructor', 'Añadir Docente', 'tab-instructors') + 
-                        (itemsHTML || '<p class="empty-state">No hay docentes.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedInstructors = this.sortData(this.allInstructors, 'instructor', 'tab-instructors');
+        const itemsHTML = sortedInstructors.map(instructor => createAdminItemCardHTML(instructor, 'instructor', `(${instructor.email})`, true)).join('');
+        const content = this._createTabHeaderHTML('instructor', 'Añadir Docente', 'tab-instructors') +
+            (itemsHTML || '<p class="empty-state">No hay docentes.</p>');
         container.innerHTML = content;
     }
 
     // ✅ NUEVO: Método para mostrar alumnos
     displayStudents() {
         const container = document.getElementById('tab-students');
-        const itemsHTML = this.allStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`, true)).join('');
-        const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') + 
-                        (itemsHTML || '<p class="empty-state">No hay alumnos.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedStudents = this.sortData(this.allStudents, 'student', 'tab-students');
+        const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`, true)).join('');
+        const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') +
+            (itemsHTML || '<p class="empty-state">No hay alumnos.</p>');
         container.innerHTML = content;
     }
 
     displayTopics() {
         const container = document.getElementById('tab-topics');
-        const itemsHTML = this.allTopics.map(topic => createAdminItemCardHTML(topic, 'topic')).join('');
-        const content = this._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics') + 
-                        (itemsHTML || '<p class="empty-state">No hay temas.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedTopics = this.sortData(this.allTopics, 'topic', 'tab-topics');
+        const itemsHTML = sortedTopics.map(topic => createAdminItemCardHTML(topic, 'topic')).join('');
+        const content = this._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics') +
+            (itemsHTML || '<p class="empty-state">No hay temas.</p>');
         container.innerHTML = content;
     }
 
     displayBooks() {
         const container = document.getElementById('tab-books');
-        const itemsHTML = this.allBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
-        const content = this._createTabHeaderHTML('book', 'Añadir Libro', 'tab-books') + 
-                        (itemsHTML || '<p class="empty-state">No hay libros.</p>');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedBooks = this.sortData(this.allBooks, 'book', 'tab-books');
+        const itemsHTML = sortedBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
+        const content = this._createTabHeaderHTML('book', 'Añadir Libro', 'tab-books') +
+            (itemsHTML || '<p class="empty-state">No hay libros.</p>');
         container.innerHTML = content;
     }
 
@@ -346,25 +449,25 @@ class AdminManager {
                 title.textContent = id ? 'Editar Carrera' : 'Añadir Carrera';
                 if (id) currentItem = this.allCareers.find(c => c.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', currentItem?.name || '', true) +
-                             this.createFormGroup('textarea', 'description', 'Descripción de la Carrera', currentItem?.description || '') +
-                             this.createFormGroup('text', 'generic-url', 'URL de la Malla Curricular', currentItem?.curriculum_url || '');
+                    this.createFormGroup('textarea', 'description', 'Descripción de la Carrera', currentItem?.description || '') +
+                    this.createFormGroup('text', 'generic-url', 'URL de la Malla Curricular', currentItem?.curriculum_url || '');
                 break;
             // ...
             case 'course':
                 title.textContent = id ? 'Editar Curso Base' : 'Añadir Curso Base';
                 if (id) currentItem = this.allCourses.find(c => c.id === parseInt(id, 10));
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) + 
-                             this.createFormGroup('textarea', 'description', 'Descripción del Curso', currentItem?.description || '') +
-                             this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) + 
-                             this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') + 
-                             this.createCheckboxList('Cursos Relacionados (Recomendaciones)', 'generic-related-courses', this.allCourses, currentItem?.relatedCourseIds || []);
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
+                    this.createFormGroup('textarea', 'description', 'Descripción del Curso', currentItem?.description || '') +
+                    this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
+                    this.createCheckboxList('Cursos Relacionados (Recomendaciones)', 'generic-related-courses', this.allCourses, currentItem?.relatedCourseIds || []);
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
                 if (id) currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', currentItem?.name || '', true) +
-                             // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
-                             this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
+                    // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
                 break;
             case 'section':
                 title.textContent = id ? 'Editar Sección' : 'Añadir Sección';
@@ -388,21 +491,21 @@ class AdminManager {
                 title.textContent = id ? 'Editar Docente' : 'Añadir Docente';
                 if (id) currentItem = this.allInstructors.find(i => i.id === id);
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Docente (*)', currentItem?.name || '', true) +
-                             this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
+                    this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
                 break;
             case 'student': // ✅ NUEVO
                 title.textContent = id ? 'Editar Alumno' : 'Añadir Alumno';
                 if (id) currentItem = this.allStudents.find(i => i.id === id);
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', currentItem?.name || '', true) +
-                             this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
+                    this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
                 break;
             case 'book':
                 title.textContent = id ? 'Editar Libro' : 'Añadir Libro';
                 if (id) currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-title', 'Título del Libro (*)', currentItem?.title || '', true) +
-                             this.createFormGroup('text', 'generic-author', 'Autor (*)', currentItem?.author || '', true) +
-                             this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true) +
-                             this.createFormGroup('text', 'generic-size', 'Tamaño (ej: 15 MB)', currentItem?.size || '');
+                    this.createFormGroup('text', 'generic-author', 'Autor (*)', currentItem?.author || '', true) +
+                    this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true) +
+                    this.createFormGroup('text', 'generic-size', 'Tamaño (ej: 15 MB)', currentItem?.size || '');
                 break;
         }
 
@@ -507,14 +610,14 @@ class AdminManager {
 
         const chipsContainer = container.querySelector('.selected-chips-container');
         const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
-        
+
         chipsContainer.innerHTML = ''; // Limpiar chips existentes
 
         checkboxes.forEach(checkbox => {
             const chip = document.createElement('div');
             chip.className = 'selected-chip';
             chip.textContent = checkbox.nextElementSibling.textContent; // El texto de la etiqueta
-            
+
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-chip-btn';
             removeBtn.innerHTML = '&times;';
@@ -618,7 +721,7 @@ class AdminManager {
         if (!previewContainer || !topicsCheckboxes) return;
 
         const selectedTopicIds = Array.from(topicsCheckboxes).map(cb => cb.value);
-        
+
         let materialsHTML = '<h4>Materiales Incluidos:</h4>';
         let hasMaterials = false;
 
@@ -701,7 +804,7 @@ class AdminManager {
                     body = {
                         courseId: document.getElementById('section-course-select').value,
                         careerIds: selectedCareers,
-                        instructorId: document.getElementById('section-instructor-select').value,
+                        instructorId: document.getElementById('section-instructor-select').value || null,
                         schedule: Array.from(scheduleRows).map(row => ({
                             day: row.querySelector('.schedule-day').value, startTime: row.querySelector('.schedule-start').value, endTime: row.querySelector('.schedule-end').value, room: row.querySelector('.schedule-room').value, notes: row.querySelector('.schedule-notes')?.value || ''
                         }))
@@ -777,7 +880,7 @@ class AdminManager {
 
     async handleDelete(type, id) {
         if (!confirm(`¿Estás seguro de que quieres eliminar este elemento (${type})? Esta acción no se puede deshacer.`)) return;
-        
+
         try {
             const url = `/api/${type}s/${id}`;
             const response = await fetch(url, {
@@ -818,7 +921,7 @@ class AdminManager {
             const response = await fetch(`/api/users/${userId}/reset-password`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',                    
+                    'Content-Type': 'application/json',
                     // ✅ SOLUCIÓN: Añadir el token de autorización a la cabecera.
                     // El token se guarda en localStorage al iniciar sesión.
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -841,7 +944,7 @@ class AdminManager {
     renderTopicResources(resources) {
         const container = document.getElementById('resources-container');
         container.innerHTML = '';
-        
+
         // Renderizar PDFs existentes
         if (resources && resources.pdfs) {
             resources.pdfs.forEach(pdf => { if (pdf.name || pdf.url) this.addResourceField('pdf', pdf.name, pdf.url); });
@@ -851,7 +954,7 @@ class AdminManager {
             resources.links.forEach(link => { if (link.name || link.url) this.addResourceField('link', link.name, link.url); });
         }
     }
-    
+
     addResourceField(type, name = '', url = '') {
         const container = document.getElementById('resources-container');
         const div = document.createElement('div');
@@ -866,15 +969,39 @@ class AdminManager {
         // El botón de eliminar se maneja por delegación de eventos
     }
 
-    // ✅ NUEVO: Función auxiliar para crear el encabezado de las pestañas con la barra de búsqueda.
+    // ✅ NUEVO: Función auxiliar para crear el encabezado de las pestañas con la barra de búsqueda y ordenamiento.
     _createTabHeaderHTML(type, buttonLabel, tabId) {
+        const currentSort = this.tabSortState[tabId] || 'date-desc';
+        // ✅ UX MEJORA: Ocultar el filtro de ordenamiento en la pestaña "Secciones" ya que tiene su propio agrupamiento.
+        const showSort = tabId !== 'tab-sections';
+
+        const sortSelectHTML = showSort ? `
+            <select class="tab-sort-select" data-tab="${tabId}" style="padding: 0 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; height: 40px; font-size: 0.9rem;">
+                <option value="date-desc" ${currentSort === 'date-desc' ? 'selected' : ''}>📅 Más Recientes</option>
+                <option value="date-asc" ${currentSort === 'date-asc' ? 'selected' : ''}>📅 Más Antiguos</option>
+                <option value="alpha-asc" ${currentSort === 'alpha-asc' ? 'selected' : ''}>🔤 A-Z</option>
+                <option value="alpha-desc" ${currentSort === 'alpha-desc' ? 'selected' : ''}>🔤 Z-A</option>
+            </select>
+        ` : '';
+
         return `
-            <div class="tab-header">
-                <div class="search-bar-container">
-                    <i class="fas fa-search"></i>
-                    <input type="text" class="admin-search-input" placeholder="Buscar en esta pestaña..." data-target-tab="${tabId}">
+            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                    <!-- ✅ UX MEJORA: Barra de búsqueda con ancho fijo y mejor padding para evitar solapamiento del icono -->
+                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                        <input type="text" 
+                               class="admin-search-input" 
+                               placeholder="Buscar..." 
+                               data-target-tab="${tabId}"
+                               style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                    </div>
+                    
+                    ${sortSelectHTML}
                 </div>
-                <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')">${buttonLabel}</button>
+                <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
+                </button>
             </div>
         `;
     }
