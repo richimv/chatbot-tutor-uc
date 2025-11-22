@@ -47,12 +47,6 @@ def predict(courses_df, trends_df, topics_df):
     top_score = topic_scores[top_topic_name]
     total_score_sum = sum(topic_scores.values())
 
-    # Calcular confianza (Softmax simplificado)
-    if total_score_sum > 0:
-        confidence = top_score / total_score_sum
-    else:
-        confidence = 0
-
     # Contar búsquedas reales para mostrar al usuario
     normalized_top_topic = normalize_text(top_topic_name)
     # Usar la misma lógica de conteo estricto para el reporte
@@ -62,6 +56,24 @@ def predict(courses_df, trends_df, topics_df):
         search_count = trends_copy[trends_copy['normalized_query'].str.contains(pattern, regex=True, na=False)]['count'].sum()
     except:
         search_count = trends_copy[trends_copy['normalized_query'].str.contains(normalized_top_topic, na=False)]['count'].sum()
+
+    # Calcular confianza (Top-K Normalization)
+    top_5_scores = sorted(topic_scores.values(), reverse=True)[:5]
+    top_k_sum = sum(top_5_scores)
+
+    if top_k_sum > 0:
+        # Confianza base relativa a los competidores cercanos
+        confidence = top_score / top_k_sum
+        
+        # Boost por volumen
+        volume_boost = min(1.2, 1.0 + (search_count / 50.0))
+        confidence *= volume_boost
+        
+        # Boost adicional si el ganador tiene mucha ventaja
+        if len(top_5_scores) > 1 and top_score > (top_5_scores[1] * 2):
+             confidence += 0.15
+    else:
+        confidence = 0
 
     result = {
         "predictedTopic": top_topic_name,

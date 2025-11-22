@@ -199,6 +199,8 @@
     gap: 1.5rem;
     /* ✅ FIX: Añadido espacio entre tarjetas */
     margin-bottom: 2rem;
+    padding: 0 0.5rem;
+    /* ✅ FIX: Espaciado lateral para evitar que toque los bordes */
 }
 
 .prediction-card {
