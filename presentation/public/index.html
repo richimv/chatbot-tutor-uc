@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,22 +16,34 @@
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/dark-theme-enhancements.css"> <!-- ✅ NUEVO: Mejoras tema oscuro -->
+    <link rel="stylesheet" href="css/3d-effects.css"> <!-- ✅ NUEVO: Efectos 3D universales -->
+    <link rel="stylesheet" href="css/header-sticky-dark.css"> <!-- ✅ Header sticky tema oscuro -->
+    <link rel="stylesheet" href="css/logo-theme.css"> <!-- ✅ Sistema de logo dual -->
     <!-- ✅ CORRECCIÓN: Añadir Font Awesome para que se vean los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
     <link rel="icon" href="../assets/logo.png" type="image/png">
     <!-- Los estilos del chat se cargan dinámicamente -->
 </head>
+
 <body>
     <header class="main-header">
         <div class="logo">
-            <img src="../assets/logo.png" alt="Logo UC" class="logo-img">
+            <!-- Logo oscuro para tema claro -->
+            <img src="../assets/logo-dark.png" alt="Logo UC" class="logo-img logo-dark">
+            <!-- Logo claro para tema oscuro -->
+            <img src="../assets/logo-light.png" alt="Logo UC" class="logo-img logo-light">
             <span class="logo-text">Tutor Académico</span> <!-- ✅ MEJORA: Texto envuelto para control responsive -->
         </div>
         <div class="header-nav">
             <a href="#" class="nav-link nav-home-button" title="Ir al inicio">
                 <i class="fas fa-home"></i>
             </a>
+            <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema"
+                aria-label="Cambiar entre tema claro y oscuro">
+                <i class="fas fa-sun" id="theme-icon"></i>
+            </button>
             <div id="user-session-controls">
                 <!-- Estado de carga inicial -->
                 <span class="loading-user">Cargando...</span>
@@ -48,8 +61,10 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Buscar por curso, tema o docente...">
                 <button id="searchButton" class="btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                     </svg>
                     Buscar
                 </button>
@@ -77,8 +92,10 @@
                 <div class="auth-prompt-benefits">
                     <p>Al registrarte, desbloquearás:</p>
                     <ul>
-                        <li><i class="fas fa-book-open"></i> Acceso a toda la <strong>biblioteca de materiales</strong> y PDFs.</li>
-                        <li><i class="fas fa-robot"></i> Uso del <strong>Tutor IA</strong> como guía para tus consultas académicas.</li>
+                        <li><i class="fas fa-book-open"></i> Acceso a toda la <strong>biblioteca de materiales</strong>
+                            y PDFs.</li>
+                        <li><i class="fas fa-robot"></i> Uso del <strong>Tutor IA</strong> como guía para tus consultas
+                            académicas.</li>
                     </ul>
                 </div>
             </div>
@@ -105,7 +122,8 @@
         <div class="pdf-modal-content">
             <div class="pdf-modal-header">
                 <h3 id="pdf-modal-title">Visor de Documentos</h3>
-                <button id="pdf-modal-close-btn" class="pdf-modal-close-btn modal-close" aria-label="Cerrar visor">&times;</button>
+                <button id="pdf-modal-close-btn" class="pdf-modal-close-btn modal-close"
+                    aria-label="Cerrar visor">&times;</button>
             </div>
             <div class="pdf-modal-body">
                 <div class="pdf-loading-spinner"></div>
@@ -115,6 +133,7 @@
     </div>
 
     <!-- ✅ CORRECCIÓN CRÍTICA: Cargar scripts en el orden correcto y app.js al final -->
+    <script src="js/theme-toggle.js"></script> <!-- ✅ NUEVO: Theme toggle -->
     <script src="js/ui/components.js"></script> <!-- Componentes de UI primero -->
     <script src="js/services/authApiService.js"></script> <!-- Servicio de API de Auth -->
     <script src="js/services/analyticsApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Analytics -->
@@ -122,6 +141,7 @@
     <script src="js/search.js"></script> <!-- Lógica de búsqueda -->
     <script src="js/chat.js"></script> <!-- Lógica del chat -->
     <script src="js/app.js"></script> <!-- Archivo principal de inicialización, al final -->
-    
+
 </body>
+
 </html>

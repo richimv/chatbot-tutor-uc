@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Cursos - Chatbot Tutor UC</title>
+    <title>Administración - Tutor IA</title>
+    <link rel="icon" type="image/png" href="/assets/logo-dark.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- ✅ NUEVA ESTRUCTURA CSS -->
     <link rel="stylesheet" href="css/components.css"> <!-- ✅ SOLUCIÓN: Cargar los estilos de los componentes -->
@@ -12,6 +13,9 @@
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/dark-theme-enhancements.css"> <!-- Mejoras tema oscuro -->
+    <link rel="stylesheet" href="css/3d-effects.css"> <!-- Efectos 3D -->
+    <link rel="stylesheet" href="css/logo-theme.css"> <!-- Sistema de logo dual -->
     <!-- ✅ CORRECCIÓN: Añadir Font Awesome para que se vean los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
@@ -29,6 +33,10 @@
             <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
                 <i class="fas fa-home"></i>
             </a>
+            <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema"
+                aria-label="Cambiar entre tema claro y oscuro">
+                <i class="fas fa-sun" id="theme-icon"></i>
+            </button>
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <a href="/dashboard.html" class="nav-link">📊 Estadísticas</a>
@@ -83,6 +91,7 @@
         </div>
     </div>
 
+    <script src="js/theme-toggle.js"></script> <!-- ✅ NUEVO: Theme toggle -->
     <script src="js/ui/components.js"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
     <script src="js/admin.js"></script> <!-- Cargar después de sus dependencias -->
 </body>

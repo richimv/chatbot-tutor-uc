@@ -197,19 +197,18 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
-    /* ✅ FIX: Añadido espacio entre tarjetas */
     margin-bottom: 2rem;
-    padding: 0 0.5rem;
-    /* ✅ FIX: Espaciado lateral para evitar que toque los bordes */
+    padding: 0 1.5rem;
+    /* ✅ MEJORADO: Más espaciado lateral */
 }
 
 .prediction-card {
-    background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
-    /* Azul celeste solicitado */
+    /* ✅ MEJORADO: Color distintivo para ML - Gradiente azul/morado */
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     border-radius: 16px;
     padding: 1.5rem;
     color: white;
-    box-shadow: 0 10px 20px rgba(0, 180, 219, 0.2);
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -218,9 +217,7 @@
     flex-direction: column;
     justify-content: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    /* Altura mínima consistente */
     animation: fadeInUp 0.5s ease-out 0.4s forwards;
-    /* Delay para que aparezca al final */
     opacity: 0;
 }
 
@@ -250,6 +247,8 @@
 .feedback-table-card {
     background: var(--surface-alt);
     padding: 1.5rem;
+    margin: 0 1.5rem;
+    /* ✅ MEJORADO: Espaciado lateral */
     border-radius: 12px;
     border: 1px solid var(--border);
 }
@@ -257,6 +256,12 @@
 .feedback-table-card h3 {
     margin-top: 0;
     margin-bottom: 1rem;
+}
+
+/* ✅ NUEVO: Estilos para "Oportunidades de Contenido" */
+.chart-card.opportunities-card {
+    margin: 0 1.5rem;
+    /* Espaciado lateral consistente */
 }
 
 /* --- ✅ NUEVO: Estilos para la sección de Inteligencia de Contenido --- */
@@ -365,7 +370,7 @@
 .top-list-card .card-header i {
     font-size: 1.2rem;
     color: var(--accent);
-    background: rgba(88, 101, 242, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     padding: 0.5rem;
     border-radius: 8px;
 }

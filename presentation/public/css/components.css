@@ -12,8 +12,10 @@
     transition: background 0.3s ease;
     display: flex;
     align-items: center;
-    justify-content: center; /* ✅ CORRECCIÓN: Centra el contenido horizontalmente. */
-    text-decoration: none; /* ✅ CORRECCIÓN: Elimina el subrayado. */
+    justify-content: center;
+    /* ✅ CORRECCIÓN: Centra el contenido horizontalmente. */
+    text-decoration: none;
+    /* ✅ CORRECCIÓN: Elimina el subrayado. */
     gap: 0.5rem;
 }
 
@@ -35,6 +37,7 @@
     text-decoration: none;
     transition: background 0.2s ease;
 }
+
 .btn-secondary:hover {
     background: #4b5563;
 }
@@ -53,6 +56,7 @@
     align-items: center;
     gap: 0.5rem;
 }
+
 .back-button:hover {
     background: var(--surface);
     color: var(--text-main);
@@ -70,21 +74,22 @@
     cursor: pointer;
 }
 
-.course-badge { 
-    background: var(--surface-alt); 
-    color: var(--text-muted); 
-    padding: 0.2rem 0.6rem; 
-    border-radius: 6px; 
-    font-size: 0.75rem; 
-    font-weight: 600; 
-    border: 1px solid var(--border); 
-    cursor: pointer; 
-    transition: all 0.2s ease; 
+.course-badge {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
-.course-badge:hover { 
-    background: var(--accent); 
-    color: white; 
-    border-color: var(--accent); 
+
+.course-badge:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }
 
 .course-badge-static {
@@ -108,8 +113,14 @@
     text-decoration: none;
     transition: all 0.2s ease;
 }
-.material-item.pdf::before { content: '📄 '; }
-.material-item.link::before { content: '🔗 '; }
+
+.material-item.pdf::before {
+    content: '📄 ';
+}
+
+.material-item.link::before {
+    content: '🔗 ';
+}
 
 .material-item:hover {
     color: var(--text-main);
@@ -123,13 +134,15 @@
 }
 
 /* Estados (Loading, Empty) */
-.no-results-container, .empty-state {
+.no-results-container,
+.empty-state {
     text-align: center;
     padding: 3rem;
     color: var(--text-muted);
 }
 
-.no-results-container h3, .empty-state h3 {
+.no-results-container h3,
+.empty-state h3 {
     margin-bottom: 1rem;
     color: var(--text-main);
 }
@@ -150,67 +163,75 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Banner Promocional del Chat */
 .chat-promo-banner {
+    /* ✅ MEJORADO: Fondo más oscuro para mejor visibilidad en tema claro */
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: var(--spacing-lg);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 1rem;
-    /* ✅ MEJORA: Gradiente llamativo y borde sutil para un look premium */
-    background: linear-gradient(135deg, var(--accent), #3e46a8);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 2rem;
-    margin-top: 2.5rem;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    /* Sombra 3D mejorada */
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.12),
+        -2px -2px 8px rgba(255, 255, 255, 0.1);
 }
 
-/* ✅ MEJORA: Icono encapsulado y con sombra */
 .chat-promo-banner-icon {
     font-size: 2.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
+    color: var(--accent);
+    margin-bottom: var(--spacing-md);
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    margin-bottom: 0.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    /* Fondo sutil para el icono */
+    border-radius: 50%;
 }
 
-/* ✅ MEJORA: Tipografía más refinada */
+.chat-promo-banner-content {
+    flex-grow: 1;
+}
+
 .chat-promo-banner-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: white;
-    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+    /* Asegurar texto visible */
+    margin: 0 0 var(--spacing-sm);
 }
 
 .chat-promo-banner-text {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    max-width: 60ch;
-    margin-bottom: 1rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
 }
 
 /* ✅ MEJORA: Botón más prominente y con mejor hover */
 .chat-promo-banner-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* --- Botones de Navegación en el Chat --- */
 .chat-nav-button {
-    background: rgba(88, 101, 242, 0.15); /* Fondo sutil del color de acento */
+    background: rgba(0, 0, 0, 0.05);
+    /* Fondo sutil del color de acento */
     border: 1px solid var(--accent);
     color: var(--accent);
     padding: 0.5rem 1rem;
@@ -222,6 +243,7 @@
     display: inline-block;
     margin: 0.25rem 0;
 }
+
 .chat-nav-button:hover {
     background: var(--accent);
     color: white;
@@ -230,25 +252,32 @@
 /* ✅ MEJORA RESPONSIVE: Estilos para el banner en pantallas grandes */
 @media (min-width: 768px) {
     .chat-promo-banner {
-        flex-direction: row; /* Cambia a layout horizontal */
-        justify-content: space-between; /* Distribuye el espacio */
-        text-align: left; /* Alinea el texto a la izquierda */
+        flex-direction: row;
+        /* Cambia a layout horizontal */
+        justify-content: space-between;
+        /* Distribuye el espacio */
+        text-align: left;
+        /* Alinea el texto a la izquierda */
         padding: 2.5rem 3rem;
     }
 
     .chat-promo-banner-icon {
         font-size: 3rem;
-        margin-bottom: 0; /* Reset de margen */
+        margin-bottom: 0;
+        /* Reset de margen */
     }
 
     .chat-promo-banner-content {
-        margin: 0 1.5rem; /* Añade espacio alrededor del texto */
-        flex: 1; /* Permite que el contenido de texto ocupe el espacio disponible */
+        margin: 0 1.5rem;
+        /* Añade espacio alrededor del texto */
+        flex: 1;
+        /* Permite que el contenido de texto ocupe el espacio disponible */
         margin: 0 2rem;
     }
 
     .chat-promo-banner-text {
-        margin-bottom: 0; /* Quita el margen inferior en la vista de escritorio */
+        margin-bottom: 0;
+        /* Quita el margen inferior en la vista de escritorio */
     }
 }
 
@@ -257,10 +286,10 @@
    ================================= */
 
 .discover-more-section {
-    /* ✅ MEJORA: Fondo más sutil y borde superior para separar visualmente */
+    /* ✅ MEJORADO: Sin borde negro superior, más sutil */
     background-color: transparent;
     border: 1px solid var(--border);
-    border-top: 3px solid var(--accent);
+    /* Borde superior removido para tema claro */
     border-radius: 16px;
     padding: var(--spacing-lg);
     margin-top: var(--spacing-xl);
@@ -286,18 +315,19 @@
 .recommendation-card {
     display: flex;
     align-items: center;
-    background-color: var(--surface); /* Fondo más oscuro para las tarjetas */
+    background-color: var(--surface);
+    /* Fondo más oscuro para las tarjetas */
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: var(--spacing-lg);
     cursor: pointer;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .recommendation-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     border-color: var(--accent);
 }
 
@@ -316,11 +346,14 @@
 
 /* ✅ MEJORA: Colores específicos para los iconos como pediste */
 .rec-icon.course-rec {
-    background-color: rgba(88, 101, 242, 0.2); /* Azul del --accent con transparencia */
+    background-color: rgba(0, 0, 0, 0.08);
+    /* Negro con transparencia */
     color: var(--accent-bright);
 }
+
 .rec-icon.topic-rec {
-    background-color: rgba(241, 196, 15, 0.2); /* Amarillo del --warning con transparencia */
+    background-color: rgba(241, 196, 15, 0.2);
+    /* Amarillo del --warning con transparencia */
     color: var(--warning);
 }
 
@@ -345,7 +378,8 @@
 }
 
 .recommendation-card .rec-arrow {
-    font-size: 1.2rem; /* Ajustado para el icono de flecha */
+    font-size: 1.2rem;
+    /* Ajustado para el icono de flecha */
     color: var(--text-muted);
     transition: transform 0.2s ease;
 }
@@ -366,11 +400,11 @@
     align-items: center;
     text-align: center;
     gap: 1rem;
-    background: linear-gradient(135deg, var(--accent), #3e46a8);
+    background: var(--surface-alt);
     border-radius: 12px;
     padding: 1.5rem;
     margin-top: 2.5rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 /* ✅ NUEVO: Icono encapsulado para consistencia */
@@ -384,7 +418,7 @@
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
 }
 
@@ -419,7 +453,8 @@
     font-weight: 500;
     padding: 0.6rem 1.25rem;
     border-radius: 8px;
-    display: inline-flex; /* Para centrar el botón y su contenido */
+    display: inline-flex;
+    /* Para centrar el botón y su contenido */
 }
 
 /* ✅ MEJORA: Layout horizontal en pantallas más grandes */
@@ -430,10 +465,13 @@
         padding: 2rem;
         gap: 1.5rem;
     }
+
     .specific-promo-content {
         flex-grow: 1;
     }
-    .specific-promo-query, .specific-promo-subtitle {
+
+    .specific-promo-query,
+    .specific-promo-subtitle {
         margin-left: 0;
         margin-right: 0;
         max-width: 100%;
@@ -445,11 +483,12 @@
    ================================= */
 
 .pdf-modal {
-    display: none; /* Oculto por defecto */
+    display: none;
+    /* Oculto por defecto */
     position: fixed;
     /* ✅ SOLUCIÓN: Reducir el z-index para que esté DEBAJO del chatbot (que tiene 9999).
        Esto permite que el botón flotante y la ventana del chat se muestren por encima del visor. */
-    z-index: 9998; 
+    z-index: 9998;
     left: 0;
     top: 0;
     width: 100%;
@@ -470,8 +509,10 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    overflow: hidden; /* Para que el iframe no se salga de los bordes redondeados */
-    position: relative; /* Para que esté sobre el overlay */
+    overflow: hidden;
+    /* Para que el iframe no se salga de los bordes redondeados */
+    position: relative;
+    /* Para que esté sobre el overlay */
 }
 
 .pdf-modal-header {

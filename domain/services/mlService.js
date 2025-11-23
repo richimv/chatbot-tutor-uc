@@ -24,38 +24,57 @@ const vertex_ai = new VertexAI({ project: project, location: location });
 const systemInstruction = {
     role: 'system',
     parts: [{
-        text: `Eres "Tutor IA UC", un tutor académico de clase mundial para la Universidad Continental. Tu misión es enseñar, inspirar y conectar a los estudiantes con el conocimiento.
+        text: `Eres "Tutor IA UC", un asistente inteligente y versátil de la Universidad Continental. Tu misión principal es ayudar académicamente, pero también eres un compañero de conversación amigable.
 
     **Tu Personalidad:**
-    *   **Cálido y Empático:** Saluda con naturalidad. Si el usuario solo dice "hola", responde con amabilidad e interés genuino.
-    *   **Proactivo:** No esperes a que te pregunten todo. Ofrece ayuda relacionada.
-    *   **Académico pero Accesible:** Explica conceptos complejos con claridad, usando analogías.
-    *   **Conector de Recursos:** Tu SUPERPODER es conectar las dudas con los materiales de la biblioteca (BD).
+    *   **Cálido y Empático:** Saluda con naturalidad. Si alguien solo dice "hola", responde con amabilidad e interés genuino.
+    *   **Versátil:** Aunque tu ESPECIALIDAD es lo académico, puedes conversar sobre MUCHOS temas: trivialidades, entretenimiento, clima, deportes, cultura general, etc.
+    *   **Proactivo:** Ofrece ayuda relacionada sin que te la pidan directamente.
+    *   **Académico pero Accesible:** Puedes profundizar en temas complejos O ser súper conciso según lo que el usuario necesite.
+    *   **Conector de Recursos:** Tu SUPERPODER académico es conectar dudas con materiales de la biblioteca (BD).
 
-    **Regla de Oro para Explicaciones Teóricas:**
-    Cuando expliques un tema (ej. "¿qué es una derivada?"), sigue esta estructura:
-    1.  **Explicación Intuitiva:** Analogía simple.
+    **Tipos de Conversación que Manejas:**
+    1.  **Consultas Directas (Información Rápida):** "¿Qué es la malla curricular?" → Respuesta corta y directa.
+    2.  **Consultas Académicas Profundas:** "Explícame las derivadas con ejemplos" → Respuesta detallada, didáctica, con analogías.
+    3.  **Conversación Casual:** "¿Cómo estás?" "Cuéntame un chiste" → Responde de forma amigable y natural.
+    4.  **Temas Generales:** Clima, deportes, noticias, entretenimiento → Responde con conocimiento general (sin acceso a internet en tiempo real, así que aclara que tu info puede no ser la más reciente).
+    
+    **Regla de Oro para Explicaciones Académicas Profundas:**
+    Cuando expliques un tema complejo (ej. "¿qué es una derivada?"), sigue esta estructura:
+    1.  **Explicación Intuitiva:** Analogía simple del día a día.
     2.  **Definición Formal:** Técnica pero clara.
-    3.  **Aplicaciones Reales:** 2-3 ejemplos (Física, Economía, etc.).
-    4.  **Recursos de Nuestra Biblioteca (¡CRÍTICO!):**
+    3.  **Aplicaciones Reales:** 2-3 ejemplos (Física, Economía, Ingeniería, etc.).
+    4.  **Recursos de Nuestra Biblioteca (¡CRÍTICO para temas académicos!):**
         *   **USO DE HERRAMIENTAS:** Debes usar \`getTopicDetails\` o \`getCourseDetails\` para buscar en la base de datos.
         *   **SI ENCUENTRAS RECURSOS (Libros/PDFs):** Diles: "¡Tengo buenas noticias! En nuestra biblioteca tenemos estos materiales para ti:". Lista los libros con sus enlaces Markdown.
         *   **SI NO ENCUENTRAS RECURSOS:** Diles: "No encontré materiales específicos en nuestra base de datos por ahora, pero aquí tienes recursos externos confiables:".
-    5.  **Recursos Externos:** 2-3 enlaces de calidad (Khan Academy, Wikipedia, etc.).
-    6.  **Cierre:** Pregunta si quiere profundizar.
+    5.  **Recursos Externos (opcional):** 2-3 enlaces de calidad (Khan Academy, Wikipedia, etc.).
+    6.  **Cierre:** Pregunta si quiere profundizar o necesita algo más.
+
+    **Límites y Seguridad (Importante pero sin ser restrictivo):**
+    *   **NO respondas:** Contenido ilegal, peligroso para la salud/vida, discriminatorio, o que promueva violencia.
+    *   **SÍ puedes hablar:** De temas sensibles con madurez (ej. historia, salud mental, carreras difíciles) siempre con respeto.
+    *   **Si te piden hacer tu tarea/examen:** Sé amable pero firme: "Puedo ayudarte a ENTENDER el tema, pero no puedo hacer tu tarea por ti. ¿Qué parte no entiendes?"
+    *   **Temas fuera de tu conocimiento actual:** Sé honesto: "No tengo acceso a información en tiempo real sobre [X], pero puedo ayudarte con conceptos generales o dirigirte a fuentes confiables."
 
     **Reglas de Formato:**
     *   **Listas Navegables (Carreras/Cursos/Temas):** USA SIEMPRE este formato específico para que el usuario pueda hacer clic e ir a la sección correspondiente:
         *   Para Carreras: '* [career:ID] Nombre de la Carrera' (ej. '* [career:1] Ingeniería de Software').
         *   Para Cursos: '* [course:ID] Nombre del Curso' (ej. '* [course:15] Cálculo I').
         *   Para Temas: '* [topic:ID] Nombre del Tema' (ej. '* [topic:42] Derivadas').
+    *   **Malla Curricular (PDF):** 
+        *   Si el usuario pregunta DIRECTAMENTE por "descargar", "ver PDF", "malla curricular PDF", "plan de estudios PDF", sé DIRECTO: empieza tu respuesta con el enlace del PDF.
+        *   Formato: "¡Claro! Aquí puedes descargar la malla curricular de [Carrera]: [📄 Descargar Malla Curricular (PDF)](curriculum_url)\n\nLa carrera incluye los siguientes cursos principales: [lista breve]"
+        *   Enlace SIEMPRE primero, lista de cursos después (y de forma concisa).
     *   **Libros y Materiales (con enlace):** Formato Markdown estándar: '* [Título del Libro](URL)'.
     *   **Usa negritas (\`**texto**\`)** para resaltar los títulos de cada sección.
+    *   **Concisión:** Si la pregunta es directa (ej. "quiero X"), da X primero. Evita rodeos innecesarios.
+    *   **Profundidad:** Si la pregunta pide explicaciones detalladas, sé exhaustivo y didáctico.
 
     **Formato de Salida Obligatorio:** Tu respuesta final DEBE ser un único objeto JSON válido, sin texto adicional.
     El JSON debe tener esta estructura:
     {
-      "intencion": "[consulta_horario|solicitar_material|duda_teorica|consulta_administrativa|consulta_general]",
+      "intencion": "[consulta_horario|solicitar_material|duda_teorica|consulta_administrativa|consulta_general|conversacion_casual]",
       "confianza": 0.9,
       "respuesta": "Tu respuesta amable y detallada aquí.",
       "sugerencias": ["Sugerencia 1", "Sugerencia 2"]
@@ -118,6 +137,22 @@ const model = vertex_ai.preview.getGenerativeModel({
                 },
                 required: ["careerName"]
             }
+        },
+        {
+            name: "getInstructorInfo",
+            description: "Obtiene información sobre un docente y los cursos que enseña. Úsalo cuando pregunten por un profesor o docente específico.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    instructorName: { type: "STRING", description: "Nombre del docente/profesor." }
+                },
+                required: ["instructorName"]
+            }
+        },
+        {
+            name: "listAllInstructors",
+            description: "Lista todos los docentes/profesores disponibles.",
+            parameters: { type: "OBJECT", properties: {} }
         }]
     }],
     systemInstruction: systemInstruction
@@ -283,16 +318,38 @@ class MLService {
                     response = result.response;
 
                 } else if (call.name === 'getCareerDetails') {
-                    console.log('🔍 Resultado de la herramienta (carrera):', careerDetails);
+                    // ✅ SOLUCIÓN: Búsqueda de carrera (faltaba la lógica completa)
+                    const allCareers = await careerRepo.findAll();
+                    const normalizedQuery = normalizeText(call.args.careerName);
+                    const career = allCareers.find(c => normalizeText(c.name).includes(normalizedQuery));
+
+                    let careerDetailsResponse = null;
+
+                    if (career) {
+                        // Obtener los cursos de esta carrera
+                        const courses = await courseRepo.findByCareerName(career.name);
+                        const courseList = courses.map(c => ({ id: c.id, name: c.name }));
+
+                        careerDetailsResponse = {
+                            id: career.id,
+                            name: career.name,
+                            description: career.description || 'No disponible',
+                            curriculum_url: career.curriculum_url || null, // ✅ INCLUIR URL DE MALLA CURRICULAR
+                            courses: courseList
+                        };
+                        console.log('🔍 Resultado (getCareerDetails): Encontrado:', career.name, 'con', courseList.length, 'cursos.');
+                    } else {
+                        console.log(`⚠️ No se encontró carrera para "${call.args.careerName}"`);
+                    }
 
                     result = await chat.sendMessage([{
                         functionResponse: {
                             name: 'getCareerDetails',
-                            // ✅ CORRECCIÓN: Devolver el objeto de la carrera directamente, no un array anidado.
-                            response: careerDetails || {}
+                            response: careerDetailsResponse || { error: "Carrera no encontrada" }
                         }
                     }]);
                     response = result.response;
+
 
                 } else if (call.name === 'listAllCareers') {
                     const allCareers = await careerRepo.findAll();
@@ -322,6 +379,65 @@ class MLService {
                         }
                     }]);
                     response = result.response;
+
+                } else if (call.name === 'getInstructorInfo') {
+                    // Buscar instructor por nombre
+                    const allInstructors = await knowledgeBaseRepo.instructorRepo.findAll();
+                    const normalizedQuery = normalizeText(call.args.instructorName);
+                    const instructor = allInstructors.find(i => normalizeText(i.name).includes(normalizedQuery));
+
+                    let instructorInfoResponse = null;
+
+                    if (instructor) {
+                        // Buscar las secciones (cursos) que enseña este instructor
+                        const allSections = await knowledgeBaseRepo.sectionRepo.findAll();
+                        const allCourses = await courseRepo.findAll();
+
+                        const instructorSections = allSections.filter(s => s.instructorId === instructor.id);
+                        const coursesTeaching = instructorSections.map(section => {
+                            const course = allCourses.find(c => c.id === section.courseId);
+                            if (!course) return null;
+
+                            return {
+                                courseId: course.id,
+                                courseName: course.name,
+                                schedule: section.schedule.map(s => `${s.day} de ${s.startTime} a ${s.endTime} en ${s.room}`)
+                            };
+                        }).filter(Boolean);
+
+                        instructorInfoResponse = {
+                            id: instructor.id,
+                            name: instructor.name,
+                            email: instructor.email,
+                            coursesTeaching: coursesTeaching
+                        };
+                        console.log('🔍 Resultado (getInstructorInfo): Encontrado:', instructor.name, 'enseña', coursesTeaching.length, 'cursos.');
+                    } else {
+                        console.log(`⚠️ No se encontró instructor para "${call.args.instructorName}"`);
+                    }
+
+                    result = await chat.sendMessage([{
+                        functionResponse: {
+                            name: 'getInstructorInfo',
+                            response: instructorInfoResponse || { error: "Docente no encontrado" }
+                        }
+                    }]);
+                    response = result.response;
+
+                } else if (call.name === 'listAllInstructors') {
+                    const allInstructors = await knowledgeBaseRepo.instructorRepo.findAll();
+                    const instructorList = allInstructors.map(i => ({ id: i.id, name: i.name }));
+
+                    console.log('🔍 Resultado (listAllInstructors):', instructorList.length, 'instructores encontrados.');
+
+                    result = await chat.sendMessage([{
+                        functionResponse: {
+                            name: 'listAllInstructors',
+                            response: { instructors: instructorList }
+                        }
+                    }]);
+                    response = result.response;
+
                 } else {
                     throw new Error(`Herramienta no reconocida: ${call.name}`);
                 }

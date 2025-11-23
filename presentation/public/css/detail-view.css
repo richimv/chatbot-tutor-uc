@@ -17,8 +17,10 @@
 
 .material-list {
     display: flex;
-    flex-direction: column; /* Apilado vertical */
-    gap: var(--spacing-md); /* Espacio entre tarjetas */
+    flex-direction: column;
+    /* Apilado vertical */
+    gap: var(--spacing-md);
+    /* Espacio entre tarjetas */
     padding-top: 0.5rem;
 }
 
@@ -37,8 +39,15 @@
     border-top: 3px solid var(--accent);
     box-shadow: var(--shadow-elevation-medium);
 }
-.curriculum-section h3 { margin-bottom: var(--spacing-sm); }
-.curriculum-section p { color: var(--text-muted); margin-bottom: var(--spacing-md); }
+
+.curriculum-section h3 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.curriculum-section p {
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+}
 
 .unified-course-view {
     background: var(--surface);
@@ -48,6 +57,7 @@
     flex-direction: column;
     gap: var(--spacing-xl);
 }
+
 .course-main-header {
     padding-bottom: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
@@ -55,18 +65,25 @@
     display: flex;
     align-items: center;
 }
+
 .course-main-header h2 {
-    font-size: 2.2rem; /* Título más grande */
+    font-size: 2.2rem;
+    /* Título más grande */
     color: var(--text-main);
     margin-bottom: var(--spacing-sm);
 }
-.course-description, .career-description {
-    font-size: 1.05rem; /* Ligeramente más grande para legibilidad */
+
+.course-description,
+.career-description {
+    font-size: 1.05rem;
+    /* Ligeramente más grande para legibilidad */
     color: var(--text-muted);
     max-width: 80ch;
-    line-height: 1.7; /* Mayor interlineado */
+    line-height: 1.7;
+    /* Mayor interlineado */
     margin-bottom: var(--spacing-lg);
 }
+
 .unified-course-view h3 {
     font-size: 1.4rem;
     color: var(--accent);
@@ -74,11 +91,14 @@
     margin-bottom: var(--spacing-md);
     border-bottom: 1px solid var(--border);
 }
+
 .sections-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Tarjetas un poco más anchas */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* Tarjetas un poco más anchas */
     gap: var(--spacing-lg);
 }
+
 .section-details-card {
     background: var(--surface-alt);
     padding: var(--spacing-lg);
@@ -89,31 +109,38 @@
     transition: all 0.3s ease;
     box-shadow: var(--shadow-elevation-low);
 }
+
 .section-details-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-elevation-medium);
 }
+
 .section-instructor {
     font-size: 1.1rem;
     color: var(--text-main);
     margin-bottom: var(--spacing-sm);
 }
+
 .section-careers {
-    font-size: 0.85rem; /* Ligeramente más grande */
+    font-size: 0.85rem;
+    /* Ligeramente más grande */
     color: var(--text-muted);
     margin-bottom: var(--spacing-md);
     font-style: italic;
 }
+
 .section-schedule {
     list-style: none;
     padding-left: 0;
     font-size: 0.9rem;
-    margin-top: auto; /* Empuja el horario hacia abajo */
+    margin-top: auto;
+    /* Empuja el horario hacia abajo */
     color: var(--text-muted);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
+
 .section-schedule li {
     display: flex;
     align-items: center;
@@ -125,10 +152,16 @@
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
 }
+
 @media (min-width: 768px) {
-    .topics-materials-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); }
+    .topics-materials-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+    }
 }
-.topics-column h4, .materials-column h4 {
+
+.topics-column h4,
+.materials-column h4 {
     font-size: 1.1rem;
     color: var(--text-main);
     margin-bottom: var(--spacing-md);
@@ -138,46 +171,62 @@
 .topic-view {
     box-shadow: var(--shadow-elevation-high);
 }
+
 .topic-header {
-    font-size: 2rem; /* Título de sección más grande */
-    color: var(--accent); /* Color acento para el título del tema */
+    font-size: 2rem;
+    /* Título de sección más grande */
+    color: var(--accent);
+    /* Color acento para el título del tema */
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--accent); /* Borde inferior con color acento */
+    border-bottom: 2px solid var(--accent);
+    /* Borde inferior con color acento */
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
 }
+
 .topic-header-icon {
-    font-size: 2.5rem; /* Icono ligeramente más pequeño que el del curso */
-    color: var(--accent);
+    font-size: 2.5rem;
+    /* Icono ligeramente más pequeño que el del curso */
+    color: var(--text-main);
+    /* ✅ MEJORADO: Texto visible en ambos temas */
     margin-right: var(--spacing-sm);
-    background-color: var(--accent-light);
+    background-color: var(--surface-alt);
+    /* ✅ MEJORADO: Fondo contrastante */
     border-radius: 50%;
     width: 56px;
     height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.1);
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.12),
+        -1px -1px 4px rgba(255, 255, 255, 0.08);
 }
-.topic-description h4, .topic-materials h4 {
-    font-size: 1.4rem; /* Título de sub-sección */
+
+.topic-description h4,
+.topic-materials h4 {
+    font-size: 1.4rem;
+    /* Título de sub-sección */
     color: var(--text-main);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border);
 }
+
 .topic-description p {
     font-size: 1rem;
     color: var(--text-muted);
     line-height: 1.7;
 }
+
 .topic-materials {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
 }
+
 .material-group {
     background: var(--surface-alt);
     padding: var(--spacing-md);
@@ -192,7 +241,8 @@
 
 @media (min-width: 1024px) {
     .course-detail-grid {
-        grid-template-columns: 1fr 340px; /* Sidebar un poco más ancha */
+        grid-template-columns: 1fr 340px;
+        /* Sidebar un poco más ancha */
     }
 }
 
@@ -207,13 +257,17 @@
     flex-direction: column;
     gap: var(--spacing-lg);
     position: sticky;
-    top: 80px; /* Ajusta según la altura de tu header */
+    top: 80px;
+    /* Ajusta según la altura de tu header */
 }
 
 .detail-section {
-    background: var(--surface); /* Fondo blanco para las tarjetas */
-    padding: var(--spacing-xl); /* Más padding */
-    border-radius: 16px; /* Bordes más redondeados */
+    background: var(--surface);
+    /* Fondo blanco para las tarjetas */
+    padding: var(--spacing-xl);
+    /* Más padding */
+    border-radius: 16px;
+    /* Bordes más redondeados */
     box-shadow: var(--shadow-elevation-medium);
     border: 1px solid var(--border);
     display: flex;
@@ -222,7 +276,8 @@
 }
 
 .detail-section-title {
-    font-size: 1.6rem; /* Título de sección más grande */
+    font-size: 1.6rem;
+    /* Título de sección más grande */
     color: var(--text-main);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-md);
@@ -240,12 +295,14 @@
     border: 1px solid transparent;
     transition: border 0.3s ease;
 }
+
 .sidebar-section:hover {
     border-color: var(--accent-light);
 }
 
 .sidebar-title {
-    font-size: 1.25rem; /* Título de sidebar más grande */
+    font-size: 1.25rem;
+    /* Título de sidebar más grande */
     color: var(--text-main);
     margin-bottom: var(--spacing-md);
     font-weight: 600;
@@ -268,7 +325,7 @@
     background-color: var(--accent);
     color: white;
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 12px rgba(88, 101, 242, 0.2);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     border-color: var(--accent);
 }
 
@@ -278,12 +335,14 @@
     gap: var(--spacing-md);
     background: var(--surface);
     padding: var(--spacing-md);
-    border-radius: 12px; /* Bordes más redondeados */
+    border-radius: 12px;
+    /* Bordes más redondeados */
     text-decoration: none;
     color: inherit;
     transition: all 0.2s ease;
     border: 1px solid var(--border);
-    width: 100%; /* Ocupar todo el ancho de la lista */
+    width: 100%;
+    /* Ocupar todo el ancho de la lista */
     box-shadow: var(--shadow-elevation-low);
 }
 
@@ -294,7 +353,8 @@
 }
 
 .material-card-icon {
-    font-size: 2rem; /* Icono más grande */
+    font-size: 2rem;
+    /* Icono más grande */
     color: var(--accent);
     flex-shrink: 0;
     width: 40px;
@@ -331,17 +391,23 @@
 }
 
 .course-header-icon {
-    font-size: 3rem; /* Icono más grande */
-    color: var(--accent);
-    margin-right: var(--spacing-lg); /* Más espacio */
-    background-color: var(--accent-light);
+    font-size: 3rem;
+    /* Icono más grande */
+    color: var(--text-main);
+    /* ✅ MEJORADO: Texto visible en ambos temas */
+    margin-right: var(--spacing-lg);
+    /* Más espacio */
+    background-color: var(--surface-alt);
+    /* ✅ MEJORADO: Fondo contrastante */
     border-radius: 50%;
     width: 64px;
     height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.1);
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.12),
+        -1px -1px 4px rgba(255, 255, 255, 0.08);
 }
 
 .course-header-title {
@@ -376,12 +442,14 @@
 .section-card-header {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md); /* Más espacio */
+    gap: var(--spacing-md);
+    /* Más espacio */
     font-size: 1.1rem;
     color: var(--text-main);
     margin-bottom: var(--spacing-md);
     font-weight: 600;
 }
+
 .section-card-header i {
     color: var(--accent);
     font-size: 1.2rem;
@@ -393,9 +461,11 @@
 
     flex-direction: column;
 
-    gap: var(--spacing-md); /* Más espacio */
+    gap: var(--spacing-md);
+    /* Más espacio */
 
-    padding-left: calc(1.2rem + var(--spacing-md)); /* Alinear con el texto del header */
+    padding-left: calc(1.2rem + var(--spacing-md));
+    /* Alinear con el texto del header */
 
 }
 
@@ -417,7 +487,8 @@
 
 .section-card-header span {
 
-    word-break: break-word; /* Asegura que los nombres largos no se desborden */
+    word-break: break-word;
+    /* Asegura que los nombres largos no se desborden */
 
 }
 
@@ -446,40 +517,30 @@
 
 
 .btn-ask-ai {
-
-    background: linear-gradient(45deg, var(--accent), var(--primary));
-
+    /* ✅ MEJORADO: Color sólido visible en ambos temas */
+    background: var(--accent);
     color: white;
-
     font-weight: 600;
-
     font-size: 1rem;
-
     border: none;
-
     border-radius: 8px;
-
     padding: var(--spacing-md) var(--spacing-lg);
-
     width: 100%;
-
     cursor: pointer;
-
     transition: all 0.3s ease;
-
-    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.2);
-
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.15),
+        -1px -1px 6px rgba(255, 255, 255, 0.1);
 }
-
-
 
 .btn-ask-ai:hover {
-
     transform: translateY(-3px);
-
-    box-shadow: 0 7px 20px rgba(88, 101, 242, 0.3);
-
+    background: var(--accent-hover);
+    box-shadow:
+        4px 4px 14px rgba(0, 0, 0, 0.2),
+        -2px -2px 8px rgba(255, 255, 255, 0.15);
 }
+
 /* --- Estilos para la sección de Temas Relacionados --- */
 .related-topics-section {
     background: var(--surface-alt);

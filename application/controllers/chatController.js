@@ -97,15 +97,30 @@ class ChatController {
 
             // 5. REGISTRAR EN ANALYTICS (Lógica original)
             if (this.analyticsService) {
-                // ✅ MEJORA: Ampliar la definición de "Consulta Educativa" para incluir horarios, material y evaluaciones.
+                // ✅ MEJORA: Clasificación refinada de "Consulta Educativa"
+                // Intenciones EDUCATIVAS: relacionadas con aprendizaje, materiales, cursos, horarios
                 const educationalIntents = [
-                    'duda_teorica',
-                    'consulta_general',
-                    'consulta_horario',
-                    'solicitar_material',
-                    'consulta_evaluacion'
+                    'duda_teorica',           // Explicaciones académicas profundas
+                    'solicitar_material',     // Libros, PDFs, recursos de estudio
+                    'consulta_horario',       // Horarios de clases
+                    'consulta_evaluacion',    // Exámenes, evaluaciones
+                    'consulta_general'        // Consultas sobre carreras, cursos, temas (puede ser educativa)
                 ];
-                const isEducational = educationalIntents.includes(response.intencion);
+
+                // Intenciones NO EDUCATIVAS:
+                const nonEducationalIntents = [
+                    'conversacion_casual',    // Saludos, chistes, clima, trivialidades
+                    'consulta_administrativa' // Trámites administrativos (no directamente educativos)
+                ];
+
+                // Determinar si es educativa
+                let isEducational = educationalIntents.includes(response.intencion);
+
+                // ✅ REFINAMIENTO: Para 'consulta_general', verificar si menciona entidades académicas
+                if (response.intencion === 'consulta_general') {
+                    const hasAcademicKeywords = /\b(curso|carrera|tema|profesor|docente|clase|estudio|malla|curricular|libro|material|horario)\b/i.test(message);
+                    isEducational = hasAcademicKeywords;
+                }
 
                 await this.analyticsService.recordSearchWithIntent(
                     message,

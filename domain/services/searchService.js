@@ -107,16 +107,40 @@ class SearchService {
     }
 
     isEducationalQuery(query) {
-        // 1. Comprobar palabras clave de preguntas (intención explícita de aprender)
+        // ✅ MEJORA: Lista ampliada de palabras clave que indican una consulta educativa
         const educationalKeywords = [
-            'que es', 'como funciona', 'explica', 'explicame', 'dime que es',
-            'diferencia entre', 'definicion de', 'concepto de', 'historia de',
-            'cual es', 'cuales son', 'podrias decirme', 'quisiera saber'
-        ];
-        const normalizedQuery = normalizeText(query);
-        const hasQuestionKeyword = educationalKeywords.some(keyword => normalizedQuery.startsWith(keyword));
+            // Conceptos académicos
+            'qué es', 'cómo', 'por qué', 'para qué', 'cuándo', 'dónde',
+            'explica', 'explicación', 'definición', 'concepto',
 
-        if (hasQuestionKeyword) return true;
+            // Materiales y recursos de estudio
+            'libro', 'pdf', 'material', 'recurso', 'guía', 'manual',
+            'apuntes', 'bibliografía', 'lectura',
+
+            // Cursos y temas académicos
+            'curso', 'materia', 'asignatura', 'tema', 'tópico', 'unidad',
+            'lección', 'capítulo', 'módulo',
+
+            // Institucional
+            'carrera', 'programa', 'malla', 'curricular', 'plan de estudios',
+            'créditos', 'semestre', 'ciclo',
+
+            // Personas académicas
+            'profesor', 'docente', 'instructor', 'maestro', 'catedrático',
+
+            // Actividades académicas
+            'clase', 'horario', 'examen', 'evaluación', 'tarea', 'trabajo',
+            'práctica', 'laboratorio', 'taller', 'seminario',
+
+            // Conceptos de aprendizaje
+            'aprender', 'estudiar', 'entender', 'comprender', 'resolver',
+            'ejercicio', 'problema', 'ejemplo', 'demostración'
+        ];
+
+        const queryLowerCase = query.toLowerCase();
+        if (educationalKeywords.some(keyword => queryLowerCase.includes(keyword))) {
+            return true;
+        }
 
         // 2. ✅ MEJORA: Comprobar si la búsqueda coincide con una entidad educativa conocida.
         // Si el usuario busca "Calculo 1" o "Profesor X", es una consulta educativa.
