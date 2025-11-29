@@ -1,6 +1,16 @@
 class AuthApiService {
+    // ✅ REFACTORIZACIÓN: Usar configuración centralizada con fallback seguro
+    static getApiUrl() {
+        if (window.AppConfig && window.AppConfig.API_URL) {
+            return window.AppConfig.API_URL;
+        }
+        console.warn('⚠️ AppConfig no encontrado. Usando localhost por defecto.');
+        return 'http://localhost:3000';
+    }
+
     static async login(email, password) {
-        const response = await fetch(`${window.API_URL}/api/auth/login`, {
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -13,7 +23,8 @@ class AuthApiService {
     }
 
     static async register(name, email, password) { // ✅ CORREGIDO: El orden de los parámetros ahora es correcto
-        const response = await fetch(`${window.API_URL}/api/auth/register`, {
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name }),
@@ -29,7 +40,8 @@ class AuthApiService {
         const token = localStorage.getItem('authToken');
         if (!token) return null;
 
-        const response = await fetch(`${window.API_URL}/api/auth/me`, {
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -49,7 +61,8 @@ class AuthApiService {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('No autenticado');
 
-        const response = await fetch(`${window.API_URL}/api/auth/change-password`, {
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/change-password`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -103,7 +116,8 @@ class AuthApiService {
      * @returns {Promise<object>} La respuesta del servidor.
      */
     static async verifyEmail(verificationToken) {
-        const response = await fetch(`${window.API_URL}/api/auth/verify-email?token=${verificationToken}`, {
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/verify-email?token=${verificationToken}`, {
             method: 'GET', // La verificación se hace con un GET
         });
 
