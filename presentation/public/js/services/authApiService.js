@@ -1,6 +1,6 @@
 class AuthApiService {
     static async login(email, password) {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch(`${window.API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -13,7 +13,7 @@ class AuthApiService {
     }
 
     static async register(name, email, password) { // ✅ CORREGIDO: El orden de los parámetros ahora es correcto
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch(`${window.API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name }),
@@ -29,7 +29,7 @@ class AuthApiService {
         const token = localStorage.getItem('authToken');
         if (!token) return null;
 
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch(`${window.API_URL}/api/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -40,7 +40,7 @@ class AuthApiService {
             localStorage.removeItem('authToken');
             return null;
         }
-        
+
         return response.json();
     }
 
@@ -49,7 +49,7 @@ class AuthApiService {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('No autenticado');
 
-        const response = await fetch('/api/auth/change-password', {
+        const response = await fetch(`${window.API_URL}/api/auth/change-password`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ class AuthApiService {
             const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const sha1Hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-            
+
             const prefix = sha1Hash.substring(0, 5);
             const suffix = sha1Hash.substring(5);
 
@@ -103,7 +103,7 @@ class AuthApiService {
      * @returns {Promise<object>} La respuesta del servidor.
      */
     static async verifyEmail(verificationToken) {
-        const response = await fetch(`/api/auth/verify-email?token=${verificationToken}`, {
+        const response = await fetch(`${window.API_URL}/api/auth/verify-email?token=${verificationToken}`, {
             method: 'GET', // La verificación se hace con un GET
         });
 

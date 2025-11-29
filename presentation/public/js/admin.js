@@ -253,13 +253,13 @@ class AdminManager {
     async loadAllData() {
         try {
             const [careersRes, coursesRes, sectionsRes, instructorsRes, studentsRes, topicsRes, booksRes] = await Promise.all([
-                fetch('/api/careers', { headers: this._getAuthHeaders() }),
-                fetch('/api/courses', { headers: this._getAuthHeaders() }),
-                fetch('/api/sections', { headers: this._getAuthHeaders() }),
-                fetch('/api/instructors', { headers: this._getAuthHeaders() }),
-                fetch('/api/students', { headers: this._getAuthHeaders() }),
-                fetch('/api/topics', { headers: this._getAuthHeaders() }),
-                fetch('/api/books', { headers: this._getAuthHeaders() })
+                fetch(`${window.API_URL}/api/careers`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/courses`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/sections`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/instructors`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/students`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/topics`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.API_URL}/api/books`, { headers: this._getAuthHeaders() })
             ]);
 
             for (const res of [careersRes, coursesRes, sectionsRes, instructorsRes, studentsRes, topicsRes, booksRes]) {
@@ -784,7 +784,7 @@ class AdminManager {
     async saveGenericForm() {
         const type = this.genericForm.dataset.type;
         const id = this.genericForm.dataset.id;
-        const url = id ? `/api/${type}s/${id}` : `/api/${type}s`;
+        const url = id ? `${window.API_URL}/api/${type}s/${id}` : `${window.API_URL}/api/${type}s`;
         const method = id ? 'PUT' : 'POST';
 
         let body = {};
@@ -896,7 +896,7 @@ class AdminManager {
         if (!await window.confirmationModal.show(`¿Estás seguro de que quieres eliminar este elemento (${type})? Esta acción no se puede deshacer.`, 'Eliminar Elemento', 'Eliminar', 'Cancelar')) return;
 
         try {
-            const url = `/api/${type}s/${id}`;
+            const url = `${window.API_URL}/api/${type}s/${id}`;
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
@@ -932,7 +932,7 @@ class AdminManager {
         }
 
         try {
-            const response = await fetch(`/api/users/${userId}/reset-password`, {
+            const response = await fetch(`${window.API_URL}/api/users/${userId}/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

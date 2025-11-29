@@ -340,7 +340,7 @@ Puedo ayudarte con:
 
             console.log('📦 Datos enviados:', requestData);
 
-            const fetchPromise = fetch('/api/chat', {
+            const fetchPromise = fetch(`${window.API_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -597,7 +597,7 @@ Puedo ayudarte con:
         if (!window.sessionManager.isLoggedIn()) return;
 
         try {
-            const response = await fetch('/api/chat/conversations', {
+            const response = await fetch(`${window.API_URL}/api/chat/conversations`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
             });
             if (!response.ok) throw new Error('No se pudo cargar el historial.');
@@ -680,7 +680,7 @@ Puedo ayudarte con:
 
     async updateConversationTitle(conversationId, newTitle) {
         try {
-            const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+            const response = await fetch(`${window.API_URL}/api/chat/conversations/${conversationId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -710,7 +710,7 @@ Puedo ayudarte con:
         }
 
         try {
-            const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+            const response = await fetch(`${window.API_URL}/api/chat/conversations/${conversationId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
             });
@@ -749,7 +749,7 @@ Puedo ayudarte con:
         messagesContainer.innerHTML = '<div class="loading-state">Cargando chat...</div>';
 
         try {
-            const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+            const response = await fetch(`${window.API_URL}/api/chat/conversations/${conversationId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
             });
             if (!response.ok) throw new Error('No se pudo cargar la conversación.');

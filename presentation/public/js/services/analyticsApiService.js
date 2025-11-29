@@ -17,7 +17,7 @@ class AnalyticsApiService {
         }
 
         try {
-            const res = await fetch('/api/analytics/feedback', {
+            const res = await fetch(`${window.API_URL}/api/analytics/feedback`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({ query, response, isHelpful, messageId }),
@@ -35,34 +35,34 @@ class AnalyticsApiService {
     static async _get(endpoint) {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('No autenticado');
-    
+
         const response = await fetch(endpoint, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-    
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
         }
         return response.json();
     }
-    
+
     /**
      * Obtiene las métricas principales para el dashboard (KPIs).
      * @returns {Promise<object>}
      */
     static async getDashboardAnalytics(days = 7) {
         // ✅ SOLUCIÓN: Añadir el parámetro 'days' a la URL de la petición.
-        return this._get(`/api/analytics?days=${days}`);
+        return this._get(`${window.API_URL}/api/analytics?days=${days}`);
     }
-    
+
     /**
      * Obtiene las tendencias de búsqueda para los gráficos.
      * @returns {Promise<object>}
      */
     static async getSearchTrends(days = 7) {
         // ✅ SOLUCIÓN: Pasar el parámetro 'days' a la API para que el filtro de tiempo funcione.
-        return this._get(`/api/analytics/trends?days=${days}`);
+        return this._get(`${window.API_URL}/api/analytics/trends?days=${days}`);
     }
 
     /**
@@ -70,25 +70,25 @@ class AnalyticsApiService {
      * @param {number} days - El número de días a consultar.
      */
     static async getInteractionTrends(days = 7) {
-        return this._get(`/api/analytics/interaction-trends?days=${days}`);
+        return this._get(`${window.API_URL}/api/analytics/interaction-trends?days=${days}`);
     }
-    
+
     /**
      * Obtiene las predicciones de los modelos de ML.
      * @returns {Promise<object>}
      */
     static async getPredictions() {
-        return this._get('/api/analytics/predictions');
+        return this._get(`${window.API_URL}/api/analytics/predictions`);
     }
-    
+
     /**
      * Obtiene todos los registros de feedback.
      * @returns {Promise<Array>}
      */
     static async getFeedback() {
-        return this._get('/api/analytics/feedback');
+        return this._get(`${window.API_URL}/api/analytics/feedback`);
     }
-    
+
     /**
      * ✅ NUEVO: Registra una vista de página.
      * Se envía en modo "fire-and-forget", no necesitamos esperar la respuesta.
@@ -99,7 +99,7 @@ class AnalyticsApiService {
         const token = localStorage.getItem('authToken');
         if (!token) return; // No registrar vistas para usuarios no logueados.
 
-        fetch('/api/analytics/view', {
+        fetch(`${window.API_URL}/api/analytics/view`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ class AnalyticsApiService {
             },
             body: JSON.stringify({ entityType, entityId }),
             // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
-            keepalive: true 
+            keepalive: true
         }).catch(error => {
             // No hacemos nada en caso de error para no interrumpir la experiencia del usuario.
             console.warn('Advertencia: No se pudo registrar la vista de página.', error);

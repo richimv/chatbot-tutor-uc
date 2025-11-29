@@ -35,12 +35,12 @@ class SearchComponent {
     async loadAllData() {
         try {
             const [careersRes, coursesRes, sectionsRes, instructorsRes, topicsRes, booksRes] = await Promise.all([
-                fetch('/api/careers'),
-                fetch('/api/courses'),
-                fetch('/api/sections'),
-                fetch('/api/instructors'),
-                fetch('/api/topics'),
-                fetch('/api/books') // ✅ AÑADIDO: Cargar los libros
+                fetch(`${window.API_URL}/api/careers`),
+                fetch(`${window.API_URL}/api/courses`),
+                fetch(`${window.API_URL}/api/sections`),
+                fetch(`${window.API_URL}/api/instructors`),
+                fetch(`${window.API_URL}/api/topics`),
+                fetch(`${window.API_URL}/api/books`) // ✅ AÑADIDO: Cargar los libros
             ]);
             this.allData.careers = await careersRes.json();
             this.allData.courses = await coursesRes.json();
@@ -235,7 +235,7 @@ class SearchComponent {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch(`/api/buscar?q=${encodeURIComponent(query)}`, {
+            const response = await fetch(`${window.API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
                 method: 'GET',
                 headers: headers
             });

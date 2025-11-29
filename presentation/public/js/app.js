@@ -5,40 +5,50 @@
  * Detecta qué componentes son necesarios en la página actual y los instancia.
  */
 
+// ✅ 1. CONFIGURACIÓN INTELIGENTE DE LA API (Local vs Nube)
+// Detectamos el entorno para configurar la URL base de la API.
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const BACKEND_URL = isLocal
+    ? 'http://localhost:3000'
+    : 'https://tutor-ia-backend.onrender.com';
+
+// Hacemos la URL global para que authApiService.js y otros puedan usarla
+window.API_URL = BACKEND_URL;
+
+console.log('🌍 Entorno detectado:', isLocal ? 'Local (localhost)' : 'Producción (Render)');
+console.log('🔗 Conectando API a:', window.API_URL);
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 DOM completamente cargado. Inicializando componentes...');
 
     // --- PASO 1: Inicializar todos los componentes globales ---
-    // ✅ CORRECCIÓN: Verificar si ChatComponent existe antes de inicializarlo (puede no estar en todas las páginas).
+
+    // ✅ CORRECCIÓN: Verificar si ChatComponent existe antes de inicializarlo.
     if (typeof ChatComponent !== 'undefined') {
         window.chatComponent = new ChatComponent();
     }
+
     // ✅ NUEVO: Inicializar el modal de confirmación global
-    window.confirmationModal = new ConfirmationModal();
+    if (typeof ConfirmationModal !== 'undefined') {
+        window.confirmationModal = new ConfirmationModal();
+    }
 
     // --- PASO 2: Registrar todos los listeners que dependen de la sesión ---
     // El header necesita saber si el usuario cambió.
-    window.sessionManager.onStateChange(updateHeaderUI);
-    // El chat ya registra su propio listener dentro de su constructor/init.
+    if (window.sessionManager) {
+        window.sessionManager.onStateChange(updateHeaderUI);
 
-    // --- PASO 3: Inicializar la sesión DESPUÉS de que todos se hayan suscrito ---
-    // Esto notificará tanto al header como al chat sobre el estado actual del usuario.
-    await window.sessionManager.initialize();
+        // --- PASO 3: Inicializar la sesión DESPUÉS de que todos se hayan suscrito ---
+        await window.sessionManager.initialize();
+    }
 
     if (document.querySelector('.admin-container')) {
         console.log('⚙️ Página de admin detectada.');
-        // El script de admin.js se auto-inicializa, lo mantenemos así por ahora.
+        // El script de admin.js se auto-inicializa.
     }
 
     // ✅ SOLUCIÓN: Lógica centralizada para cerrar TODAS las modales.
-    // Esto reemplaza el código repetitivo anterior y funciona para cualquier modal.
-
-    /**
-     * Cierra todas las ventanas modales abiertas.
-     * Es una función reutilizable para no repetir código.
-     */
     const closeAllModals = () => {
-        // Busca todas las modales visibles y las oculta.
         document.querySelectorAll('.modal, .pdf-modal').forEach(modal => {
             modal.style.display = 'none';
         });
@@ -46,21 +56,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /**
      * Gestiona los clics en toda la página para cerrar modales.
-     * Utiliza delegación de eventos para un rendimiento óptimo.
      */
     document.body.addEventListener('click', (event) => {
-        // Cierra la modal si se hace clic en un botón de cierre (clase .modal-close)
-        // ✅ SOLUCIÓN: Incluir el botón de cierre del visor de PDF.
+        // Cierra la modal si se hace clic en un botón de cierre
         const closeButton = event.target.closest('.modal-close, .pdf-modal-close-btn');
         if (closeButton) {
             closeAllModals();
         }
-        // Cierra la modal si se hace clic en el fondo (clase .modal-overlay)
+        // Cierra la modal si se hace clic en el fondo
         if (event.target.classList.contains('modal-overlay')) {
             closeAllModals();
         }
     });
-
 });
 
 function updateHeaderUI(user) {
@@ -68,8 +75,7 @@ function updateHeaderUI(user) {
     if (!userControlsContainer) return;
 
     if (user) {
-        // Usuario logueado
-        // ✅ MEJORA UI/UX: Usar un menú desplegable para las opciones de usuario.
+        // Usuario logueado - Menú desplegable
         userControlsContainer.innerHTML = `
             <div class="user-menu-container">
                 <button id="user-menu-toggle" class="user-menu-toggle">
@@ -93,15 +99,22 @@ function updateHeaderUI(user) {
                 </div>
             </div>
         `;
+
         // Listeners para el nuevo menú
-        // ✅ CORRECCIÓN: Añadir los listeners DESPUÉS de renderizar el HTML.
-        // Esto asegura que los listeners se adjuntan a los botones que realmente existen en el DOM.
-        document.getElementById('user-menu-toggle').addEventListener('click', () => {
-            document.getElementById('user-menu-dropdown').classList.toggle('show');
-        });
-        document.getElementById('logout-button').addEventListener('click', () => {
-            window.sessionManager.logout();
-        });
+        const menuToggle = document.getElementById('user-menu-toggle');
+        const logoutBtn = document.getElementById('logout-button');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                document.getElementById('user-menu-dropdown').classList.toggle('show');
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.sessionManager.logout();
+            });
+        }
     } else {
         // Usuario no logueado
         userControlsContainer.innerHTML = `
@@ -118,18 +131,16 @@ function showLoginPrompt() {
     if (modal) modal.style.display = 'flex';
 }
 
-// Abre el widget de chat
 window.openChat = function () {
-    if (window.sessionManager.isLoggedIn()) {
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         if (window.chatComponent) window.chatComponent.openAndAsk('');
     } else {
         showLoginPrompt();
     }
 };
 
-// Abre el widget de chat con una pregunta específica
 window.askAboutCourse = function (courseName) {
-    if (window.sessionManager.isLoggedIn()) {
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         if (window.chatComponent) window.chatComponent.openAndAsk(`Háblame más sobre el curso "${courseName}"`);
     } else {
         showLoginPrompt();
@@ -137,7 +148,7 @@ window.askAboutCourse = function (courseName) {
 };
 
 window.askAboutTopic = function (topic) {
-    if (window.sessionManager.isLoggedIn()) {
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         if (window.chatComponent) window.chatComponent.openAndAsk(`Explícame sobre "${topic}"`);
     } else {
         showLoginPrompt();

@@ -48,15 +48,15 @@ class DashboardManager {
                 AnalyticsApiService.getSearchTrends(days), // ✅ RESTAURADO: Cargar tendencias totales
                 AnalyticsApiService.getInteractionTrends(days), // Esto lo usamos para la dona
                 // ✅ IMPORTANTE: Pasamos 'days' a las predicciones para que el ML respete el filtro
-                fetch(`/api/analytics/predictions?days=${days}`, {
+                fetch(`${window.API_URL}/api/analytics/predictions?days=${days}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 }).then(res => res.json()),
                 AnalyticsApiService.getFeedback(),
                 // ✅ NUEVO: Obtener datos de series de tiempo SEPARADOS
-                fetch(`/api/analytics/courses-time-series?days=${days}`, {
+                fetch(`${window.API_URL}/api/analytics/courses-time-series?days=${days}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 }).then(res => res.json()),
-                fetch(`/api/analytics/topics-time-series?days=${days}`, {
+                fetch(`${window.API_URL}/api/analytics/topics-time-series?days=${days}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 }).then(res => res.json())
             ]);
