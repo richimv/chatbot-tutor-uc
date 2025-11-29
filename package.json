@@ -1,0 +1,40 @@
+{
+  "name": "chatbot-tutor-uc",
+  "version": "1.0.0",
+  "description": "Chatbot Tutor Académico con IA - Arquitectura 4 Capas",
+  "main": "infrastructure/config/server.js",
+  "scripts": {
+    "start": "node infrastructure/config/server.js",
+    "dev": "nodemon infrastructure/config/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
+    "@supabase/supabase-js": "^2.83.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.2.1",
+    "fast-levenshtein": "^3.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "natural": "^8.1.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
+    "snowball": "^0.3.1"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.10"
+  },
+  "keywords": [
+    "chatbot",
+    "ia",
+    "educacion",
+    "universidad"
+  ],
+  "author": "Tu Equipo",
+  "license": "MIT"
+}

@@ -22,4 +22,3 @@ infrastructure/database/analytics.json
 # Ignorar credenciales de servicio de Google
 service-account-key.json
 Credenciales.zip
-*.json
