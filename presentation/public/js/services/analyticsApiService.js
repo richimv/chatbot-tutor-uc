@@ -1,3 +1,5 @@
+const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
+
 class AnalyticsApiService {
     /**
      * Registra el feedback del usuario sobre una respuesta del bot.
@@ -17,7 +19,7 @@ class AnalyticsApiService {
         }
 
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/analytics/feedback`, {
+            const res = await fetch(`${API_URL}/api/analytics/feedback`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({ query, response, isHelpful, messageId }),
@@ -53,7 +55,7 @@ class AnalyticsApiService {
      */
     static async getDashboardAnalytics(days = 7) {
         // ✅ SOLUCIÓN: Añadir el parámetro 'days' a la URL de la petición.
-        return this._get(`${window.AppConfig.API_URL}/api/analytics?days=${days}`);
+        return this._get(`${API_URL}/api/analytics?days=${days}`);
     }
 
     /**
@@ -62,7 +64,7 @@ class AnalyticsApiService {
      */
     static async getSearchTrends(days = 7) {
         // ✅ SOLUCIÓN: Pasar el parámetro 'days' a la API para que el filtro de tiempo funcione.
-        return this._get(`${window.AppConfig.API_URL}/api/analytics/trends?days=${days}`);
+        return this._get(`${API_URL}/api/analytics/trends?days=${days}`);
     }
 
     /**
@@ -70,7 +72,7 @@ class AnalyticsApiService {
      * @param {number} days - El número de días a consultar.
      */
     static async getInteractionTrends(days = 7) {
-        return this._get(`${window.AppConfig.API_URL}/api/analytics/interaction-trends?days=${days}`);
+        return this._get(`${API_URL}/api/analytics/interaction-trends?days=${days}`);
     }
 
     /**
@@ -78,7 +80,7 @@ class AnalyticsApiService {
      * @returns {Promise<object>}
      */
     static async getPredictions() {
-        return this._get(`${window.AppConfig.API_URL}/api/analytics/predictions`);
+        return this._get(`${API_URL}/api/analytics/predictions`);
     }
 
     /**
@@ -86,7 +88,7 @@ class AnalyticsApiService {
      * @returns {Promise<Array>}
      */
     static async getFeedback() {
-        return this._get(`${window.AppConfig.API_URL}/api/analytics/feedback`);
+        return this._get(`${API_URL}/api/analytics/feedback`);
     }
 
     /**
@@ -99,7 +101,7 @@ class AnalyticsApiService {
         const token = localStorage.getItem('authToken');
         if (!token) return; // No registrar vistas para usuarios no logueados.
 
-        fetch(`${window.AppConfig.API_URL}/api/analytics/view`, {
+        fetch(`${API_URL}/api/analytics/view`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
