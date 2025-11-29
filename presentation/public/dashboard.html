@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tutor IA</title>
+    <link rel="icon" type="image/png" href="/assets/logo-dark.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dark-theme-enhancements.css"> <!-- Mejoras tema oscuro -->
+    <link rel="stylesheet" href="css/3d-effects.css"> <!-- Efectos 3D -->
+    <link rel="stylesheet" href="css/logo-theme.css"> <!-- Sistema de logo dual -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header class="admin-header">
+        <div class="logo">
+            <h1>Dashboard de Estadísticas</h1>
+        </div>
+        <div class="header-nav">
+            <a href="/admin.html" class="nav-link" title="Ir al Panel de Gestión">
+                <i class="fas fa-tasks"></i> Gestión
+            </a>
+            <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema"
+                aria-label="Cambiar entre tema claro y oscuro">
+                <i class="fas fa-sun" id="theme-icon"></i>
+            </button>
+            <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
+                <i class="fas fa-home"></i>
+            </a>
+        </div>
+    </header>
+
+    <main id="dashboard-container" class="admin-container">
+        <!-- ✅ NUEVO: Gráficos de Evolución de Popularidad Separados -->
+        <div class="chart-card" style="grid-column: span 3;">
+            <h3>Evolución de Popularidad: Top 5 CURSOS</h3>
+            <div class="chart-wrapper">
+                <canvas id="course-popularity-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card" style="grid-column: span 3;">
+            <h3>Evolución de Popularidad: Top 5 TEMAS</h3>
+            <div class="chart-wrapper">
+                <canvas id="topic-popularity-chart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- ✅ SOLUCIÓN: Cargar los scripts en el orden correcto de dependencias. -->
+    <script src="js/theme-toggle.js"></script> <!-- ✅ NUEVO: Theme toggle -->
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // ✅ REACTIVADO: Ahora que la cadena de dependencias está corregida, la protección funcionará.
+        window.sessionManager.initialize().then(() => { if (window.sessionManager.getUser()?.role !== 'admin') window.location.href = '/'; });
+    </script>
+</body>
+
+</html>

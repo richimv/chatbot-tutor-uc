@@ -1,0 +1,30 @@
+/* ============================================
+   SISTEMA DE LOGO DUAL (CLARO/OSCURO)
+   Muestra logo oscuro en tema claro y viceversa
+   ============================================ */
+
+/* Logo oscuro/negro para tema CLARO */
+.logo-dark {
+    display: block;
+}
+
+/* Logo blanco para tema OSCURO - oculto por defecto */
+.logo-light {
+    display: none;
+}
+
+/* Tema oscuro: intercambiar visibilidad */
+body.dark-theme .logo-dark {
+    display: none;
+}
+
+body.dark-theme .logo-light {
+    display: block;
+}
+
+/* Asegurar que ambos logos tengan el mismo tamaño */
+.logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+}

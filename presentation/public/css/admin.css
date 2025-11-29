@@ -1,0 +1,441 @@
+/* --- Estilos para la Página de Admin --- */
+
+.admin-container {
+    max-width: 900px;
+    margin: 20px auto 40px;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 30px 35px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.career-card {
+    background: var(--surface-alt);
+    border-radius: 12px;
+    margin-bottom: var(--spacing-lg);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+.career-card-details {
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+    border-top: 1px solid var(--border);
+    display: none;
+}
+
+.career-card.expanded .career-card-details {
+    display: block;
+}
+
+.career-card .career-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.career-card .toggle-arrow {
+    transition: transform 0.3s ease;
+    font-size: 1.5rem;
+}
+
+.career-card.expanded .toggle-arrow {
+    transform: rotate(90deg);
+}
+
+.admin-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    /* Evita que las pestañas salten a la siguiente línea */
+    overflow-x: auto;
+    /* Permite el scroll horizontal */
+    gap: var(--spacing-sm);
+    border-bottom: 2px solid var(--border);
+    margin-bottom: var(--spacing-lg);
+    -webkit-overflow-scrolling: touch;
+    /* Scroll suave en iOS */
+}
+
+.tab-header {
+    display: flex;
+    /* ✅ MEJORA: Alinear la barra de búsqueda a la izquierda y el botón a la derecha */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    /* Para que se ajuste en pantallas pequeñas */
+    gap: 1rem;
+}
+
+.tab-header .btn-primary {
+    padding: 0.5rem 1rem;
+}
+
+.tab-link {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    /* Evita que el texto de la pestaña se parta */
+    transition: all 0.2s ease;
+}
+
+.tab-link.active,
+.tab-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.tab-content:not(.active) {
+    display: none;
+}
+
+.item-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-alt);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 8px;
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--border);
+    /* ✅ CORRECCIÓN: Borde completo para diferenciar del fondo */
+    border-left: 3px solid var(--border);
+    /* Mantener el borde izquierdo más grueso */
+    transition: all 0.2s ease;
+    /* ✅ NUEVO: Transición suave */
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    /* ✅ NUEVO: Efecto de elevación */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* ✅ NUEVO: Sombra al pasar el mouse */
+    border-left-color: var(--accent);
+    /* ✅ NUEVO: Resaltar borde izquierdo */
+}
+
+/* ✅ SOLUCIÓN: Estilos para el ícono de la malla curricular en la lista de carreras */
+.curriculum-link-icon {
+    text-decoration: none;
+    color: var(--accent);
+    margin: 0 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.curriculum-link-icon:hover {
+    transform: scale(1.2);
+}
+
+.item-card-full {
+    background: var(--surface-alt);
+    border-radius: 12px;
+    margin-bottom: var(--spacing-lg);
+    border-left: 4px solid var(--accent);
+}
+
+.item-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border);
+}
+
+.item-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.item-card-body {
+    padding: var(--spacing-md);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: grid;
+    gap: var(--spacing-sm);
+}
+
+.item-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.edit-btn-small,
+.delete-btn-small,
+.reset-pass-btn-small {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.edit-btn-small:hover {
+    color: var(--warning);
+}
+
+.delete-btn-small:hover {
+    color: var(--danger);
+}
+
+.reset-pass-btn-small:hover {
+    color: var(--accent);
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.loading-state,
+.empty-state,
+.error-state {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+/* --- ESTILOS PARA EL NUEVO COMBOBOX DESPLEGABLE --- */
+.searchable-dropdown-container {
+    position: relative;
+    /* Clave para que el dropdown se posicione correctamente */
+}
+
+.searchable-dropdown-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.live-search-input {
+    padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+    /* Espacio para la flecha */
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: 8px !important;
+    /* Asegurar que el borde se aplique */
+    cursor: pointer;
+    width: 100%;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 1rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    /* La flecha no captura clics */
+    transition: transform 0.2s ease;
+}
+
+.searchable-dropdown-container.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.collapsible-list {
+    display: none;
+    /* Oculto por defecto */
+    position: absolute;
+    width: 100%;
+    z-index: 1001;
+    /* Por encima de otros elementos del modal */
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    top: 100%;
+    margin-top: 4px;
+    /* Pequeño espacio estético */
+    background: var(--surface-alt);
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.searchable-dropdown-container.open .collapsible-list {
+    display: block;
+    /* Se muestra al hacer clic */
+}
+
+/* Para el <select> dentro del dropdown */
+.collapsible-list select {
+    width: 100%;
+    border: none;
+    background: var(--surface-alt);
+    color: var(--text-main);
+}
+
+.collapsible-list select option {
+    padding: 8px 12px;
+}
+
+/* Estilos para la lista de checkboxes */
+.checkbox-list {
+    max-height: 180px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 1.1em;
+    height: 1.1em;
+    accent-color: var(--accent);
+}
+
+.checkbox-item label {
+    font-weight: normal;
+    color: var(--text-main);
+}
+
+/* --- ESTILOS PARA LOS CHIPS DE SELECCIÓN --- */
+.selected-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    /* Espacio antes del input de búsqueda */
+}
+
+.selected-chip {
+    display: flex;
+    align-items: center;
+    background: var(--accent);
+    color: var(--surface);
+    /* ✅ CORRECCIÓN: Usar variable adaptativa para contraste en ambos temas */
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.remove-chip-btn {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.schedule-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    /* Columnas flexibles */
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.schedule-row input {
+    margin: 0;
+    min-width: 0;
+    /* Permite que los inputs se encojan */
+}
+
+.remove-schedule-row {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+#schedule-container {
+    margin-bottom: 1rem;
+}
+
+#add-schedule-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* --- Scrollbar personalizado (Tema Oscuro) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--surface);
+}
+
+/* --- ✅ NUEVO: Estilos para la barra de búsqueda del panel de admin --- */
+
+.search-bar-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+    /* Ancho máximo para la barra */
+}
+
+.search-bar-container .fa-search {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+}
+
+.admin-search-input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    /* Espacio para el ícono */
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--surface);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}

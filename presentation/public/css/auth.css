@@ -1,0 +1,285 @@
+/* === auth.css === */
+/* Estilos dedicados para las páginas de login y registro */
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--bg-gradient);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 900px;
+    min-height: 550px;
+    background-color: var(--surface);
+    border-radius: 20px;
+    /* ✅ Sombra NEGRA para tema CLARO */
+    box-shadow:
+        4px 4px 20px rgba(0, 0, 0, 0.15),
+        -2px -2px 10px rgba(255, 255, 255, 0.05);
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: hidden;
+    margin: 1rem;
+}
+
+/* Sombras BLANCAS para tema OSCURO */
+body.dark-theme .auth-container {
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.4),
+        -3px -3px 16px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 768px) {
+    .auth-container {
+        grid-template-columns: 40% 60%;
+    }
+}
+
+.auth-panel-left {
+    display: none;
+    /* Oculto en móvil */
+    background: #f5f5f5;
+    /* ✅ MEJORADO: Gris claro para tema claro */
+    color: #0a0a0a;
+    /* ✅ Texto negro para contraste */
+    padding: 3rem;
+    text-align: center;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Tema oscuro: fondo oscuro con texto claro */
+body.dark-theme .auth-panel-left {
+    background: #0a0a0a;
+    /* Fondo muy oscuro */
+    color: #f5f5f5;
+    /* Texto claro */
+}
+
+@media (min-width: 768px) {
+    .auth-panel-left {
+        display: flex;
+    }
+}
+
+.auth-panel-left .logo-img {
+    width: 80px;
+    height: auto;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+}
+
+.auth-panel-left h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.auth-panel-left p {
+    font-size: 1rem;
+    max-width: 300px;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.auth-panel-right {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    animation: slideInFromRight 0.6s ease-out;
+}
+
+@media (min-width: 768px) {
+    .auth-panel-right {
+        padding: 3rem;
+    }
+}
+
+.auth-form {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.auth-form h2 {
+    color: var(--text-main);
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.auth-form .form-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-main);
+    /* ✅ CORREGIDO: Color visible en ambos temas */
+    font-size: 0.95rem;
+    transition: color 0.3s;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form .btn-primary {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.auth-switch-link {
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.auth-switch-link a {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ============================================
+   BOTÓN MOSTRAR/OCULTAR CONTRASEÑA
+   ============================================ */
+
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    font-size: 1.1rem;
+}
+
+.password-toggle-btn:hover {
+    color: var(--text-main);
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+}
+
+/* Mensaje de error de validación */
+.password-match-error {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.password-match-error.show {
+    display: block;
+}
+
+/* --- Estilos para la validación de contraseña en tiempo real --- */
+.password-requirements-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.requirement-item {
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 4px;
+    opacity: 0.7;
+}
+
+.requirement-item::before {
+    /* Usamos Font Awesome para iconos consistentes */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    content: '\f111';
+    /* Círculo (fa-circle) */
+    margin-right: 8px;
+    font-size: 0.7rem;
+    display: inline-block;
+    width: 16px;
+    /* Alineación */
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.requirement-item.valid {
+    color: var(--success);
+    opacity: 1;
+}
+
+.requirement-item.valid::before {
+    content: '\f058';
+    /* Círculo con check (fa-circle-check) */
+    color: var(--success);
+}
+
+.requirement-item.invalid {
+    color: var(--danger);
+    opacity: 1;
+}
+
+.requirement-item.invalid::before {
+    content: '\f057';
+    /* Círculo con X (fa-circle-xmark) */
+    color: var(--danger);
+}

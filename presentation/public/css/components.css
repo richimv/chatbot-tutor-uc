@@ -1,0 +1,612 @@
+/* --- Componentes Reutilizables --- */
+
+/* Botones */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* ✅ CORRECCIÓN: Centra el contenido horizontalmente. */
+    text-decoration: none;
+    /* ✅ CORRECCIÓN: Elimina el subrayado. */
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    /* ✅ CORRECCIÓN: Añadir estilos para centrar y quitar subrayado. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.back-button {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.back-button:hover {
+    background: var(--surface);
+    color: var(--text-main);
+}
+
+/* Badges y Tags */
+.topic-tag {
+    background: var(--surface-alt);
+    color: var(--accent);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+}
+
+.course-badge {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.course-badge:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.course-badge-static {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+}
+
+/* Items de Materiales */
+.material-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.material-item.pdf::before {
+    content: '📄 ';
+}
+
+.material-item.link::before {
+    content: '🔗 ';
+}
+
+.material-item:hover {
+    color: var(--text-main);
+    border-color: var(--accent);
+}
+
+.material-size {
+    font-weight: 600;
+    color: var(--danger);
+    margin-left: 0.5rem;
+}
+
+/* Estados (Loading, Empty) */
+.no-results-container,
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.no-results-container h3,
+.empty-state h3 {
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Banner Promocional del Chat */
+.chat-promo-banner {
+    /* ✅ MEJORADO: Fondo más oscuro para mejor visibilidad en tema claro */
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    /* Sombra 3D mejorada */
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.12),
+        -2px -2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.chat-promo-banner-icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    margin-bottom: var(--spacing-md);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.05);
+    /* Fondo sutil para el icono */
+    border-radius: 50%;
+}
+
+.chat-promo-banner-content {
+    flex-grow: 1;
+}
+
+.chat-promo-banner-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+    /* Asegurar texto visible */
+    margin: 0 0 var(--spacing-sm);
+}
+
+.chat-promo-banner-text {
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+
+/* ✅ MEJORA: Botón más prominente y con mejor hover */
+.chat-promo-banner-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Botones de Navegación en el Chat --- */
+.chat-nav-button {
+    background: rgba(0, 0, 0, 0.05);
+    /* Fondo sutil del color de acento */
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: var(--font-main);
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin: 0.25rem 0;
+}
+
+.chat-nav-button:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* ✅ MEJORA RESPONSIVE: Estilos para el banner en pantallas grandes */
+@media (min-width: 768px) {
+    .chat-promo-banner {
+        flex-direction: row;
+        /* Cambia a layout horizontal */
+        justify-content: space-between;
+        /* Distribuye el espacio */
+        text-align: left;
+        /* Alinea el texto a la izquierda */
+        padding: 2.5rem 3rem;
+    }
+
+    .chat-promo-banner-icon {
+        font-size: 3rem;
+        margin-bottom: 0;
+        /* Reset de margen */
+    }
+
+    .chat-promo-banner-content {
+        margin: 0 1.5rem;
+        /* Añade espacio alrededor del texto */
+        flex: 1;
+        /* Permite que el contenido de texto ocupe el espacio disponible */
+        margin: 0 2rem;
+    }
+
+    .chat-promo-banner-text {
+        margin-bottom: 0;
+        /* Quita el margen inferior en la vista de escritorio */
+    }
+}
+
+/* =================================
+   Sección de Recomendaciones (Descubre más)
+   ================================= */
+
+.discover-more-section {
+    /* ✅ MEJORADO: Sin borde negro superior, más sutil */
+    background-color: transparent;
+    border: 1px solid var(--border);
+    /* Borde superior removido para tema claro */
+    border-radius: 16px;
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+    background: var(--surface-alt);
+}
+
+.discover-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--spacing-md);
+}
+
+.recommendations-section {
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--surface-alt);
+    /* Fondo sutil para diferenciar la sección */
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.recommendations-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.recommendation-card {
+    display: flex;
+    align-items: center;
+    position: relative;
+    /* Para posicionar badge absoluto */
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-alt) 100%);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+    border-left-width: 4px;
+}
+
+/* Icono de recomendación */
+.recommendation-icon {
+    font-size: 1.8rem;
+    margin-right: var(--spacing-md);
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--accent-dark);
+    color: var(--accent);
+    transition: all 0.3s ease;
+}
+
+.recommendation-card:hover .recommendation-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.recommendation-icon.topic-icon {
+    background: rgba(241, 196, 15, 0.15);
+    color: var(--warning);
+}
+
+/* Contenido de la tarjeta */
+.recommendation-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 4px;
+}
+
+.recommendation-type {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.3;
+}
+
+/* Flecha de navegación */
+.recommendation-arrow {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    margin-left: var(--spacing-sm);
+}
+
+.recommendation-card:hover .recommendation-arrow {
+    transform: translateX(6px);
+    color: var(--accent);
+}
+
+/* Badge de Confianza ML */
+.ml-confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    letter-spacing: 0.3px;
+}
+
+.ml-confidence-badge::before {
+    content: "🎯";
+    font-size: 0.8rem;
+}
+
+/* Indicador de IA */
+.ml-powered-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.ml-powered-indicator i {
+    color: #8b5cf6;
+    font-size: 1.2rem;
+}
+
+.ml-confidence-avg {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* =================================================== */
+/* == NUEVOS ESTILOS: Tarjeta de Promo Específica   == */
+/* =================================================== */
+
+.specific-promo-card {
+    /* ✅ MEJORA: Aplicar un diseño premium similar al banner principal del chat */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    background: var(--surface-alt);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2.5rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    /* Sombra más suave por defecto */
+}
+
+/* ✅ NUEVO: Icono encapsulado para consistencia */
+.specific-promo-icon {
+    font-size: 2rem;
+    background: var(--accent-dark);
+    /* Variable adaptativa */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    /* Variable adaptativa */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.specific-promo-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    /* Variable adaptativa */
+    margin: 0 0 1rem 0;
+}
+
+.specific-promo-query {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0 auto 1rem auto;
+    max-width: 90%;
+    font-style: normal;
+    color: var(--text-main);
+    /* Variable adaptativa */
+    font-size: 1rem;
+    word-wrap: break-word;
+}
+
+.specific-promo-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    /* Variable adaptativa */
+    margin: 0 0 1.5rem 0;
+}
+
+.specific-promo-cta {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    display: inline-flex;
+    /* Para centrar el botón y su contenido */
+}
+
+/* ✅ MEJORA: Layout horizontal en pantallas más grandes */
+@media (min-width: 768px) {
+    .specific-promo-card {
+        flex-direction: row;
+        text-align: left;
+        padding: 2rem;
+        gap: 1.5rem;
+    }
+
+    .specific-promo-content {
+        flex-grow: 1;
+    }
+
+    .specific-promo-query,
+    .specific-promo-subtitle {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: 100%;
+    }
+}
+
+/* =================================
+   Visor Modal de PDF
+   ================================= */
+
+.pdf-modal {
+    display: none;
+    /* Oculto por defecto */
+    position: fixed;
+    /* ✅ SOLUCIÓN: Reducir el z-index para que esté DEBAJO del chatbot (que tiene 9999).
+       Esto permite que el botón flotante y la ventana del chat se muestren por encima del visor. */
+    z-index: 9998;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+}
+
+.pdf-modal-content {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 90%;
+    height: 90%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    /* Para que el iframe no se salga de los bordes redondeados */
+    position: relative;
+    /* Para que esté sobre el overlay */
+}
+
+.pdf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.pdf-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.pdf-modal-body {
+    flex-grow: 1;
+    position: relative;
+}
+
+#pdf-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}

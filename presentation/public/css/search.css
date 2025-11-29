@@ -1,0 +1,84 @@
+/* Container principal */
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
+/* Hero section */
+.hero {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.hero h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+}
+
+.hero p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+
+/* --- Sección de Búsqueda --- */
+.search-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.search-box {
+    display: flex;
+    flex-direction: column; /* Mobile-first: apilado por defecto */
+    gap: var(--spacing-md);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#searchInput {
+    flex: 1;
+    background: var(--surface-alt);
+    color: var(--text-main);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#searchInput:focus {
+    outline: none;
+    border-color: var(--accent);
+    background-color: var(--card-bg);
+}
+/* Responsive */
+@media (min-width: 640px) {
+    .search-box {
+        flex-direction: row; /* En pantallas más grandes, los elementos se alinean en fila */
+    }
+}
+/* =================================
+   Estilos para Vistas de Detalle
+   ================================= */
+
+/* ✅ NUEVO DISEÑO: Título principal, integrado con el tema oscuro */
+.detail-view-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--accent);
+    line-height: 1.2;
+}
+
+/* ✅ NUEVO DISEÑO: Subtítulo, usa el color de acento para jerarquía */
+.detail-view-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: var(--spacing-md); /* ✅ AJUSTE: Reducido aún más el espacio superior para acercarlo al título. */
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+}

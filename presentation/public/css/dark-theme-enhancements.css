@@ -1,0 +1,927 @@
+/* ============================================
+   MEJORAS ESPECÍFICAS PARA TEMA OSCURO
+   Paleta Profesional y Armoniosa
+   ============================================ */
+
+/* Sombras sutiles y profesionales */
+body.dark-theme .main-header,
+body.dark-theme .admin-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+    /* Sombra más sutil y natural */
+}
+
+/* Tarjetas de navegación (carreras, cursos, etc.) */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    background: var(--surface);
+    /* Negro suave #141414 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+    /* Sombra muy sutil + borde casi imperceptible */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    background: #181818;
+    /* Ligeramente más claro al hover */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    /* Elevación sutil */
+}
+
+/* Mejoras para botones en tema oscuro */
+body.dark-theme .btn-primary {
+    background: #e8e8e8;
+    color: #0a0a0a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .btn-primary:hover {
+    background: #f5f5f5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Input de búsqueda en tema oscuro */
+body.dark-theme #searchInput,
+body.dark-theme .search-bar-container input {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-main);
+}
+
+body.dark-theme #searchInput:focus {
+    border-color: var(--accent);
+    background: #181818;
+    /* Ligeramente más claro en focus */
+    box-shadow: 0 0 0 3px rgba(232, 232, 232, 0.08);
+}
+
+/* Modales en tema oscuro */
+body.dark-theme .modal-content {
+    background: var(--surface-alt);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   MEJORAS ESPECÍFICAS PARA TEMA OSCURO
+   Paleta Profesional y Armoniosa
+   ============================================ */
+
+/* Sombras sutiles y profesionales */
+body.dark-theme .main-header,
+body.dark-theme .admin-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+    /* Sombra más sutil y natural */
+}
+
+/* Tarjetas de navegación (carreras, cursos, etc.) */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    background: var(--surface);
+    /* Negro suave #141414 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+    /* Sombra muy sutil + borde casi imperceptible */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    background: #181818;
+    /* Ligeramente más claro al hover */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    /* Elevación sutil */
+}
+
+/* Mejoras para botones en tema oscuro */
+body.dark-theme .btn-primary {
+    background: #e8e8e8;
+    color: #0a0a0a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .btn-primary:hover {
+    background: #f5f5f5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Input de búsqueda en tema oscuro */
+body.dark-theme #searchInput,
+body.dark-theme .search-bar-container input {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-main);
+}
+
+body.dark-theme #searchInput:focus {
+    border-color: var(--accent);
+    background: #181818;
+    /* Ligeramente más claro en focus */
+    box-shadow: 0 0 0 3px rgba(232, 232, 232, 0.08);
+}
+
+/* Modales en tema oscuro */
+body.dark-theme .modal-content {
+    background: var(--surface-alt);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ✅ Predicciones ML - Mantienen gradiente vibrante */
+body.dark-theme .prediction-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+body.dark-theme .prediction-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4),
+        0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   MEJORAS PARA CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Panel de historial más oscuro */
+body.dark-theme .chatbot-history-panel {
+    background: #0f0f0f;
+    /* Más oscuro que el fondo principal */
+    border-right-color: #2a2a2a;
+}
+
+/* Items de conversación con mejor contraste */
+body.dark-theme .conversation-item {
+    background: #1a1a1a;
+    /* Gris oscuro visible */
+    color: #d5d5d5;
+    /* Texto claro */
+    border-color: #2a2a2a;
+}
+
+body.dark-theme .conversation-item:hover {
+    background: #222222;
+    /* Más claro al hover */
+    border-color: #e8e8e8;
+}
+
+body.dark-theme .conversation-item.active {
+    background: #e8e8e8;
+    /* Gris claro para el activo */
+    color: #0a0a0a;
+    /* Texto oscuro */
+    border-color: #e8e8e8;
+}
+
+/* Botón de nuevo chat en tema oscuro */
+body.dark-theme .new-chat-btn {
+    background: #e8e8e8;
+    color: #0a0a0a;
+}
+
+body.dark-theme .new-chat-btn:hover {
+    background: #f5f5f5;
+}
+
+body.dark-theme .modal-content {
+    background: var(--surface-alt);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   MEJORAS ESPECÍFICAS PARA TEMA OSCURO
+   Paleta Profesional y Armoniosa
+   ============================================ */
+
+/* Sombras sutiles y profesionales */
+body.dark-theme .main-header,
+body.dark-theme .admin-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+    /* Sombra más sutil y natural */
+}
+
+/* Tarjetas de navegación (carreras, cursos, etc.) */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    background: var(--surface);
+    /* Negro suave #141414 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+    /* Sombra muy sutil + borde casi imperceptible */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    background: #181818;
+    /* Ligeramente más claro al hover */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    /* Elevación sutil */
+}
+
+/* Mejoras para botones en tema oscuro */
+body.dark-theme .btn-primary {
+    background: #e8e8e8;
+    color: #0a0a0a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .btn-primary:hover {
+    background: #f5f5f5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Input de búsqueda en tema oscuro */
+body.dark-theme #searchInput,
+body.dark-theme .search-bar-container input {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-main);
+}
+
+body.dark-theme #searchInput:focus {
+    border-color: var(--accent);
+    background: #181818;
+    /* Ligeramente más claro en focus */
+    box-shadow: 0 0 0 3px rgba(232, 232, 232, 0.08);
+}
+
+/* Modales en tema oscuro */
+body.dark-theme .modal-content {
+    background: var(--surface-alt);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ✅ Predicciones ML - Mantienen gradiente vibrante */
+body.dark-theme .prediction-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+body.dark-theme .prediction-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4),
+        0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   MEJORAS PARA CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Panel de historial más oscuro */
+body.dark-theme .chatbot-history-panel {
+    background: #0f0f0f;
+    /* Más oscuro que el fondo principal */
+    border-right-color: #2a2a2a;
+}
+
+/* Items de conversación con mejor contraste */
+body.dark-theme .conversation-item {
+    background: #1a1a1a;
+    /* Gris oscuro visible */
+    color: #d5d5d5;
+    /* Texto claro */
+    border-color: #2a2a2a;
+}
+
+body.dark-theme .conversation-item:hover {
+    background: #222222;
+    /* Más claro al hover */
+    border-color: #e8e8e8;
+}
+
+body.dark-theme .conversation-item.active {
+    background: #e8e8e8;
+    /* Gris claro para el activo */
+    color: #0a0a0a;
+    /* Texto oscuro */
+    border-color: #e8e8e8;
+}
+
+/* Botón de nuevo chat en tema oscuro */
+body.dark-theme .new-chat-btn {
+    background: #e8e8e8;
+    color: #0a0a0a;
+}
+
+body.dark-theme .new-chat-btn:hover {
+    background: #f5f5f5;
+}
+
+/* Chat messages area */
+body.dark-theme .chatbot-main {
+    background: var(--bg-gradient);
+}
+
+/* Input area */
+body.dark-theme .chatbot-input {
+    background: #1a1a1a;
+    border-top-color: #2a2a2a;
+}
+
+/* ============================================
+   REFUERZO DE SOMBRAS PARA TEMA OSCURO
+   Sombras blancas más intensas para resaltar
+   ============================================ */
+
+/* Tarjetas de navegación - sombras blancas intensas */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.4),
+        /* Oscura sutil */
+        -3px -3px 12px rgba(255, 255, 255, 0.15),
+        /* Blanca INTENSA */
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    /* Borde luminoso */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    box-shadow:
+        3px 3px 12px rgba(0, 0, 0, 0.5),
+        -4px -4px 16px rgba(255, 255, 255, 0.2),
+        /* Más luz en hover */
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Dashboard cards - resaltar con blanco */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Modales en tema oscuro */
+body.dark-theme .modal-content {
+    background: var(--surface-alt);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ✅ Predicciones ML - Mantienen gradiente vibrante */
+body.dark-theme .prediction-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+body.dark-theme .prediction-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4),
+        0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   MEJORAS PARA CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Panel de historial más oscuro */
+body.dark-theme .chatbot-history-panel {
+    background: #0f0f0f;
+    /* Más oscuro que el fondo principal */
+    border-right-color: #2a2a2a;
+}
+
+/* Items de conversación con mejor contraste */
+body.dark-theme .conversation-item {
+    background: #1a1a1a;
+    /* Gris oscuro visible */
+    color: #d5d5d5;
+    /* Texto claro */
+    border-color: #2a2a2a;
+}
+
+body.dark-theme .conversation-item:hover {
+    background: #222222;
+    /* Más claro al hover */
+    border-color: #e8e8e8;
+}
+
+body.dark-theme .conversation-item.active {
+    background: #e8e8e8;
+    /* Gris claro para el activo */
+    color: #0a0a0a;
+    /* Texto oscuro */
+    border-color: #e8e8e8;
+}
+
+/* Botón de nuevo chat en tema oscuro */
+body.dark-theme .new-chat-btn {
+    background: #e8e8e8;
+    color: #0a0a0a;
+}
+
+body.dark-theme .new-chat-btn:hover {
+    background: #f5f5f5;
+}
+
+/* Chat messages area */
+body.dark-theme .chatbot-main {
+    background: var(--bg-gradient);
+}
+
+/* Input area */
+body.dark-theme .chatbot-input {
+    background: #1a1a1a;
+    border-top-color: #2a2a2a;
+}
+
+/* ============================================
+   REFUERZO DE SOMBRAS PARA TEMA OSCURO
+   Sombras blancas más intensas para resaltar
+   ============================================ */
+
+/* Tarjetas de navegación - sombras blancas intensas */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.4),
+        /* Oscura sutil */
+        -3px -3px 12px rgba(255, 255, 255, 0.15),
+        /* Blanca INTENSA */
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    /* Borde luminoso */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    box-shadow:
+        3px 3px 12px rgba(0, 0, 0, 0.5),
+        -4px -4px 16px rgba(255, 255, 255, 0.2),
+        /* Más luz en hover */
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Dashboard cards - resaltar con blanco */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.3),
+        -3px -3px 10px rgba(255, 255, 255, 0.12),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Recomendaciones - Sección "Descubre más" */
+body.dark-theme .discover-more-section {
+    background: #141414;
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.4),
+        -4px -4px 20px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .recommendation-card {
+    background: #1a1a1a;
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.3),
+        -2px -2px 12px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .recommendation-card:hover {
+    box-shadow:
+        4px 4px 14px rgba(0, 0, 0, 0.4),
+        -3px -3px 16px rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Contenedor de sugerencia del chatbot */
+body.dark-theme .chat-prompt-container,
+body.dark-theme .chatbot-prompt {
+    background: #141414;
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.4),
+        -4px -4px 20px rgba(255, 255, 255, 0.18),
+        /* Luz MUY intensa */
+        0 0 0 1px rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Modales con luz intensa */
+body.dark-theme .modal-content {
+    box-shadow:
+        8px 8px 32px rgba(0, 0, 0, 0.6),
+        -6px -6px 24px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   MENSAJES DEL CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Mensajes del usuario - fondo oscuro con texto claro */
+body.dark-theme .chatbot-messages .message.user {
+    background: #2a2a2a;
+    /* Gris oscuro */
+    color: #f5f5f5;
+    /* Texto muy claro */
+}
+
+/* Dashboard cards en tema oscuro */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body.dark-theme .kpi-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sección de recomendaciones en tema oscuro */
+body.dark-theme .discover-more-section {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .recommendation-card:hover {
+    background: #181818;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ✅ Predicciones ML - Mantienen gradiente vibrante */
+body.dark-theme .prediction-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+body.dark-theme .prediction-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4),
+        0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   MEJORAS PARA CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Panel de historial más oscuro */
+body.dark-theme .chatbot-history-panel {
+    background: #0f0f0f;
+    /* Más oscuro que el fondo principal */
+    border-right-color: #2a2a2a;
+}
+
+/* Items de conversación con mejor contraste */
+body.dark-theme .conversation-item {
+    background: #1a1a1a;
+    /* Gris oscuro visible */
+    color: #d5d5d5;
+    /* Texto claro */
+    border-color: #2a2a2a;
+}
+
+body.dark-theme .conversation-item:hover {
+    background: #222222;
+    /* Más claro al hover */
+    border-color: #e8e8e8;
+}
+
+body.dark-theme .conversation-item.active {
+    background: #e8e8e8;
+    /* Gris claro para el activo */
+    color: #0a0a0a;
+    /* Texto oscuro */
+    border-color: #e8e8e8;
+}
+
+/* Botón de nuevo chat en tema oscuro */
+body.dark-theme .new-chat-btn {
+    background: #e8e8e8;
+    color: #0a0a0a;
+}
+
+body.dark-theme .new-chat-btn:hover {
+    background: #f5f5f5;
+}
+
+/* Chat messages area */
+body.dark-theme .chatbot-main {
+    background: var(--bg-gradient);
+}
+
+/* Input area */
+body.dark-theme .chatbot-input {
+    background: #1a1a1a;
+    border-top-color: #2a2a2a;
+}
+
+/* ============================================
+   REFUERZO DE SOMBRAS PARA TEMA OSCURO
+   Sombras blancas más intensas para resaltar
+   ============================================ */
+
+/* Tarjetas de navegación - sombras blancas intensas */
+body.dark-theme .browse-card,
+body.dark-theme .career-card,
+body.dark-theme .course-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.4),
+        /* Oscura sutil */
+        -3px -3px 12px rgba(255, 255, 255, 0.15),
+        /* Blanca INTENSA */
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    /* Borde luminoso */
+}
+
+body.dark-theme .browse-card:hover,
+body.dark-theme .career-card:hover,
+body.dark-theme .course-card:hover {
+    box-shadow:
+        3px 3px 12px rgba(0, 0, 0, 0.5),
+        -4px -4px 16px rgba(255, 255, 255, 0.2),
+        /* Más luz en hover */
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Dashboard cards - resaltar con blanco */
+body.dark-theme .kpi-card,
+body.dark-theme .chart-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.3),
+        -3px -3px 10px rgba(255, 255, 255, 0.12),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Recomendaciones - Sección "Descubre más" */
+body.dark-theme .discover-more-section {
+    background: #141414;
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.4),
+        -4px -4px 20px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .recommendation-card {
+    background: #1a1a1a;
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.3),
+        -2px -2px 12px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .recommendation-card:hover {
+    box-shadow:
+        4px 4px 14px rgba(0, 0, 0, 0.4),
+        -3px -3px 16px rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Contenedor de sugerencia del chatbot */
+body.dark-theme .chat-prompt-container,
+body.dark-theme .chatbot-prompt {
+    background: #141414;
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.4),
+        -4px -4px 20px rgba(255, 255, 255, 0.18),
+        /* Luz MUY intensa */
+        0 0 0 1px rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Modales con luz intensa */
+body.dark-theme .modal-content {
+    box-shadow:
+        8px 8px 32px rgba(0, 0, 0, 0.6),
+        -6px -6px 24px rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   MENSAJES DEL CHAT EN TEMA OSCURO
+   ============================================ */
+
+/* Mensajes del usuario - fondo oscuro con texto claro */
+body.dark-theme .chatbot-messages .message.user {
+    background: #2a2a2a;
+    /* Gris oscuro */
+    color: #f5f5f5;
+    /* Texto muy claro */
+    box-shadow:
+        2px 2px 6px rgba(0, 0, 0, 0.3),
+        -1px -1px 4px rgba(255, 255, 255, 0.08);
+}
+
+/* Mensajes del bot en tema oscuro */
+body.dark-theme .chatbot-messages .message.bot {
+    background: #1a1a1a;
+    /* Más oscuro que mensajes del usuario */
+    color: #e4e4e7;
+    /* Texto claro */
+    box-shadow:
+        2px 2px 6px rgba(0, 0, 0, 0.3),
+        -1px -1px 4px rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   BOTÓN ASK-AI EN TEMA OSCURO
+   ============================================ */
+
+/* Texto negro sobre fondo gris claro en tema oscuro */
+body.dark-theme .btn-ask-ai {
+    background: #e8e8e8;
+    /* Gris claro (var --accent en oscuro) */
+    color: #0a0a0a;
+    /* Texto negro para contraste */
+}
+
+body.dark-theme .btn-ask-ai:hover {
+    background: #f5f5f5;
+    /* Más claro en hover */
+    color: #0a0a0a;
+}

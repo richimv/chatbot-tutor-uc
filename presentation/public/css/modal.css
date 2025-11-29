@@ -1,0 +1,247 @@
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* --- REDISEÑO COMPLETO DE MODALES --- */
+.modal-content {
+    background: var(--surface-alt);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 550px;
+    /* Un poco más ancho para los checkboxes */
+    color: var(--text-main);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    animation: fadeIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    /* Altura máxima */
+    overflow: hidden;
+    /* ✅ CORRECCIÓN: Evitar que el footer sobresalga de los bordes redondeados */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--accent);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: var(--text-main);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    /* Clave para que el cuerpo ocupe el espacio restante */
+    overflow-y: auto;
+    /* El cuerpo del modal es el que se desplaza */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Asegurar que el formulario participe en el layout flexible */
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    /* Evita que el contenido del formulario desborde el contenedor flex */
+}
+
+.modal-body fieldset {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modal-body legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    outline: none;
+    transition: 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: var(--accent);
+    background: var(--surface-alt);
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface-alt);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* ✅ CORRECCIÓN: Normalizar tamaño de botones en el footer del modal */
+.modal-footer button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    font-weight: 500;
+    min-width: 100px;
+    /* Ancho mínimo para consistencia */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Modal de Auth Prompt */
+.auth-prompt-modal .modal-header h2 {
+    color: var(--text-main);
+    /* Título más neutro */
+}
+
+.auth-prompt-modal .modal-body {
+    text-align: center;
+    gap: 1rem;
+    /* Espacio entre el ícono y el texto */
+}
+
+.auth-prompt-icon {
+    font-size: 4rem;
+    /* Ícono grande y llamativo */
+    color: var(--accent);
+}
+
+.auth-prompt-main-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.auth-prompt-benefits {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.auth-prompt-benefits p {
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+}
+
+.auth-prompt-benefits ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.auth-prompt-benefits li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.auth-prompt-benefits li i {
+    color: var(--accent);
+}
+
+/* --- Estilos para el Modal de Filtros (Móvil) --- */
+.filter-modal .modal-content {
+    max-width: 400px;
+    /* Más angosto para filtros */
+}
+
+.filter-modal .modal-body {
+    padding: 0;
+    /* Quitamos el padding para que el contenido se ajuste */
+}
+
+.filter-modal .filter-sidebar {
+    display: block;
+    /* Hacemos visible el contenido del sidebar dentro del modal */
+    border: none;
+    background: none;
+    border-radius: 0;
+    padding: 1.5rem;
+}
+
+.filter-modal .modal-footer {
+    display: none;
+}
+
+/* No necesitamos footer en este modal */

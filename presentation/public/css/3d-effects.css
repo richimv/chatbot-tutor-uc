@@ -1,0 +1,178 @@
+/* ============================================
+   EFECTOS 3D - SOMBRAS DUALES
+   Funciona en ambos temas
+   ============================================ */
+
+/* --- TARJETAS DE NAVEGACIÓN (Browse, Carreras, Cursos) --- */
+.browse-card,
+.career-card,
+.course-card {
+    /* Sombra oscura (se ve en claro) + Sombra clara (se ve en oscuro) */
+    box-shadow:
+        4px 4px 12px rgba(0, 0, 0, 0.15),
+        /* Sombra inferior-derecha oscura */
+        -2px -2px 8px rgba(255, 255, 255, 0.1);
+    /* Luz superior-izquierda */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Borde luminoso sutil */
+}
+
+.browse-card:hover,
+.career-card:hover,
+.course-card:hover {
+    box-shadow:
+        6px 6px 16px rgba(0, 0, 0, 0.2),
+        -3px -3px 12px rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* --- TARJETAS DE DASHBOARD (KPI, Charts) --- */
+.kpi-card,
+.chart-card,
+.top-list-card {
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.12),
+        -2px -2px 6px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kpi-card:hover,
+.chart-card:hover {
+    box-shadow:
+        5px 5px 14px rgba(0, 0, 0, 0.18),
+        -3px -3px 10px rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+/* --- MODALES --- */
+.modal-content {
+    box-shadow:
+        8px 8px 24px rgba(0, 0, 0, 0.25),
+        /* Sombra profunda */
+        -4px -4px 16px rgba(255, 255, 255, 0.1);
+    /* Luz suave */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* --- INPUTS DE BÚSQUEDA --- */
+#searchInput,
+.search-bar-container input,
+.chatbot-input input {
+    /* Efecto "hundido" - sombras invertidas */
+    box-shadow:
+        inset 2px 2px 6px rgba(0, 0, 0, 0.1),
+        /* Sombra interior oscura */
+        inset -1px -1px 4px rgba(255, 255, 255, 0.05);
+    /* Luz interior */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#searchInput:focus,
+.search-bar-container input:focus,
+.chatbot-input input:focus {
+    box-shadow:
+        inset 3px 3px 8px rgba(0, 0, 0, 0.12),
+        inset -2px -2px 6px rgba(255, 255, 255, 0.08),
+        0 0 0 3px rgba(0, 0, 0, 0.05);
+    /* Glow exterior */
+}
+
+/* --- HEADERS --- */
+.main-header,
+.admin-header {
+    box-shadow:
+        2px 4px 12px rgba(0, 0, 0, 0.15),
+        -1px -2px 8px rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --- BOTONES PRIMARIOS --- */
+.btn-primary {
+    box-shadow:
+        3px 3px 8px rgba(0, 0, 0, 0.2),
+        -1px -1px 4px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary:hover {
+    box-shadow:
+        4px 4px 12px rgba(0, 0, 0, 0.25),
+        -2px -2px 6px rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+/* --- CHAT WIDGET --- */
+.chatbot-container {
+    box-shadow:
+        8px 8px 28px rgba(0, 0, 0, 0.2),
+        -4px -4px 16px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conversation-item {
+    box-shadow:
+        2px 2px 6px rgba(0, 0, 0, 0.1),
+        -1px -1px 4px rgba(255, 255, 255, 0.05);
+}
+
+.conversation-item:hover {
+    box-shadow:
+        3px 3px 8px rgba(0, 0, 0, 0.15),
+        -2px -2px 6px rgba(255, 255, 255, 0.08);
+}
+
+.conversation-item.active {
+    box-shadow:
+        4px 4px 10px rgba(0, 0, 0, 0.2),
+        -2px -2px 6px rgba(255, 255, 255, 0.1);
+}
+
+/* --- TARJETAS DE RESULTADOS --- */
+.course-card-link,
+.result-card {
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.12),
+        -2px -2px 6px rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.course-card-link:hover,
+.result-card:hover {
+    box-shadow:
+        5px 5px 14px rgba(0, 0, 0, 0.18),
+        -3px -3px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* --- SECCIÓN DE RECOMENDACIONES --- */
+.discover-more-section {
+    box-shadow:
+        4px 4px 14px rgba(0, 0, 0, 0.12),
+        -2px -2px 8px rgba(255, 255, 255, 0.06);
+}
+
+.recommendation-card {
+    box-shadow:
+        2px 2px 8px rgba(0, 0, 0, 0.1),
+        -1px -1px 4px rgba(255, 255, 255, 0.05);
+}
+
+.recommendation-card:hover {
+    box-shadow:
+        4px 4px 12px rgba(0, 0, 0, 0.15),
+        -2px -2px 8px rgba(255, 255, 255, 0.08);
+}
+
+/* --- FEEDBACK TABLE CARD --- */
+.feedback-table-card {
+    box-shadow:
+        3px 3px 10px rgba(0, 0, 0, 0.12),
+        -2px -2px 6px rgba(255, 255, 255, 0.08);
+}
+
+/* --- TARJETAS DE AUTENTICACIÓN --- */
+.auth-container .auth-panel-left,
+.auth-container .auth-panel-right {
+    box-shadow:
+        4px 4px 16px rgba(0, 0, 0, 0.15),
+        -2px -2px 10px rgba(255, 255, 255, 0.08);
+}

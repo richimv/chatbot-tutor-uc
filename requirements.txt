@@ -1,0 +1,17 @@
+# Primero instalamos torch CPU explícitamente desde el índice de PyTorch
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+
+sentence-transformers
+flask
+pandas
+numpy
+scikit-learn
+sqlalchemy
+psycopg2-binary
+python-dotenv
+gunicorn
+unidecode
+nltk
