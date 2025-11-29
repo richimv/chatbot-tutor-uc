@@ -59,6 +59,7 @@
     <script src="js/sessionManager.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/app.js"></script>
     <script>
         // ✅ REACTIVADO: Ahora que la cadena de dependencias está corregida, la protección funcionará.
         window.sessionManager.initialize().then(() => { if (window.sessionManager.getUser()?.role !== 'admin') window.location.href = '/'; });
