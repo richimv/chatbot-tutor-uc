@@ -29,7 +29,18 @@ class SearchComponent {
     async init() {
         await this.loadAllData();
         this.setupEventListeners();
-        this.startNewNavigation(this.renderInitialView.bind(this));
+
+        // ✅ LÓGICA DE HISTORIAL: Manejar el botón Atrás
+        window.addEventListener('popstate', this.handlePopState.bind(this));
+
+        // Si ya hay un estado (ej: recarga de página), lo restauramos.
+        // Si no, establecemos el estado inicial.
+        if (history.state) {
+            this.handlePopState({ state: history.state });
+        } else {
+            history.replaceState({ view: 'home' }, '', '#home');
+            this.renderInitialView();
+        }
     }
 
     async loadAllData() {
@@ -72,42 +83,84 @@ class SearchComponent {
             const homeButton = e.target.closest('.nav-home-button');
             if (homeButton) {
                 e.preventDefault();
-                this.startNewNavigation(this.renderInitialView.bind(this)); // Volver al inicio es una nueva navegación
+                if (homeButton) {
+                    e.preventDefault();
+                    this.startNewNavigation('home'); // Volver al inicio
+                }
             }
         });
     }
 
     /**
-     * Navega a una nueva vista, guardando la actual en el historial.
-     * Se usa para profundizar en la navegación (ej: de resultados a curso).
+     * Navega a una nueva vista usando History API.
+     * @param {string} viewName - Nombre de la vista ('career', 'course', 'topic', 'search', 'home').
+     * @param {...any} args - Argumentos para la función de renderizado.
      */
-    navigateTo(renderFunction, ...args) {
-        if (this.currentView.render) {
-            this.viewStack.push(this.currentView);
-        }
-        this.currentView = { render: renderFunction, args: args };
-        renderFunction(...args);
+    navigateTo(viewName, ...args) {
+        // Guardamos el estado en el historial
+        const state = { view: viewName, args: args };
+        // Construimos una URL amigable (opcional, pero útil para debug)
+        const hash = `#${viewName}/${args.join('/')}`;
+        history.pushState(state, '', hash);
+
+        // Renderizamos la vista
+        this.renderView(viewName, ...args);
     }
 
     /**
-     * Inicia una nueva secuencia de navegación, limpiando el historial anterior.
-     * Se usa exclusivamente al realizar una búsqueda.
+     * Inicia una nueva navegación (resetea el flujo, pero mantiene el historial lineal).
+     * Se usa para Búsquedas o volver al Inicio explícitamente.
      */
-    startNewNavigation(renderFunction, ...args) {
-        this.viewStack = []; // Limpia el historial para la nueva búsqueda.
-        this.currentView = { render: renderFunction, args: args };
-        renderFunction(...args);
+    startNewNavigation(viewName, ...args) {
+        const state = { view: viewName, args: args };
+        const hash = `#${viewName}`;
+        history.pushState(state, '', hash);
+        this.renderView(viewName, ...args);
     }
 
     navigateBack() {
-        if (this.viewStack.length > 0) {
-            const previousView = this.viewStack.pop();
-            this.currentView = previousView;
-            // ✅ CORRECCIÓN: Llamar a la función de renderizado sin modificar más la pila.
-            previousView.render(...previousView.args);
-        } else {
-            // Si no hay historial, la única acción segura es volver al inicio.
-            this.startNewNavigation(this.renderInitialView.bind(this));
+        // ✅ SOLUCIÓN: Usar la funcionalidad nativa del navegador.
+        // Esto disparará el evento 'popstate' que manejamos en handlePopState.
+        history.back();
+    }
+
+    /**
+     * Maneja el evento popstate (Botón Atrás/Adelante).
+     */
+    handlePopState(event) {
+        const state = event.state;
+        if (!state) {
+            // Si no hay estado (ej: estado inicial vacío), volvemos al home.
+            this.renderInitialView();
+            return;
+        }
+        // Restauramos la vista según el estado guardado.
+        this.renderView(state.view, ...state.args);
+    }
+
+    /**
+     * Dispatcher centralizado para renderizar vistas.
+     */
+    renderView(viewName, ...args) {
+        switch (viewName) {
+            case 'career':
+                this.renderCoursesForCareer(...args);
+                break;
+            case 'course':
+                this.renderUnifiedCourseView(...args);
+                break;
+            case 'topic':
+                this.renderTopicView(...args);
+                break;
+            case 'search':
+                this.renderSearchResults(...args);
+                break;
+            case 'home':
+                this.renderInitialView();
+                break;
+            default:
+                console.warn('Vista desconocida:', viewName);
+                this.renderInitialView();
         }
     }
 
@@ -133,7 +186,7 @@ class SearchComponent {
             const careerId = parseInt(careerBadge.dataset.careerId, 10);
             if (!isNaN(careerId)) {
                 // Navegamos a la vista que renderiza los cursos para esa carrera.
-                this.navigateTo(this.renderCoursesForCareer.bind(this), careerId);
+                this.navigateTo('career', careerId);
             }
             return;
         }
@@ -146,9 +199,9 @@ class SearchComponent {
             const id = parseInt(browseCard.dataset.id, 10);
 
             if (!isNaN(id)) {
-                if (type === 'career') this.navigateTo(this.renderCoursesForCareer.bind(this), id);
-                if (type === 'course') this.navigateTo(this.renderUnifiedCourseView.bind(this), id);
-                if (type === 'topic') this.navigateTo(this.renderTopicView.bind(this), id);
+                if (type === 'career') this.navigateTo('career', id);
+                if (type === 'course') this.navigateTo('course', id);
+                if (type === 'topic') this.navigateTo('topic', id);
             }
             return;
         }
@@ -162,8 +215,8 @@ class SearchComponent {
             const id = parseInt(recommendationCard.dataset.recId, 10);
 
             if (!isNaN(id)) {
-                if (type === 'course') this.navigateTo(this.renderUnifiedCourseView.bind(this), id);
-                if (type === 'topic') this.navigateTo(this.renderTopicView.bind(this), id);
+                if (type === 'course') this.navigateTo('course', id);
+                if (type === 'topic') this.navigateTo('topic', id);
             }
             return;
         }
@@ -247,7 +300,7 @@ class SearchComponent {
 
             // Inicia una nueva navegación con los resultados de la búsqueda.
             // Esto limpia el historial anterior, lo cual es correcto para una nueva búsqueda.
-            this.startNewNavigation(this.renderSearchResults.bind(this), data);
+            this.startNewNavigation('search', data);
 
         } catch (error) {
             console.error("Error performing search:", error);
