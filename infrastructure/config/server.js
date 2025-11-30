@@ -5,7 +5,7 @@ const path = require('path');
 class Server {
     constructor() {
         console.log('🚀 Inicializando Server...');
-        
+
         this.app = express();
         this.port = process.env.PORT || 3000;
     }
@@ -47,18 +47,21 @@ class Server {
             console.error('💥 UNCAUGHT EXCEPTION:', error);
             console.error('💥 Stack:', error.stack);
         });
-        
+
         process.on('unhandledRejection', (reason, promise) => {
             console.error('💥 UNHANDLED REJECTION at:', promise, 'reason:', reason);
         });
     }
 
-     configureMiddleware() {
+    configureMiddleware() {
         console.log('🔧 Configurando middleware...');
-        
+
+        // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
+        this.app.set('trust proxy', 1);
+
         // ✅ CORS SIMPLIFICADO
         this.app.use(cors());
-        
+
         // ✅ EXPRESS.JSON MÍNIMO Y SEGURO
         this.app.use(express.json({
             limit: '1mb',
@@ -66,7 +69,7 @@ class Server {
                 req.rawBody = buf.toString();
             }
         }));
-        
+
         // ✅ MIDDLEWARE DE LOG SIMPLIFICADO
         this.app.use((req, res, next) => {
             if (req.method === 'POST' && req.path === '/api/chat') {
@@ -87,7 +90,7 @@ class Server {
     }
 
     configureRoutes() {
-         console.log('🔧 Configurando rutas...');
+        console.log('🔧 Configurando rutas...');
         // Importar y usar los enrutadores modulares
         const { globalApiLimiter } = require('./rateLimiters');
         const apiRoutes = require('../routes/apiRoutes');
