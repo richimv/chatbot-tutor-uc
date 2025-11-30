@@ -33,6 +33,8 @@ def initialize_app():
     try:
         print("   🧠 Cargando modelo de lenguaje (all-MiniLM-L6-v2)...")
         # Modelo L3 (3 capas en vez de 6): Mucho menos RAM, precisión similar para tu caso
+        #ml_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L3-v2')
+        # AHORA (Ligero y rápido)
         ml_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L3-v2')
         print("   ✅ Modelo IA cargado.")
         
