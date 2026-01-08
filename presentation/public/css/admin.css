@@ -45,15 +45,39 @@
 
 .admin-tabs {
     display: flex;
-    flex-wrap: nowrap;
-    /* Evita que las pestañas salten a la siguiente línea */
-    overflow-x: auto;
-    /* Permite el scroll horizontal */
-    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    gap: 1rem;
+    /* Proper gap between buttons */
     border-bottom: 2px solid var(--border);
     margin-bottom: var(--spacing-lg);
-    -webkit-overflow-scrolling: touch;
-    /* Scroll suave en iOS */
+    padding-bottom: 0.5rem;
+}
+
+.tab-link {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    background: var(--surface-alt);
+    /* Button-like background */
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 8px;
+    /* Rounded corners */
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.tab-link:hover {
+    background: var(--surface);
+    color: var(--accent);
+}
+
+.tab-link.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tab-header {
@@ -71,51 +95,83 @@
     padding: 0.5rem 1rem;
 }
 
-.tab-link {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: none;
-    background: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    /* Evita que el texto de la pestaña se parta */
-    transition: all 0.2s ease;
-}
-
-.tab-link.active,
-.tab-link:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-}
+/* Removed duplicate tab-link styles that caused contrast issues */
 
 .tab-content:not(.active) {
     display: none;
 }
 
+/* --- Grid Layout Redesign --- */
+/* --- Compact Row Layout (Professional & Space Efficient) --- */
+/* ✅ CORRECCIÓN: Aplicar estilos solo cuando la pestaña está activa o es una lista interna */
+/* ✅ CORRECCIÓN: Aplicar estilos a los contenedores de pestaña activos */
+#tab-careers.active,
+#tab-courses.active,
+#tab-students.active,
+#tab-topics.active,
+#tab-books.active {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
 .item-card {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     align-items: center;
     background: var(--surface-alt);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 1rem 1.5rem;
     border-radius: 8px;
-    margin-bottom: var(--spacing-sm);
     border: 1px solid var(--border);
-    /* ✅ CORRECCIÓN: Borde completo para diferenciar del fondo */
-    border-left: 3px solid var(--border);
-    /* Mantener el borde izquierdo más grueso */
+    border-left: 4px solid var(--accent);
     transition: all 0.2s ease;
-    /* ✅ NUEVO: Transición suave */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: auto;
 }
 
 .item-card:hover {
-    transform: translateY(-2px);
-    /* ✅ NUEVO: Efecto de elevación */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    /* ✅ NUEVO: Sombra al pasar el mouse */
-    border-left-color: var(--accent);
-    /* ✅ NUEVO: Resaltar borde izquierdo */
+    transform: translateX(4px);
+    background: var(--surface);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Card Content Typography - Horizontal Layout */
+.item-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.item-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.item-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.area-badge {
+    display: inline-flex;
+    align-self: flex-start;
+}
+
+/* Actions Bar - Compact & Aligned Right */
+.item-actions {
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    gap: 0.5rem;
 }
 
 /* ✅ SOLUCIÓN: Estilos para el ícono de la malla curricular en la lista de carreras */
@@ -438,4 +494,53 @@
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Mobile Responsiveness for Admin Panel --- */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 1.5rem 1rem;
+        margin: 10px auto;
+        width: 95%;
+    }
+
+    .tab-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .tab-header-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .search-sort-wrapper {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .search-bar-container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .item-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .item-actions {
+        width: 100%;
+        justify-content: flex-end;
+        border-top: 1px solid var(--border);
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .generic-modal .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
 }

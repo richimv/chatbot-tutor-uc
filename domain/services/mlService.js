@@ -21,72 +21,77 @@ if (!project || !location) {
 const vertex_ai = new VertexAI({ project: project, location: location });
 
 // ✅ OPTIMIZACIÓN: Inicializar el modelo una sola vez (Singleton) para mejorar la latencia.
+// ✅ OPTIMIZACIÓN: Inicializar el modelo una sola vez (Singleton) para mejorar la latencia.
 const systemInstruction = {
     role: 'system',
     parts: [{
-        text: `Eres "Tutor IA UC", un asistente inteligente y versátil de la Universidad Continental. Tu misión principal es ayudar académicamente, pero también eres un compañero de conversación amigable.
-
-    **Tu Personalidad:**
-    *   **Cálido y Empático:** Saluda con naturalidad. Si alguien solo dice "hola", responde con amabilidad e interés genuino.
-    *   **Versátil:** Aunque tu ESPECIALIDAD es lo académico, puedes conversar sobre MUCHOS temas: trivialidades, entretenimiento, clima, deportes, cultura general, etc.
-    *   **Proactivo:** Ofrece ayuda relacionada sin que te la pidan directamente.
-    *   **Académico pero Accesible:** Puedes profundizar en temas complejos O ser súper conciso según lo que el usuario necesite.
-    *   **Conector de Recursos:** Tu SUPERPODER académico es conectar dudas con materiales de la biblioteca (BD).
-
-    **Tipos de Conversación que Manejas:**
-    1.  **Consultas Directas (Información Rápida):** "¿Qué es la malla curricular?" → Respuesta corta y directa.
-    2.  **Consultas Académicas Profundas:** "Explícame las derivadas con ejemplos" → Respuesta detallada, didáctica, con analogías.
-    3.  **Conversación Casual:** "¿Cómo estás?" "Cuéntame un chiste" → Responde de forma amigable y natural.
-    4.  **Temas Generales:** Clima, deportes, noticias, entretenimiento → Responde con conocimiento general (sin acceso a internet en tiempo real, así que aclara que tu info puede no ser la más reciente).
+        text: `ROL: Eres el Bibliotecario Académico Multimedia y Tutor Inteligente de la institución.
     
-    **Regla de Oro para Explicaciones Académicas Profundas:**
-    Cuando expliques un tema complejo (ej. "¿qué es una derivada?"), sigue esta estructura:
-    1.  **Explicación Intuitiva:** Analogía simple del día a día.
-    2.  **Definición Formal:** Técnica pero clara.
-    3.  **Aplicaciones Reales:** 2-3 ejemplos (Física, Economía, Ingeniería, etc.).
-    4.  **Recursos de Nuestra Biblioteca (¡CRÍTICO para temas académicos!):**
-        *   **USO DE HERRAMIENTAS:** Debes usar \`getTopicDetails\` o \`getCourseDetails\` para buscar en la base de datos.
-        *   **SI ENCUENTRAS RECURSOS (Libros/PDFs):** Diles: "¡Tengo buenas noticias! En nuestra biblioteca tenemos estos materiales para ti:". Lista los libros con sus enlaces Markdown.
-        *   **SI NO ENCUENTRAS RECURSOS:** Diles: "No encontré materiales específicos en nuestra base de datos por ahora, pero aquí tienes recursos externos confiables:".
-    5.  **Recursos Externos (opcional):** 2-3 enlaces de calidad (Khan Academy, Wikipedia, etc.).
-    6.  **Cierre:** Pregunta si quiere profundizar o necesita algo más.
+    TU MISIÓN TIENE 3 PILARES:
+    1.  **TUTOR:** Explicar conceptos complejos de cualquier disciplina con claridad pedagógica.
+    2.  **BIBLIOTECARIO:** Conectar al usuario con recursos específicos (Libros, Videos, Webs) de nuestra BD.
+    3.  **GUÍA:** Orientar sobre qué Carreras y Cursos están disponibles en la plataforma.
 
-    **Límites y Seguridad (Importante pero sin ser restrictivo):**
-    *   **NO respondas:** Contenido ilegal, peligroso para la salud/vida, discriminatorio, o que promueva violencia.
-    *   **SÍ puedes hablar:** De temas sensibles con madurez (ej. historia, salud mental, carreras difíciles) siempre con respeto.
-    *   **Si te piden hacer tu tarea/examen:** Sé amable pero firme: "Puedo ayudarte a ENTENDER el tema, pero no puedo hacer tu tarea por ti. ¿Qué parte no entiendes?"
-    *   **Temas fuera de tu conocimiento actual:** Sé honesto: "No tengo acceso a información en tiempo real sobre [X], pero puedo ayudarte con conceptos generales o dirigirte a fuentes confiables."
+    --- DIRECTRICES DE COMPORTAMIENTO ---
 
-    **Reglas de Formato:**
-    *   **Listas Navegables (Carreras/Cursos/Temas):** USA SIEMPRE este formato específico para que el usuario pueda hacer clic e ir a la sección correspondiente:
-        *   Para Carreras: '* [career:ID] Nombre de la Carrera' (ej. '* [career:1] Ingeniería de Software').
-        *   Para Cursos: '* [course:ID] Nombre del Curso' (ej. '* [course:15] Cálculo I').
-        *   Para Temas: '* [topic:ID] Nombre del Tema' (ej. '* [topic:42] Derivadas').
-    *   **Malla Curricular (PDF):** 
-        *   Si el usuario pregunta DIRECTAMENTE por "descargar", "ver PDF", "malla curricular PDF", "plan de estudios PDF", sé DIRECTO: empieza tu respuesta con el enlace del PDF.
-        *   Formato: "¡Claro! Aquí puedes descargar la malla curricular de [Carrera]: [📄 Descargar Malla Curricular (PDF)](curriculum_url)\n\nLa carrera incluye los siguientes cursos principales: [lista breve]"
-        *   Enlace SIEMPRE primero, lista de cursos después (y de forma concisa).
-    *   **Libros y Materiales (con enlace):** Formato Markdown estándar: '* [Título del Libro](URL)'.
-    *   **Usa negritas (\`**texto**\`)** para resaltar los títulos de cada sección.
-    *   **Concisión:** Si la pregunta es directa (ej. "quiero X"), da X primero. Evita rodeos innecesarios.
-    *   **Profundidad:** Si la pregunta pide explicaciones detalladas, sé exhaustivo y didáctico.
+    A) AL RESPONDER SOBRE TEMAS/CONCEPTOS:
+    1.  **Explicación Enriquecida:** Define el concepto con profundidad con claridad pedagógica.
+    2.  **RAG (Recuperación):** Revisa el contexto inyectado "[BIBLIOTECA...]".
+        * **Si hay LIBROS:** "Para profundizar, lee: [Título](URL)."
+        * **Si hay VIDEOS:** "Te recomiendo este video: [Título](URL)."
+        * **Si hay WEBS:** "Consulta esta web: [Título](URL)."
+    3.  **Si NO hay recursos en BD:** Sugiere buscar en google académico o fuentes confiables.
 
-    **Formato de Salida Obligatorio:** Tu respuesta final DEBE ser un único objeto JSON válido, sin texto adicional.
-    El JSON debe tener esta estructura:
+    B) AL RESPONDER SOBRE ESTRUCTURA (CARRERAS/CURSOS):
+    Si el usuario pregunta "¿Qué carreras hay?" o "¿Qué cursos tiene Medicina?", revisa el contexto inyectado "[ESTRUCTURA...]".
+    1.  **Listado Claro:** Presenta la información con viñetas o listas numeradas para que sea fácil de leer.
+    2.  **Formato:** Usa emojis para distinguir.
+        * Carreras: [Nombre Carrera]
+        * Cursos:[Nombre Curso]
+    3.  **No inventes:** Solo menciona lo que el sistema te ha mostrado en el contexto. No inventes mallas curriculares que no existen.
+
+    C) AL GENERAR CITAS BIBLIOGRÁFICAS:
+    * Genera citas (APA, Vancouver, ISO) **SOLO** si el usuario lo pide explícitamente y **SOLO** para recursos tipo 'book' o 'article'.
+    * Usa estrictamente los metadatos provistos (Año, Editorial, Ciudad).
+
+    D) FORMATO DE NAVEGACIÓN INTERACTIVA (IMPORTANTE):
+    Para que el usuario pueda hacer clic en Carreras o Cursos, USA ESTRICTAMENTE este formato en los listados:
+    * Para Carreras: "* [career:ID] Nombre de la Carrera"
+    * Para Cursos: "* [course:ID] Nombre del Curso"
+    
+    EJEMPLO:
+    "Aquí tienes las carreras disponibles:
+    * [career:1] Ingeniería de Sistemas
+    * [career:2] Medicina Humana"
+
+    --- ESTILO Y TONO ---
+    * Sé servicial y dinámico.
+    * Si recomiendas un video, invita a "verlo". Si es un libro, a "leerlo".
+    E) SUGERENCIAS ACTIVAS (OBLIGATORIO):
+    Al final de TU RESPUESTA, genera siempre 3 preguntas cortas que el usuario podría hacer a continuación para profundizar.
+    *   NO repitas lo que ya explicaste.
+    *   Deben ser INTUITIVAS y naturales (ej. "Dame un ejemplo", "Ver libros del tema", "¿Cómo se aplica en...?").
+    *   NO uses preguntas genéricas como "¿En qué más puedo ayudarte?".
+    *   Relaciona las preguntas con los recursos disponibles (Libros, Videos) si aplica.
+
+    IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
     {
-      "intencion": "[consulta_horario|solicitar_material|duda_teorica|consulta_administrativa|consulta_general|conversacion_casual]",
-      "confianza": 0.9,
-      "respuesta": "Tu respuesta amable y detallada aquí.",
-      "sugerencias": ["Sugerencia 1", "Sugerencia 2"]
-    }` }]
+      "intencion": "clasificación_de_la_intención",
+      "respuesta": "Tu respuesta completa aquí en Markdown...",
+      "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
+    }
+    `
+    }]
 };
+
+
 
 const model = vertex_ai.preview.getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: {
         maxOutputTokens: 8192,
-        temperature: 0.7,
-        topP: 0.95,
+        temperature: 0.3, // ✅ Reducido para ser más preciso como bibliotecario
+        topP: 0.8,
     },
     tools: [{
         functionDeclarations: [{
@@ -101,19 +106,8 @@ const model = vertex_ai.preview.getGenerativeModel({
             }
         },
         {
-            name: "getTopicDetails",
-            description: "Obtiene información de un tema y sus LIBROS/RECURSOS asociados. Úsalo SIEMPRE que expliques un tema.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    topicName: { type: "STRING", description: "Nombre del tema (ej. 'Derivadas')." }
-                },
-                required: ["topicName"]
-            }
-        },
-        {
             name: "getCareerDetails",
-            description: "Obtiene detalles sobre una carrera (malla curricular).",
+            description: "Obtiene detalles sobre una carrera.",
             parameters: {
                 type: "OBJECT",
                 properties: {
@@ -170,30 +164,30 @@ class MLService {
         const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet } = dependencies;
 
         // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite)
-        // Buscamos entidades en el mensaje y cargamos sus datos ANTES de llamar al LLM.
-        // Esto evita que el LLM tenga que hacer una "tool call" para pedir información básica.
         let contextInjection = "";
         try {
-            const entities = knowledgeBaseRepo.findEntitiesInText(message);
+            // 1. Buscar coincidencias directas de libros (Metadata Search)
+            const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
+            const normalizedMsg = normalizeText(message);
 
-            if (entities.courses.length > 0) {
-                const courseName = entities.courses[0];
-                const courses = await courseRepo.search(courseName);
-                if (courses.length > 0) {
-                    const course = courses[0];
-                    // Simular output de getCourseDetails
-                    // Nota: Esto es ineficiente si hay muchos temas, idealmente topicRepo tendría un findByCourseId
-                    const allTopics = await knowledgeBaseRepo.topicRepo.findAll();
-                    const courseTopics = allTopics.filter(t => t.course_id === course.id).map(t => ({ id: t.id, name: t.name }));
+            // Buscar libros cuyo título o autor coincida con el mensaje
+            const matchedBooks = allBooks.filter(b => {
+                const titleMatch = normalizeText(b.title).includes(normalizedMsg);
+                const authorMatch = b.author && normalizeText(b.author).includes(normalizedMsg);
+                return (titleMatch || authorMatch) && normalizedMsg.length > 3; // Evitar matches con "el", "la"
+            });
 
-                    contextInjection += `\n[SISTEMA: INFORMACIÓN PRE-CARGADA SOBRE EL CURSO "${course.name}"]\n` +
-                        `ID: ${course.id}\n` +
-                        `Descripción: ${course.description || "No disponible"}\n` +
-                        `Temas del curso: ${courseTopics.map(t => `* [topic:${t.id}] ${t.name}`).join('\n')}\n` +
-                        `[FIN INFORMACIÓN PRE-CARGADA]\n`;
-                    console.log(`🚀 Pre-fetching: Datos del curso "${course.name}" inyectados en el contexto.`);
-                }
+            if (matchedBooks.length > 0) {
+                contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS PARA TU BÚSQUEDA]\n` +
+                    matchedBooks.map(b =>
+                        `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
+                    ).join('\n') +
+                    `\n[FIN RECURSOS ENCONTRADOS]\n`;
+                console.log(`🚀 Pre-fetching: ${matchedBooks.length} recursos inyectados directamente.`);
             }
+
+            // 2. Buscar por TEMA (usando la lógica existente de entidades)
+            const entities = knowledgeBaseRepo.findEntitiesInText(message);
 
             if (entities.topics.length > 0) {
                 const topicName = entities.topics[0];
@@ -201,16 +195,51 @@ class MLService {
                 const topic = allTopics.find(t => normalizeText(t.name).includes(normalizeText(topicName)));
 
                 if (topic) {
-                    const books = await knowledgeBaseRepo.bookRepo.findAll();
-                    // ✅ CORRECCIÓN: Usar 'topic.bookIds' (relación muchos a muchos) en lugar de 'book.topic_id'
-                    const topicBooks = books.filter(b => (topic.bookIds || []).includes(b.id));
+                    const topicBooks = allBooks.filter(b => (topic.bookIds || []).includes(b.id));
 
-                    contextInjection += `\n[SISTEMA: INFORMACIÓN PRE-CARGADA SOBRE EL TEMA "${topic.name}"]\n` +
-                        `ID: ${topic.id}\n` +
-                        `Descripción: ${topic.description || "No disponible"}\n` +
-                        `Libros/Recursos disponibles:\n${topicBooks.map(b => `* [${b.title}](${b.url})`).join('\n')}\n` +
-                        `[FIN INFORMACIÓN PRE-CARGADA]\n`;
-                    console.log(`🚀 Pre-fetching: Datos del tema "${topic.name}" inyectados en el contexto.`);
+                    contextInjection += `\n[BIBLIOTECA: RECURSOS DISPONIBLES PARA EL TEMA "${topic.name}"]\n` +
+                        `Descripción Tema: ${topic.description || "No disponible"}\n` +
+                        `Recursos:\n` +
+                        topicBooks.map(b =>
+                            `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
+                        ).join('\n') +
+                        `\n[FIN RECURSOS TEMA]\n`;
+                    console.log(`🚀 Pre-fetching: Datos del tema "${topic.name}" inyectados.`);
+                }
+            }
+
+            // 3. Buscar por CURSO (RAG para cursos mencionados)
+            if (entities.courses.length > 0) {
+                const courseName = entities.courses[0];
+                const allCourses = await courseRepo.findAll();
+                const course = allCourses.find(c => normalizeText(c.name).includes(normalizeText(courseName)));
+
+                if (course) {
+                    const courseBooks = allBooks.filter(b => (course.materials || []).some(m => m.id === b.id) || (course.bookIds || []).includes(b.id));
+
+                    contextInjection += `\n[BIBLIOTECA: INFORMACIÓN DEL CURSO "${course.name}"]\n` +
+                        `Descripción Curso: ${course.description || "No disponible"}\n` +
+                        `Libros del Curso:\n` +
+                        courseBooks.map(b =>
+                            `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
+                        ).join('\n') +
+                        `\n[FIN INFORMACIÓN CURSO]\n`;
+                    console.log(`🚀 Pre-fetching: Datos del curso "${course.name}" inyectados.`);
+                }
+            }
+
+            // 4. Buscar por CARRERA
+            if (entities.careers.length > 0) {
+                const careerName = entities.careers[0];
+                const allCareers = await careerRepo.findAll();
+                const career = allCareers.find(c => normalizeText(c.name).includes(normalizeText(careerName)));
+
+                if (career) {
+                    contextInjection += `\n[ESTRUCTURA: INFORMACIÓN DE LA CARRERA "${career.name}"]\n` +
+                        `Descripción: ${career.description || "No disponible"}\n` +
+                        `ID para enlace: ${career.id}\n` +
+                        `\n[FIN INFORMACIÓN CARRERA]\n`;
+                    console.log(`🚀 Pre-fetching: Datos de la carrera "${career.name}" inyectados.`);
                 }
             }
 
@@ -253,9 +282,6 @@ class MLService {
                         // ✅ MEJORA: Enriquecer la respuesta
                         const allTopics = await knowledgeBaseRepo.topicRepo.findAll();
                         const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
-                        const allSections = await knowledgeBaseRepo.sectionRepo.findAll();
-                        const allInstructors = await knowledgeBaseRepo.instructorRepo.findAll();
-
                         // ✅ MEJORA CRÍTICA: Enviar ID y Nombre de los temas para que la IA pueda generar enlaces [topic:ID]
                         const topics = (course.topicIds || []).map(id => {
                             const t = allTopics.find(topic => topic.id === id);
@@ -264,21 +290,12 @@ class MLService {
 
                         const books = (course.bookIds || []).map(id => allBooks.find(b => b.id === id)).filter(b => b && b.title && b.url);
 
-                        const sectionsForCourse = allSections
-                            .filter(s => s.courseId === course.id)
-                            .map(section => {
-                                const instructor = allInstructors.find(i => i.id === section.instructorId);
-                                return {
-                                    instructorName: instructor ? instructor.name : 'Por asignar',
-                                    schedule: section.schedule.map(s => `${s.day} de ${s.startTime} a ${s.endTime} en el salón ${s.room}`)
-                                };
-                            });
+                        // Legacy 'sections' logic removed as per cleanup task.
 
                         courseDetailsResponse = {
                             ...course,
-                            topics, // Ahora enviamos objetos {id, name}
-                            books,
-                            sections: sectionsForCourse
+                            topics,
+                            books
                         };
                         console.log('🔍 Resultado (getCourseDetails): Encontrado:', course.name);
                     } else {
@@ -292,31 +309,7 @@ class MLService {
                         }
                     }]);
                     response = result.response;
-                } else if (call.name === 'getTopicDetails') {
-                    // ✅ SOLUCIÓN: Búsqueda flexible para temas
-                    const allTopics = await knowledgeBaseRepo.topicRepo.findAll();
-                    const normalizedQuery = normalizeText(call.args.topicName);
-                    // Buscar coincidencia parcial (includes) en lugar de exacta
-                    const topic = allTopics.find(t => normalizeText(t.name).includes(normalizedQuery));
 
-                    let topicDetailsResponse = null;
-
-                    if (topic) {
-                        const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
-                        const books = (topic.bookIds || []).map(id => allBooks.find(b => b.id === id)).filter(b => b && b.title && b.url);
-                        topicDetailsResponse = { ...topic, books };
-                        console.log('🔍 Resultado (getTopicDetails): Encontrado:', topic.name, 'con', books.length, 'libros.');
-                    } else {
-                        console.log(`⚠️ No se encontró tema para "${call.args.topicName}"`);
-                    }
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'getTopicDetails',
-                            response: topicDetailsResponse || { error: "Tema no encontrado" }
-                        }
-                    }]);
-                    response = result.response;
 
                 } else if (call.name === 'getCareerDetails') {
                     // ✅ SOLUCIÓN: Búsqueda de carrera (faltaba la lógica completa)
@@ -328,14 +321,14 @@ class MLService {
 
                     if (career) {
                         // Obtener los cursos de esta carrera
-                        const courses = await courseRepo.findByCareerName(career.name);
+                        // ✅ CORRECCIÓN: Usar 'findByCareerCategory' que sí existe en el repositorio
+                        const courses = await courseRepo.findByCareerCategory(career.name);
                         const courseList = courses.map(c => ({ id: c.id, name: c.name }));
 
                         careerDetailsResponse = {
                             id: career.id,
                             name: career.name,
                             description: career.description || 'No disponible',
-                            curriculum_url: career.curriculum_url || null, // ✅ INCLUIR URL DE MALLA CURRICULAR
                             courses: courseList
                         };
                         console.log('🔍 Resultado (getCareerDetails): Encontrado:', career.name, 'con', courseList.length, 'cursos.');
@@ -367,7 +360,8 @@ class MLService {
                     response = result.response;
 
                 } else if (call.name === 'getCoursesForCareer') {
-                    const courses = await courseRepo.findByCareerName(call.args.careerName);
+                    // ✅ CORRECCIÓN: Usar 'findByCareerCategory'
+                    const courses = await courseRepo.findByCareerCategory(call.args.careerName);
                     console.log(`🔍 Resultado de la herramienta (cursos por carrera): ${courses.length} cursos encontrados.`);
 
                     // Devolvemos solo id y nombre para ser concisos
@@ -381,66 +375,19 @@ class MLService {
                     }]);
                     response = result.response;
 
-                } else if (call.name === 'getInstructorInfo') {
-                    // Buscar instructor por nombre
-                    const allInstructors = await knowledgeBaseRepo.instructorRepo.findAll();
-                    const normalizedQuery = normalizeText(call.args.instructorName);
-                    const instructor = allInstructors.find(i => normalizeText(i.name).includes(normalizedQuery));
 
-                    let instructorInfoResponse = null;
-
-                    if (instructor) {
-                        // Buscar las secciones (cursos) que enseña este instructor
-                        const allSections = await knowledgeBaseRepo.sectionRepo.findAll();
-                        const allCourses = await courseRepo.findAll();
-
-                        const instructorSections = allSections.filter(s => s.instructorId === instructor.id);
-                        const coursesTeaching = instructorSections.map(section => {
-                            const course = allCourses.find(c => c.id === section.courseId);
-                            if (!course) return null;
-
-                            return {
-                                courseId: course.id,
-                                courseName: course.name,
-                                schedule: section.schedule.map(s => `${s.day} de ${s.startTime} a ${s.endTime} en ${s.room}`)
-                            };
-                        }).filter(Boolean);
-
-                        instructorInfoResponse = {
-                            id: instructor.id,
-                            name: instructor.name,
-                            email: instructor.email,
-                            coursesTeaching: coursesTeaching
-                        };
-                        console.log('🔍 Resultado (getInstructorInfo): Encontrado:', instructor.name, 'enseña', coursesTeaching.length, 'cursos.');
-                    } else {
-                        console.log(`⚠️ No se encontró instructor para "${call.args.instructorName}"`);
-                    }
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'getInstructorInfo',
-                            response: instructorInfoResponse || { error: "Docente no encontrado" }
-                        }
-                    }]);
-                    response = result.response;
-
-                } else if (call.name === 'listAllInstructors') {
-                    const allInstructors = await knowledgeBaseRepo.instructorRepo.findAll();
-                    const instructorList = allInstructors.map(i => ({ id: i.id, name: i.name }));
-
-                    console.log('🔍 Resultado (listAllInstructors):', instructorList.length, 'instructores encontrados.');
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'listAllInstructors',
-                            response: { instructors: instructorList }
-                        }
-                    }]);
-                    response = result.response;
+                    // Legacy tools 'getInstructorInfo' and 'listAllInstructors' removed.
 
                 } else {
-                    throw new Error(`Herramienta no reconocida: ${call.name}`);
+                    console.warn(`⚠️ Herramienta solicitada no encontrada o eliminada: ${call.name}`);
+                    // Fallback seguro: responder que la herramienta no está disponible
+                    result = await chat.sendMessage([{
+                        functionResponse: {
+                            name: call.name,
+                            response: { error: "Herramienta no disponible o en mantenimiento." }
+                        }
+                    }]);
+                    response = result.response;
                 }
             }
 
@@ -597,36 +544,7 @@ class MLService {
         }
     }
 
-    /**
-     * Genera una descripción concisa y académica para un tema específico.
-     */
-    static async generateTopicDescription(topicName) {
-        console.log(`🤖 MLService: Generando descripción para el tema: "${topicName}"`);
-        try {
-            // ✅ 5. Esta es la sintaxis correcta para 'generateContent' en Vertex
-            const model = vertex_ai.preview.getGenerativeModel({
-                model: 'gemini-2.5-flash'
-            });
 
-            const prompt = `Como un experto académico, explica brevemente (en 2 o 3 frases) de qué trata el tema "${topicName}" en un contexto universitario. Sé claro y conciso.`;
-
-            const result = await model.generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }]
-            });
-            const response = result.response;
-            const description = response.candidates[0].content.parts[0].text;
-
-            if (!description) {
-                throw new Error("La respuesta de la IA estaba vacía.");
-            }
-            console.log(`✅ Descripción generada para "${topicName}"`);
-            return description;
-
-        } catch (error) {
-            console.error(`❌ Error en MLService al generar descripción para "${topicName}":`, error);
-            return "No se pudo generar una descripción en este momento. Inténtalo de nuevo más tarde.";
-        }
-    }
 
     static async trainModel() {
         console.warn('⚠️ El entrenamiento del modelo local ya no es necesario con la nueva arquitectura LLM.');

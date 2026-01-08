@@ -46,13 +46,37 @@ function getIconForItem(name, type) {
 function createBrowseCardHTML(item, type) {
     const iconClass = getIconForItem(item.name, type);
 
-    // ✅ MEJORA: Card para Carreras con un diseño más rico y descriptivo.
+    // ✅ MEJORA: Card para Carreras con soporte de imagen TIPO POSTER
     if (type === 'career') {
-        return `
-            <div class="browse-card career-card" data-type="career" data-id="${item.id}">
-                <div class="browse-card-icon">
-                    <i class="fas ${iconClass}"></i>
+        // Opción 1: Diseño Full Image (Si tiene imagen)
+        if (item.image_url) {
+            return `
+                <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" onclick="window.location.href='career.html?id=${item.id}'" style="cursor: pointer;">
+                    <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    
+                    <div class="browse-card-overlay">
+                        <div class="browse-card-content overlay-content">
+                            <h3 class="browse-card-title text-white" style="font-size: 1.25rem;">${item.name}</h3>
+                        </div>
+                        <div class="browse-card-cta overlay-cta">
+                            <span>Ver Cursos</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
                 </div>
+            `;
+        }
+
+        // Opción 2: Diseño Estándar (Solo icono)
+        const iconOrImage = `
+            <div class="browse-card-icon">
+                <i class="fas ${iconClass}"></i>
+            </div>
+        `;
+
+        return `
+            <div class="browse-card career-card" data-type="career" data-id="${item.id}" onclick="window.location.href='career.html?id=${item.id}'" style="cursor: pointer;">
+                ${iconOrImage}
                 <div class="browse-card-content">
                     <h3 class="browse-card-title">${item.name}</h3>
                 </div>
@@ -64,22 +88,56 @@ function createBrowseCardHTML(item, type) {
         `;
     }
 
-    // Card para Cursos (NUEVO DISEÑO)
+    // Card para Cursos (DISEÑO TIPO POSTER/NETFLIX SI HAY IMAGEN)
     if (type === 'course') {
-        const code = item.code ? `<span class="course-card-code">${item.code}</span>` : '';
-        const description = item.description ? item.description.substring(0, 80) + '...' : 'Ver más información sobre este curso.';
+        const codeHTML = item.code ? `<span class="course-card-code">${item.code}</span>` : '';
+
+        // ✅ NUEVO: Botones de acción (Guardar/Favorito)
+        const actionButtons = `
+            <div class="card-actions">
+                <button class="action-btn save-btn" data-type="course" data-id="${item.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+                <button class="action-btn fav-btn" data-type="course" data-id="${item.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+            </div>
+        `;
+
+        // Si hay imagen, usamos el diseño "Full Cover"
+        if (item.image_url) {
+            return `
+                <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" onclick="window.location.href='course.html?id=${item.id}'" style="cursor: pointer;">
+                    <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    
+                    ${actionButtons}
+
+                    <div class="browse-card-overlay">
+                         <div class="browse-card-content overlay-content">
+                            <h3 class="browse-card-title text-white">${item.name}</h3>
+                            ${codeHTML}
+                         </div>
+                         <div class="browse-card-cta overlay-cta">
+                            <span>Ver detalles</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Diseño Estándar (Sin imagen, solo icono)
+        const iconOrImage = `
+            <div class="browse-card-icon">
+                <i class="fas ${iconClass}"></i>
+            </div>
+        `;
 
         return `
-            <div class="browse-card course-card" data-type="course" data-id="${item.id}">
-                <div class="browse-card-icon">
-                    <i class="fas ${iconClass}"></i>
-                </div>
+            <div class="browse-card course-card" data-type="course" data-id="${item.id}" onclick="window.location.href='course.html?id=${item.id}'" style="cursor: pointer;">
+                ${actionButtons}
+                ${iconOrImage}
                 <div class="browse-card-content">
                     <div class="course-card-header">
                         <h3 class="browse-card-title">${item.name}</h3>
-                        ${code}
+                        ${codeHTML}
                     </div>
-                    <p class="course-card-description">${description}</p>
                 </div>
                 <div class="browse-card-cta">
                     <span>Ver detalles</span>
@@ -87,17 +145,21 @@ function createBrowseCardHTML(item, type) {
                 </div>
             </div>
         `;
-    }
-
-    // Fallback para otros tipos (si los hubiera)
-    return `
-        <div class="browse-card" data-type="${type}" data-id="${item.id}">
+    } else if (type === 'topic') {
+        clickAction = `onclick="window.location.href='topic.html?id=${item.id}'"`;
+        contentHTML = `
             <div class="browse-card-icon">
                 <i class="fas ${iconClass}"></i>
             </div>
             <div class="browse-card-content">
                 <h3 class="browse-card-title">${item.name}</h3>
             </div>
+        `;
+    }
+
+    return `
+        <div class="browse-card ${type}-card" ${clickAction} style="cursor: pointer;">
+            ${contentHTML}
             <div class="browse-card-cta">
                 <span>Ver detalles</span>
                 <i class="fas fa-arrow-right"></i>
@@ -129,29 +191,25 @@ function createFilterSidebarHTML(careers) {
 }
 
 function createSearchResultCardHTML(course) {
-    // ✅ SOLUCIÓN: El backend ahora envía 'careerIds' como un array de objetos {id, name}.
-    // Lo renombramos a 'careers' para mayor claridad y generamos botones clickables.
     const careers = course.careerIds || [];
-    const careersHTML = careers.map(c =>
-        `<button class="course-badge" data-career-id="${c.id}">${c.name}</button>`
-    ).join('');
-
-    // ✅ MEJORA UI/UX: Aplicar el estilo de las tarjetas de "Explorar" para consistencia.
     const iconClass = getIconForItem(course.name, 'course');
-
-    // ✅ MEJORA: Añadir el código del curso para mayor consistencia con las tarjetas de exploración.
     const codeHTML = course.code ? `<span class="course-card-code">${course.code}</span>` : '';
 
     return `
-        <div class="course-card-link" data-type="course" data-id="${course.id}" data-careers="${careers.map(c => c.name).join(',')}" style="cursor: pointer;">
-            <div class="course-card-link-icon">
+        <div class="browse-card course-card" onclick="window.location.href='course.html?id=${course.id}'" style="cursor: pointer;">
+            <div class="card-bookmark-ribbon"><i class="fas fa-bookmark"></i></div>
+            <div class="browse-card-icon">
                 <i class="fas ${iconClass}"></i>
             </div>
-            <div class="course-card-link-content">
-                <h3>${course.name}</h3>${codeHTML}
-                <div class="course-badges">${careersHTML}</div>
+            <div class="browse-card-content">
+                <div class="course-card-header">
+                    <h3 class="browse-card-title">${course.name}</h3>
+                    ${codeHTML}
+                </div>
+                <p class="course-card-description" style="display:none;">${course.description || ''}</p>
             </div>
-            <div class="course-card-link-cta">
+            <div class="browse-card-cta">
+                <span>Ver detalles</span>
                 <i class="fas fa-arrow-right"></i>
             </div>
         </div>
@@ -169,19 +227,26 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
         return ''; // No mostrar nada si no hay recomendaciones
     }
 
-    // ✅ MEJORA: Las recomendaciones navegan a la vista detallada usando data attributes
-    const coursesHTML = (recommendations.relatedCourses || []).map(course => `
-        <div class="recommendation-card" data-type="course" data-id="${course.id}">
-            <div class="recommendation-icon"><i class="fas fa-graduation-cap"></i></div>
+    // ✅ MEJORA: Renderizado híbrido de Cursos y Libros
+    const coursesHTML = (recommendations.relatedCourses || []).map(item => {
+        const isBook = item.type === 'book';
+        const icon = isBook ? 'fa-book-open' : 'fa-graduation-cap';
+        const typeLabel = isBook ? 'LIBRO RECOMENDADO' : 'CURSO RELACIONADO';
+        const dataType = isBook ? 'book' : 'course';
+
+        return `
+        <div class="recommendation-card" data-type="${dataType}" data-id="${item.id}">
+            <div class="recommendation-icon"><i class="fas ${icon}"></i></div>
             <div class="recommendation-content">
-                <div class="recommendation-type">CURSO RELACIONADO 
-                    ${course.confidence ? `<span class="ml-confidence-badge" title="Confianza de la IA">${course.confidence}% Match</span>` : ''}
+                <div class="recommendation-type">${typeLabel} 
+                    ${item.confidence ? `<span class="ml-confidence-badge" title="Confianza de la IA">${item.confidence}% Match</span>` : ''}
                 </div>
-                <div class="recommendation-title">${course.name}</div>
+                <div class="recommendation-title">${item.name}</div>
+                ${isBook && item.author ? `<div class="recommendation-author" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${item.author}</div>` : ''}
             </div>
             <div class="recommendation-arrow"><i class="fas fa-arrow-right"></i></div>
         </div>
-    `).join('');
+    `}).join('');
 
     const topicsHTML = (recommendations.relatedTopics || []).map(topic => `
         <div class="recommendation-card topic-card" data-type="topic" data-id="${topic.id}">
@@ -332,54 +397,83 @@ function createTopicViewHTML(topic, description, books = [], showChatButton = fa
 
 // --- Componentes para la página de Administración (admin.js) ---
 
-function createAdminSectionCardHTML(section, data) {
-    const { allCourses, allInstructors, allCareers } = data;
-    const course = allCourses.find(c => c.id === section.courseId);
-    const instructor = allInstructors.find(i => i.id === section.instructorId);
-    const careers = section.careerIds.map(id => allCareers.find(c => c.id === id)?.name).filter(Boolean);
 
-    if (!course) return ''; // No renderizar si el curso base no existe
+
+function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = false) {
+    // ✅ SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
+    const displayName = type === 'book' ? item.title : item.name;
+    const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
+
+    // ✅ NUEVO: Mostrar badge de área para carreras de forma más limpia
+    const areaBadge = (type === 'career' && item.area)
+        ? `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`
+        : '';
+
+    // Subtitulo formateado
+    const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
 
     return `
-        <div class="item-card-full">
-            <div class="item-card-header">
-                <h3>${course.name} (${course.course_id})</h3>
-                <div class="item-actions">
-                    <button class="edit-btn-small" data-type="section" data-id="${section.id}" title="Editar Sección">✏️</button>
-                    <button class="delete-btn-small" data-type="section" data-id="${section.id}" title="Eliminar Sección">🗑️</button>
-                </div>
+        <div class="admin-item-card item-card">
+            <div class="item-card-content">
+                <h3>${displayName}</h3>
+                ${areaBadge}
+                ${subtitleHTML}
             </div>
-            <div class="item-card-body">
-                <div><strong>Docente:</strong> ${instructor ? instructor.name : 'No asignado'}</div>
-                <div><strong>Carreras:</strong> ${careers.join(', ') || 'Ninguna'}</div>
-                <div><strong>Horario:</strong> ${section.schedule.map(s => `${s.day} ${s.startTime}-${s.endTime}`).join(' | ') || 'No definido'}</div>
+            
+            <div class="item-actions">
+                ${resetPasswordButton}
+                <button class="edit-btn-small" data-type="${type}" data-id="${item.id}" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-btn-small" data-type="${type}" data-id="${item.id}" title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
         </div>
     `;
 }
 
-function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = false) {
-    // ✅ SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
-    const displayName = type === 'book' ? item.title : item.name;
-    const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña">🔑</button>` : '';
+function create3DBookCardHTML(book) {
+    const title = book.title || 'Sin Título';
+    const author = book.author || 'Autor Desconocido';
 
-    // ✅ NUEVO: Mostrar badge de área para carreras
-    const areaBadge = (type === 'career' && item.area)
-        ? `<span class="area-badge" style="font-size: 0.75rem; background: var(--bg-tertiary); padding: 2px 8px; border-radius: 12px; margin-left: 8px; color: var(--text-secondary); border: 1px solid var(--border-color);">${item.area}</span>`
-        : '';
+    // ✅ CORRECCIÓN: Usar 'image_url' que es la propiedad correcta de Supabase.
+    // También chequeamos 'coverUrl' por compatibilidad hacia atrás si fuera necesario.
+    const rawCoverUrl = book.image_url || book.coverUrl;
+
+    const coverUrl = (rawCoverUrl && rawCoverUrl.trim() !== "")
+        ? rawCoverUrl
+        : 'https://placehold.co/150x220/1e293b/ffffff?text=Libro';
+
+    const url = book.url || '#';
+
+    // ✅ NUEVO: Botones de acción para libros
+    // Serializamos el objeto libro para pasarlo al modal de citación (escapando comillas dobles)
+    const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
+
+    const actionButtons = `
+        <div class="card-actions" style="top: 0px; right: 0px;">
+            <button class="action-btn save-btn" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+            <button class="action-btn fav-btn" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+            <button class="action-btn cite-btn" onclick="window.openCitationModal(event, ${safeBook})" title="Citar"><i class="fas fa-quote-right"></i></button>
+        </div>
+    `;
 
     return `
-        <div class="admin-item-card item-card">
-            <span style="display: flex; align-items: center; flex-wrap: wrap; gap: 5px;">
-                ${displayName} 
-                <small>${subtitle}</small>
-                ${areaBadge}
-            </span>
-            <div class="item-actions">
-                ${resetPasswordButton}
-                <button class="edit-btn-small" data-type="${type}" data-id="${item.id}" title="Editar ${type}">✏️</button>
-                <button class="delete-btn-small" data-type="${type}" data-id="${item.id}" title="Eliminar ${type}">🗑️</button>
-            </div>
+        <div class="book-card-container" style="position: relative;">
+            ${actionButtons}
+            <a href="${url}" class="book-card" onclick="event.preventDefault(); window.open('${url}', '_blank');" title="${title}">
+                <div class="book-cover-container">
+                    <img src="${coverUrl}" alt="${title}" class="book-cover-img" loading="lazy" onerror="this.src='https://placehold.co/150x220/1e293b/ffffff?text=Sin+Imagen'">
+                    <div class="book-overlay-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                </div>
+                <div class="book-info">
+                    <h3 class="book-title">${title}</h3>
+                    <div class="book-author">${author}</div>
+                </div>
+            </a>
         </div>
     `;
 }

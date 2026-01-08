@@ -55,11 +55,11 @@ class ChatComponent {
                             <i class="fas fa-bars"></i>
                         </button>
                         <div class="chatbot-title">
-                            <span class="chatbot-icon">🤖</span>
-                            <h3 id="chatbot-title-heading">Tutor IA UC</h3>
+                            <i class="fas fa-robot chatbot-icon-svg"></i>
+                            <h3 id="chatbot-title-heading">Tutor IA</h3>
                             <span class="chatbot-status">En línea</span>
                         </div>
-                        <button id="chatbot-close" class="chatbot-close">×</button>
+                        <button id="chatbot-close" class="chatbot-close"><i class="fas fa-times"></i></button>
                     </div>
 
                     <div id="chatbot-messages" class="chatbot-messages">
@@ -77,7 +77,7 @@ class ChatComponent {
                         <div class="chatbot-input">
                             <input type="text" id="chatbot-input" placeholder="Escribe tu pregunta aquí..." maxlength="500">
                             <button id="chatbot-send" class="chatbot-send">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                                <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
                         <div class="chatbot-suggestions" id="chatbot-suggestions">
@@ -88,7 +88,7 @@ class ChatComponent {
             </div>
 
             <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Tutor IA">
-                <span class="chatbot-toggle-icon">🤖</span>
+                <i class="fas fa-robot"></i>
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
         `;
@@ -110,9 +110,9 @@ class ChatComponent {
         if (this.messages.length === 0) {
             const welcomeText = `**¡Hola! Soy tu tutor IA 🤖**
 Puedo ayudarte con:
-*   📚 Encontrar materiales de cursos
-*   🕐 Consultar horarios y fechas
-*   💡 Explicar conceptos teóricos
+*   🎓 Orientación sobre Carreras y Cursos
+*   📚 Búsqueda de Libros y Recursos
+*   💡 Explicación de conceptos teóricos
 ¿En qué puedo ayudarte hoy?`;
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
         }
@@ -197,6 +197,15 @@ Puedo ayudarte con:
                     }
                 }
             });
+
+            // ✅ MEJORA UI/UX: Permitir scroll horizontal con la rueda del mouse (Shift opcional)
+            suggestionsContainer.addEventListener('wheel', (e) => {
+                if (e.deltaY !== 0) {
+                    // Si el usuario mueve la rueda verticalmente, lo traducimos a horizontal
+                    e.preventDefault();
+                    suggestionsContainer.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
         }
 
         // ✅ FASE III: Delegación de eventos para la lista de conversaciones
@@ -471,10 +480,13 @@ Puedo ayudarte con:
         let messageHTML = this.formatMessage(text);
 
         // Agregar información de metadata para mensajes del bot
+        // Intención/Confianza removed from UI as per user request.
+        /*
         if (sender === 'bot' && metadata.intencion) {
             const confidencePercent = (metadata.confianza * 100).toFixed(1);
             messageHTML += `<div class="message-info">Intención: ${metadata.intencion} • Confianza: ${confidencePercent}%</div>`;
         }
+        */
 
         // ✅ AÑADIR BOTÓN DE REDIRECCIÓN SI EXISTE LA URL
         if (sender === 'bot' && metadata.redirectUrl) {
@@ -532,17 +544,22 @@ Puedo ayudarte con:
             .replace(navRegex, (match, type, id, text) => {
                 const numericId = parseInt(id, 10);
                 const trimmedText = text.trim();
-
-                // ✅ SOLUCIÓN: Minificar el string del onclick y añadir logs para depuración.
-                // Se usa 'window.searchComponent' directamente.
                 let functionCall = '';
 
                 if (type === 'career') {
-                    functionCall = `console.log('Navegando a carrera ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderCoursesForCareer.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
+                    // ✅ FIX: Redirigir a la página real de carrera (MPA) para asegurar el diseño correcto.
+                    functionCall = `window.location.href = 'career.html?id=${numericId}'`;
                 } else if (type === 'course') {
-                    functionCall = `console.log('Navegando a curso ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderUnifiedCourseView.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
+                    // ✅ FIX: Redirigir a la página real de curso (MPA).
+                    functionCall = `window.location.href = 'course.html?id=${numericId}'`;
                 } else if (type === 'topic') {
-                    functionCall = `console.log('Navegando a tema ${numericId}'); if(window.searchComponent) { window.chatComponent.closeChat(); window.searchComponent.navigateTo(window.searchComponent.renderTopicView.bind(window.searchComponent), ${numericId}); } else { console.error('SearchComponent no encontrado'); }`;
+                    // ✅ FIX: Como no hay página de tema, redirigimos a la búsqueda con el nombre del tema (o placeholder).
+                    // Pero si el ID es válido, intentamos ir a búsqueda filtrada por tema si existiera, o search.
+                    // Mejor: redirigir a search.html con query.
+                    // Para simplificar, asumiremos que si hay ID, el usuario quiere ver "algo".
+                    // Dado que el usuario dijo que "ya no tenemos paginas para temas", lo mejor es no navegar a una 404.
+                    // Redirigiremos al HOME con una búsqueda pre-llenada o simplemente search.html
+                    functionCall = `window.location.href = 'index.html?q=tema:${numericId}'`;
                 }
 
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;

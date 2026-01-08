@@ -1,0 +1,140 @@
+/* Career Page Styles */
+
+/* Sticky Search Override for this page */
+.search-section.sticky {
+    position: sticky;
+    /* ✅ UPDATE: Reduced to 57px to FORCE overlap behind header (z-index 1000 vs 900) and kill the gap */
+    top: 57px;
+    margin: 0;
+    width: 100%;
+    z-index: 900;
+    background: var(--surface);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 1rem;
+}
+
+.career-view {
+    padding: var(--spacing-xl) 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.career-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+    /* ✅ UPDATE: Increased margin bottom for better separation from content */
+    margin-bottom: 3rem;
+    padding-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+    .career-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .career-info h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* ✅ MINIMALIST UPDATE: Smaller icon */
+.career-icon-large {
+    font-size: 2.5rem;
+    /* Was 4rem */
+    width: 64px;
+    /* Was 100px */
+    height: 64px;
+    /* Was 100px */
+    border-radius: 12px;
+    /* Less rounded */
+}
+
+.career-info h1 {
+    font-size: 1.75rem;
+    /* Was 2.5rem */
+    margin-bottom: 0.5rem;
+    /* Was 1.5rem */
+    font-weight: 600;
+}
+
+.back-nav {
+    /* ✅ UPDATE: Increased back button margin significantly */
+    margin-bottom: 2rem;
+    /* ✅ NUEVO: Separación superior para despegarlo del buscador */
+    margin-top: 3rem;
+}
+
+.back-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    /* Ensure iconic alignment */
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    /* Add touch target area */
+}
+
+.back-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+/* =========================================
+   ✅ NUEVO: Estilos para el nuevo layout (Hero)
+   Generados por career.js
+   ========================================= */
+
+.hero-banner {
+    padding: 2rem 0 0.5rem 0;
+    /* Reduced bottom padding */
+    background-color: var(--bg-main);
+}
+
+.hero-nav {
+    margin-bottom: 0.5rem;
+}
+
+.hero-title {
+    font-size: 1.75rem;
+    /* Was 2.5rem */
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.overlap-container {
+    padding-top: 0.5rem;
+    /* Reduced padding */
+    position: relative;
+    z-index: 2;
+}
+
+.content-card {
+    /* No background/border needed if we just want the list, but adding spacing */
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    /* Subtle border */
+}
+
+.section-title {
+    font-size: 1.1rem;
+    /* Was 1.5rem */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

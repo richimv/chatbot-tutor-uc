@@ -22,7 +22,15 @@ function auth(req, res, next) {
         req.user = decoded; // Asignamos el payload decodificado directamente a req.user
         next();
     } catch (ex) {
-        res.status(400).json({ error: 'Token inválido.' });
+        // ✅ MEJORA: Loguear el error específico para depuración
+        console.error('❌ Error de autenticación (JWT):', ex.message);
+
+        // ✅ MEJORA: Devolver 401 (Unauthorized) en lugar de 400 (Bad Request)
+        // y un mensaje más específico si es posible.
+        if (ex.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Token expirado. Por favor, inicia sesión nuevamente.' });
+        }
+        res.status(401).json({ error: 'Token inválido.' });
     }
 }
 

@@ -3,7 +3,10 @@
 /* Botones */
 .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
+    /* Fixed: Dark text on light background */
+    font-weight: 600;
+    /* Added weight for better readability */
     border: none;
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: 12px;
@@ -88,7 +91,8 @@
 
 .course-badge:hover {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
+    /* Fixed: Dark text on light background */
     border-color: var(--accent);
 }
 
@@ -246,7 +250,8 @@
 
 .chat-nav-button:hover {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
+    /* Fixed: Dark text on light background */
 }
 
 /* ✅ MEJORA RESPONSIVE: Estilos para el banner en pantallas grandes */

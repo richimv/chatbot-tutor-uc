@@ -1,520 +1,237 @@
-/* === dashboard.css === */
-/* Estilos para el panel de estadísticas */
+/* --- Dashboard Professional Design (Slate Theme) --- */
 
-/* ✅ NUEVO: Estilos para el header del dashboard y filtros */
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 1.5rem 0 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.dashboard-header h2 {
-    margin: 0;
-    color: var(--text-main);
-}
-
-.date-filters {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.date-filter-btn {
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text-muted);
-}
-
-.date-filter-btn:hover {
-    background: var(--surface-hover);
-    color: var(--text-main);
-}
-
-.date-filter-btn.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-}
-
-/* ✅ NUEVO: Animaciones para dar vida al dashboard */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* --- Contenedores Principales --- */
-
-/* ✅ SOLUCIÓN: Contenedor centralizado con ancho óptimo */
-.admin-container {
+.dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding-bottom: 2rem;
+    padding: 2rem 1.5rem;
 }
 
-.dashboard-grid {
-    display: grid;
-    gap: 1.5rem;
-    /* ✅ SOLUCIÓN: Solo padding vertical, SIN padding horizontal */
-    padding: 0.75rem 0;
+.dashboard-header {
+    margin-bottom: 2.5rem;
 }
 
-/* Tarjetas de KPIs */
-.kpi-cards-container {
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* KPIs Grid */
+.kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1.5rem;
+    margin-bottom: 2.5rem;
 }
 
 .kpi-card {
-    background: var(--surface-alt);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid transparent;
-    /* Borde transparente por defecto */
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.5s ease-out forwards;
-    opacity: 0;
-    /* Inicia invisible para la animación */
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 
 .kpi-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--accent);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
 }
 
-/* ✅ NUEVO: Contenedor para el ícono y el título */
-.kpi-card-header {
+.kpi-icon {
+    background: var(--bg-tertiary);
+    color: var(--primary-light);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+    justify-content: center;
+    font-size: 1.5rem;
 }
 
-.kpi-card-title {
-    font-size: 0.9rem;
+.kpi-content {
+    flex: 1;
+}
+
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.kpi-label {
+    font-size: 0.875rem;
     color: var(--text-muted);
     font-weight: 500;
 }
 
-.kpi-card-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.kpi-card-change {
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.kpi-card-change.positive {
-    color: var(--success);
-}
-
-.kpi-card-change.negative {
-    color: var(--danger);
-}
-
-/* Contenedores de Gráficos */
-.charts-container {
-    display: grid;
-    /* ✅ MEJORA: Reducir el ancho mínimo para permitir 3 columnas en pantallas medianas/grandes */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-/* ✅ NUEVO: Añadir animación a las tarjetas de gráficos */
-.chart-card,
-.feedback-table-card {
-    animation: fadeInUp 0.5s ease-out forwards;
-    opacity: 0;
-}
-
-/* Staggered animation delays */
-.kpi-card:nth-child(2),
-.chart-card:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.kpi-card:nth-child(3) {
-    animation-delay: 0.2s;
-}
-
-.kpi-card:nth-child(4) {
-    animation-delay: 0.3s;
-}
+/* Charts Section */
+/* Charts Section styles modified below in responsive section */
 
 .chart-card {
-    background: var(--surface-alt);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.chart-header {
     display: flex;
-    flex-direction: column;
-}
-
-.chart-card h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    /* Reducir margen para ganar espacio */
-    font-size: 1rem;
-    /* Ajustar tamaño de fuente */
-    color: var(--text-main);
-    flex-shrink: 0;
-}
-
-/* ✅ SOLUCIÓN: Contenedor para el canvas del gráfico. */
-/* Esto evita que el gráfico crezca indefinidamente. */
-.chart-wrapper {
-    position: relative;
-    height: 250px;
-    /* ✅ AJUSTE: Altura un poco menor para equilibrar */
-    width: 100%;
-    flex-grow: 1;
-}
-
-/* Sección de Insights */
-.insights-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-}
-
-@media (min-width: 992px) {
-
-    .insights-container,
-    .top-lists-container {
-        /* ✅ MEJORA: Layout de 3 columnas idéntico para ambas filas */
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    /* Ajuste específico para la fila de insights si queremos que la tabla sea más ancha */
-    .insights-container {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-}
-
-/* ✅ RESPONSIVE: Ajustes para móviles */
-@media (max-width: 768px) {
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .charts-container,
-    .kpi-cards-container,
-    .top-lists-container,
-    .insights-container,
-    .prediction-cards-container {
-        grid-template-columns: 1fr !important;
-        /* Forzar una columna */
-    }
-
-    .chart-wrapper {
-        height: 200px;
-        /* Reducir altura en móvil */
-    }
-
-    .admin-container {
-        padding: 0 1rem;
-    }
-}
-
-.prediction-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    padding: 0 1.5rem;
-    /* ✅ MEJORADO: Más espaciado lateral */
-}
-
-.prediction-card {
-    /* ✅ MEJORADO: Color distintivo para ML - Gradiente azul/morado */
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    border-radius: 16px;
-    padding: 1.5rem;
-    color: white;
-    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    animation: fadeInUp 0.5s ease-out 0.4s forwards;
-    opacity: 0;
-}
-
-.prediction-card:hover {
-    transform: translateY(-5px);
-}
-
-.prediction-card h3 {
-    margin-top: 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-}
-
-.prediction-card .predicted-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 1rem 0;
-}
-
-/* ✅ NUEVO: Estilo para el texto de confianza de la predicción */
-.prediction-confidence {
-    font-size: 0.8rem;
-    opacity: 0.8;
-    margin-top: -0.5rem;
-}
-
-.feedback-table-card {
-    background: var(--surface-alt);
-    padding: 1.5rem;
-    /* ✅ CORRECCIÓN: Eliminar margen lateral para respetar el grid gap */
-    margin: 0;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.feedback-table-card h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-
-/* ✅ NUEVO: Estilos para "Oportunidades de Contenido" */
-.chart-card.opportunities-card {
-    margin: 0;
-}
-
-/* ✅ SOLUCIÓN: Hacer que la tarjeta de "Oportunidades" ocupe todo el ancho si está en la grilla de insights */
-#zero-results-card {
-    grid-column: 1 / -1;
-}
-
-/* --- ✅ NUEVO: Estilos para la sección de Inteligencia de Contenido --- */
-
-.chart-card.full-width {
-    grid-column: 1 / -1;
-    /* Ocupa todo el ancho en la cuadrícula de gráficos */
-}
-
-.top-by-category-grid {
-    display: grid;
-    /* Crea columnas flexibles, cada una con un mínimo de 200px */
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    /* Espacio entre las listas */
-}
-
-.top-category-list h4 {
-    font-size: 1rem;
-    color: var(--text-main);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
+    justify-content: space-between;
     align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.chart-actions {
+    display: flex;
     gap: 0.5rem;
 }
 
-.top-category-list h4 i {
-    color: var(--accent);
-}
-
-.top-category-list ol {
-    list-style: none;
-    padding-left: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.top-category-list li {
-    font-size: 0.9rem;
+.chart-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
     color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    transition: all 0.2s;
 }
 
-.top-category-list li span {
-    font-weight: 600;
+.chart-btn:hover,
+.chart-btn.active {
+    background: var(--bg-tertiary);
     color: var(--text-main);
-    background-color: var(--surface);
-    padding: 0.1rem 0.4rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
 }
 
-.empty-list-item {
-    font-style: italic;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    opacity: 0.7;
+.chart-container {
+    height: 300px;
+    width: 100%;
 }
 
-/* ✅ NUEVO: Estilos para las listas Top 5 */
-.top-lists-section {
-    margin-top: 1rem;
-}
-
-.section-title {
-    font-size: 1.2rem;
-    color: var(--text-main);
-    margin-bottom: 1rem;
-    padding-left: 0.5rem;
-    border-left: 4px solid var(--accent);
-}
-
-.top-lists-container {
-    /* ✅ MEJORA: Usar la misma estructura base que insights */
+/* Quick Actions / Recent Activity */
+.dashboard-sections-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 2fr 1fr;
     gap: 1.5rem;
 }
 
-.top-list-card {
-    background: var(--surface-alt);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border: 1px solid var(--border);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.top-list-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    border-color: var(--accent);
-}
-
-.top-list-card .card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.top-list-card .card-header i {
-    font-size: 1.2rem;
-    color: var(--accent);
-    background: rgba(0, 0, 0, 0.05);
-    padding: 0.5rem;
-    border-radius: 8px;
-}
-
-.top-list-card .card-header h4 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: var(--text-main);
-}
-
-.top-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.top-list-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-
-.top-list-item:hover {
-    background: var(--surface);
-}
-
-.top-list-item .rank {
-    font-weight: 700;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    min-width: 20px;
-}
-
-.top-list-item .name {
-    flex: 1;
-    color: var(--text-main);
-    font-size: 0.95rem;
-    white-space: nowrap;
+.section-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.top-list-item .count.badge {
-    background: var(--surface);
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.empty-state-small {
-    color: var(--text-muted);
-    font-style: italic;
-    text-align: center;
-    padding: 1rem;
-}
-
-/* ✅ NUEVO: Estilos para la lista de búsquedas sin resultados */
-.zero-results-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.zero-result-item {
+.section-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem;
-    background: rgba(231, 76, 60, 0.1);
-    /* Fondo rojo muy suave */
-    border-radius: 8px;
-    border-left: 3px solid var(--danger);
 }
 
-.zero-result-item .query-text {
-    font-weight: 500;
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--text-main);
 }
 
-.zero-result-item .query-count {
-    font-size: 0.85rem;
-    color: var(--danger);
-    font-weight: 600;
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.card-subtitle {
+.activity-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-main);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
     font-size: 0.9rem;
+}
+
+.activity-details {
+    flex: 1;
+}
+
+.activity-text {
+    font-size: 0.9375rem;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    font-size: 0.75rem;
     color: var(--text-muted);
-    margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+    .dashboard-sections-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
+        /* ✅ CORRECCIÓN: Evitar desbordamiento en móviles */
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboard-container {
+        padding: 1rem 1rem;
+    }
+
+    .chart-container {
+        height: 250px;
+        /* Slightly shorter on mobile */
+    }
+}
+
+/* Fallback for safer min-width on larger screens */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* ✅ 300px es más seguro que 500px */
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
 }

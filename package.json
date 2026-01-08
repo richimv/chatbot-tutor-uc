@@ -20,6 +20,8 @@
     "express-rate-limit": "^8.2.1",
     "fast-levenshtein": "^3.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.11.0",
+    "multer": "^2.0.2",
     "natural": "^8.1.0",
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3",

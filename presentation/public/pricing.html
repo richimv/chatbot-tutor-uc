@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suscripción Premium - Biblioteca Académica</title>
+    <link rel="stylesheet" href="css/pricing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="pricing-container">
+        <div class="pricing-header">
+            <h1>Desbloquea tu Potencial</h1>
+            <p>Acceso ilimitado a todos los recursos académicos.</p>
+        </div>
+
+        <div class="plan-card">
+            <h3>Acceso Vitalicio</h3>
+            <div class="plan-price">S/ 9.90 <span>/ único</span></div>
+
+            <ul class="plan-benefits">
+                <li><i class="fas fa-check-circle"></i> Acceso total a todos los libros y cursos</li>
+                <li><i class="fas fa-check-circle"></i> Tutor IA ilimitado 24/7</li>
+                <li><i class="fas fa-check-circle"></i> Sin publicidad ni interrupciones</li>
+                <li><i class="fas fa-check-circle"></i> Nuevos contenidos cada mes</li>
+            </ul>
+
+            <button id="pay-button" class="btn-pay">
+                Pagar con Mercado Pago <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <div class="secure-payment">
+            <i class="fas fa-lock"></i> Pago 100% Seguro vía Mercado Pago
+        </div>
+        <div style="margin-top: 10px; font-size: 0.8rem; color: #999;">
+            Aceptamos Yape, Plin, Visa, Mastercard
+        </div>
+        <div style="margin-top: 20px;">
+            <a href="#" onclick="logout()" style="color: #666; text-decoration: underline; font-size: 0.9rem;">Cerrar
+                Sesión</a>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>Procesando solicitud de pago...</p>
+    </div>
+
+    <!-- Configuration Script -->
+    <script src="js/config.js"></script>
+    <script>
+        // Check for payment status in URL (returned from MP success/failure)
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment');
+
+        if (paymentStatus === 'failure') {
+            alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
+        } else if (paymentStatus === 'pending') {
+            alert('Tu pago está en proceso. Te notificaremos cuando se apruebe.');
+        }
+
+        // Logout helper
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userValues');
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('pay-button').addEventListener('click', async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                // If somehow here without token, go to login
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const loading = document.getElementById('loading-overlay');
+            loading.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al iniciar el pago');
+                }
+
+                const data = await response.json();
+
+                if (data.init_point) {
+                    // Redirect to Mercado Pago
+                    window.location.href = data.init_point;
+                } else {
+                    alert('Error: No se recibió el link de pago.');
+                    loading.classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert('Hubo un problema al conectar con el servidor de pagos.');
+                loading.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>

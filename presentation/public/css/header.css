@@ -1,123 +1,188 @@
 /* --- Estructura Principal y Header --- */
 .main-header {
-    /* ✅ MEJORADO: Header sticky para que permanezca visible al scroll */
     position: sticky;
     top: 0;
     z-index: 1000;
-    /* Por encima del contenido pero debajo de modales */
-    background: var(--surface);
-    box-shadow: var(--shadow-elevation-low);
-    padding: var(--spacing-lg) var(--spacing-xl);
-    /* ✅ Padding original restaurado */
-    border-bottom: 1px solid var(--border);
-    transition: box-shadow 0.3s ease, background 0.3s ease;
-    border-radius: 12px;
-    margin: var(--spacing-lg) auto;
-    /* This margin will be overridden by padding 0 for sticky header, but kept for non-sticky behavior */
-    max-width: 1200px;
+    background: var(--bg-secondary);
+    /* Slate 800 */
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(8px);
+    background: rgba(30, 41, 59, 0.9);
+    /* Translucent slate */
 }
 
 .admin-header {
-    background: var(--surface-alt);
-    padding: var(--spacing-lg) var(--spacing-xl);
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    margin: var(--spacing-lg) auto;
+    background: var(--bg-secondary);
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin: 1.5rem auto;
     max-width: 1200px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: var(--shadow-md);
 }
 
-/* Se aplica a .header-nav en ambas páginas */
 .header-nav {
     display: flex;
-    gap: var(--spacing-xl);
+    gap: 1.5rem;
     align-items: center;
-    /* Asegura alineación vertical */
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: 0.75rem;
+    text-decoration: none;
 }
 
 .logo-img {
-    height: 40px;
+    height: 36px;
     width: auto;
-    object-fit: contain;
 }
 
 .logo-text {
-    display: none;
-    /* Oculto por defecto en móvil */
     font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--text-main);
+    display: none;
+}
+
+@media (min-width: 768px) {
+    /* .logo-text { display: block; } REMOVED */
+}
+
+/* Nuevo contenedor para alinear logo y botón a la izquierda */
+.header-start {
+    display: flex;
+    align-items: center;
+}
+
+.header-back-btn {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    /* Separador estilo "pipe" */
+    border-left: 1px solid var(--border-color);
+    margin-left: 1.5rem;
+    padding-left: 1.5rem;
+    height: 28px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.header-back-btn:hover {
+    color: var(--accent);
+}
+
+.header-back-btn.visible {
+    display: flex;
 }
 
 .nav-link {
     text-decoration: none;
     color: var(--text-muted);
     font-weight: 500;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    font-size: 0.9375rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
 }
 
 .nav-link:hover {
     color: var(--text-main);
-    background: var(--card-bg);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-link.active {
-    background: var(--accent);
-    color: white;
+    background: var(--bg-tertiary);
+    color: var(--text-main);
 }
 
-.nav-home-button {
-    background: var(--surface);
-    padding: 0.5rem 0.8rem;
-    display: flex;
-    align-items: center;
-}
-
-.nav-home-button i {
-    font-size: 1.2rem;
-}
-
-/* --- Estilos para Controles de Sesión en el Header --- */
+/* User Session Controls - Auth Buttons Container */
 #user-session-controls {
     display: flex;
     align-items: center;
     gap: 1rem;
-    /* Espacio entre los botones */
 }
 
-/* --- Estilos para el Menú de Usuario (Header) --- */
+/* ✅ NUEVO DISEÑO: Botón "Iniciar Sesión" (Ghost Style + Texto Blanco) */
+#user-session-controls .nav-link {
+    background-color: transparent;
+    color: var(--text-main);
+    /* Blanco/Slate-50 */
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    /* Para evitar saltos si se agrega borde */
+}
+
+#user-session-controls .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* ✅ NUEVO DISEÑO: Botón "Registrarse" (Gradient Premium) */
+#user-session-controls .btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+    /* Blue 600 -> Sky 500 */
+    color: white !important;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Sutil borde interno */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.5px;
+}
+
+#user-session-controls .btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+    /* Un poco más oscuro al hover */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -2px rgba(37, 99, 235, 0.2);
+}
+
+#user-session-controls .btn-primary:active {
+    transform: translateY(0);
+}
+
+/* User Menu */
 .user-menu-container {
     position: relative;
-    display: inline-block;
 }
 
 .user-menu-toggle {
-    background-color: var(--surface);
+    background: transparent;
     color: var(--text-main);
-    padding: 8px 16px;
-    font-size: 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: var(--font-main);
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
 }
 
-.user-menu-toggle i {
-    transition: transform 0.2s ease-in-out;
+.user-menu-toggle:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-hover);
 }
 
 .user-menu-dropdown {
@@ -125,28 +190,24 @@
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    background-color: var(--surface-alt);
-    /* Ligeramente más claro para contraste */
-    min-width: 220px;
+    background: var(--bg-secondary);
+    min-width: 240px;
     z-index: 1001;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
-    /* ✅ NUEVOS ESTILOS APLICADOS */
-    padding: 0;
-    /* Eliminar padding para que los grupos ocupen todo el espacio */
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
 }
 
 .user-menu-dropdown.show {
     display: block;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.15s ease-out;
 }
 
-/* ✅ NUEVOS ESTILOS APLICADOS */
 .user-menu-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-menu-name {
@@ -157,13 +218,14 @@
 
 .user-menu-email {
     display: block;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--text-muted);
+    margin-top: 2px;
 }
 
 .user-menu-group {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-menu-group:last-child {
@@ -173,32 +235,35 @@
 .user-menu-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    /* Espacio entre ícono y texto */
-    padding: 10px 16px;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
     width: 100%;
     text-align: left;
-    background: none;
+    background: transparent;
     border: none;
-    font-size: 0.9rem;
-    color: var(--text-main);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
 }
 
 .user-menu-item:hover {
-    background-color: var(--surface);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
 }
 
 .user-menu-item i {
-    width: 16px;
-    /* Ancho fijo para los íconos */
+    width: 1.25rem;
     text-align: center;
     color: var(--text-muted);
 }
 
+.user-menu-item:hover i {
+    color: var(--text-main);
+}
+
 .user-menu-item.logout-item:hover {
-    background-color: rgba(231, 76, 60, 0.1);
+    background: rgba(239, 68, 68, 0.1);
     color: var(--danger);
 }
 
@@ -206,59 +271,41 @@
     color: var(--danger);
 }
 
-/* Media query para mostrar el texto del logo en pantallas más grandes */
-@media (min-width: 768px) {
-    .logo-text {
-        display: inline;
-        /* Visible en escritorio */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* ✅ NUEVO: Responsive para header en móviles */
 @media (max-width: 768px) {
-    .admin-header {
-        padding: 1rem;
-        margin: 0.5rem;
-        flex-wrap: wrap;
+    .main-header {
+        padding: 0.5rem 1rem;
+        /* Smaller padding */
     }
 
-    .admin-header .logo h1 {
-        font-size: 1.1rem;
-        line-height: 1.2;
+    .logo-img {
+        height: 28px;
+        /* Smaller logo */
+    }
+
+    .nav-link span {
+        display: none;
     }
 
     .header-nav {
         gap: 0.5rem;
+        /* Tighter gap */
     }
-}
 
-/* ============================================
-   BOTÓN DE TOGGLE DE TEMA
-   ============================================ */
-.theme-toggle-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    padding: 0.5rem 0.8rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-}
-
-.theme-toggle-btn:hover {
-    background: var(--surface-alt);
-    transform: scale(1.05);
-    border-color: var(--accent);
-}
-
-.theme-toggle-btn i {
-    transition: transform 0.3s ease;
-}
-
-.theme-toggle-btn:active i {
-    transform: rotate(360deg);
+    /* Ensure user menu doesn't overflow */
+    .user-menu-dropdown {
+        right: -10px;
+        min-width: 200px;
+    }
 }

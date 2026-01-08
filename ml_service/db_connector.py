@@ -24,39 +24,61 @@ def get_db_engine():
     
 def get_courses_data():
     """
-    Descarga cursos con temas Y carreras.
-    CORRECCIÓN: Usamos 'c.name' directamente (sin alias 'as title')
+    Descarga cursos con temas (sin secciones/carreras legacy).
     """
     query = """
     SELECT 
         c.id, 
         c.name,  
-        c.description,
+        'course' as type,
         string_agg(DISTINCT t.name, ' ') as topics_soup,
         COALESCE(
             json_agg(DISTINCT t.name) FILTER (WHERE t.id IS NOT NULL),
             '[]'
-        ) as topics,
-        COALESCE(
-            json_agg(DISTINCT jsonb_build_object('name', car.name, 'area', car.area)) 
-            FILTER (WHERE car.id IS NOT NULL), 
-            '[]'
-        ) as careers
+        ) as topics
     FROM courses c
     LEFT JOIN course_topics ct ON c.id = ct.course_id
     LEFT JOIN topics t ON ct.topic_id = t.id
-    LEFT JOIN sections s ON c.id = s.course_id
-    LEFT JOIN section_careers sc ON s.id = sc.section_id
-    LEFT JOIN careers car ON sc.career_id = car.id
-    GROUP BY c.id, c.name, c.description;
+    GROUP BY c.id, c.name;
     """
     try:
         engine = get_db_engine()
         df = pd.read_sql(query, engine)
-        print(f"📊 [DB] Cursos cargados: {len(df)} (Schema corregido: 'name')")
+        print(f"📊 [DB] Cursos cargados: {len(df)}")
         return df
     except Exception as e:
         print(f"❌ [DB] Error descargando cursos: {e}")
+        return pd.DataFrame()
+
+def get_books_data():
+    """
+    Descarga libros (resources) con temas.
+    """
+    query = """
+    SELECT 
+        r.id, 
+        r.title as name, 
+        r.author,
+        r.publisher,
+        'book' as type,
+        string_agg(DISTINCT t.name, ' ') as topics_soup,
+        COALESCE(
+            json_agg(DISTINCT t.name) FILTER (WHERE t.id IS NOT NULL),
+            '[]'
+        ) as topics
+    FROM resources r
+    LEFT JOIN topic_resources tr ON r.id = tr.resource_id
+    LEFT JOIN topics t ON tr.topic_id = t.id
+    WHERE r.resource_type = 'book'
+    GROUP BY r.id, r.title, r.author, r.publisher;
+    """
+    try:
+        engine = get_db_engine()
+        df = pd.read_sql(query, engine)
+        print(f"📚 [DB] Libros cargados: {len(df)}")
+        return df
+    except Exception as e:
+        print(f"❌ [DB] Error descargando libros: {e}")
         return pd.DataFrame()
 
 def get_search_trends_data(days=30):

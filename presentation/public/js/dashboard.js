@@ -1,58 +1,67 @@
 class DashboardManager {
     constructor() {
         this.container = document.getElementById('dashboard-container');
-        this.kpiData = null; // Almacenar los datos de los KPIs para reutilizarlos en los modales
-        this.charts = {}; // Almacenar instancias de gráficos para destruirlos
+        this.charts = {};
         this.init();
     }
 
     async init() {
-        // Renderizar el layout inicial con los filtros
+        this.renderInitialStructure();
+        this.setupFilterListeners();
+        await this.displayStatistics(7);
+    }
+
+    renderInitialStructure() {
         this.container.innerHTML = `
             <div class="dashboard-header">
-                <h2>Visión General</h2>
-                <div class="date-filters">
-                    <button class="date-filter-btn active" data-days="7">7 Días</button>
-                    <button class="date-filter-btn" data-days="30">30 Días</button>
-                    <button class="date-filter-btn" data-days="90">90 Días</button>
+                <div style="display: flex; justify-content: space-between; align-items: end;">
+                    <div>
+                        <h2 class="dashboard-title">Visión General</h2>
+                        <p class="dashboard-subtitle">Métricas clave y rendimiento del sistema</p>
+                    </div>
+                    <div class="date-filters" style="display: flex; gap: 0.5rem;">
+                        <!-- Using nav-link style for buttons for consistency -->
+                        <button class="chart-btn active" data-days="7">7 Días</button>
+                        <button class="chart-btn" data-days="30">30 Días</button>
+                        <button class="chart-btn" data-days="90">90 Días</button>
+                    </div>
                 </div>
             </div>
 
             <div id="dashboard-content">
-                <div class="loading-state">Cargando estadísticas...</div>
+                <div class="loading-state" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                    <p style="margin-top: 1rem;">Cargando datos...</p>
+                </div>
             </div>
         `;
-        this.setupFilterListeners();
-        await this.displayStatistics(7); // Cargar datos de los últimos 7 días por defecto
     }
 
     setupFilterListeners() {
-        document.querySelector('.date-filters').addEventListener('click', (e) => {
-            if (e.target.classList.contains('date-filter-btn')) {
-                document.querySelectorAll('.date-filter-btn').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                const days = e.target.dataset.days;
-                this.displayStatistics(days);
-            }
-        });
+        const filters = this.container.querySelector('.date-filters');
+        if (filters) {
+            filters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    this.container.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    this.displayStatistics(e.target.dataset.days);
+                }
+            });
+        }
     }
 
     async displayStatistics(days = 7) {
         const contentContainer = document.getElementById('dashboard-content');
-        contentContainer.innerHTML = `<div class="loading-state">Cargando estadísticas...</div>`;
 
         try {
-            // ✅ Ahora pasamos el filtro de días a la API
             const [kpiData, totalTrends, interactionTrends, predictionsData, feedbackData, courseSeriesData, topicSeriesData] = await Promise.all([
                 AnalyticsApiService.getDashboardAnalytics(days),
-                AnalyticsApiService.getSearchTrends(days), // ✅ RESTAURADO: Cargar tendencias totales
-                AnalyticsApiService.getInteractionTrends(days), // Esto lo usamos para la dona
-                // ✅ IMPORTANTE: Pasamos 'days' a las predicciones para que el ML respete el filtro
+                AnalyticsApiService.getSearchTrends(days),
+                AnalyticsApiService.getInteractionTrends(days),
                 fetch(`${window.AppConfig.API_URL}/api/analytics/predictions?days=${days}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 }).then(res => res.json()),
                 AnalyticsApiService.getFeedback(),
-                // ✅ NUEVO: Obtener datos de series de tiempo SEPARADOS
                 fetch(`${window.AppConfig.API_URL}/api/analytics/courses-time-series?days=${days}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 }).then(res => res.json()),
@@ -61,467 +70,262 @@ class DashboardManager {
                 }).then(res => res.json())
             ]);
 
-            // ✅ PLAN DE EJECUCIÓN: Almacenar los datos para usarlos en los modales
-            this.kpiData = kpiData;
-
-            // Destruir gráficos antiguos antes de crear nuevos
+            // Clear old charts
             Object.values(this.charts).forEach(chart => chart.destroy());
 
+            // Render Layout using dashboard.css Grid Classes
             contentContainer.innerHTML = `
-                <div class="dashboard-grid">
-                    <div class="kpi-cards-container" id="kpi-cards"></div>
-                    <div class="charts-container">
-                        <div class="chart-card">
-                            <!-- ✅ RESTAURADO: Gráfico de tendencia total -->
-                            <h3>Tendencia Total de Búsquedas</h3>
-                            <div class="chart-wrapper">
-                                <canvas id="total-trends-chart"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card">
-                            <h3>Distribución de Búsquedas por Categoría</h3>
-                            <div class="chart-wrapper">
-                                <canvas id="category-distribution-chart"></canvas>
-                            </div>
-                        </div>
-                        <!-- ✅ RESTAURADO: Contenedor para el gráfico de Top Términos -->
-                        <div class="chart-card" id="top-terms-chart-container"></div>
-                        
-                        <!-- ✅ NUEVO: Gráficos de Evolución de Popularidad Separados -->
-                        <div class="chart-card" style="grid-column: span 3;">
-                            <h3>Evolución de Popularidad: Top 5 CURSOS</h3>
-                            <div class="chart-wrapper">
-                                <canvas id="course-popularity-chart"></canvas>
-                            </div>
-                        </div>
+                <!-- KPIs -->
+                <div class="kpi-grid" id="kpi-grid"></div>
 
-                        <div class="chart-card" style="grid-column: span 3;">
-                            <h3>Evolución de Popularidad: Top 5 TEMAS</h3>
-                            <div class="chart-wrapper">
-                                <canvas id="topic-popularity-chart"></canvas>
-                            </div>
+                <!-- Main Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Tendencia de Búsquedas</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="total-trends-chart"></canvas>
                         </div>
                     </div>
-                    
-                    <!-- ✅ NUEVO: Sección de Top 5 Listas -->
-                    <div class="top-lists-section">
-                        <h3 class="section-title">Top 5 Más Solicitados</h3>
-                        <div class="top-lists-container" id="top-lists-container"></div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Distribución por Categoría</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="category-distribution-chart"></canvas>
+                        </div>
                     </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Top 5 Cursos (Popularidad)</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="course-popularity-chart"></canvas>
+                        </div>
                     </div>
-                    <div class="insights-container">
-                        <!-- ✅ MEJORA: Dos tarjetas separadas para las predicciones -->
-                        <div class="prediction-card" id="popular-course-card"></div>
-                        <div class="prediction-card" id="popular-topic-card" style="animation-delay: 0.5s;"></div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Top 5 Temas (Popularidad)</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="topic-popularity-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Section: Lists & Insights -->
+                <div class="dashboard-sections-grid">
+                    <!-- Top Lists -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3 class="section-title">Lo Más Buscado</h3>
+                        </div>
+                        <div id="top-lists-content" style="padding: 0;"></div>
+                    </div>
+
+                    <!-- Insights & Feedback -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <!-- Predictions -->
+                        <div id="prediction-cards-container" style="display: flex; flex-direction: column; gap: 1rem;"></div>
                         
-                        <div class="feedback-table-card">
-                            <h3>Últimos Feedbacks</h3>
-                            <div id="feedback-table"></div>
+                        <!-- Recent Feedback -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3 class="section-title">Feedback Reciente</h3>
+                            </div>
+                            <div id="feedback-list" class="activity-list"></div>
                         </div>
                     </div>
                 </div>
             `;
 
-            this.renderKpiCards(kpiData);
+            this.renderKpiGrid(kpiData);
             this.renderTotalTrendsChart(totalTrends);
-            this.renderCategoryDistributionChart(kpiData.categoryDistribution); // ✅ MEJORA: Usar la nueva distribución calculada
-            this.renderTopTermsChart(kpiData.topSearches); // ✅ RESTAURADO: Gráfico de barras Top 10
-            this.renderTopLists(kpiData);
-            this.renderPredictionCards(predictionsData);
-            this.renderFeedbackTable(feedbackData);
-            this.renderZeroResults(kpiData.zeroResultSearches); // ✅ NUEVO INSIGHT
-
-            // ✅ NUEVO: Renderizar gráficos separados
+            this.renderCategoryDistributionChart(kpiData.categoryDistribution);
             this.renderTimeSeriesChart(courseSeriesData, 'course-popularity-chart');
             this.renderTimeSeriesChart(topicSeriesData, 'topic-popularity-chart');
+            this.renderTopLists(kpiData);
+            this.renderPredictions(predictionsData);
+            this.renderFeedbackList(feedbackData);
 
         } catch (error) {
-            console.error('❌ Error al cargar las estadísticas:', error);
-            this.container.innerHTML = `<p class="error-state">No se pudieron cargar las estadísticas. ${error.message}</p>`;
+            console.error('Dashboard Error:', error);
+            contentContainer.innerHTML = `<p class="error-message">Error cargando datos: ${error.message}</p>`;
         }
     }
 
-    renderKpiCards(data) {
-        const container = document.getElementById('kpi-cards');
+    renderKpiGrid(data) {
+        const container = document.getElementById('kpi-grid');
         const positiveFeedbackRate = data.totalFeedbacks > 0 ? ((data.positiveFeedbacks / data.totalFeedbacks) * 100).toFixed(1) : '0.0';
 
-        // ✅ MEJORA: Añadir iconos a las tarjetas de KPI
-        container.innerHTML = `
-            <!-- ✅ KPI Unificados y Claros -->
-            <div class="kpi-card">
-                <div class="kpi-card-header">
-                    <i class="fas fa-user-friends fa-2x" style="color: #9b59b6;"></i>
-                    <div class="kpi-card-title">Usuarios Activos</div>
-                </div>
-                <div class="kpi-card-value">${data.users.active} <span class="kpi-sub-value">/ ${data.users.total} total</span></div>
-            </div>
-            <!-- ✅ NUEVO: KPI para Consultas al Chatbot -->
-            <div class="kpi-card">
-                <div class="kpi-card-header">
-                    <i class="fas fa-comments fa-2x" style="color: #f39c12;"></i>
-                    <div class="kpi-card-title">Consultas al Chatbot</div>
-                </div>
-                <div class="kpi-card-value">${data.totalChatQueries}</div>
-            </div>
-            <!-- ✅ NUEVO: KPI para Búsquedas en Buscador -->
-            <div class="kpi-card">
-                <div class="kpi-card-header">
-                    <i class="fas fa-search fa-2x" style="color: #3498db;"></i>
-                    <div class="kpi-card-title">Búsquedas en Buscador</div>
-                </div>
-                <div class="kpi-card-value">${data.totalSearches}</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-card-header">
-                    <i class="fas fa-graduation-cap fa-2x" style="color: #3498db;"></i>
-                    <div class="kpi-card-title">Consultas Educativas</div>
-                </div>
-                <div class="kpi-card-value">${data.educationalQueryPercentage}%</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-card-header">
-                    <i class="fas fa-thumbs-up fa-2x" style="color: var(--success);"></i>
-                    <div class="kpi-card-title">Feedback Positivo</div>
-                </div>
-                <div class="kpi-card-value">${positiveFeedbackRate}%</div>
-            </div>
-        `;
-    }
-
-    // ✅ RESTAURADO: Gráfico de línea para el total de búsquedas diarias
-    renderTotalTrendsChart(data) {
-        const ctx = document.getElementById('total-trends-chart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(88, 101, 242, 0.5)');
-        gradient.addColorStop(1, 'rgba(88, 101, 242, 0)');
-
-        // ✅ NUEVO: Calcular y mostrar el total en la tarjeta del gráfico.
-        const totalCount = data.values.reduce((sum, value) => sum + parseInt(value, 10), 0);
-        const chartCard = document.getElementById('total-trends-chart').closest('.chart-card');
-        const totalDisplay = document.createElement('div');
-        totalDisplay.className = 'chart-total-display';
-        totalDisplay.innerHTML = `Total: <strong>${totalCount}</strong>`;
-        chartCard.querySelector('h3').insertAdjacentElement('afterend', totalDisplay);
-
-        this.charts.totalTrends = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'Búsquedas Totales por Día',
-                    data: data.values,
-                    borderColor: 'rgba(88, 101, 242, 1)',
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(88, 101, 242, 1)'
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    // ✅ MEJORA: Gráfico de dona usando la distribución calculada en backend
-    renderCategoryDistributionChart(distribution) {
-        const ctx = document.getElementById('category-distribution-chart').getContext('2d');
-
-        // Si no hay datos de distribución, mostrar estado vacío
-        if (!distribution || Object.values(distribution).reduce((a, b) => a + b, 0) === 0) {
-            ctx.canvas.parentElement.innerHTML = '<p class="empty-state-small">No hay datos suficientes.</p>';
-            return;
-        }
-
-        const categories = Object.keys(distribution);
-        const counts = Object.values(distribution);
-        const backgroundColors = [
-            'rgba(52, 152, 219, 0.8)',  // Azul (Curso)
-            'rgba(46, 204, 113, 0.8)',   // Verde (Tema)
-            'rgba(155, 89, 182, 0.8)',  // Morado (Docente)
-            'rgba(230, 126, 34, 0.8)',  // Naranja (Carrera)
-            'rgba(149, 165, 166, 0.8)'  // Gris (General)
+        const kpis = [
+            { icon: 'fa-user-friends', color: 'text-info', label: 'Usuarios Activos', value: data.users.active, sub: `/ ${data.users.total}` },
+            { icon: 'fa-comments', color: 'text-warning', label: 'Consultas Chat', value: data.totalChatQueries },
+            { icon: 'fa-search', color: 'text-primary', label: 'Búsquedas', value: data.totalSearches },
+            { icon: 'fa-graduation-cap', color: 'text-success', label: '% Educativo', value: `${data.educationalQueryPercentage}%` },
+            { icon: 'fa-smile', color: 'text-success', label: 'Satisfacción', value: `${positiveFeedbackRate}%` }
         ];
 
-        this.charts.categoryDistribution = new Chart(ctx, {
+        container.innerHTML = kpis.map(kpi => `
+            <div class="kpi-card">
+                <div class="kpi-icon">
+                    <i class="fas ${kpi.icon}"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-value">${kpi.value} <small style="font-size: 0.6em; color: var(--text-muted);">${kpi.sub || ''}</small></div>
+                    <div class="kpi-label">${kpi.label}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderTotalTrendsChart(data) {
+        this.renderLineChart('total-trends-chart', data.labels, [{
+            label: 'Búsquedas Diarias',
+            data: data.values,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true
+        }]);
+    }
+
+    renderCategoryDistributionChart(distribution) {
+        const ctx = document.getElementById('category-distribution-chart').getContext('2d');
+        if (!distribution) return;
+
+        this.charts.distribution = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: categories,
+                labels: Object.keys(distribution),
                 datasets: [{
-                    label: 'Nº de Búsquedas',
-                    data: counts,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1
+                    data: Object.values(distribution),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                let value = context.raw;
-                                let total = context.chart._metasets[context.datasetIndex].total;
-                                let percentage = Math.round((value / total) * 100) + '%';
-                                return label + value + ' (' + percentage + ')';
-                            }
-                        }
-                    }
+                plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
+            }
+        });
+    }
+
+    renderTimeSeriesChart(data, canvasId) {
+        if (!data || !data.datasets) return;
+
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const datasets = data.datasets.map((ds, i) => ({
+            ...ds,
+            borderColor: colors[i % colors.length],
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            tension: 0.4
+        }));
+
+        this.renderLineChart(canvasId, data.labels, datasets);
+    }
+
+    renderLineChart(id, labels, datasets) {
+        const ctx = document.getElementById(id)?.getContext('2d');
+        if (!ctx) return;
+
+        this.charts[id] = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#94a3b8' } } },
+                scales: {
+                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                 }
             }
         });
     }
 
-    // ✅ RESTAURADO: Gráfico de barras para los términos más buscados (Top 10)
-    renderTopTermsChart(topTerms) {
-        const container = document.getElementById('top-terms-chart-container');
-        if (!topTerms || topTerms.length === 0) {
-            container.innerHTML = '<p class="empty-state-small">No hay términos para mostrar.</p>';
-            return;
-        }
-
-        // Asegurarse de que el contenedor esté vacío y tenga un canvas
-        container.innerHTML = `
-            <h3>Top 5 Términos más buscados</h3>
-            <div class="chart-wrapper">
-                <canvas id="top-terms-bar-chart"></canvas>
-            </div>
-        `;
-        const ctx = document.getElementById('top-terms-bar-chart').getContext('2d');
-
-        // Tomar hasta 5 términos (según solicitud del usuario)
-        const termsToShow = topTerms.slice(0, 5);
-
-        this.charts.topTerms = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: termsToShow.map(t => t.query),
-                datasets: [{
-                    label: 'Nº de Búsquedas',
-                    data: termsToShow.map(t => t.count),
-                    backgroundColor: 'rgba(88, 101, 242, 0.6)',
-                    borderColor: 'rgba(88, 101, 242, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    hoverBackgroundColor: 'rgba(88, 101, 242, 0.8)'
-                }]
-            },
-            options: {
-                indexAxis: 'y', // Barras horizontales
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' } }, y: { grid: { display: false } } }
-            }
-        });
-    }
-
-    // ✅ RESTAURADO: Gráfico de barras simple para los 5 términos más buscados.
-    // ✅ NUEVO: Renderiza las 4 listas de Top 5
     renderTopLists(data) {
-        const container = document.getElementById('top-lists-container');
+        const container = document.getElementById('top-lists-content');
 
-        const createListCard = (title, icon, items, type) => {
-            const listItems = items.map((item, index) => `
-                <li class="top-list-item">
-                    <span class="rank">#${index + 1}</span>
-                    <span class="name">${item.name || item.query}</span>
-                    <span class="count badge">${item.count} ${type === 'instructor' ? 'búsquedas' : 'vistas'}</span>
-                </li>
-            `).join('');
-
+        const renderList = (title, icon, items) => {
+            if (!items.length) return '';
             return `
-                <div class="top-list-card">
-                    <div class="card-header">
-                        <i class="fas ${icon}"></i>
-                        <h4>${title}</h4>
-                    </div>
-                    <ul class="top-list">
-                        ${items.length ? listItems : '<li class="empty-state-small">Sin datos suficientes</li>'}
+                <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas ${icon}"></i> ${title}
+                    </h4>
+                    <ul class="activity-list">
+                        ${items.slice(0, 3).map((item, i) => `
+                            <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.9rem;">
+                                <span><strong style="color: var(--primary); margin-right: 0.5rem;">#${i + 1}</strong> ${item.name || item.query}</span>
+                                <span class="badge" style="background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">${item.count}</span>
+                            </li>
+                        `).join('')}
                     </ul>
                 </div>
             `;
         };
 
         container.innerHTML = `
-            ${createListCard('Carreras', 'fa-graduation-cap', data.topCareers, 'career')}
-            ${createListCard('Cursos', 'fa-book', data.topCourses, 'course')}
-            ${createListCard('Temas', 'fa-lightbulb', data.topTopics, 'topic')}
+            ${renderList('Carreras Populares', 'fa-graduation-cap', data.topCareers)}
+            ${renderList('Cursos Populares', 'fa-book', data.topCourses)}
+            ${renderList('Temas de Interés', 'fa-lightbulb', data.topTopics)}
         `;
     }
 
-    // ✅ MEJORA: Función renombrada para manejar ambas predicciones
-    renderPredictionCards(data) {
-        const courseCard = document.getElementById('popular-course-card');
-        const topicCard = document.getElementById('popular-topic-card');
+    renderPredictions(data) {
+        const container = document.getElementById('prediction-cards-container');
 
-        const renderCardContent = (title, icon, predictionData, type) => {
-            const value = predictionData?.predictedCourse || predictionData?.predictedTopic || 'No disponible';
-            const confidence = predictionData?.confidence || 0;
-            const confidencePercent = (confidence * 100).toFixed(0);
-            const reason = predictionData?.reason || '';
-
-            // Color de la barra según confianza
-            let barColor = '#4caf50'; // Verde (Alto)
-            if (confidence < 0.7) barColor = '#ff9800'; // Naranja (Medio)
-            if (confidence < 0.4) barColor = '#f44336'; // Rojo (Bajo)
-
+        const renderPrediction = (title, icon, pred) => {
+            if (!pred) return '';
+            const confidence = (pred.confidence * 100).toFixed(0);
             return `
-                <h3><i class="fas ${icon}"></i> ${title}</h3>
-                <p class="prediction-subtitle">${type === 'course' ? 'Curso con mayor probabilidad de ser popular:' : 'Tema emergente de mayor interés:'}</p>
-                
-                <div class="predicted-value">${value}</div>
-                
-                ${value !== 'No disponible' ? `
-                    <div class="confidence-container" style="width: 80%; margin: 0.5rem auto;">
-                        <div class="confidence-label" style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.2rem;">
-                            <span>Confianza del modelo</span>
-                            <span>${confidencePercent}%</span>
-                        </div>
-                        <div class="confidence-bar-bg" style="background: rgba(255,255,255,0.2); height: 6px; border-radius: 3px;">
-                            <div class="confidence-bar-fill" style="width: ${confidencePercent}%; background: ${barColor}; height: 100%; border-radius: 3px; transition: width 1s ease;"></div>
-                        </div>
+                <div class="kpi-card" style="padding: 1rem; flex-direction: column; gap: 0.5rem; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="font-size: 0.9rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas ${icon}" style="color: var(--warning);"></i> ${title}
+                        </h4>
+                        <span style="font-size: 0.8rem; color: var(--success);">${confidence}% Confianza</span>
                     </div>
-                    <p class="prediction-reason" style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.8rem; font-style: italic;">
-                        <i class="fas fa-info-circle"></i> ${reason}
-                    </p>
-                ` : ''}
+                    <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">${pred.predictedCourse || pred.predictedTopic}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">${pred.reason}</div>
+                </div>
             `;
         };
 
-        courseCard.innerHTML = renderCardContent('Predicción de Curso', 'fa-brain', data.popularCourse, 'course');
-        topicCard.innerHTML = renderCardContent('Predicción de Tema', 'fa-lightbulb', data.popularTopic, 'topic');
-    }
-
-    // ✅ NUEVO INSIGHT: Renderiza la lista de búsquedas sin resultados
-    renderZeroResults(data) {
-        // Crear el contenedor si no existe (se añadirá dinámicamente al grid)
-        let container = document.getElementById('zero-results-card');
-        if (!container) {
-            const insightsContainer = document.querySelector('.insights-container');
-            container = document.createElement('div');
-            container.id = 'zero-results-card';
-            container.className = 'feedback-table-card'; // Reutilizamos estilo
-            insightsContainer.appendChild(container);
-        }
-
-        if (!data || data.length === 0) {
-            container.innerHTML = `
-                <h3><i class="fas fa-search-minus" style="color: var(--danger);"></i> Búsquedas Sin Resultados</h3>
-                <p class="empty-state-small">¡Excelente! Los usuarios encuentran todo lo que buscan.</p>
-            `;
-            return;
-        }
-
-        const listItems = data.map(item => `
-            <li class="zero-result-item">
-                <span class="query-text">"${item.query}"</span>
-                <span class="query-count">${item.count} veces</span>
-            </li>
-        `).join('');
-
         container.innerHTML = `
-            <h3><i class="fas fa-search-minus" style="color: var(--danger);"></i> Oportunidades de Contenido</h3>
-            <p class="card-subtitle">Términos buscados que no arrojaron resultados:</p>
-            <ul class="zero-results-list">
-                ${listItems}
-            </ul>
+            ${renderPrediction('Próximo Curso Tendencia', 'fa-brain', data.popularCourse)}
+            ${renderPrediction('Tema Emergente', 'fa-bolt', data.popularTopic)}
         `;
     }
 
-    renderFeedbackTable(feedbackData) {
-        const container = document.getElementById('feedback-table');
-        const recentFeedback = feedbackData.slice(0, 5);
-        if (recentFeedback.length === 0) {
-            container.innerHTML = '<p class="empty-state-small">Aún no hay feedbacks.</p>';
+    renderFeedbackList(feedback) {
+        const container = document.getElementById('feedback-list');
+        if (!feedback.length) {
+            container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin feedback reciente</div>';
             return;
         }
-        container.innerHTML = `
-            <table class="admin-table">
-                <thead><tr><th>Consulta</th><th>Feedback</th></tr></thead>
-                <tbody>
-                    ${recentFeedback.map(fb => `<tr><td>${this.escapeHTML(fb.query)}</td><td>${fb.is_helpful ? '👍' : '👎'}</td></tr>`).join('')}
-                </tbody>
-            </table>`;
+
+        container.innerHTML = feedback.slice(0, 5).map(fb => `
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas ${fb.is_helpful ? 'fa-thumbs-up' : 'fa-thumbs-down'}" style="color: ${fb.is_helpful ? 'var(--success)' : 'var(--danger)'}"></i>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-text">${this.escapeHTML(fb.query)}</div>
+                    <div class="activity-time">${new Date(fb.created_at).toLocaleDateString()}</div>
+                </div>
+            </div>
+        `).join('');
     }
 
     escapeHTML(str) {
-        return str.replace(/[&<>"']/g, (match) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match]));
-    }
-
-    // ✅ NUEVO: Renderizar gráfico de series de tiempo (Genérico)
-    renderTimeSeriesChart(data, canvasId) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-
-        if (!data || !data.datasets || data.datasets.length === 0) {
-            ctx.canvas.parentElement.innerHTML = '<p class="empty-state-small">No hay datos suficientes para la serie temporal.</p>';
-            return;
-        }
-
-        // Colores predefinidos para las líneas
-        const colors = [
-            'rgba(255, 99, 132, 1)',   // Rojo
-            'rgba(54, 162, 235, 1)',   // Azul
-            'rgba(255, 206, 86, 1)',   // Amarillo
-            'rgba(75, 192, 192, 1)',   // Verde azulado
-            'rgba(153, 102, 255, 1)'   // Morado
-        ];
-
-        // Asignar colores a los datasets
-        const datasets = data.datasets.map((ds, index) => ({
-            ...ds,
-            borderColor: colors[index % colors.length],
-            backgroundColor: colors[index % colors.length].replace('1)', '0.1)'),
-            borderWidth: 2,
-            tension: 0.3, // Curva suave
-            fill: false
-        }));
-
-        // Guardar instancia con una clave única basada en el ID del canvas
-        // Limpiar instancia previa si existe (aunque ya lo hacemos en displayStatistics, es doble seguridad)
-        if (this.charts[canvasId]) {
-            this.charts[canvasId].destroy();
-        }
-
-        this.charts[canvasId] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0 // Enteros solamente
-                        }
-                    }
-                }
-            }
-        });
+        return str ? str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[m])) : '';
     }
 }
 

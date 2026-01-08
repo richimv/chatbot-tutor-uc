@@ -180,6 +180,7 @@ class AnalyticsService {
         const scores = { Curso: 0, Tema: 0, Carrera: 0, Docente: 0 };
 
         const scoreCategory = (category, nameSet) => {
+            if (!nameSet) return; // ✅ FIX: Guard against undefined sets
             for (const name of nameSet) {
                 if (name === normalizedQuery) {
                     scores[category] = Math.max(scores[category], 3);

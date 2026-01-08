@@ -31,24 +31,39 @@ class CareerRepository {
     }
 
     async create(careerData) {
-        const { name, curriculumUrl, description, area } = careerData;
+        const { name, area, image_url } = careerData;
         // ✅ SOLUCIÓN TEMPORAL: Generar un 'career_id' de texto para satisfacer la restricción NOT NULL.
         // La solución ideal es eliminar la columna 'career_id' de la tabla 'careers' en la base de datos.
         const tempCareerId = `CAREER_${Date.now()}`;
+
+        // ✅ FIX: Incluir image_url en la inserción
         const { rows } = await db.query(
-            'INSERT INTO careers (career_id, name, curriculum_url, description, area) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [tempCareerId, name, curriculumUrl, description, area]
+            'INSERT INTO careers (career_id, name, area, image_url) VALUES ($1, $2, $3, $4) RETURNING *',
+            [tempCareerId, name, area, image_url]
         );
         return rows[0];
     }
 
     async update(id, careerData) {
-        const { name, curriculumUrl, description, area } = careerData;
-        const { rows } = await db.query(
-            // ✅ SOLUCIÓN: Eliminar 'updated_at' y buscar por el 'id' numérico.
-            'UPDATE careers SET name = $1, curriculum_url = $2, description = $3, area = $4 WHERE id = $5 RETURNING *',
-            [name, curriculumUrl || null, description, area, id]
-        );
+        const { name, area, image_url } = careerData;
+
+        // ✅ FIX: Incluir image_url en la actualización si viene definido
+        // Al igual que en Courses, si image_url está presente, lo actualizamos.
+        let query = 'UPDATE careers SET name = $1, area = $2';
+        const params = [name, area];
+
+        if (image_url !== undefined) {
+            query += ', image_url = $3';
+            params.push(image_url);
+            query += ' WHERE id = $4 RETURNING *';
+            params.push(id);
+        } else {
+            query += ' WHERE id = $3 RETURNING *';
+            params.push(id);
+        }
+
+        const { rows } = await db.query(query, params);
+
         if (rows.length === 0) {
             throw new Error(`Carrera con ID ${id} no encontrada.`);
         }

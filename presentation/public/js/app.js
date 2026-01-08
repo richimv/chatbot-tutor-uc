@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.chatComponent = new ChatComponent();
     }
 
-    // ✅ NUEVO: Inicializar el modal de confirmación global
-    if (typeof ConfirmationModal !== 'undefined') {
+    // ✅ NUEVO: Inicializar el modal de confirmación global (Solo si existe en el DOM)
+    if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) {
         window.confirmationModal = new ConfirmationModal();
     }
 

@@ -228,29 +228,33 @@ class ChatController {
         }
 
         // Si no, usamos las sugerencias predefinidas como fallback.
+        // Si no, usamos las sugerencias predefinidas como fallback.
+        // ✅ MEJORA: Sugerencias centradas en el usuario ("Yo quiero...") en lugar de preguntas del bot.
+        // ✅ MEJORA: Sugerencias centradas en el usuario ("Yo quiero...") 
         const predefinedSuggestions = {
-            'consulta_horario': [
-                "¿Horarios de teoría o laboratorio?",
-                "¿De qué curso específico?"
-            ],
             'solicitar_material': [
-                "Material de 'Programación I'",
-                "¿Buscas PDFs o videos?"
+                "Ver libros del curso",
+                "Buscar papers clave"
             ],
             'duda_teorica': [
-                "Explícame 'qué es una API'",
-                "¿Necesitas ejemplos prácticos?"
+                "Dame ejemplos",
+                "¿Qué libros hablan de esto?"
             ],
             'consulta_evaluacion': [
-                "¿Examen parcial o final?",
-                "¿Fechas o contenidos?"
+                "¿Qué temas entran?",
+                "Ver fechas importantes"
             ],
             'consulta_administrativa': [
-                "Información sobre matrícula",
-                "¿Horarios de atención?"
+                "Ver fechas de matrícula",
+                "Contactar soporte"
             ]
         };
-        return predefinedSuggestions[intencion] || ["¿En qué más puedo ayudarte?", "¿Necesitas información de otro curso?"];
+        // Fallback general más útil y seguro
+        return predefinedSuggestions[intencion] || [
+            "Buscar cursos",
+            "Ver libros de Anatomía",
+            "Explícame un tema"
+        ];
     }
 
     async trainModel(req, res) {

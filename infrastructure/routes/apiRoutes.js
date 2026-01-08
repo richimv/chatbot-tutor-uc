@@ -12,6 +12,14 @@ const { authLimiter } = require('../config/rateLimiters');
 // 🔗 RUTAS API
 // ======================
 
+// ✅ RUTAS DE PAGOS (Mercado Pago)
+const paymentRoutes = require('./paymentRoutes');
+router.use('/payment', paymentRoutes);
+
+// ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
+const libraryRoutes = require('./libraryRoutes');
+router.use('/library', libraryRoutes);
+
 // --- Rutas de Autenticación (Prefijo /api/auth) ---
 router.post('/auth/login', authLimiter, authController.login);
 router.post('/auth/register', authLimiter, authController.register);
@@ -32,16 +40,56 @@ router.post('/chat/train-model', auth, adminOnly, chatController.trainModel);
 router.get('/buscar', optionalAuth, coursesController.searchCourses);
 router.get('/careers', coursesController.getCareers);
 router.get('/courses', coursesController.getCourses);
-router.get('/sections', coursesController.getSections);
-router.get('/instructors', coursesController.getInstructors);
+
 router.get('/topics', coursesController.getTopics);
 router.get('/books', coursesController.getBooks);
 
+// ✅ NUEVO: Rutas para obtener detalles por ID
+router.get('/careers/:id', coursesController.getCareerById);
+router.get('/courses/:id', coursesController.getCourseById);
+router.get('/topics/:id', coursesController.getTopicById);
+
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);
-const entities = ['career', 'course', 'section', 'instructor', 'student', 'topic', 'book'];
-entities.forEach(entity => {
+// --- Configuración de Multer para Carga de Imágenes ---
+const multer = require('multer');
+const path = require('path'); // Necesario para path.extname
+// ✅ CONFIGURACIÓN MULTER: Usar memoria en lugar de disco
+// Para Supabase, necesitamos el buffer en memoria, no un archivo en disco.
+const storage = multer.memoryStorage();
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // ✅ AUMENTADO: 50MB límite para evitar errores con imágenes grandes
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP)'));
+    }
+});
+
+// --- Rutas CRUD Protegidas para el Panel de Administración ---
+router.get('/students', auth, adminOnly, coursesController.getStudents);
+
+// ✅ LÓGICA ESPECIAL PARA LIBROS, CARRERAS Y CURSOS (con subida de archivos)
+const mediaEntities = ['book', 'career', 'course'];
+
+mediaEntities.forEach(entity => {
     const plural = entity === 'career' ? 'careers' : `${entity}s`;
+    router.post(`/${plural}`, auth, adminOnly, upload.single('coverImage'), (req, res) => coursesController.createEntity(req, res, entity));
+    router.put(`/${plural}/:id`, auth, adminOnly, upload.single('coverImage'), (req, res) => coursesController.updateEntity(req, res, entity));
+    router.delete(`/${plural}/:id`, auth, adminOnly, (req, res) => coursesController.deleteEntity(req, res, entity));
+});
+
+// Entidades simples (sin subida de archivos)
+const simpleEntities = ['student', 'topic'];
+simpleEntities.forEach(entity => {
+    const plural = `${entity}s`;
     router.post(`/${plural}`, auth, adminOnly, (req, res) => coursesController.createEntity(req, res, entity));
     router.put(`/${plural}/:id`, auth, adminOnly, (req, res) => coursesController.updateEntity(req, res, entity));
     router.delete(`/${plural}/:id`, auth, adminOnly, (req, res) => coursesController.deleteEntity(req, res, entity));

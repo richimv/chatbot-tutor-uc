@@ -5,7 +5,7 @@
 // Importar todos los repositorios necesarios
 const CareerRepository = require('../../domain/repositories/careerRepository');
 const CourseRepository = require('../../domain/repositories/courseRepository');
-const SectionRepository = require('../../domain/repositories/sectionRepository');
+
 const TopicRepository = require('../../domain/repositories/topicRepository');
 const BookRepository = require('../../domain/repositories/bookRepository');
 const UserRepository = require('../../domain/repositories/userRepository'); // ✅ AÑADIDO
@@ -16,7 +16,7 @@ class AdminService {
         this.repositories = {
             career: new CareerRepository(),
             course: new CourseRepository(),
-            section: new SectionRepository(),
+
             topic: new TopicRepository(),
             book: new BookRepository(),
             user: new UserRepository(), // ✅ AÑADIDO
@@ -34,7 +34,7 @@ class AdminService {
 
     async getAll(entityType) {
         // ✅ LÓGICA MEJORADA: Si es instructor o student, usar el repo de usuarios.
-        if (entityType === 'instructor' || entityType === 'student') {
+        if (entityType === 'student') {
             return this.repositories.user.findByRole(entityType);
         }
 
@@ -51,7 +51,7 @@ class AdminService {
 
     async create(entityType, newData) {
         // ✅ LÓGICA MEJORADA: Crear usuarios con el rol correcto.
-        if (entityType === 'instructor' || entityType === 'student') {
+        if (entityType === 'student') {
             const { name, email } = newData;
             const tempPassword = Math.random().toString(36).slice(-8);
             console.log(`🔑 Contraseña temporal generada para ${email}: ${tempPassword}`);
@@ -66,7 +66,7 @@ class AdminService {
 
     async update(entityType, id, updatedData) {
         // ✅ LÓGICA MEJORADA: Actualizar datos de usuario.
-        if (entityType === 'instructor' || entityType === 'student') {
+        if (entityType === 'student') {
             const { name, email } = updatedData;
             return this.repositories.user.update(id, { name, email, role: entityType });
         }
@@ -79,7 +79,7 @@ class AdminService {
     async delete(entityType, id) {
         // ✅ SOLUCIÓN: Añadir 'student' a la condición para que use el repositorio de usuarios.
         // El repositorio de usuarios ya contiene la lógica correcta para eliminar un usuario por su ID.
-        if (entityType === 'instructor' || entityType === 'student') {
+        if (entityType === 'student') {
             return this.repositories.user.delete(id);
         }
 

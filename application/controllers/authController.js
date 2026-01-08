@@ -32,13 +32,30 @@ class AuthController {
         }
     }
 
-    // Endpoint para que el frontend verifique quién es el usuario logueado
     async getMe(req, res) {
         // Este endpoint estará protegido, por lo que `req.user` será añadido por el middleware
         if (!req.user) {
             return res.status(401).json({ error: 'No autenticado' });
         }
-        res.json(req.user);
+
+        try {
+            // ✅ MEJORA: Obtener datos frescos de la base de datos (incluyendo estado de suscripción).
+            const user = await this.authService.userRepository.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+            // Devolvemos el usuario COMPLETO (sin el hash de la password, que debería filtrarse en el modelo o aquí)
+            // Para simplicidad, devolvemos el objeto User que ya tiene las propiedades públicas.
+            // Asegúrate de NO devolver passwordHash en producción si el modelo lo expone directamente en JSON.
+            // En este caso, User es una clase, al serializar a JSON se incluirán sus propiedades.
+            // Deberíamos omitir passwordHash.
+            const { passwordHash, ...userWithoutPassword } = user;
+            res.json(userWithoutPassword);
+
+        } catch (error) {
+            console.error('Error en getMe:', error);
+            res.status(500).json({ error: 'Error interno al obtener datos del usuario.' });
+        }
     }
 
     async changePassword(req, res) {

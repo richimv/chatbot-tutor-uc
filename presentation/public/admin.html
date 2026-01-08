@@ -5,18 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración - Tutor IA</title>
-    <link rel="icon" type="image/png" href="/assets/logo-dark.png">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- ✅ NUEVA ESTRUCTURA CSS -->
     <link rel="stylesheet" href="css/components.css"> <!-- ✅ SOLUCIÓN: Cargar los estilos de los componentes -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin-units.css"> <!-- ✅ NUEVO: Estilos para el gestor de unidades -->
     <link rel="stylesheet" href="css/modal.css">
-    <link rel="stylesheet" href="css/dark-theme-enhancements.css"> <!-- Mejoras tema oscuro -->
-    <link rel="stylesheet" href="css/3d-effects.css"> <!-- Efectos 3D -->
-    <link rel="stylesheet" href="css/logo-theme.css"> <!-- Sistema de logo dual -->
-    <!-- ✅ CORRECCIÓN: Añadir Font Awesome para que se vean los íconos -->
+    <!-- ✅ CORRECCIÓN: Eliminados archivos CSS que ya no existen para limpiar la consola -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
     <link rel="icon" href="assets/logo.png" type="image/png">
@@ -33,10 +31,7 @@
             <a href="/" class="nav-link nav-home-button" title="Ir a la página principal">
                 <i class="fas fa-home"></i>
             </a>
-            <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema"
-                aria-label="Cambiar entre tema claro y oscuro">
-                <i class="fas fa-sun" id="theme-icon"></i>
-            </button>
+
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <a href="/dashboard.html" class="nav-link">📊 Estadísticas</a>
@@ -46,25 +41,18 @@
     <div class="admin-container" id="admin-main-container">
         <!-- ✅ NUEVO: Navegación por Pestañas -->
         <div class="admin-tabs">
-            <button class="tab-link active" data-tab="tab-sections">Secciones (CarrerasUC)</button>
-            <button class="tab-link" data-tab="tab-careers">Carreras</button>
+            <button class="tab-link active" data-tab="tab-careers">Carreras</button>
             <button class="tab-link" data-tab="tab-courses">Cursos</button>
-            <button class="tab-link" data-tab="tab-instructors">Docentes</button>
-            <!-- ✅ SOLUCIÓN: Corregir el atributo data-tab y añadir el div faltante abajo. -->
             <button class="tab-link" data-tab="tab-students">Alumnos</button>
             <button class="tab-link" data-tab="tab-topics">Temas</button>
             <button class="tab-link" data-tab="tab-books">Libros</button>
         </div>
 
         <!-- Contenido de las Pestañas -->
-        <div id="tab-sections" class="tab-content active">
-            <p class="loading-state">Cargando secciones...</p>
-        </div>
-        <div id="tab-careers" class="tab-content">
-            <p class="loading-state">Cargando carreras...</p>
-        </div>
+
+        <div id="tab-careers" class="tab-content active"></div>
         <div id="tab-courses" class="tab-content"></div>
-        <div id="tab-instructors" class="tab-content"></div>
+
         <div id="tab-students" class="tab-content"></div>
         <div id="tab-topics" class="tab-content"></div>
         <div id="tab-books" class="tab-content"></div>
@@ -109,7 +97,7 @@
     </div>
 
     <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración global -->
-    <script src="js/theme-toggle.js"></script> <!-- ✅ NUEVO: Theme toggle -->
+
     <script src="js/ui/components.js"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
     <script src="js/services/authApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Auth -->
     <script src="js/sessionManager.js"></script> <!-- ✅ NUEVO: Gestor de sesión -->

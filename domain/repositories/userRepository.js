@@ -9,21 +9,21 @@ class UserRepository {
         if (res.rows.length === 0) return null;
         // Mapear el resultado de la BD a nuestro objeto de dominio
         const row = res.rows[0]; // ✅ SOLUCIÓN: Usar el 'id' numérico de la BD, no el 'user_id' de texto.
-        return new User(row.id, row.email, row.password_hash, row.role, row.name);
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
     }
 
     async findById(id) {
         const res = await db.query('SELECT * FROM users WHERE id = $1', [id]);
         if (res.rows.length === 0) return null;
         const row = res.rows[0]; // ✅ SOLUCIÓN: Usar el 'id' numérico de la BD.
-        return new User(row.id, row.email, row.password_hash, row.role, row.name);
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
     }
 
     // ✅ NUEVO: Método para encontrar todos los usuarios de un rol específico.
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
         // ✅ MEJORA: Devolver un array de instancias del modelo User para mantener la consistencia.
-        return res.rows.map(row => new User(row.id, row.email, row.password_hash, row.role, row.name));
+        return res.rows.map(row => new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id));
     }
 
     async create(email, password, name, role = 'student') {
@@ -36,7 +36,7 @@ class UserRepository {
 
         const res = await db.query(queryText, values);
         const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name);
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
     }
 
     // ✅ NUEVO: Método para actualizar solo la contraseña.

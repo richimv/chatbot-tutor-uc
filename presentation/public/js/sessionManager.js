@@ -30,7 +30,7 @@ class SessionManager {
         localStorage.setItem('authToken', token);
         // ✅ SOLUCIÓN DEFINITIVA: Guardar el objeto 'user' completo que viene de la API.
         // Este objeto contiene { id, name, email, role }, que es lo que necesitamos.
-        this.currentUser = user; 
+        this.currentUser = user;
         this.notifyStateChange();
     }
 
@@ -57,7 +57,33 @@ class SessionManager {
     notifyStateChange() {
         this.onStateChangeCallbacks.forEach(cb => cb(this.currentUser));
     }
+
+    /**
+     * ✅ LÓGICA DE MONETIZACIÓN
+     * Verifica si el usuario tiene una suscripción activa.
+     * Si no, redirige a la página de precios.
+     */
+    checkSubscriptionStatus() {
+        if (!this.currentUser) return;
+
+        // Si es admin, dejamos pasar siempre.
+        if (this.currentUser.role === 'admin') return;
+
+        const isPricingPage = window.location.pathname.includes('pricing.html');
+        // Si el estado NO es 'active' y NO estamos ya en la página de precios, redirigir.
+        if (this.currentUser.subscriptionStatus !== 'active' && !isPricingPage) {
+            console.warn('🔒 Usuario sin suscripción activa. Redirigiendo a precios...');
+            window.location.href = 'pricing.html';
+        }
+    }
 }
 
 // Instancia global
 window.sessionManager = new SessionManager();
+
+// ✅ Hook para verificar suscripción cuando cambia el estado (login/init)
+window.sessionManager.onStateChange((user) => {
+    if (user) {
+        window.sessionManager.checkSubscriptionStatus();
+    }
+});

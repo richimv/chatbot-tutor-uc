@@ -4,7 +4,7 @@ const path = require('path');
 
 class Server {
     constructor() {
-        console.log('🚀 Inicializando Server...');
+        console.log('🚀 Inicializando Server (Restauración de Servicio)...');
 
         this.app = express();
         this.port = process.env.PORT || 3000;
@@ -59,8 +59,11 @@ class Server {
         // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
         this.app.set('trust proxy', 1);
 
-        // ✅ CORS SIMPLIFICADO
-        this.app.use(cors());
+        // ✅ CORS CONFIGURADO PARA VERCEL
+        this.app.use(cors({
+            origin: ['http://localhost:3000', 'https://chatbot-tutor-uc.vercel.app'],
+            credentials: true
+        }));
 
         // ✅ EXPRESS.JSON MÍNIMO Y SEGURO
         this.app.use(express.json({

@@ -4,12 +4,11 @@ from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer
 
 # ✅ 1. IMPORTACIONES RELATIVAS (Necesarias para ejecutar como módulo)
-from .db_connector import get_courses_data, get_search_trends_data, get_all_topics
+from .db_connector import get_courses_data, get_books_data, get_search_trends_data, get_all_topics
 from .predictors import (
     popular_course_predictor, 
-    popular_topic_predictor,
-    related_course_predictor, 
-    related_topic_predictor
+    popular_resource_predictor,
+    related_resource_predictor
 )
 
 app = Flask(__name__)
@@ -20,8 +19,10 @@ print("⏳ Iniciando servicio de ML...")
 # Variable global para caché en memoria (Evita consultar DB en cada click)
 global_data = {
     "courses_df": pd.DataFrame(),
+    "books_df": pd.DataFrame(),
     "topics_df": pd.DataFrame(),
     "embeddings": None,        # Vectores de Cursos
+    "book_embeddings": None,   # Vectores de Libros
     "topic_embeddings": None   # Vectores de Temas
 }
 
@@ -52,10 +53,9 @@ def refresh_data():
         # A. Vectorizar Cursos
         if not global_data["courses_df"].empty:
             df = global_data["courses_df"]
-            # Feature Engineering: Concatenar Título + Descripción + Temas para mayor contexto
+            # Feature Engineering: Concatenar Título + Temas para mayor contexto
             df['soup'] = (
                 df['name'] + " " + 
-                df['description'].fillna('') + " " + 
                 df['topics_soup'].fillna('')
             )
             print(f"   🧠 Vectorizando {len(df)} cursos...")
@@ -88,36 +88,20 @@ def recommendations():
 
     # Objeto caché para pasar al predictor
     # (Simulamos la estructura que espera el refactor anterior)
-    class CacheWrapper:
-        def __init__(self):
-            self.model = ml_model
-            self.course_embeddings = global_data["embeddings"]
-            self.course_ids = global_data["courses_df"]['id'].tolist() if not global_data["courses_df"].empty else []
-            self.initialized = True
-
-    cache_wrapper = CacheWrapper()
-
-    # 1. Predecir Cursos Relacionados
-    rec_courses = related_course_predictor.predict(
+    # 1. Predecir Recursos (Cursos + Libros) Relacionados
+    rec_courses = related_resource_predictor.predict(
         query, 
         direct_ids, 
         global_data["courses_df"], 
-        cache_wrapper
-    )
-
-    # 2. Predecir Temas Relacionados
-    rec_topics = related_topic_predictor.predict(
-        query,
-        direct_ids,
-        global_data["courses_df"],
-        global_data["topics_df"],
-        global_data["topic_embeddings"],
+        global_data["books_df"],
+        global_data["embeddings"],
+        global_data["book_embeddings"],
         ml_model
     )
 
     return jsonify({
         "relatedCourses": rec_courses,
-        "relatedTopics": rec_topics
+        "relatedTopics": [] 
     })
 
 
@@ -161,19 +145,19 @@ def trends():
             ml_model
         )
 
-        # 4. Predecir Tema Popular
-        pop_topic = popular_topic_predictor.predict(
-            global_data["courses_df"],
+        # 4. Predecir Libro Popular
+        pop_book = popular_resource_predictor.predict(
+            global_data["books_df"],
             grouped_trends,
-            global_data["topics_df"],
-            global_data["topic_embeddings"],
+            global_data["book_embeddings"],
             ml_model
         )
 
         return jsonify({
             "period": f"Last {days} days",
             "popularCourse": pop_course,
-            "popularTopic": pop_topic
+            "popularTopic": None,
+            "popularBook": pop_book
         })
 
     except Exception as e:

@@ -3,9 +3,7 @@ const { normalizeText } = require('../utils/textUtils');
 const CourseRepository = require('./courseRepository');
 const TopicRepository = require('./topicRepository');
 const CareerRepository = require('./careerRepository');
-const InstructorRepository = require('./instructorRepository');
 const BookRepository = require('./bookRepository'); // ✅ SOLUCIÓN: Importar el repositorio de libros.
-const SectionRepository = require('./sectionRepository'); // ✅ SOLUCIÓN: Importar el repositorio de secciones.
 
 /**
  * Repositorio para cargar y acceder a una base de conocimiento local
@@ -18,26 +16,22 @@ class KnowledgeBaseRepository {
         this.courseNames = new Set();
         this.topicNames = new Set();
         this.careerNames = new Set();
-        this.instructorNames = new Set();
 
         // Instanciar los repositorios que usaremos para cargar los datos.
         this.courseRepo = new CourseRepository();
         this.topicRepo = new TopicRepository();
         this.careerRepo = new CareerRepository();
-        this.instructorRepo = new InstructorRepository();
         this.bookRepo = new BookRepository(); // ✅ SOLUCIÓN: Instanciar el repositorio de libros.
-        this.sectionRepo = new SectionRepository(); // ✅ SOLUCIÓN: Instanciar el repositorio de secciones.
     }
 
     async load() {
         if (this.knowledgeBase) return this.knowledgeBase;
 
         // Cargar todas las entidades directamente desde la base de datos usando sus repositorios.
-        const [courses, topics, careers, instructors, books] = await Promise.all([
+        const [courses, topics, careers, books] = await Promise.all([
             this.courseRepo.findAll(),
             this.topicRepo.findAll(),
             this.careerRepo.findAll(),
-            this.instructorRepo.findAll(),
             this.bookRepo.findAll(), // ✅ SOLUCIÓN: Cargar también los libros.
         ]);
 
@@ -45,7 +39,6 @@ class KnowledgeBaseRepository {
         courses.forEach(c => this.courseNames.add(normalizeText(c.name)));
         topics.forEach(t => this.topicNames.add(normalizeText(t.name)));
         careers.forEach(c => this.careerNames.add(normalizeText(c.name)));
-        instructors.forEach(i => this.instructorNames.add(normalizeText(i.name)));
         const bookTitles = books.map(b => normalizeText(b.title));
 
         // El knowledgeBase general sigue siendo útil para validaciones rápidas.
@@ -53,7 +46,6 @@ class KnowledgeBaseRepository {
             ...this.courseNames,
             ...this.topicNames,
             ...this.careerNames,
-            ...this.instructorNames,
             ...bookTitles,
         ].filter(Boolean));
 

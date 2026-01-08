@@ -1,238 +1,203 @@
-/* --- ✅ FASE III: NUEVA ESTRUCTURA DEL CHAT CON HISTORIAL --- */
+/* Chat Widget - Premium Glassmorphism Design */
+:root {
+    /* Local scoped variables for better control, falling back to app vars */
+    --chat-primary: var(--primary, #3b82f6);
+    --chat-primary-dark: var(--primary-hover, #2563eb);
+    --chat-bg: #0f172a;
+    /* Slate 900 */
+    --chat-surface: #1e293b;
+    /* Slate 800 */
+    --chat-surface-hover: #334155;
+    /* Slate 700 */
+    --chat-text: #f8fafc;
+    /* Slate 50 */
+    --chat-text-muted: #94a3b8;
+    /* Slate 400 */
+    --chat-border: #334155;
+    /* Slate 700 */
+    --chat-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --chat-radius: 16px;
+    --chat-font: 'Inter', system-ui, sans-serif;
+}
 
+/* Base Container */
 .chatbot-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 420px;
+    /* Slightly wider for better history panel */
+    height: 650px;
+    max-height: 85vh;
+    background-color: var(--chat-bg);
+    border: 1px solid var(--chat-border);
+    border-radius: var(--chat-radius);
+    box-shadow: var(--chat-shadow);
     display: flex;
-    width: 700px;
-    /* Ancho total del widget */
-    height: 80vh;
-    max-height: 700px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    border-radius: 16px;
+    flex-direction: row;
+    /* Sidebar + Main */
+    z-index: 10000;
+    font-family: var(--chat-font);
     overflow: hidden;
-    transform: scale(0.95) translateY(20px);
+    transform: translateY(20px) scale(0.95);
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    z-index: 10000;
-    /* ✅ CORRECCIÓN: Aumentar el z-index para que se muestre por encima de todos los modales. */
-    font-family: var(--font-main);
-    color: var(--text-main);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+    /* Glass effect if BG has transparency */
 }
 
 .chatbot-container.open {
-    transform: scale(1) translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
     visibility: visible;
 }
 
-/* Panel de Historial (Izquierda) */
+/* --- Sidebar (History) --- */
 .chatbot-history-panel {
-    width: 220px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
+    width: 260px;
+    background-color: rgba(15, 23, 42, 0.95);
+    /* Nearly opaque slate */
+    border-right: 1px solid var(--chat-border);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    /* Prevent history panel from shrinking */
+    position: absolute;
+    /* Mobile-first approach for slide-in */
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+}
+
+/* Show sidebar if 'history-open' class is present on container */
+.chatbot-container.history-open .chatbot-history-panel {
+    transform: translateX(0);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
 }
 
 .history-header {
     padding: 1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--chat-border);
 }
 
 .new-chat-btn {
     width: 100%;
-    background: var(--accent);
-    color: white;
-    /* Siempre blanco para contraste */
-    border: none;
     padding: 0.75rem;
+    background: linear-gradient(135deg, var(--chat-primary), var(--chat-primary-dark));
+    color: white;
+    border: none;
     border-radius: 8px;
-    font-size: 0.9rem;
     font-weight: 600;
-    cursor: pointer;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .new-chat-btn:hover {
-    background: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .conversation-list {
-    flex-grow: 1;
+    flex: 1;
     overflow-y: auto;
     padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .conversation-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: var(--chat-text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-    background: var(--surface-alt);
-    /* ✅ MEJORADO: Fondo visible */
-    color: var(--text-main);
-    /* ✅ MEJORADO: Texto visible */
-    font-size: 0.9rem;
+    transition: all 0.2s;
     position: relative;
-    margin-bottom: 0.5rem;
-    /* Espaciado entre items */
-    border: 1px solid var(--border);
-    /* Borde sutil para definición */
+    border: 1px solid transparent;
 }
 
 .conversation-item:hover {
-    background: var(--card-bg);
-    /* Ligeramente más claro */
-    color: var(--text-main);
-    transform: translateX(2px);
-    /* Elevación sutil */
-    border-color: var(--accent);
-    /* Borde de acento */
+    background-color: var(--chat-surface);
+    color: var(--chat-text);
 }
 
 .conversation-item.active {
-    background: var(--accent);
-    /* Fondo de acento para el chat activo */
-    color: white;
-    /* Texto blanco para contraste */
-    font-weight: 600;
-    border-color: var(--accent);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    /* Sombra para destacar */
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--chat-primary);
+    border-color: rgba(59, 130, 246, 0.2);
 }
 
 .conversation-title {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex-grow: 1;
-    /* Ocupa el espacio disponible */
+    flex: 1;
 }
 
-/* Estilos para el input de edición de título */
-.conversation-title-input {
-    width: 100%;
-    background: var(--surface-alt);
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    padding: 0.2rem 0.4rem;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    outline: none;
-    flex-grow: 1;
-}
-
-/* Contenedor para los botones de acción del historial */
 .conversation-actions {
     display: flex;
-    gap: 0.25rem;
+    gap: 4px;
     opacity: 0;
-    /* Oculto por defecto */
+    /* Hidden by default */
     transition: opacity 0.2s;
 }
 
 .conversation-item:hover .conversation-actions {
     opacity: 1;
-    /* Visible al hacer hover en el item */
 }
 
-/* ✅ MEJORA RESPONSIVE: En dispositivos táctiles (sin hover), los botones de acción son siempre visibles. */
-@media (hover: none) {
-    .conversation-actions {
-        opacity: 1;
-    }
-}
-
-/* Estilos para los botones de acción individuales (editar, borrar) */
-.edit-conversation-btn,
-.delete-conversation-btn {
-    background: none;
+.conversation-actions button {
+    background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--chat-text-muted);
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 4px;
     border-radius: 4px;
     font-size: 0.8rem;
-    transition: color 0.2s;
 }
 
-.edit-conversation-btn:hover {
-    color: var(--accent);
+.conversation-actions button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
-.delete-conversation-btn:hover {
-    color: var(--danger);
+.conversation-actions .delete-conversation-btn:hover {
+    color: #ef4444;
+    /* Red for delete */
 }
 
-.no-history {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    padding: 2rem 1rem;
-}
-
-/* Panel Principal del Chat (Derecha) */
+/* --- Main Panel --- */
 .chatbot-main-panel {
-    flex-grow: 1;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--card-bg);
-    overflow-x: hidden;
-    /* Prevent horizontal overflow */
     min-width: 0;
-    /* Allow main panel to shrink if content is too wide */
+    background-color: var(--chat-bg);
+    position: relative;
+    /* Ensure it handles the full width */
 }
 
-/* --- ESTILOS ANTIGUOS REUTILIZADOS Y AJUSTADOS --- */
-
-/* ✅ MEJORA RESPONSIVE: Overlay para cerrar el historial en móvil */
-.chatbot-history-overlay {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 5;
-    /* Por debajo del panel de historial (z-index: 10) */
-    transition: opacity 0.3s ease;
-}
-
-/* ✅ MEJORA RESPONSIVE: Botón para el historial en móvil */
-.chatbot-history-toggle {
-    display: none;
-    /* Oculto en escritorio */
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.25rem;
-    cursor: pointer;
-}
-
+/* Header */
 .chatbot-header {
-    background: var(--surface-alt);
-    color: var(--text-main);
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    background-color: rgba(30, 41, 59, 0.8);
+    /* Semi-transparent */
+    border-bottom: 1px solid var(--chat-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(8px);
 }
 
 .chatbot-title {
@@ -241,73 +206,76 @@
     gap: 0.75rem;
 }
 
-.chatbot-title h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
+.chatbot-icon-svg {
+    font-size: 1.25rem;
+    color: var(--chat-primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 8px;
+    border-radius: 8px;
 }
 
-.chatbot-icon {
-    font-size: 1.5rem;
+.chatbot-title h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--chat-text);
 }
 
 .chatbot-status {
-    font-size: 0.75rem;
-    opacity: 0.9;
-    background: var(--success);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
+    font-size: 0.7rem;
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 500;
 }
 
-.chatbot-close {
-    background: none;
+.chatbot-close,
+.chatbot-history-toggle {
+    background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--chat-text-muted);
+    cursor: pointer;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.2s;
+    font-size: 1rem;
 }
 
-.chatbot-close:hover {
-    background: var(--surface);
-    color: var(--text-main);
+.chatbot-close:hover,
+.chatbot-history-toggle:hover {
+    background-color: var(--chat-surface);
+    color: var(--chat-text);
 }
 
+/* Messages Area */
 .chatbot-messages {
     flex: 1;
-    padding: 1.25rem;
+    padding: 1.5rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
+    scroll-behavior: smooth;
+    background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
 }
 
-.chatbot-messages .message {
-    padding: 0.875rem 1rem;
-    border-radius: 18px;
+.message {
     max-width: 85%;
+    padding: 1rem;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    position: relative;
     word-wrap: break-word;
-    line-height: 1.5;
-    animation: messageSlideIn 0.2s ease;
-    white-space: pre-wrap;
-    /* ✅ MEJORA: Renderizar saltos de línea correctamente */
+    animation: messageEnter 0.3s ease-out both;
 }
 
-.chatbot-messages .message img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    /* Remove extra space below image */
-}
-
-@keyframes messageSlideIn {
+@keyframes messageEnter {
     from {
         opacity: 0;
         transform: translateY(10px);
@@ -319,66 +287,145 @@
     }
 }
 
-.chatbot-messages .message.user {
-    background: var(--accent);
-    color: white;
+.message.user {
     align-self: flex-end;
-    border-bottom-right-radius: 6px;
+    background: linear-gradient(135deg, var(--chat-primary) 0%, var(--chat-primary-dark) 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
 }
 
-.chatbot-messages .message.bot {
-    background: var(--surface-alt);
-    color: var(--text-main);
+.message.bot {
     align-self: flex-start;
-    border-bottom-left-radius: 6px;
+    background-color: var(--chat-surface);
+    color: var(--chat-text);
+    border: 1px solid var(--chat-border);
+    border-bottom-left-radius: 4px;
 }
 
-.message-info {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    margin-top: 0.5rem;
-    padding-top: 0.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+.message.welcome-message {
+    background: linear-gradient(to right, #1e293b, #0f172a);
+    border: 1px solid var(--chat-primary);
 }
 
-.message.bot .message-info {
-    border-top: 1px solid var(--border);
-    color: var(--text-muted);
+/* Markdown Styling */
+.message strong {
+    font-weight: 600;
+    color: inherit;
 }
 
-/* ✅ CORRECCIÓN: Ya no se necesita una regla especial para el mensaje de bienvenida,
-   ya que ahora es un `.message.bot` normal y hereda el `max-width: 85%` correctamente.
-   Se mantiene la clase por si se quieren añadir estilos específicos que no afecten al layout. */
-.welcome-message ul {
-    margin: 0.5rem 0;
+.message ul,
+.message ol {
     padding-left: 1.25rem;
+    margin: 0.5rem 0;
 }
 
-.welcome-message li {
-    margin: 0.25rem 0;
+.message code {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.85em;
 }
 
+.message pre {
+    background-color: #020617;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid var(--chat-border);
+}
+
+/* Navigation Buttons inside chat */
+.chat-nav-button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--chat-primary);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.chat-nav-button:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: var(--chat-primary);
+}
+
+.chat-nav-button::before {
+    content: '🔗 ';
+    margin-right: 5px;
+}
+
+/* Feedback & Redirect */
+.redirect-btn {
+    display: inline-block;
+    color: var(--chat-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.redirect-btn:hover {
+    text-decoration: underline;
+}
+
+.feedback-container {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: flex-end;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.feedback-container:hover {
+    opacity: 1;
+}
+
+.feedback-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--chat-border);
+    background: transparent;
+    color: var(--chat-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.feedback-btn:hover {
+    color: var(--chat-primary);
+    border-color: var(--chat-primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Typing Indicator */
 .chatbot-typing {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--border);
+    padding: 0 1.5rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: var(--text-muted);
-    font-size: 0.875rem;
-}
-
-.typing-indicator {
-    display: flex;
-    gap: 0.25rem;
+    color: var(--chat-text-muted);
+    font-size: 0.85rem;
+    opacity: 0.8;
 }
 
 .typing-indicator span {
-    width: 8px;
-    height: 8px;
-    background: var(--text-muted);
+    width: 6px;
+    height: 6px;
+    background-color: var(--chat-primary);
     border-radius: 50%;
-    animation: typingBounce 1.4s ease-in-out infinite both;
+    animation: bounce 1.4s infinite ease-in-out both;
 }
 
 .typing-indicator span:nth-child(1) {
@@ -389,252 +436,201 @@
     animation-delay: -0.16s;
 }
 
-@keyframes typingBounce {
-
-    0%,
-    80%,
-    100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-
-    40% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
+/* Input Area */
 .chatbot-input-container {
-    border-top: 1px solid var(--border);
-    background: var(--surface-alt);
+    padding: 1.25rem;
+    background-color: var(--chat-surface);
+    border-top: 1px solid var(--chat-border);
 }
 
 .chatbot-input {
     display: flex;
-    padding: 1rem;
     gap: 0.75rem;
+    background-color: var(--chat-bg);
+    padding: 6px;
+    border: 1px solid var(--chat-border);
+    border-radius: 50px;
+    /* Pill shape */
+    transition: all 0.2s;
+    align-items: center;
+}
+
+.chatbot-input:focus-within {
+    border-color: var(--chat-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .chatbot-input input {
     flex: 1;
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 0.875rem;
+    background: transparent;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: var(--chat-text);
+    font-size: 0.95rem;
     outline: none;
-    transition: border-color 0.2s ease;
-    background: var(--card-bg);
-    color: var(--text-main);
-}
-
-.chatbot-input input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    min-width: 0;
 }
 
 .chatbot-send {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--chat-primary), var(--chat-primary-dark));
     color: white;
     border: none;
-    border-radius: 12px;
-    padding: 0.875rem;
-    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-right: 4px;
 }
 
 .chatbot-send:hover {
-    background: var(--accent-hover);
+    transform: scale(1.05);
 }
 
 .chatbot-send:disabled {
-    background: #6b7280;
+    background: var(--chat-surface-hover);
+    color: var(--chat-text-muted);
     cursor: not-allowed;
+    transform: none;
 }
 
+/* Suggestions */
 .chatbot-suggestions {
-    padding: 0 1rem 1rem;
     display: flex;
     gap: 0.5rem;
+    padding: 0.75rem 0 0;
     overflow-x: auto;
+    /* ✅ FIX: Forzar que no haya salto de línea y scroll funcione */
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    /* Asegurar que el contenedor tenga ancho para scrollear */
+    width: 100%;
+}
+
+.chatbot-suggestions::-webkit-scrollbar {
+    display: none;
 }
 
 .suggestion-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.75rem;
-    cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s ease;
-    color: var(--text-muted);
+    /* ✅ FIX: Evitar que los botones se encojan */
+    flex-shrink: 0;
+    background-color: var(--chat-bg);
+    border: 1px solid var(--chat-border);
+    color: var(--chat-text-muted);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .suggestion-btn:hover {
-    background: var(--surface-alt);
-    border-color: var(--accent);
-    color: var(--accent);
+    background-color: var(--chat-surface-hover);
+    color: var(--chat-primary);
+    border-color: var(--chat-primary);
 }
 
+/* Floating Toggle Button */
 .chatbot-toggle {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 64px;
-    height: 64px;
-    background: var(--accent);
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--chat-primary), var(--chat-primary-dark));
     color: white;
     border: none;
-    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     cursor: pointer;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    z-index: 9999;
-    display: none;
-    /* JS lo mostrará */
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    transition: all 0.3s ease;
-}
-
-.chatbot-toggle:hover {
-    transform: scale(1.1);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-}
-
-.chatbot-notification {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: var(--danger);
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: pulse 2s infinite;
+    font-size: 1.6rem;
+    z-index: 9999;
+    transition: transform 0.2s;
 }
 
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+.chatbot-toggle:hover {
+    transform: scale(1.1) rotate(5deg);
 }
 
-/* Responsive para el widget de chat */
-@media (max-width: 750px) {
+/* Notification Badge */
+.chatbot-notification {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 14px;
+    height: 14px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    border: 2px solid var(--chat-bg);
+}
+
+/* Mobile & Overlay */
+.chatbot-history-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 15;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
+}
+
+.chatbot-container.history-open .chatbot-history-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (max-width: 480px) {
     .chatbot-container {
         width: 100%;
         height: 100%;
         max-height: 100%;
-        right: 0;
         bottom: 0;
+        right: 0;
         border-radius: 0;
+        transform: translateY(100%);
+        /* Ensure z-index is high enough to cover everything */
+        z-index: 10000;
+        border: none;
     }
 
-    /* ✅ MEJORA RESPONSIVE: El panel de historial ahora se desliza desde la izquierda */
+    .chatbot-container.open {
+        transform: translateY(0);
+    }
+
     .chatbot-history-panel {
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        z-index: 10;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+        width: 85%;
+        max-width: 320px;
+        z-index: 25;
     }
 
-    .chatbot-container.history-open .chatbot-history-panel {
-        transform: translateX(0);
+    .chatbot-toggle {
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        font-size: 1.4rem;
     }
 
-    /* ✅ CORRECCIÓN: Mostrar el overlay cuando el historial está abierto. */
-    .chatbot-container.history-open .chatbot-history-overlay {
-        display: block;
+    /* Adjust padding for message area to account for mobile keyboard potentially */
+    .chatbot-messages {
+        padding: 1rem;
+        padding-bottom: 2rem;
     }
 
-    .chatbot-history-toggle {
-        display: block;
-        /* Visible en móvil */
+    .chatbot-input-container {
+        padding: 1rem;
+        padding-bottom: env(safe-area-inset-bottom, 1rem);
+        /* iPhone X+ safe area */
     }
-
-    .chatbot-main-panel {
-        width: 100%;
-        /* Asegura que el panel principal ocupe todo el ancho */
-    }
-}
-
-/* --- Estilos para Feedback --- (Añadir al final de chat.css) */
-.feedback-container {
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.feedback-btn {
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.feedback-btn:hover {
-    background: var(--surface-hover);
-    transform: scale(1.1);
-}
-
-.feedback-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.feedback-thanks {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-/* ✅ NUEVO: Estilos para los botones de navegación dentro del chat */
-.chat-nav-button {
-    background: none;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 0.25rem 0.75rem;
-    border-radius: 16px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    margin: 0.25rem 0;
-    transition: all 0.2s;
-    display: inline-block;
-    text-align: left;
-}
-
-.chat-nav-button:hover {
-    background: var(--accent);
-    color: white;
-    text-decoration: none;
 }

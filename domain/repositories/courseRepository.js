@@ -4,12 +4,77 @@ const { normalizeText } = require('../utils/textUtils');
 class CourseRepository {
 
     async findAll() {
-        const { rows } = await db.query('SELECT * FROM get_all_courses_with_details();');
+        // ✅ SOLUCIÓN: Reemplazamos el procedimiento almacenado (que usaba la tabla 'sections' eliminada)
+        // por una consulta directa que construye la estructura correcta con temas y libros.
+        const query = `
+            SELECT 
+                c.id,
+                c.course_id,
+                c.name,
+                c.image_url, 
+                (
+                    SELECT COALESCE(JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id', t.id,
+                            'name', t.name,
+                            'unit', ct.unit_name
+                        ) ORDER BY ct.unit_name, t.name
+                    ), '[]')
+                    FROM course_topics ct
+                    JOIN topics t ON t.id = ct.topic_id
+                    WHERE ct.course_id = c.id
+                ) AS topics,
+                (
+                    SELECT COALESCE(JSON_AGG(r.*), '[]')
+                    FROM course_books cb
+                    JOIN resources r ON r.id = cb.resource_id
+                    WHERE cb.course_id = c.id
+                ) AS materials,
+                (
+                    SELECT COALESCE(JSON_AGG(cc.career_id), '[]')
+                    FROM course_careers cc
+                    WHERE cc.course_id = c.id
+                ) AS "careerIds"
+            FROM courses c
+            ORDER BY c.name ASC
+        `;
+        const { rows } = await db.query(query);
         return rows;
     }
 
     async findById(id) {
-        const { rows } = await db.query('SELECT * FROM courses WHERE id = $1', [id]);
+        // ✅ SOLUCIÓN: Obtener el curso con sus temas y materiales (libros) anidados.
+        // Usamos subconsultas y JSON_AGG para construir la estructura completa en una sola consulta.
+        const query = `
+            SELECT 
+                c.*,
+                (
+                    SELECT COALESCE(JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id', t.id,
+                            'name', t.name,
+                            'unit', ct.unit_name
+                        ) ORDER BY ct.unit_name, t.name
+                    ), '[]')
+                    FROM course_topics ct
+                    JOIN topics t ON t.id = ct.topic_id
+                    WHERE ct.course_id = c.id
+                ) AS topics,
+                (
+                    SELECT COALESCE(JSON_AGG(r.*), '[]')
+                    FROM course_books cb
+                    JOIN resources r ON r.id = cb.resource_id
+                    WHERE cb.course_id = c.id
+                ) AS materials,
+                (
+                    SELECT COALESCE(JSON_AGG(cc.career_id), '[]')
+                    FROM course_careers cc
+                    WHERE cc.course_id = c.id
+                ) AS "careerIds"
+            FROM courses c
+            WHERE c.id = $1
+        `;
+        const { rows } = await db.query(query, [id]);
         return rows[0];
     }
 
@@ -20,39 +85,59 @@ class CourseRepository {
      * @returns {Promise<Array>} - Lista de cursos que coinciden.
      */
     async search(query) {
-        // ARQUITECTURA: La lógica de normalización de texto ahora se delega a la base de datos.
-        // La aplicación solo necesita pasar el término de búsqueda en crudo.
-        const normalizedQuery = normalizeText(query);
+        // ARQUITECTURA: Reemplazo del Stored Procedure por consulta directa insensible a acentos.
+        // Esto soluciona el error 500 y mejora la "inteligencia" de la búsqueda.
+        const searchTerm = `%${query}%`;
 
-        // Llamamos al procedimiento almacenado `search_courses` y le pasamos el término de búsqueda.
-        // La base de datos se encarga de toda la complejidad de los JOINs y subconsultas.
-        const sqlQuery = 'SELECT * FROM search_courses($1)';
+        const normalize = (col) => `translate(lower(${col}), 'áéíóúÁÉÍÓÚüÜ', 'aeiouaeiouuu')`;
 
-        const { rows } = await db.query(sqlQuery, [normalizedQuery]);
+        // Buscamos en Nombre del curso y en los ID de temas si existen
+        // Usamos una consulta unificada
+        const sqlQuery = `
+            SELECT DISTINCT c.*
+            FROM courses c
+            LEFT JOIN course_topics ct ON c.id = ct.course_id
+            LEFT JOIN topics t ON t.id = ct.topic_id
+            WHERE 
+                ${normalize('c.name')} LIKE ${normalize('$1')} OR
+                ${normalize('t.name')} LIKE ${normalize('$1')}
+            ORDER BY c.name ASC
+        `;
+
+        const { rows } = await db.query(sqlQuery, [searchTerm]);
         return rows;
     }
-    async findByCareerName(careerName) {
-        const normalizedQuery = `%${normalizeText(careerName)}%`;
-        const { rows } = await db.query('SELECT * FROM find_courses_by_career_name($1)', [normalizedQuery]);
+    async findByCareerId(careerId) {
+        // ✅ NUEVO: Buscar cursos por ID exacto de carrera usando la tabla de unión.
+        const query = `
+            SELECT c.* 
+            FROM courses c
+            JOIN course_careers cc ON c.id = cc.course_id
+            WHERE cc.career_id = $1
+            ORDER BY c.name ASC
+        `;
+        const { rows } = await db.query(query, [careerId]);
         return rows;
     }
 
     async create(courseData) {
         // ✅ LÓGICA REHECHA: Esta función ahora es simple y correcta.
-        const { name, description, topicIds, bookIds } = courseData;
+        const { name, topicIds, bookIds, units, careerIds, image_url } = courseData;
 
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
             // 1. Insertar el curso principal.
             const tempCourseId = `C-${Date.now()}`; // Valor temporal para satisfacer la restricción NOT NULL.
-            const courseRes = await client.query('INSERT INTO courses (name, description, course_id) VALUES ($1, $2, $3) RETURNING *', [name, description || '', tempCourseId]);
+            // ✅ FIX: Incluir image_url en el insert
+            const courseRes = await client.query('INSERT INTO courses (name, course_id, image_url) VALUES ($1, $2, $3) RETURNING *', [name, tempCourseId, image_url]);
             const newCourse = courseRes.rows[0];
 
-            if (topicIds && topicIds.length > 0) {
-                const topicPromises = topicIds.map(topicId => client.query('INSERT INTO course_topics (course_id, topic_id) VALUES ($1, $2)', [newCourse.id, topicId]));
-                await Promise.all(topicPromises);
+            /* 2. Insertar temas. (DESACTIVADO: El usuario solicitó eliminar la relación curso-temas)
+            if (units && units.length > 0) {
+                // ...
             }
+            */
 
             // 3. Insertar las relaciones con los libros en la tabla de unión.
             if (bookIds && bookIds.length > 0) {
@@ -60,11 +145,17 @@ class CourseRepository {
                 await Promise.all(bookPromises);
             }
 
-            // 4. Confirmar la transacción si todo fue exitoso.
+            // 4. ✅ NUEVO: Insertar relaciones con carreras
+            if (careerIds && careerIds.length > 0) {
+                const careerPromises = careerIds.map(careerId => client.query('INSERT INTO course_careers (course_id, career_id) VALUES ($1, $2)', [newCourse.id, careerId]));
+                await Promise.all(careerPromises);
+            }
+
+            // 5. Confirmar la transacción si todo fue exitoso.
             await client.query('COMMIT');
             return newCourse;
         } catch (e) {
-            // 5. Si algo falla, revertir todos los cambios.
+            // 6. Si algo falla, revertir todos los cambios.
             await client.query('ROLLBACK');
             throw e;
         } finally {
@@ -74,24 +165,60 @@ class CourseRepository {
 
     async update(id, courseData) {
         // ✅ SOLUCIÓN: Usar una transacción para actualizar el curso y sus relaciones.
-        const { name, description, topicIds, bookIds } = courseData;
+        const { name, topicIds, bookIds, units, careerIds, image_url } = courseData;
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
-            // ✅ SOLUCIÓN: Eliminar 'updated_at' de la consulta.
-            const courseRes = await client.query('UPDATE courses SET name = $1, description = $2 WHERE id = $3 RETURNING *', [name, description || '', id]);
-            const updatedCourse = courseRes.rows[0];
+            // ✅ SOLUCIÓN: Eliminar 'updated_at' de la consulta e INCLUIR image_url.
+            // Si image_url es undefined (no se envió cambio), mantenemos el valor actual con COALESCE o simplemente lo actualizamos si viene en null explicitamente.
+            // Pero como updateEntity siempre envía el body procesado, si no hay cambio image_url podría no estar.
+            // Sin embargo, coursesController maneja esto. Si image_url viene, se actualiza.
 
-            await client.query('DELETE FROM course_topics WHERE course_id = $1', [id]);
-            if (topicIds && topicIds.length > 0) {
-                const topicPromises = topicIds.map(topicId => client.query('INSERT INTO course_topics (course_id, topic_id) VALUES ($1, $2)', [id, topicId]));
-                await Promise.all(topicPromises);
+            // Lógica dinámica simple: si image_url está presente en courseData, actualizamos. Si no, solo nombre?
+            // Para simplificar y dado que el controlador maneja la lógica de "borrar" enviando null, o "mantener" no enviando nada...
+            // Si image_url es undefined, NO deberíamos tocarlo.
+
+            let updateQuery = 'UPDATE courses SET name = $1';
+            const params = [name, id];
+            let paramIndex = 3;
+
+            if (image_url !== undefined) {
+                updateQuery += `, image_url = $${paramIndex}`;
+                params.splice(2, 0, image_url); // Insert image_url at index 2 (param $3) -> wait, params are 1-indexed in query, 0-indexed in array.
+                // query: name=$1, id=$2. image_url=$3.
+                // params array: [name, id] -> logic above is slightly flawed for splice.
+                // Let's reset.
             }
+
+            // RE-DOING QUERY CONSTRUCTION FOR SAFETY
+            // Always update name.
+            // Update image_url ONLY if it is defined (null is a valid value for deletion).
+
+            if (image_url !== undefined) {
+                const courseRes = await client.query('UPDATE courses SET name = $1, image_url = $2 WHERE id = $3 RETURNING *', [name, image_url, id]);
+                var updatedCourse = courseRes.rows[0];
+            } else {
+                const courseRes = await client.query('UPDATE courses SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+                var updatedCourse = courseRes.rows[0];
+            }
+
+            // 2. Relations... (Rest of method)
+
+            /* DESACTIVADO... */
+
             await client.query('DELETE FROM course_books WHERE course_id = $1', [id]);
             if (bookIds && bookIds.length > 0) {
                 const bookPromises = bookIds.map(bookId => client.query('INSERT INTO course_books (course_id, resource_id) VALUES ($1, $2)', [id, bookId]));
                 await Promise.all(bookPromises);
             }
+
+            // ✅ NUEVO: Actualizar carreras
+            await client.query('DELETE FROM course_careers WHERE course_id = $1', [id]);
+            if (careerIds && careerIds.length > 0) {
+                const careerPromises = careerIds.map(careerId => client.query('INSERT INTO course_careers (course_id, career_id) VALUES ($1, $2)', [id, careerId]));
+                await Promise.all(careerPromises);
+            }
+
             await client.query('COMMIT');
             return updatedCourse;
         } catch (e) {
@@ -117,10 +244,15 @@ class CourseRepository {
      * @returns {Promise<Array>} - Una lista de cursos.
      */
     async findByCareerCategory(categoryName) {
-        // ✅ ARQUITECTURA: Llamamos al procedimiento almacenado `find_courses_by_career_category`.
-        // La lógica compleja de búsqueda con Levenshtein ahora está encapsulada en la base de datos.
-        const query = 'SELECT * FROM find_courses_by_career_category($1)';
-        const values = [categoryName];
+        // ✅ ARQUITECTURA: Reemplazo del Stored Procedure por consulta JOIN explicita con el nuevo esquema.
+        const query = `
+            SELECT DISTINCT c.* 
+            FROM courses c
+            JOIN course_careers cc ON c.id = cc.course_id
+            JOIN careers car ON car.id = cc.career_id
+            WHERE car.name ILIKE $1
+        `;
+        const values = [`%${categoryName}%`];
         try {
             const { rows } = await db.query(query, values);
             return rows;

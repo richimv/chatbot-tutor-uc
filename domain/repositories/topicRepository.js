@@ -8,7 +8,7 @@ class TopicRepository {
             SELECT 
                 t.*,
                 (
-                    SELECT COALESCE(ARRAY_AGG(tr.resource_id), '{}')
+                    SELECT COALESCE(JSON_AGG(tr.resource_id), '[]')
                     FROM topic_resources tr
                     WHERE tr.topic_id = t.id
                 ) as "bookIds"
@@ -32,7 +32,7 @@ class TopicRepository {
             // ✅ SOLUCIÓN TEMPORAL: Generar un 'topic_id' de texto para satisfacer la restricción NOT NULL.
             // La solución ideal es eliminar la columna 'topic_id' de la tabla 'topics' en la base de datos.
             const tempTopicId = `TOPIC_${Date.now()}`;
-            const topicRes = await client.query('INSERT INTO topics (topic_id, name, description) VALUES ($1, $2, $3) RETURNING *', [tempTopicId, name, description]);
+            const topicRes = await client.query('INSERT INTO topics (topic_id, name) VALUES ($1, $2) RETURNING *', [tempTopicId, name]);
             const newTopic = topicRes.rows[0];
 
             if (bookIds && bookIds.length > 0) {
@@ -58,7 +58,7 @@ class TopicRepository {
         try {
             await client.query('BEGIN');
             // ✅ SOLUCIÓN: Eliminar la actualización de 'updated_at' porque la columna no existe en la tabla 'topics'.
-            const topicRes = await client.query('UPDATE topics SET name = $1, description = $2 WHERE id = $3 RETURNING *', [name, description, id]);
+            const topicRes = await client.query('UPDATE topics SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
             const updatedTopic = topicRes.rows[0];
 
             await client.query('DELETE FROM topic_resources WHERE topic_id = $1', [id]); // Limpiar relaciones antiguas

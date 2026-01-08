@@ -3,8 +3,7 @@ class AdminManager {
         // Almacenes de datos
         this.allCareers = [];
         this.allCourses = []; // Cursos base (de courses.json)
-        this.allSections = []; // Secciones (de sections.json)
-        this.allInstructors = [];
+
         this.allStudents = []; // ✅ NUEVO: Almacén para alumnos
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
@@ -12,17 +11,14 @@ class AdminManager {
         // Estado de ordenamiento
         // ✅ NUEVO: Estado de ordenamiento por pestaña
         this.tabSortState = {
-            'tab-sections': 'date-desc',
             'tab-careers': 'date-desc',
             'tab-courses': 'date-desc',
-            'tab-instructors': 'date-desc',
             'tab-students': 'date-desc',
             'tab-topics': 'date-desc',
             'tab-books': 'date-desc'
         };
 
         // Elementos del DOM
-        this.sectionsContainer = document.getElementById('tab-sections');
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
 
@@ -61,15 +57,6 @@ class AdminManager {
         document.querySelector('.admin-tabs').addEventListener('click', (e) => {
             if (e.target.classList.contains('tab-link')) {
                 this.switchTab(e.target.dataset.tab);
-            }
-        });
-
-        // Delegación de eventos para expandir/colapsar tarjetas de carrera
-        this.sectionsContainer.addEventListener('click', e => {
-            const header = e.target.closest('.career-card-header');
-            // ✅ MEJORA: Asegurarse de que el clic no fue en un botón dentro del header.
-            if (header && !e.target.closest('button')) {
-                header.parentElement.classList.toggle('expanded');
             }
         });
 
@@ -127,6 +114,90 @@ class AdminManager {
             if (e.target.type === 'checkbox') {
                 const container = e.target.closest('.searchable-dropdown-container');
                 if (container) this.updateSelectedChips(container);
+            }
+
+            // ✅ NUEVO: Listeners para el Gestor de Unidades
+            if (e.target.id === 'add-unit-btn') {
+                const container = document.getElementById('units-container');
+                container.insertAdjacentHTML('beforeend', this._createUnitHTML('Nueva Unidad', []));
+            }
+            if (e.target.closest('.remove-unit-btn')) {
+                e.target.closest('.unit-item').remove();
+            }
+            if (e.target.classList.contains('add-topic-btn')) {
+                const container = e.target.closest('.add-topic-container');
+                const template = document.getElementById('topic-selector-template').innerHTML;
+                container.innerHTML = template; // Reemplazar botón con selector
+
+                // Inicializar búsqueda en vivo para este nuevo selector
+                const searchInput = container.querySelector('.unit-topic-search');
+                const select = container.querySelector('.topic-select');
+                const dropdownContainer = container.querySelector('.searchable-dropdown-container');
+
+                // NOTA: No necesitamos listeners para abrir/cerrar aquí, 
+                // la delegación global en genericModal lo maneja.
+
+                // Filtrar opciones
+                searchInput.addEventListener('input', () => {
+                    const filter = searchInput.value.toLowerCase();
+                    const options = select.options;
+                    for (let i = 0; i < options.length; i++) {
+                        const txtValue = options[i].text.toLowerCase();
+                        options[i].style.display = txtValue.includes(filter) ? "" : "none";
+                    }
+                    if (!dropdownContainer.classList.contains('open')) {
+                        dropdownContainer.classList.add('open');
+                    }
+                });
+
+                // Seleccionar opción
+                select.addEventListener('change', () => {
+                    searchInput.value = select.options[select.selectedIndex].text;
+                    dropdownContainer.classList.remove('open');
+                });
+
+                // Seleccionar opción al hacer clic (para UX de lista)
+                select.addEventListener('click', (ev) => {
+                    if (ev.target.tagName === 'OPTION') {
+                        select.value = ev.target.value;
+                        searchInput.value = ev.target.text;
+                        dropdownContainer.classList.remove('open');
+                    }
+                });
+            }
+            if (e.target.classList.contains('cancel-add-topic')) {
+                const container = e.target.closest('.add-topic-container');
+                container.innerHTML = '<button type="button" class="btn-secondary btn-small add-topic-btn">+ Añadir Tema</button>';
+            }
+            if (e.target.classList.contains('confirm-add-topic')) {
+                const selectorWrapper = e.target.closest('.topic-selector-wrapper'); // Usar el nuevo wrapper
+                const select = selectorWrapper.querySelector('select');
+                const topicId = select.value;
+
+                if (!topicId) return; // No hacer nada si no hay selección
+
+                const topicName = select.options[select.selectedIndex].text;
+
+                const unitItem = e.target.closest('.unit-item');
+                const list = unitItem.querySelector('.unit-topics-list');
+
+                // Evitar duplicados en la misma unidad
+                if (!list.querySelector(`[data-id="${topicId}"]`)) {
+                    list.insertAdjacentHTML('beforeend', `
+                        <div class="unit-topic-item" data-id="${topicId}">
+                            <span class="topic-name">${topicName}</span>
+                            <button type="button" class="remove-topic-btn">×</button>
+                            <input type="hidden" name="unit-topic-id" value="${topicId}">
+                        </div>
+                    `);
+                }
+
+                // Restaurar botón
+                const container = e.target.closest('.add-topic-container');
+                container.innerHTML = '<button type="button" class="btn-secondary btn-small add-topic-btn">+ Añadir Tema</button>';
+            }
+            if (e.target.classList.contains('remove-topic-btn')) {
+                e.target.closest('.unit-topic-item').remove();
             }
         });
 
@@ -195,19 +266,27 @@ class AdminManager {
     }
 
     switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // 1. Gestionar clases de botones
         document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-
-        document.getElementById(tabId).classList.add('active');
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
 
-        // ✅ RENDERIZAR CONTENIDO DE LA PESTAÑA ACTIVA
-        if (tabId === 'tab-sections') this.displaySections();
+        // 2. Gestionar visibilidad de contenedores (Forzar display para evitar errores CSS)
+        document.querySelectorAll('.tab-content').forEach(c => {
+            c.classList.remove('active');
+            c.style.display = 'none'; // ✅ FORZAR OCULTO
+        });
+
+        const activeContainer = document.getElementById(tabId);
+        if (activeContainer) {
+            activeContainer.classList.add('active');
+            activeContainer.style.display = 'block'; // ✅ FORZAR VISIBLE
+        }
+
+        // 3. Renderizar contenido (Lazy Load o Refresh)
         if (tabId === 'tab-courses') this.displayBaseCourses();
-        if (tabId === 'tab-instructors') this.displayInstructors();
         if (tabId === 'tab-topics') this.displayTopics();
-        if (tabId === 'tab-students') this.displayStudents(); // ✅ NUEVO
-        if (tabId === 'tab-books') this.displayBooks(); // Nueva pestaña
+        if (tabId === 'tab-students') this.displayStudents();
+        if (tabId === 'tab-books') this.displayBooks();
         if (tabId === 'tab-careers') this.displayCareers();
     }
 
@@ -217,6 +296,16 @@ class AdminManager {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         };
+    }
+
+    // ✅ NUEVO: Método para obtener IDs seleccionados de un checkbox list
+    getSelectedIds(name) {
+        const container = document.querySelector(`.searchable-dropdown-container[data-name="${name}"]`);
+        if (!container) return [];
+        // Filtrar valores no numéricos para evitar NaN
+        return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => parseInt(cb.value, 10))
+            .filter(id => !isNaN(id));
     }
 
     // ✅ NUEVO: Método de ordenamiento genérico
@@ -252,33 +341,29 @@ class AdminManager {
 
     async loadAllData() {
         try {
-            const [careersRes, coursesRes, sectionsRes, instructorsRes, studentsRes, topicsRes, booksRes] = await Promise.all([
+            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes] = await Promise.all([
                 fetch(`${window.AppConfig.API_URL}/api/careers`, { headers: this._getAuthHeaders() }),
                 fetch(`${window.AppConfig.API_URL}/api/courses`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/sections`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/instructors`, { headers: this._getAuthHeaders() }),
+
                 fetch(`${window.AppConfig.API_URL}/api/students`, { headers: this._getAuthHeaders() }),
                 fetch(`${window.AppConfig.API_URL}/api/topics`, { headers: this._getAuthHeaders() }),
                 fetch(`${window.AppConfig.API_URL}/api/books`, { headers: this._getAuthHeaders() })
             ]);
 
-            for (const res of [careersRes, coursesRes, sectionsRes, instructorsRes, studentsRes, topicsRes, booksRes]) {
+            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes]) {
                 if (!res.ok) throw new Error(`Failed to fetch ${res.url}: ${res.statusText}`);
             }
 
             this.allCareers = await careersRes.json();
             this.allCourses = await coursesRes.json();
-            this.allSections = await sectionsRes.json();
-            this.allInstructors = await instructorsRes.json();
+
             this.allStudents = await studentsRes.json(); // ✅ NUEVO
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
 
             // ✅ CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
-            this.displaySections();
             this.displayCareers();
             this.displayBaseCourses();
-            this.displayInstructors();
             this.displayStudents(); // ✅ NUEVO
             this.displayTopics();
             this.displayBooks();
@@ -289,62 +374,7 @@ class AdminManager {
         }
     }
 
-    // Nueva pestaña para Secciones (CarrerasUC)
-    displaySections() {
-        const container = document.getElementById('tab-sections');
-        // ✅ SOLUCIÓN: Usar la función estandarizada para crear el header con la barra de búsqueda.
-        let header = this._createTabHeaderHTML('section', 'Añadir Sección', 'tab-sections');
 
-        // 1. Agrupar secciones por carrera
-        const sectionsByCareer = new Map();
-        // ✅ APLICAR ORDENAMIENTO A LAS SECCIONES
-        const sortedSections = this.sortData(this.allSections, 'section', 'tab-sections');
-
-        sortedSections.forEach(section => {
-            section.careerIds.forEach(careerId => {
-                if (!sectionsByCareer.has(careerId)) {
-                    sectionsByCareer.set(careerId, []);
-                }
-                sectionsByCareer.get(careerId).push(section);
-            });
-        });
-
-        // 2. Ordenar carreras alfabéticamente por nombre (esto se mantiene igual para la agrupación)
-        const sortedCareerIds = [...sectionsByCareer.keys()].sort((idA, idB) => {
-            const careerA = this.allCareers.find(c => c.id === idA)?.name || '';
-            const careerB = this.allCareers.find(c => c.id === idB)?.name || '';
-            return careerA.localeCompare(careerB);
-        });
-
-        // Si no hay secciones, mostrar el header y el mensaje de estado vacío.
-        if (!this.allSections || this.allSections.length === 0) {
-            container.innerHTML = header + `<p class="empty-state">📭 No hay secciones para mostrar.</p>`;
-            return;
-        }
-
-        const dataForCards = { allCourses: this.allCourses, allInstructors: this.allInstructors, allCareers: this.allCareers };
-
-        // 3. Renderizar HTML agrupado
-        // ✅ SOLUCIÓN: Declarar la variable 'html' como una cadena vacía antes de usarla.
-        let html = '';
-        sortedCareerIds.forEach(careerId => {
-            const career = this.allCareers.find(c => c.id === careerId);
-            const sections = sectionsByCareer.get(careerId);
-            html += `
-                <div class="career-card">
-                    <div class="career-card-header">
-                        <h3>${career ? career.name : 'Carrera Desconocida'} (${sections.length} cursos)</h3>
-                        <span class="toggle-arrow">›</span>
-                    </div>
-                    <div class="career-card-details">
-                        ${sections.map(section => createAdminSectionCardHTML(section, dataForCards)).join('')}
-                    </div>
-                </div>
-            `;
-        });
-
-        container.innerHTML = header + html;
-    }
 
     setupMainContainerDelegation() {
         const mainContainer = document.getElementById('admin-main-container');
@@ -390,15 +420,7 @@ class AdminManager {
         container.innerHTML = content;
     }
 
-    displayInstructors() {
-        const container = document.getElementById('tab-instructors');
-        // ✅ APLICAR ORDENAMIENTO
-        const sortedInstructors = this.sortData(this.allInstructors, 'instructor', 'tab-instructors');
-        const itemsHTML = sortedInstructors.map(instructor => createAdminItemCardHTML(instructor, 'instructor', `(${instructor.email})`, true)).join('');
-        const content = this._createTabHeaderHTML('instructor', 'Añadir Docente', 'tab-instructors') +
-            (itemsHTML || '<p class="empty-state">No hay docentes.</p>');
-        container.innerHTML = content;
-    }
+
 
     // ✅ NUEVO: Método para mostrar alumnos
     displayStudents() {
@@ -431,7 +453,7 @@ class AdminManager {
         container.innerHTML = content;
     }
 
-    openGenericModal(type, id = null) {
+    async openGenericModal(type, id = null) {
         this.genericForm.reset();
         this.genericForm.dataset.type = type;
         this.genericForm.dataset.id = id || '';
@@ -459,52 +481,105 @@ class AdminManager {
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', currentItem?.name || '', true) +
-                    this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false) +
-                    this.createFormGroup('textarea', 'description', 'Descripción de la Carrera', currentItem?.description || '') +
-                    this.createFormGroup('text', 'generic-url', 'URL de la Malla Curricular', currentItem?.curriculum_url || '');
+                    this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false);
+
+                // ✅ NUEVO: Previsualización de imagen para Carrera
+                let careerImagePreview = '';
+                if (currentItem?.image_url) {
+                    careerImagePreview = `
+                        <div class="form-group" id="current-cover-preview">
+                            <label>Portada Actual:</label>
+                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
+                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
+                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                fieldsHTML += careerImagePreview +
+                    `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createFormGroup('file', 'generic-image', 'Portada (Imagen Horizontal 16:9)', '', false);
+
+                // Inicializar lógica de eliminación de imagen (reutilizada)
+                setTimeout(() => {
+                    const removeBtn = document.getElementById('remove-cover-btn');
+                    if (removeBtn) {
+                        removeBtn.onclick = () => {
+                            document.getElementById('generic-delete-image').value = 'true';
+                            document.getElementById('current-cover-preview').style.display = 'none';
+                            document.getElementById('generic-image').value = '';
+                        };
+                    }
+                }, 0);
                 break;
             // ...
             case 'course':
                 title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
-                if (id) currentItem = this.allCourses.find(c => c.id === parseInt(id, 10));
+
+                // ✅ SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
+                if (id) {
+                    try {
+                        const res = await fetch(`${window.AppConfig.API_URL}/api/courses/${id}`, { headers: this._getAuthHeaders() });
+                        if (res.ok) {
+                            currentItem = await res.json();
+                        } else {
+                            console.error('Error fetching course details');
+                            currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
+                        }
+                    } catch (error) {
+                        console.error('Error fetching course details:', error);
+                        currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
+                    }
+                }
+
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
-                    this.createFormGroup('textarea', 'description', 'Descripción del Curso', currentItem?.description || '') +
-                    this.createCheckboxList('Temas Asociados', 'generic-topics', this.allTopics, currentItem?.topicIds || []) +
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book');
+                    // ✅ NUEVO: Selector de Carreras
+                    this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, currentItem?.careerIds || [], 'career') +
+                    // this.createUnitManager(...) Eliminado
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
+
+                // ✅ NUEVO: Previsualización de imagen para Curso
+                let courseImagePreview = '';
+                if (currentItem?.image_url) {
+                    courseImagePreview = `
+                        <div class="form-group" id="current-cover-preview">
+                            <label>Portada Actual:</label>
+                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
+                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
+                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                fieldsHTML += courseImagePreview +
+                    `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createFormGroup('file', 'generic-image', 'Portada (Imagen Horizontal 16:9)', '', false);
+
+                // Inicializar lógica de eliminación de imagen
+                setTimeout(() => {
+                    const removeBtn = document.getElementById('remove-cover-btn');
+                    if (removeBtn) {
+                        removeBtn.onclick = () => {
+                            document.getElementById('generic-delete-image').value = 'true';
+                            document.getElementById('current-cover-preview').style.display = 'none';
+                            document.getElementById('generic-image').value = '';
+                        };
+                    }
+                }, 0);
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
                 if (id) currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', currentItem?.name || '', true) +
-                    this.createFormGroup('textarea', 'description', 'Descripción del Tema', currentItem?.description || '') +
+                    // Descripción eliminada
                     // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
                     this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
                     '<div id="resources-container"></div>';
                 break;
-            case 'section':
-                title.textContent = id ? 'Editar Sección' : 'Añadir Sección';
-                if (id) currentItem = this.allSections.find(s => s.id === parseInt(id, 10));
-                fieldsHTML = `
-                    <fieldset>
-                        <legend>Información Principal</legend>
-                        ${this.createSearchableSelect('section-course-select', 'Curso Base (*)', this.allCourses, currentItem?.courseId)}
-                        <!-- ✅ CORRECCIÓN: La lista de docentes para el dropdown ahora viene de this.allInstructors, que se carga desde la tabla users. -->
-                        ${this.createCheckboxList('Carreras (*)', 'section-career-select', this.allCareers, currentItem?.careerIds || [])}
-                        ${this.createSearchableSelect('section-instructor-select', 'Docente', this.allInstructors, currentItem?.instructorId, true)}
-                    </fieldset>
-                    <fieldset>
-                        <legend>Horarios</legend>
-                        <div id="schedule-container"></div>
-                        <button type="button" id="add-schedule-row" class="btn-secondary">Añadir Horario</button>
-                    </fieldset>
-                `;
-                break;
-            case 'instructor':
-                title.textContent = id ? 'Editar Docente' : 'Añadir Docente';
-                if (id) currentItem = this.allInstructors.find(i => i.id === id);
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Docente (*)', currentItem?.name || '', true) +
-                    this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
-                break;
+
+
             case 'student': // ✅ NUEVO
                 title.textContent = id ? 'Editar Alumno' : 'Añadir Alumno';
                 if (id) currentItem = this.allStudents.find(i => i.id === id);
@@ -512,12 +587,93 @@ class AdminManager {
                     this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
                 break;
             case 'book':
-                title.textContent = id ? 'Editar Libro' : 'Añadir Libro';
+                title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
                 if (id) currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
-                fieldsHTML = this.createFormGroup('text', 'generic-title', 'Título del Libro (*)', currentItem?.title || '', true) +
-                    this.createFormGroup('text', 'generic-author', 'Autor (*)', currentItem?.author || '', true) +
-                    this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true) +
-                    this.createFormGroup('text', 'generic-size', 'Tamaño (ej: 15 MB)', currentItem?.size || '');
+
+                let imagePreview = '';
+                if (currentItem?.image_url) {
+                    imagePreview = `
+                        <div class="form-group" id="current-cover-preview">
+                            <label>Portada/Miniatura Actual:</label>
+                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
+                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
+                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Definir tipos de recurso
+                const resourceTypes = [
+                    { id: 'book', name: 'Libro' },
+                    { id: 'article', name: 'Artículo' },
+                    { id: 'video', name: 'Video' },
+                    { id: 'other', name: 'Otro' }
+                ];
+
+                fieldsHTML = `
+                <div style="margin-bottom: 15px;">
+                    ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, currentItem?.resource_type || 'book', false)}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="grid-column: 1 / -1;">
+                        ${this.createFormGroup('text', 'generic-title', 'Título (*)', currentItem?.title || '', true)}
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        ${this.createFormGroup('text', 'generic-author', 'Autor/Creador (*)', currentItem?.author || '', true)}
+                    </div>
+                    
+                    <!-- Metadata Fields Container -->
+                    <div id="metadata-fields" style="display: contents;">
+                        ${this.createFormGroup('number', 'generic-year', 'Año (Publicación)', currentItem?.publication_year || '')}
+                        ${this.createFormGroup('text', 'generic-edition', 'Edición (Ej: 7ma)', currentItem?.edition || '')}
+                        ${this.createFormGroup('text', 'generic-city', 'Ciudad', currentItem?.city || '')}
+                        ${this.createFormGroup('text', 'generic-publisher', 'Editorial', currentItem?.publisher || '')}
+                        <div style="grid-column: 1 / -1;">
+                            ${this.createFormGroup('text', 'generic-isbn', 'ISBN (Opcional)', currentItem?.isbn || '')}
+                        </div>
+                    </div>
+
+                    <div style="grid-column: 1 / -1;">
+                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true)}
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        ${this.createFormGroup('text', 'generic-size', 'Tamaño/Duración', currentItem?.size || '')}
+                    </div>
+                </div>
+                ` + imagePreview +
+                    `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createFormGroup('file', 'generic-image', 'Portada/Miniatura (Imagen)', '', false);
+
+                // Initialize Logic
+                setTimeout(() => {
+                    // Remove Image Button Logic
+                    const removeBtn = document.getElementById('remove-cover-btn');
+                    if (removeBtn) {
+                        removeBtn.onclick = () => {
+                            document.getElementById('generic-delete-image').value = 'true';
+                            document.getElementById('current-cover-preview').style.display = 'none';
+                            document.getElementById('generic-image').value = '';
+                        };
+                    }
+
+                    // Resource Type Toggle Logic
+                    const typeSelect = document.getElementById('generic-type');
+                    const metadataContainer = document.getElementById('metadata-fields');
+
+                    const toggleMetadata = () => {
+                        const type = typeSelect.value;
+                        if (type === 'book') {
+                            metadataContainer.style.display = 'contents';
+                        } else {
+                            metadataContainer.style.display = 'none';
+                        }
+                    };
+
+                    typeSelect.addEventListener('change', toggleMetadata);
+                    toggleMetadata(); // Submit initial state
+                }, 0);
                 break;
         }
 
@@ -540,12 +696,7 @@ class AdminManager {
             }
         });
 
-        // Cargar datos existentes para sección
-        if (type === 'section' && currentItem) {
-            (currentItem.schedule || []).forEach(s => this.addScheduleRow(s.day, s.startTime, s.endTime, s.room));
-        } else if (type === 'section') {
-            this.addScheduleRow(); // Añadir una fila por defecto al crear
-        }
+
 
         if (type === 'topic' && currentItem) this.renderTopicResources(currentItem.resources);
 
@@ -727,6 +878,80 @@ class AdminManager {
         container.appendChild(newRow);
     }
 
+    // ✅ NUEVO: Gestor de Unidades
+    createUnitManager(allTopics, currentTopics = []) {
+        // Agrupar temas actuales por unidad
+        const unitsMap = new Map();
+        currentTopics.forEach(t => {
+            const unitName = t.unit || 'General';
+            if (!unitsMap.has(unitName)) unitsMap.set(unitName, []);
+            unitsMap.get(unitName).push(t);
+        });
+
+        // Si no hay temas, iniciar con una unidad vacía
+        if (unitsMap.size === 0) unitsMap.set('Unidad I', []);
+
+        let unitsHTML = '';
+        unitsMap.forEach((topics, unitName) => {
+            unitsHTML += this._createUnitHTML(unitName, topics);
+        });
+
+        // Crear el select de temas (oculto, usado como plantilla) - AHORA CON BUSCADOR
+        const topicOptions = allTopics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+        return `
+            <div class="form-group unit-manager-container">
+                <label>Contenido del Curso (Unidades y Temas)</label>
+                <div id="units-container">${unitsHTML}</div>
+                <button type="button" id="add-unit-btn" class="btn-secondary btn-small" style="margin-top: 10px;">+ Añadir Unidad</button>
+                
+                <!-- Template oculto para selector de temas CON BUSCADOR -->
+                <div id="topic-selector-template" style="display:none;">
+                    <div class="topic-selector-wrapper">
+                        <div class="searchable-dropdown-container" data-name="unit-topic-select">
+                            <div class="searchable-dropdown-toggle">
+                                <input type="text" class="live-search-input unit-topic-search" placeholder="Buscar tema..." autocomplete="off">
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            </div>
+                            <div class="collapsible-list">
+                                <select class="topic-select" size="5">${topicOptions}</select>
+                            </div>
+                        </div>
+                        <div class="topic-actions">
+                            <button type="button" class="btn-primary btn-small confirm-add-topic">Añadir</button>
+                            <button type="button" class="btn-secondary btn-small cancel-add-topic">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    _createUnitHTML(unitName, topics) {
+        const topicsHTML = topics.map(t => `
+            <div class="unit-topic-item" data-id="${t.id}">
+                <span class="topic-name">${t.name}</span>
+                <button type="button" class="remove-topic-btn" title="Quitar tema">×</button>
+                <input type="hidden" name="unit-topic-id" value="${t.id}">
+            </div>
+        `).join('');
+
+        return `
+            <div class="unit-item card-3d">
+                <div class="unit-header">
+                    <input type="text" class="unit-name-input" placeholder="Nombre de la Unidad" value="${unitName}">
+                    <button type="button" class="remove-unit-btn" title="Eliminar Unidad"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="unit-topics-list">
+                    ${topicsHTML}
+                </div>
+                <div class="add-topic-container">
+                    <button type="button" class="btn-secondary btn-small add-topic-btn">+ Añadir Tema</button>
+                </div>
+            </div>
+        `;
+    }
+
     updateMaterialsPreview() {
         const previewContainer = document.getElementById('topic-materials-preview');
         const topicsCheckboxes = document.querySelectorAll('input[name="generic-topics"]:checked');
@@ -792,24 +1017,53 @@ class AdminManager {
         try {
             switch (type) {
                 case 'career':
-                    body = {
-                        name: document.getElementById('generic-name').value,
-                        area: document.getElementById('generic-area').value,
-                        description: document.getElementById('description').value,
-                        curriculumUrl: document.getElementById('generic-url').value
-                    };
+                    // ✅ AHORA USA FORMDATA
+                    const careerFormData = new FormData();
+                    careerFormData.append('name', document.getElementById('generic-name').value);
+                    careerFormData.append('area', document.getElementById('generic-area').value);
+
+                    // Manejo de imagen
+                    const deleteCareerImage = document.getElementById('generic-delete-image')?.value;
+                    if (deleteCareerImage === 'true') careerFormData.append('deleteImage', 'true');
+
+                    const careerFileInput = document.getElementById('generic-image');
+                    if (careerFileInput && careerFileInput.files[0]) {
+                        careerFormData.append('coverImage', careerFileInput.files[0]);
+                    }
+
+                    body = careerFormData;
                     break;
                 case 'course':
-                    const selectedTopics = Array.from(document.querySelectorAll('input[name="generic-topics"]:checked')).map(cb => cb.value);
-                    const selectedBooks = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
-                    const selectedRelatedCourses = Array.from(document.querySelectorAll('input[name="generic-related-courses"]:checked')).map(cb => cb.value);
-                    body = {
-                        name: document.getElementById('generic-name').value, // Esto es correcto para los cursos.
-                        description: document.querySelector('textarea[name="description"]')?.value || '', // Se obtiene del textarea
-                        topicIds: selectedTopics,
-                        bookIds: selectedBooks,
-                        relatedCourseIds: selectedRelatedCourses
-                    };
+                    // ✅ AHORA USA FORMDATA
+                    const courseFormData = new FormData();
+                    courseFormData.append('name', document.getElementById('generic-name').value);
+                    // Append arrays as JSON strings or separate fields depending on backend expectation.
+                    // For FormData usually we append multiple values with same key or a JSON string.
+                    // Assuming backend parses 'bookIds' and 'careerIds' from JSON string if sent as text in FormData, 
+                    // OR we can send them as regular fields if the backend supports it.
+                    // Let's serialize to JSON for safety if backend expects JSON body usually.
+                    // BUT since we are switching to FormData, standard is multiple keys. 
+                    // Let's try appending JSON string for arrays which is robust for many backends.
+
+                    const bookIds = this.getSelectedIds('generic-books');
+                    const careerIds = this.getSelectedIds('generic-careers');
+
+                    // Hack: Send as JSON string and ensure backend parses it. 
+                    // Alternatively, append each id: careerIds[] = 1, careerIds[] = 2
+                    // Let's stick to JSON string for arrays to keep it simple if backend logic supports `JSON.parse` on these fields.
+                    courseFormData.append('bookIds', JSON.stringify(bookIds));
+                    courseFormData.append('careerIds', JSON.stringify(careerIds));
+
+                    // Manejo de imagen
+                    const deleteCourseImage = document.getElementById('generic-delete-image')?.value;
+                    if (deleteCourseImage === 'true') courseFormData.append('deleteImage', 'true');
+
+                    const courseFileInput = document.getElementById('generic-image');
+                    if (courseFileInput && courseFileInput.files[0]) {
+                        courseFormData.append('coverImage', courseFileInput.files[0]);
+                    }
+
+                    body = courseFormData;
                     break;
                 case 'section':
                     const selectedCareers = Array.from(document.querySelectorAll('input[name="section-career-select"]:checked')).map(cb => cb.value);
@@ -836,42 +1090,70 @@ class AdminManager {
                     };
                     break;
                 case 'topic':
-                    // ✅ SOLUCIÓN: Enviar un array                case 'topic':
+                    // ✅ SOLUCIÓN: Enviar un array
                     const selectedBooksTopic = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
                     body = {
                         name: document.getElementById('generic-name').value,
-                        description: document.querySelector('textarea[name="description"]')?.value || '',
                         bookIds: selectedBooksTopic
                     };
                     break;
                 case 'book':
-                    body = {
-                        title: document.getElementById('generic-title').value, // ✅ CORRECCIÓN: El ID para el título del libro es 'generic-title'.
-                        author: document.getElementById('generic-author').value,
-                        url: document.getElementById('generic-url').value,
-                        size: document.getElementById('generic-size').value // ✅ MEJORA: Guardar el tamaño.
-                    };
+                    // ✅ LÓGICA ESPECIAL: Usar FormData para subir archivos (imagen de portada)
+                    const formData = new FormData();
+                    formData.append('title', document.getElementById('generic-title').value);
+                    formData.append('author', document.getElementById('generic-author').value);
+                    formData.append('url', document.getElementById('generic-url').value);
+                    formData.append('size', document.getElementById('generic-size').value);
+                    // ✅ Type & Citation Fields
+                    formData.append('resource_type', document.getElementById('generic-type').value);
+                    formData.append('publication_year', document.getElementById('generic-year').value || ''); // Send empty string for null
+                    formData.append('publisher', document.getElementById('generic-publisher').value || '');
+                    formData.append('edition', document.getElementById('generic-edition').value || '');
+                    formData.append('city', document.getElementById('generic-city').value || '');
+                    formData.append('isbn', document.getElementById('generic-isbn').value || '');
+
+                    // ✅ NUEVO: Manejo de eliminación de imagen
+                    const deleteImageFlag = document.getElementById('generic-delete-image')?.value;
+                    if (deleteImageFlag === 'true') {
+                        formData.append('deleteImage', 'true');
+                    }
+
+                    const fileInput = document.getElementById('generic-image');
+                    if (fileInput && fileInput.files[0]) {
+                        formData.append('coverImage', fileInput.files[0]);
+                    }
+                    if (method === 'PUT' && id) {
+                        // Pasar ID si es update, aunque en FormData suele ir mejor en URL, el controlador espera el ID en URL.
+                        // Pero si necesitamos ID en body en el futuro, se añade.
+                        // formData.append('id', id);
+                        // NOTA: Para imagen existente si no se sube una nueva, el backend mantiene la anterior.
+                    }
+                    body = formData; // Asignamos FormData en lugar de objeto JSON
                     break;
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
             }
 
             // ✅ SOLUCIÓN DEFINITIVA: Añadir el ID al cuerpo de la petición SOLO si estamos
-            // actualizando un registro existente (método PUT).
-            // Para la creación (POST), el ID no se incluye, permitiendo que la base de datos lo genere.
-            if (method === 'PUT' && id) {
+            // actualizando un registro existente (método PUT) Y si NO estamos usando FormData.
+            // (Si usamos FormData, no podemos mezclarlo con JSON body fácilmente aquí).
+            if (method === 'PUT' && id && !(body instanceof FormData)) {
                 body.id = id;
             }
 
             const headers = {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             };
+
+            // ✅ FIX: Content-Type NO debe establecerse para FormData (el navegador pone boundary)
+            if (!(body instanceof FormData)) {
+                headers['Content-Type'] = 'application/json';
+            }
 
             const response = await fetch(url, {
                 method: method,
                 headers: headers,
-                body: JSON.stringify(body)
+                body: (body instanceof FormData) ? body : JSON.stringify(body)
             });
 
             const responseData = await response.json();
@@ -888,7 +1170,15 @@ class AdminManager {
 
         } catch (error) {
             console.error(`❌ Error guardando ${type}:`, error);
-            await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
+
+            // ✅ NUEVO: Manejo específico para sesión expirada
+            if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
+                await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
+                // Opcional: Redirigir al login después de que el usuario cierre el modal (si showAlert tuviera callback, o con un pequeño delay)
+                // setTimeout(() => window.location.href = '/login.html', 2000);
+            } else {
+                await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
+            }
         }
     }
 
@@ -915,7 +1205,13 @@ class AdminManager {
 
         } catch (error) {
             console.error(`❌ Error eliminando ${type}:`, error);
-            await window.confirmationModal.showAlert(`Error al eliminar: ${error.message}`, 'Error');
+
+            // ✅ NUEVO: Manejo específico para sesión expirada
+            if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
+                await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
+            } else {
+                await window.confirmationModal.showAlert(`Error al eliminar: ${error.message}`, 'Error');
+            }
         }
     }
 

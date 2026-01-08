@@ -1,0 +1,200 @@
+/* --- Unit Manager Styles --- */
+.unit-manager-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.unit-manager-container label {
+    display: block;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+#units-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.unit-item {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    position: relative;
+    border-left: 4px solid var(--accent);
+}
+
+.unit-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.unit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.unit-name-input {
+    flex: 1;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--border);
+    padding: 0.5rem 0;
+    border-radius: 0;
+}
+
+.unit-name-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.remove-unit-btn {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--danger);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.remove-unit-btn:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.unit-topics-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    min-height: 40px;
+    /* Ensure drop area exists */
+}
+
+.unit-topic-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    animation: fadeIn 0.2s ease;
+}
+
+.unit-topic-item .topic-name {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.remove-topic-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.remove-topic-btn:hover {
+    color: var(--danger);
+}
+
+.add-topic-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    /* Full width to contain selector */
+}
+
+.add-topic-btn {
+    width: 100%;
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+}
+
+.add-topic-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Topic Selector Styles */
+.topic-selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    animation: fadeIn 0.2s ease;
+    margin-top: 0.5rem;
+}
+
+.topic-selector-wrapper .searchable-dropdown-container {
+    margin-bottom: 0;
+    /* Override default margin */
+    position: relative;
+    /* Anchor for absolute list */
+}
+
+.topic-selector-wrapper .searchable-dropdown-toggle {
+    width: 100%;
+}
+
+.topic-selector-wrapper .collapsible-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    /* Ensure it's above buttons */
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.topic-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: flex-end;
+}
+
+.topic-actions button {
+    min-width: 80px;
+}
+
+#add-unit-btn {
+    width: 100%;
+    padding: 0.8rem;
+    font-weight: 600;
+    border-style: dashed;
+    margin-top: 1rem;
+}
