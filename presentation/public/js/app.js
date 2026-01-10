@@ -19,96 +19,157 @@ console.log('🌍 Entorno detectado:', isLocal ? 'Local (localhost)' : 'Producci
 console.log('🔗 Conectando API a:', window.API_URL);
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("🚀 App iniciada. Verificando sesión...");
+    console.log('🚀 DOM completamente cargado. Inicializando componentes...');
 
-    // Inicializar lógica de Modals y otros componentes
-    if (typeof ChatComponent !== 'undefined') new ChatComponent();
-    if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) window.confirmationModal = new ConfirmationModal();
-    const closeAllModals = () => document.querySelectorAll('.modal, .pdf-modal').forEach(m => m.style.display = 'none');
-    document.body.addEventListener('click', (e) => {
-        if (e.target.closest('.modal-close, .pdf-modal-close-btn') || e.target.classList.contains('modal-overlay')) closeAllModals();
-    });
+    // --- PASO 1: Inicializar todos los componentes globales ---
 
-    // ✅ LÓGICA DE AUTENTICACIÓN SOLICITADA
-    if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
-        const { createClient } = supabase;
-        const sbClient = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-
-        // Exponer cliente para uso global si es necesario
-        window.supabaseClient = sbClient;
-
-        // 1. Verificar sesión actual
-        const { data: { session } } = await sbClient.auth.getSession();
-        updateUI(session);
-
-        // 2. Escuchar cambios en vivo
-        sbClient.auth.onAuthStateChange((event, session) => {
-            console.log("🔄 Cambio de estado de autenticación:", event);
-            updateUI(session);
-        });
-    } else {
-        console.error("⚠️ Supabase no está configurado.");
+    // ✅ CORRECCIÓN: Verificar si ChatComponent existe antes de inicializarlo.
+    if (typeof ChatComponent !== 'undefined') {
+        window.chatComponent = new ChatComponent();
     }
-});
 
-// Función para actualizar la interfaz visual
-function updateUI(session) {
-    const userControls = document.getElementById('user-session-controls');
-    if (!userControls) return;
+    // ✅ NUEVO: Inicializar el modal de confirmación global (Solo si existe en el DOM)
+    if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) {
+        window.confirmationModal = new ConfirmationModal();
+    }
 
-    if (session) {
-        console.log("✅ Usuario logueado:", session.user.email);
+    // --- PASO 2: Registrar todos los listeners que dependen de la sesión ---
+    // El header necesita saber si el usuario cambió.
+    if (window.sessionManager) {
+        window.sessionManager.onStateChange(updateHeaderUI);
 
-        // Sincronizar con SessionManager para mantener compatibilidad con otras partes de la app
-        if (window.sessionManager) {
-            // Construir objeto de usuario compatible
-            const appUser = {
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
-                role: 'student', // Se actualizará si el backend responde con datos reales
-                subscriptionStatus: 'pending',
-                usage_count: 0,
-                max_free_limit: 3
-            };
-            // Solo actualizar si no está ya seteado para evitar bucles si sessionManager dispara eventos
-            if (!window.sessionManager.getUser()) {
-                window.sessionManager.login(session.access_token, appUser);
+        // --- PASO 3: Inicializar la sesión DESPUÉS de que todos se hayan suscrito ---
+        await window.sessionManager.initialize();
+
+        // ✅ PASO 4: Integración con Google Auth (Supabase)
+        // Escuchamos si Supabase detecta un login por OAuth (Google)
+        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
+            try {
+                const { createClient } = supabase;
+                const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+
+                sb.auth.onAuthStateChange(async (event, session) => {
+                    console.log('🔄 Estado Auth Supabase:', event);
+
+                    if (event === 'SIGNED_IN' && session) {
+                        // Solo loguear si SessionManager no tiene usuario aún o es diferente
+                        const currentUser = window.sessionManager.getUser();
+                        if (!currentUser || currentUser.email !== session.user.email) {
+                            console.log('👤 Usuario Google detectado, sincronizando sesión...');
+
+                            const sbUser = session.user;
+                            // Adaptar objeto de Supabase a nuestro modelo User
+                            const appUser = {
+                                id: sbUser.id,
+                                email: sbUser.email,
+                                name: sbUser.user_metadata?.full_name || sbUser.email.split('@')[0],
+                                role: 'student', // Default (el backend actualizará esto si ya existe)
+                                subscriptionStatus: 'pending',
+                                usage_count: 0,
+                                max_free_limit: 3
+                            };
+
+                            // Loguear en la app
+                            window.sessionManager.login(session.access_token, appUser);
+                        }
+                    } else if (event === 'SIGNED_OUT') {
+                        if (window.sessionManager.isLoggedIn()) {
+                            window.sessionManager.logout();
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('❌ Error al inicializar Supabase Client en app.js:', err);
             }
         }
+    }
 
-        const avatarUrl = session.user.user_metadata.avatar_url || 'https://via.placeholder.com/40';
-        const userName = session.user.user_metadata.full_name || 'Estudiante';
+    if (document.querySelector('.admin-container')) {
+        console.log('⚙️ Página de admin detectada.');
+        // El script de admin.js se auto-inicializa.
+    }
 
-        userControls.innerHTML = `
-            <div id="user-profile-container" style="display: flex; align-items: center; gap: 10px; color: var(--text-main);">
-                <img src="${avatarUrl}" style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid #2563eb;">
-                <span class="user-name-display" style="font-weight: 500;">${userName}</span>
-                <button onclick="handleLogout()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em; margin-left: 5px;" title="Cerrar Sesión">
-                    <i class="fas fa-sign-out-alt"></i>
+    // ✅ SOLUCIÓN: Lógica centralizada para cerrar TODAS las modales.
+    const closeAllModals = () => {
+        document.querySelectorAll('.modal, .pdf-modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    };
+
+    /**
+     * Gestiona los clics en toda la página para cerrar modales.
+     */
+    document.body.addEventListener('click', (event) => {
+        // Cierra la modal si se hace clic en un botón de cierre
+        const closeButton = event.target.closest('.modal-close, .pdf-modal-close-btn');
+        if (closeButton) {
+            closeAllModals();
+        }
+        // Cierra la modal si se hace clic en el fondo
+        if (event.target.classList.contains('modal-overlay')) {
+            closeAllModals();
+        }
+    });
+});
+
+function updateHeaderUI(user) {
+    const userControlsContainer = document.getElementById('user-session-controls');
+    if (!userControlsContainer) return;
+
+    if (user) {
+        // Usuario logueado - Menú desplegable
+        userControlsContainer.innerHTML = `
+            <div class="user-menu-container">
+                <button id="user-menu-toggle" class="user-menu-toggle">
+                    Hola, ${user.name} <i class="fas fa-chevron-down"></i>
                 </button>
+                <div id="user-menu-dropdown" class="user-menu-dropdown">
+                    <div class="user-menu-header">
+                        <span class="user-menu-name">${user.name}</span>
+                        <span class="user-menu-email">${user.email}</span>
+                        ${user.subscriptionStatus !== 'active' ? `
+                            <div class="usage-badge" style="background: #2563eb15; color: #2563eb; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-top: 8px; font-weight: 600; text-align: center; border: 1px solid #2563eb30;">
+                                🎁 Te quedan ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))} vistas gratis
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="user-menu-group">
+                        ${user.role === 'admin' ? '<a href="/admin.html" class="user-menu-item"><i class="fas fa-user-shield"></i><span>Panel de Admin</span></a>' : ''}
+                        <a href="/change-password.html" class="user-menu-item" id="change-password-link">
+                            <i class="fas fa-key"></i>
+                            <span>Cambiar Contraseña</span>
+                        </a>
+                    </div>
+                    <div class="user-menu-group">
+                        <button id="logout-button" class="user-menu-item logout-item"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></button>
+                    </div>
+                </div>
             </div>
         `;
-    } else {
-        console.log("👤 No hay sesión activa.");
-        if (window.sessionManager) window.sessionManager.logout();
 
-        userControls.innerHTML = `
+        // Listeners para el nuevo menú
+        const menuToggle = document.getElementById('user-menu-toggle');
+        const logoutBtn = document.getElementById('logout-button');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                document.getElementById('user-menu-dropdown').classList.toggle('show');
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.sessionManager.logout();
+            });
+        }
+    } else {
+        // Usuario no logueado
+        userControlsContainer.innerHTML = `
             <a href="/login.html" class="nav-link">Iniciar Sesión</a>
             <a href="/register.html" class="btn-primary">Registrarse</a>
         `;
     }
 }
-
-// Función global para cerrar sesión
-window.handleLogout = async () => {
-    if (window.supabaseClient) await window.supabaseClient.auth.signOut();
-    if (window.sessionManager) window.sessionManager.logout();
-    window.location.reload();
-};
-
-// Mantener compatibilidad
-window.updateHeaderUI = updateUI;
 
 // --- Funciones globales para interactuar con el chat desde otros componentes ---
 
