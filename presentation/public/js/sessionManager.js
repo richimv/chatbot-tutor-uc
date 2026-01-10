@@ -59,9 +59,10 @@ class SessionManager {
     }
 
     /**
-     * ✅ LÓGICA DE MONETIZACIÓN
-     * Verifica si el usuario tiene una suscripción activa.
-     * Si no, redirige a la página de precios.
+     * ✅ LÓGICA DE MONETIZACIÓN AJUSTADA
+     * Antes: Redirigía agresivamente si no era 'active'.
+     * Ahora: Permite la navegación para usuarios 'pending' (Freemium/3 Vidas).
+     * El bloqueo real ocurrirá al intentar abrir un libro (backend).
      */
     checkSubscriptionStatus() {
         if (!this.currentUser) return;
@@ -69,12 +70,19 @@ class SessionManager {
         // Si es admin, dejamos pasar siempre.
         if (this.currentUser.role === 'admin') return;
 
+        // 🛑 CAMBIO EXACTO AQUÍ:
+        // Hemos desactivado la redirección automática.
+        // Ahora el usuario puede ver el dashboard y gastar sus vidas gratis.
+
+        console.log(`👤 Verificando estatus: ${this.currentUser.subscriptionStatus}`);
+
+        /* BLOQUE DESACTIVADO PARA PERMITIR MODELO FREEMIUM
         const isPricingPage = window.location.pathname.includes('pricing.html');
-        // Si el estado NO es 'active' y NO estamos ya en la página de precios, redirigir.
         if (this.currentUser.subscriptionStatus !== 'active' && !isPricingPage) {
             console.warn('🔒 Usuario sin suscripción activa. Redirigiendo a precios...');
             window.location.href = 'pricing.html';
         }
+        */
     }
 }
 
