@@ -1,11 +1,12 @@
 class AuthApiService {
-    // ✅ REFACTORIZACIÓN: Usar configuración centralizada con fallback seguro
+
+    // ✅ 1. Obtener URL de forma segura usando la config global
     static getApiUrl() {
         if (window.AppConfig && window.AppConfig.API_URL) {
             return window.AppConfig.API_URL;
         }
-        console.warn('⚠️ AppConfig no encontrado. Usando localhost por defecto.');
-        return 'http://localhost:3000';
+        // Fallback por si acaso config.js no cargó (evita romper todo)
+        return 'https://tutor-ia-backend.onrender.com';
     }
 
     static async login(email, password) {
@@ -15,6 +16,7 @@ class AuthApiService {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
         });
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Error al iniciar sesión');
@@ -22,13 +24,15 @@ class AuthApiService {
         return response.json();
     }
 
-    static async register(name, email, password) { // ✅ CORREGIDO: El orden de los parámetros ahora es correcto
+    static async register(name, email, password) {
         const API_URL = this.getApiUrl();
+        // Nota: Asegúrate que tu backend espere 'name' en el body
         const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name }),
         });
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Error en el registro');
@@ -36,27 +40,37 @@ class AuthApiService {
         return response.json();
     }
 
+    // ✅ MEJORA: Manejo silencioso de 401 para evitar ruido excesivo
     static async getMe() {
         const token = localStorage.getItem('authToken');
         if (!token) return null;
 
         const API_URL = this.getApiUrl();
-        const response = await fetch(`${API_URL}/api/auth/me`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        try {
+            const response = await fetch(`${API_URL}/api/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        if (response.status === 401 || response.status === 400) {
-            // Token inválido o expirado
-            localStorage.removeItem('authToken');
+            // Si el token expiró o es inválido (401/403), limpiamos y retornamos null
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.warn('⚠️ Sesión expirada o token inválido. Limpiando credenciales locales.');
+                    localStorage.removeItem('authToken');
+                    return null;
+                }
+                // Otros errores (500, etc)
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error de conexión verificando sesión:', error);
             return null;
         }
-
-        return response.json();
     }
 
-    // ✅ NUEVO: Método para cambiar la contraseña del usuario logueado.
     static async changePassword(oldPassword, newPassword) {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('No autenticado');
@@ -72,25 +86,18 @@ class AuthApiService {
         });
 
         const data = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || 'No se pudo cambiar la contraseña.');
         }
 
-        alert(data.message || 'Contraseña cambiada con éxito.');
+        // Feedback visual simple
+        if (typeof alert !== 'undefined') alert(data.message || 'Contraseña cambiada con éxito.');
         return data;
     }
 
-    /**
-     * ✅ NUEVO: Verifica si una contraseña está comprometida (pwned) llamando a la API de HIBP.
-     * Este método es seguro porque la contraseña real no se envía, solo un hash.
-     * @param {string} password La contraseña a verificar.
-     * @returns {Promise<boolean>} `true` si la contraseña está comprometida.
-     */
+    // Verificación de contraseñas filtradas (HIBP)
     static async isPasswordPwned(password) {
         try {
-            // Esta lógica es idéntica a la del backend, pero en el cliente.
-            // Usamos la API de Web Crypto que es estándar en los navegadores modernos.
             const buffer = new TextEncoder().encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -103,27 +110,18 @@ class AuthApiService {
             const text = await response.text();
             return text.split('\r\n').some(line => line.split(':')[0] === suffix);
         } catch (error) {
-            console.error('Error al verificar contraseña con HIBP en el cliente:', error);
-            return false; // No bloquear si la API falla.
+            console.error('Error HIBP:', error);
+            return false;
         }
     }
 
-    /**
-     * ✅ NUEVO: Llama al endpoint del backend para verificar un token de correo electrónico.
-     * Este método no necesita enviar un token de autorización, ya que el token de verificación
-     * es la propia autorización.
-     * @param {string} verificationToken - El token recibido en la URL del correo.
-     * @returns {Promise<object>} La respuesta del servidor.
-     */
     static async verifyEmail(verificationToken) {
         const API_URL = this.getApiUrl();
         const response = await fetch(`${API_URL}/api/auth/verify-email?token=${verificationToken}`, {
-            method: 'GET', // La verificación se hace con un GET
+            method: 'GET',
         });
 
-        // No necesitamos el cuerpo de la respuesta aquí, el backend redirigirá.
-        // Solo verificamos si la respuesta fue un error del servidor.
-        if (!response.ok && response.redirected === false) { // Si no fue exitoso Y no hubo redirección
+        if (!response.ok && response.redirected === false) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Error durante la verificación.');
         }

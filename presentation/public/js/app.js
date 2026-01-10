@@ -1,7 +1,7 @@
 /**
  * app.js
  * Punto de entrada principal.
- * Versión corregida: Integra Google Auth sin bucles infinitos.
+ * Versión corregida: Soluciona error de Avatar y Logout en bucle.
  */
 
 // ✅ 1. CONFIGURACIÓN INTELIGENTE DE LA API
@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await window.sessionManager.initialize();
 
         // ✅ PASO 3: INTEGRACIÓN GOOGLE AUTH (SUPABASE)
-        // Esta es la pieza que faltaba para detectar el regreso de Google.
         if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
             try {
                 const { createClient } = supabase;
@@ -42,8 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (event === 'SIGNED_IN' && session) {
                         // 🛑 FRENO DE MANO (ANTI-BUCLE):
-                        // Solo procesamos si el SessionManager NO tiene usuario todavía
-                        // o si el usuario que llega es diferente al que tenemos.
                         const currentUser = window.sessionManager.getUser();
 
                         if (!currentUser || currentUser.email !== session.user.email) {
@@ -61,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 max_free_limit: 3
                             };
 
-                            // Guardamos en el Manager (Esto actualizará el Header automáticamente)
+                            // Guardamos en el Manager
                             window.sessionManager.login(session.access_token, appUser);
                         }
                     } else if (event === 'SIGNED_OUT') {
@@ -97,7 +94,8 @@ function updateHeaderUI(user) {
 
     if (user) {
         // --- MODO: USUARIO LOGUEADO ---
-        const avatarUrl = user.avatar_url || 'https://via.placeholder.com/40';
+        // 🔧 FIX: Usamos ui-avatars.com porque via.placeholder.com suele fallar
+        const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
         const displayName = user.name || 'Estudiante';
 
         container.innerHTML = `
@@ -135,7 +133,9 @@ function updateHeaderUI(user) {
                 if (!container.contains(e.target)) dropdown.style.display = 'none';
             }, { once: true });
         }
-        if (logout) logout.onclick = () => window.sessionManager.logout();
+
+        // 🔧 FIX: Usamos la función robusta handleLogout
+        if (logout) logout.onclick = () => window.handleLogout();
 
     } else {
         // --- MODO: INVITADO ---
@@ -145,6 +145,32 @@ function updateHeaderUI(user) {
         `;
     }
 }
+
+// ✅ FUNCIÓN DE LOGOUT ROBUSTA (Evita bucles y limpia todo)
+window.handleLogout = async () => {
+    console.log("🚪 Iniciando cierre de sesión...");
+
+    try {
+        // 1. Cerrar sesión en Supabase explícitamente
+        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
+            const { createClient } = supabase;
+            const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+            await sb.auth.signOut();
+        }
+    } catch (error) {
+        console.warn("⚠️ Error al cerrar sesión en Supabase:", error);
+    }
+
+    // 2. Limpiar SessionManager y LocalStorage
+    if (window.sessionManager) {
+        window.sessionManager.logout();
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 3. Redirigir al inicio
+    window.location.href = '/index.html';
+};
 
 // Helpers Globales
 window.openChat = () => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(''));

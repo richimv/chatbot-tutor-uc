@@ -42,7 +42,7 @@ class LibraryManager {
             const token = localStorage.getItem('authToken');
             if (!token) return;
 
-            const response = await fetch('/api/library/status', {
+            const response = await fetch(`${window.AppConfig.API_URL}/api/library/status`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -66,7 +66,7 @@ class LibraryManager {
     async loadFullLibrary() {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch('/api/library/my-library', {
+            const response = await fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -117,7 +117,7 @@ class LibraryManager {
 
         try {
             const token = localStorage.getItem('authToken');
-            await fetch('/api/library/toggle', {
+            await fetch(`${window.AppConfig.API_URL}/api/library/toggle`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
