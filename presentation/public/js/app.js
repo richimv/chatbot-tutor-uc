@@ -1,180 +1,152 @@
 /**
  * app.js
- * * Punto de entrada principal.
- * Maneja la inicialización segura sin bucles infinitos.
+ * 
+ * Punto de entrada principal para la inicialización de componentes de JavaScript.
+ * Detecta qué componentes son necesarios en la página actual y los instancia.
  */
 
-// 1. CONFIGURACIÓN DE ENTORNO
+// ✅ 1. CONFIGURACIÓN INTELIGENTE DE LA API (Local vs Nube)
+// Detectamos el entorno para configurar la URL base de la API.
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BACKEND_URL = isLocal ? 'http://localhost:3000' : 'https://tutor-ia-backend.onrender.com';
+const BACKEND_URL = isLocal
+    ? 'http://localhost:3000'
+    : 'https://tutor-ia-backend.onrender.com';
+
+// Hacemos la URL global para que authApiService.js y otros puedan usarla
 window.API_URL = BACKEND_URL;
 
-console.log('🌍 Entorno:', isLocal ? 'Local' : 'Producción', '| API:', window.API_URL);
+console.log('🌍 Entorno detectado:', isLocal ? 'Local (localhost)' : 'Producción (Render)');
+console.log('🔗 Conectando API a:', window.API_URL);
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 DOM cargado. Iniciando sistema...');
+    console.log('🚀 DOM completamente cargado. Inicializando componentes...');
 
-    // --- PASO 1: Componentes Globales (UI) ---
-    if (typeof ChatComponent !== 'undefined') window.chatComponent = new ChatComponent();
+    // --- PASO 1: Inicializar todos los componentes globales ---
 
+    // ✅ CORRECCIÓN: Verificar si ChatComponent existe antes de inicializarlo.
+    if (typeof ChatComponent !== 'undefined') {
+        window.chatComponent = new ChatComponent();
+    }
+
+    // ✅ NUEVO: Inicializar el modal de confirmación global (Solo si existe en el DOM)
     if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) {
         window.confirmationModal = new ConfirmationModal();
     }
 
-    // --- PASO 2: Lógica de Sesión (El cerebro) ---
+    // --- PASO 2: Registrar todos los listeners que dependen de la sesión ---
+    // El header necesita saber si el usuario cambió.
     if (window.sessionManager) {
-
-        // A. Suscribir la UI a los cambios de sesión
-        // IMPORTANTE: updateHeaderUI SOLO pinta, no cambia datos (evita el bucle).
         window.sessionManager.onStateChange(updateHeaderUI);
 
-        // B. Inicializar sesión guardada en LocalStorage
+        // --- PASO 3: Inicializar la sesión DESPUÉS de que todos se hayan suscrito ---
         await window.sessionManager.initialize();
-
-        // C. Integración con Google Auth (Supabase)
-        // Esta parte detecta si el usuario viene redirigido desde Google
-        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
-            try {
-                const { createClient } = supabase;
-                const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-
-                // Escucha ACTIVA de eventos de autenticación
-                sb.auth.onAuthStateChange(async (event, session) => {
-                    console.log('🔄 Evento Supabase:', event);
-
-                    if (event === 'SIGNED_IN' && session) {
-                        // 🛑 PREVENCIÓN DE BUCLE:
-                        // Solo procesamos el login si el SessionManager NO tiene este usuario aún.
-                        const currentUser = window.sessionManager.getUser();
-
-                        // Si no hay usuario en app, O si el email es diferente al de la sesión actual
-                        if (!currentUser || currentUser.email !== session.user.email) {
-                            console.log('👤 Usuario Google nuevo detectado. Sincronizando...');
-
-                            const sbUser = session.user;
-                            const appUser = {
-                                id: sbUser.id,
-                                email: sbUser.email,
-                                name: sbUser.user_metadata?.full_name || sbUser.email.split('@')[0],
-                                role: 'student',
-                                subscriptionStatus: 'pending',
-                                usage_count: 0,
-                                max_free_limit: 3
-                            };
-
-                            // Esto actualiza el manager, quien a su vez llamará a updateHeaderUI
-                            window.sessionManager.login(session.access_token, appUser);
-                        } else {
-                            console.log('✅ Sesión ya sincronizada. No se requiere acción.');
-                        }
-                    } else if (event === 'SIGNED_OUT') {
-                        if (window.sessionManager.isLoggedIn()) {
-                            window.sessionManager.logout();
-                        }
-                    }
-                });
-            } catch (err) {
-                console.error('❌ Error Supabase:', err);
-            }
-        }
     }
 
-    // --- PASO 3: Utilidades Globales ---
+    if (document.querySelector('.admin-container')) {
+        console.log('⚙️ Página de admin detectada.');
+        // El script de admin.js se auto-inicializa.
+    }
 
-    // Cierre de modales global
+    // ✅ SOLUCIÓN: Lógica centralizada para cerrar TODAS las modales.
     const closeAllModals = () => {
-        document.querySelectorAll('.modal, .pdf-modal').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.modal, .pdf-modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
     };
 
-    document.body.addEventListener('click', (e) => {
-        if (e.target.closest('.modal-close, .pdf-modal-close-btn') || e.target.classList.contains('modal-overlay')) {
+    /**
+     * Gestiona los clics en toda la página para cerrar modales.
+     */
+    document.body.addEventListener('click', (event) => {
+        // Cierra la modal si se hace clic en un botón de cierre
+        const closeButton = event.target.closest('.modal-close, .pdf-modal-close-btn');
+        if (closeButton) {
+            closeAllModals();
+        }
+        // Cierra la modal si se hace clic en el fondo
+        if (event.target.classList.contains('modal-overlay')) {
             closeAllModals();
         }
     });
 });
 
-// --- FUNCIÓN DE UI (SOLO PINTAR) ---
-// Esta función es segura, solo manipula el DOM.
 function updateHeaderUI(user) {
-    const container = document.getElementById('user-session-controls');
-    if (!container) return; // Si no existe el header, no hacemos nada
+    const userControlsContainer = document.getElementById('user-session-controls');
+    if (!userControlsContainer) return;
 
     if (user) {
-        // --- MODO: USUARIO LOGUEADO ---
-        // Extraemos nombre corto
-        const displayName = user.name ? user.name.split(' ')[0] : 'Estudiante';
-        const avatarUrl = user.avatar_url || 'https://via.placeholder.com/40';
-
-        // Generamos HTML del menú
-        container.innerHTML = `
-            <div class="user-menu-container" style="position: relative; display: inline-block;">
-                <button id="user-menu-toggle" class="user-menu-toggle" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
-                    <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #2563eb;">
-                    <span>Hola, ${displayName}</span>
-                    <i class="fas fa-chevron-down" style="font-size: 0.8rem;"></i>
+        // Usuario logueado - Menú desplegable
+        userControlsContainer.innerHTML = `
+            <div class="user-menu-container">
+                <button id="user-menu-toggle" class="user-menu-toggle">
+                    Hola, ${user.name} <i class="fas fa-chevron-down"></i>
                 </button>
-                
-                <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 8px; width: 220px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); z-index: 50; margin-top: 8px;">
-                    <div style="padding: 12px; border-bottom: 1px solid #334155;">
-                        <div style="font-weight: bold; color: white;">${user.name}</div>
-                        <div style="font-size: 0.8rem; color: #94a3b8; word-break: break-all;">${user.email}</div>
-                         ${user.subscriptionStatus !== 'active' ? `
-                            <div style="margin-top: 8px; background: rgba(37, 99, 235, 0.1); color: #60a5fa; padding: 4px; border-radius: 4px; font-size: 0.75rem; text-align: center;">
-                                🎁 ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))} vistas gratis
+                <div id="user-menu-dropdown" class="user-menu-dropdown">
+                    <div class="user-menu-header">
+                        <span class="user-menu-name">${user.name}</span>
+                        <span class="user-menu-email">${user.email}</span>
+                        ${user.subscriptionStatus !== 'active' ? `
+                            <div class="usage-badge" style="background: #2563eb15; color: #2563eb; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-top: 8px; font-weight: 600; text-align: center; border: 1px solid #2563eb30;">
+                                🎁 Te quedan ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))} vistas gratis
                             </div>
                         ` : ''}
                     </div>
-                    
-                    <div style="padding: 8px;">
-                        ${user.role === 'admin' ? `
-                            <a href="/admin.html" style="display: flex; items-center; gap: 8px; padding: 8px; color: #cbd5e1; text-decoration: none; border-radius: 4px; transition: background 0.2s;">
-                                <i class="fas fa-shield-alt"></i> Admin Panel
-                            </a>` : ''}
-                        
-                        <button id="logout-btn-action" style="width: 100%; text-align: left; background: none; border: none; padding: 8px; color: #ef4444; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </button>
+                    <div class="user-menu-group">
+                        ${user.role === 'admin' ? '<a href="/admin.html" class="user-menu-item"><i class="fas fa-user-shield"></i><span>Panel de Admin</span></a>' : ''}
+                        <a href="/change-password.html" class="user-menu-item" id="change-password-link">
+                            <i class="fas fa-key"></i>
+                            <span>Cambiar Contraseña</span>
+                        </a>
+                    </div>
+                    <div class="user-menu-group">
+                        <button id="logout-button" class="user-menu-item logout-item"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></button>
                     </div>
                 </div>
             </div>
         `;
 
-        // Listeners del menú (Apertura y Logout)
-        const toggleBtn = document.getElementById('user-menu-toggle');
-        const dropdown = document.getElementById('user-menu-dropdown');
-        const logoutBtn = document.getElementById('logout-btn-action');
+        // Listeners para el nuevo menú
+        const menuToggle = document.getElementById('user-menu-toggle');
+        const logoutBtn = document.getElementById('logout-button');
 
-        if (toggleBtn && dropdown) {
-            toggleBtn.onclick = (e) => {
-                e.stopPropagation(); // Evitar que se cierre inmediatamente
-                const isVisible = dropdown.style.display === 'block';
-                dropdown.style.display = isVisible ? 'none' : 'block';
-            };
-
-            // Cerrar menú al hacer clic fuera
-            document.addEventListener('click', (e) => {
-                if (!container.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            }, { once: true }); // Listener de un solo uso para eficiencia
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                document.getElementById('user-menu-dropdown').classList.toggle('show');
+            });
         }
 
         if (logoutBtn) {
-            logoutBtn.onclick = () => window.sessionManager.logout();
+            logoutBtn.addEventListener('click', () => {
+                window.sessionManager.logout();
+            });
         }
-
     } else {
-        // --- MODO: INVITADO ---
-        container.innerHTML = `
-            <div style="display: flex; gap: 10px;">
-                <a href="/login.html" class="nav-link" style="color: white; text-decoration: none; padding: 8px 12px;">Iniciar Sesión</a>
-                <a href="/register.html" class="btn-primary" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">Registrarse</a>
-            </div>
+        // Usuario no logueado
+        userControlsContainer.innerHTML = `
+            <a href="/login.html" class="nav-link">Iniciar Sesión</a>
+            <a href="/register.html" class="btn-primary">Registrarse</a>
         `;
     }
 }
 
-// Helpers globales para Chat
-window.openChat = () => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(''));
-window.askAboutCourse = (n) => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(`Cuéntame del curso "${n}"`));
-window.askAboutTopic = (t) => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(`Explícame "${t}"`));
+// --- Funciones globales para interactuar con el chat desde otros componentes ---
+
+// --- Funciones globales para interactuar con el chat desde otros componentes ---
+
+window.openChat = function () {
+    window.uiManager.checkAuthAndExecute(() => {
+        if (window.chatComponent) window.chatComponent.openAndAsk('');
+    });
+};
+
+window.askAboutCourse = function (courseName) {
+    window.uiManager.checkAuthAndExecute(() => {
+        if (window.chatComponent) window.chatComponent.openAndAsk(`Háblame más sobre el curso "${courseName}"`);
+    });
+};
+
+window.askAboutTopic = function (topic) {
+    window.uiManager.checkAuthAndExecute(() => {
+        if (window.chatComponent) window.chatComponent.openAndAsk(`Explícame sobre "${topic}"`);
+    });
+};
