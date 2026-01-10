@@ -40,6 +40,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // --- PASO 3: Inicializar la sesión DESPUÉS de que todos se hayan suscrito ---
         await window.sessionManager.initialize();
+
+        // ✅ PASO 4: Integración con Google Auth (Supabase)
+        // Escuchamos si Supabase detecta un login por OAuth (Google)
+        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
+            try {
+                const { createClient } = supabase;
+                const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+
+                sb.auth.onAuthStateChange(async (event, session) => {
+                    console.log('🔄 Estado Auth Supabase:', event);
+
+                    if (event === 'SIGNED_IN' && session) {
+                        // Solo loguear si SessionManager no tiene usuario aún o es diferente
+                        const currentUser = window.sessionManager.getUser();
+                        if (!currentUser || currentUser.email !== session.user.email) {
+                            console.log('👤 Usuario Google detectado, sincronizando sesión...');
+
+                            const sbUser = session.user;
+                            // Adaptar objeto de Supabase a nuestro modelo User
+                            const appUser = {
+                                id: sbUser.id,
+                                email: sbUser.email,
+                                name: sbUser.user_metadata?.full_name || sbUser.email.split('@')[0],
+                                role: 'student', // Default (el backend actualizará esto si ya existe)
+                                subscriptionStatus: 'pending',
+                                usage_count: 0,
+                                max_free_limit: 3
+                            };
+
+                            // Loguear en la app
+                            window.sessionManager.login(session.access_token, appUser);
+                        }
+                    } else if (event === 'SIGNED_OUT') {
+                        if (window.sessionManager.isLoggedIn()) {
+                            window.sessionManager.logout();
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('❌ Error al inicializar Supabase Client en app.js:', err);
+            }
+        }
     }
 
     if (document.querySelector('.admin-container')) {
