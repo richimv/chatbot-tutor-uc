@@ -59,9 +59,9 @@ class Server {
         // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
         this.app.set('trust proxy', 1);
 
-        // ✅ CORS CONFIGURADO PARA VERCEL
+        // ✅ CORS CONFIGURADO PARA VERCEL Y DOMINIO PROPIO (HubAcademia)
         this.app.use(cors({
-            origin: ['http://localhost:3000', 'https://chatbot-tutor-uc.vercel.app'],
+            origin: ['http://localhost:3000', 'https://chatbot-tutor-uc.vercel.app', 'https://hubacademia.com', 'https://www.hubacademia.com'],
             credentials: true
         }));
 
