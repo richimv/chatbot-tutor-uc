@@ -49,6 +49,7 @@
     <script src="js/sessionManager.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/security.js"></script> <!-- ✅ NUEVO -->
     <script src="js/app.js"></script>
     <script>
         window.sessionManager.initialize().then(() => { if (window.sessionManager.getUser()?.role !== 'admin') window.location.href = '/'; });

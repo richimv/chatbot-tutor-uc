@@ -11,6 +11,12 @@ exports.createOrder = async (req, res) => {
     try {
         const userId = req.user.id;
 
+        // ✅ VALIDACIÓN CRÍTICA: Asegurar que el usuario tenga email.
+        if (!req.user || !req.user.email) {
+            console.error('❌ Error: Usuario sin email intentando pagar.');
+            return res.status(400).json({ error: 'Usuario no válido. Se requiere email para el recibo.' });
+        }
+
         // 1. Configuración dinámica de URLs (Frontend vs Backend)
         // APP_URL: URL del Frontend (Vercel) para redirecciones del usuario.
         let baseUrl = process.env.APP_URL || 'http://localhost:3000';
@@ -40,11 +46,8 @@ exports.createOrder = async (req, res) => {
                         quantity: 1,
                     }
                 ],
-                // 🚀 TRUCO CRÍTICO PARA SANDBOX: 
-                // Generamos un email aleatorio para el comprador.
-                // Esto engaña al sistema antifraude de MP para que no detecte "Autocompra"
                 payer: {
-                    email: `test_user_${Math.floor(Math.random() * 100000)}@test.com`
+                    email: req.user.email // ✅ USO REAL: Email del usuario logueado para recibir el comprobante.
                 },
                 binary_mode: true, // Aprobación inmediata
                 external_reference: userId.toString(), // Vincula el pago a tu usuario

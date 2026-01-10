@@ -8,22 +8,22 @@ class UserRepository {
         const res = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
         if (res.rows.length === 0) return null;
         // Mapear el resultado de la BD a nuestro objeto de dominio
-        const row = res.rows[0]; // ✅ SOLUCIÓN: Usar el 'id' numérico de la BD, no el 'user_id' de texto.
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
+        const row = res.rows[0];
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
     }
 
     async findById(id) {
         const res = await db.query('SELECT * FROM users WHERE id = $1', [id]);
         if (res.rows.length === 0) return null;
-        const row = res.rows[0]; // ✅ SOLUCIÓN: Usar el 'id' numérico de la BD.
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
+        const row = res.rows[0];
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
     }
 
     // ✅ NUEVO: Método para encontrar todos los usuarios de un rol específico.
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
-        // ✅ MEJORA: Devolver un array de instancias del modelo User para mantener la consistencia.
-        return res.rows.map(row => new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id));
+        // ✅ MEJORA: Devolver un array de instancias del modelo User con todos los campos.
+        return res.rows.map(row => new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit));
     }
 
     async create(email, password, name, role = 'student') {
@@ -36,7 +36,7 @@ class UserRepository {
 
         const res = await db.query(queryText, values);
         const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id);
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
     }
 
     // ✅ NUEVO: Método para actualizar solo la contraseña.
@@ -48,18 +48,32 @@ class UserRepository {
         return { success: true };
     }
 
-    // ✅ NUEVO: Método para actualizar datos de un usuario.
+    // ✅ NUEVO: Método para actualizar datos de un usuario (DINÁMICO).
     async update(id, userData) {
-        const { name, email, role } = userData;
-        // ✅ MEJORA: El rol ahora es parte del SET, no del WHERE, permitiendo cambiarlo.
-        const res = await db.query(
-            'UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4 RETURNING *',
-            [name, email, role, id]
-        );
+        const fields = [];
+        const values = [];
+        let idx = 1;
+
+        if (userData.name !== undefined) { fields.push(`name = $${idx++}`); values.push(userData.name); }
+        if (userData.email !== undefined) { fields.push(`email = $${idx++}`); values.push(userData.email); }
+        if (userData.role !== undefined) { fields.push(`role = $${idx++}`); values.push(userData.role); }
+        // ✅ CRÍTICO: Permitir actualizar contadores de uso.
+        if (userData.usage_count !== undefined) { fields.push(`usage_count = $${idx++}`); values.push(userData.usage_count); }
+        if (userData.subscription_status !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscription_status); }
+        if (userData.payment_id !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.payment_id); }
+
+        if (fields.length === 0) return this.findById(id);
+
+        values.push(id);
+        const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
+
+        const res = await db.query(query, values);
+
         if (res.rows.length === 0) {
-            throw new Error(`Usuario con ID ${id} y rol ${role} no encontrado.`);
+            throw new Error(`Usuario con ID ${id} no encontrado.`);
         }
-        return res.rows[0];
+        const row = res.rows[0];
+        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
     }
 
     // ✅ NUEVO: Método para eliminar un usuario.

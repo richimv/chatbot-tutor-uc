@@ -22,12 +22,14 @@ class ChatComponent {
         window.sessionManager.onStateChange(async (user) => {
             const toggleBtn = document.getElementById('chatbot-toggle');
             if (toggleBtn) {
+                // ✅ CAMBIO SOFT BLOCK: Siempre mostrar el botón, incluso desconectado.
+                toggleBtn.style.display = 'block';
+
                 if (user) {
-                    toggleBtn.style.display = 'block';
                     // Si el usuario inicia sesión, cargar sus conversaciones.
                     await this.loadConversations();
                 } else {
-                    toggleBtn.style.display = 'none';
+                    // Si cierra sesión, cerrar el chat si estaba abierto
                     if (this.isOpen) this.closeChat();
                 }
             }
@@ -126,15 +128,18 @@ Puedo ayudarte con:
         console.log('Close button:', closeBtn);
 
         // BOTÓN FLOTANTE - Con delegación de eventos más robusta
+        // BOTÓN FLOTANTE - Con delegación de eventos más robusta
         if (toggleBtn) {
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🎯 Botón toggle clickeado');
-                this.toggleChat();
+
+                // ✅ NUEVO: Soft block para el chat
+                window.uiManager.checkAuthAndExecute(() => {
+                    console.log('🎯 Botón toggle clickeado');
+                    this.toggleChat();
+                });
             });
-        } else {
-            console.error('❌ No se encontró el botón toggle');
         }
 
         // BOTÓN CERRAR
@@ -374,6 +379,18 @@ Puedo ayudarte con:
                     window.sessionManager.logout();
                     return;
                 }
+
+                // ✅ NUEVO: Manejo de Soft Block (Límite alcanzado)
+                if (response.status === 403) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.paywall) {
+                        this.hideTypingIndicator();
+                        window.uiManager.showPaywallModal();
+                        this.addMessage('🔒 Límite de prueba alcanzado. Actualiza tu plan para continuar.', 'bot');
+                        return; // El finally desbloqueará el input, pero el usuario no podrá enviar con éxito.
+                    }
+                }
+
                 let errorDetails = `Error HTTP: ${response.status} ${response.statusText}`;
                 try {
                     const errorData = await response.json();

@@ -15,7 +15,10 @@
 
     // Exponer globalmente
     window.AppConfig = {
-        API_URL: API_URL
+        API_URL: API_URL,
+        // ✅ SUPABASE CONFIG (Requerido para Google Login)
+        SUPABASE_URL: 'INSERT_YOUR_SUPABASE_URL_HERE',
+        SUPABASE_ANON_KEY: 'INSERT_YOUR_SUPABASE_ANON_KEY_HERE'
     };
 
     console.log('🔧 Configuración cargada. API:', API_URL);

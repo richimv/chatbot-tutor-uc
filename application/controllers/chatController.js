@@ -7,10 +7,11 @@ const CareerRepository = require('../../domain/repositories/careerRepository');
 const ChatService = require('../../domain/services/chatService');
 
 class ChatController {
-    constructor(chatService, analyticsService) {
+    constructor(chatService, analyticsService, usageService) { // ✅ usageService inyectado
         console.log('🔄 Inicializando ChatController...');
         this.mlService = MLService;
         this.analyticsService = analyticsService;
+        this.usageService = usageService; // ✅ Guardar referencia
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.chatService = chatService;
         console.log('✅ ChatController inicializado correctamente');

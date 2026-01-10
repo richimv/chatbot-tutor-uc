@@ -25,10 +25,14 @@ class LibraryManager {
             if (btn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const type = btn.dataset.type;
-                const id = btn.dataset.id;
-                const action = btn.dataset.action; // 'save' | 'favorite'
-                this.toggleItem(type, id, action, btn);
+
+                // ✅ NUEVO: Bloqueo Soft para usuarios no registrados
+                window.uiManager.checkAuthAndExecute(() => {
+                    const type = btn.dataset.type;
+                    const id = btn.dataset.id;
+                    const action = btn.dataset.action; // 'save' | 'favorite'
+                    this.toggleItem(type, id, action, btn);
+                });
             }
         });
     }

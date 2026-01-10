@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController } = require('../../application/controllers');
+const { coursesController, analyticsController, authController, chatController, usageController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
+const usageMiddleware = require('../middleware/usageMiddleware'); // ✅ NUEVO
 const { authLimiter } = require('../config/rateLimiters');
 
 // ======================
@@ -20,6 +21,9 @@ router.use('/payment', paymentRoutes);
 const libraryRoutes = require('./libraryRoutes');
 router.use('/library', libraryRoutes);
 
+// --- Rutas de Control de Acceso (Uso Gratuito) ---
+router.post('/usage/verify', auth, usageController.checkAccess); // ✅ NUEVO
+
 // --- Rutas de Autenticación (Prefijo /api/auth) ---
 router.post('/auth/login', authLimiter, authController.login);
 router.post('/auth/register', authLimiter, authController.register);
@@ -29,7 +33,7 @@ router.get('/auth/verify-email', authController.verifyEmail);
 router.post('/auth/users/:id/reset-password', auth, adminOnly, authController.adminResetPassword);
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
-router.post('/chat', auth, chatController.processMessage);
+router.post('/chat', auth, usageMiddleware, chatController.processMessage); // ✅ Middleware aplicado
 router.get('/chat/conversations', auth, chatController.getUserConversations);
 router.get('/chat/conversations/:id', auth, chatController.getConversationMessages);
 router.put('/chat/conversations/:id', auth, chatController.updateConversationTitle);

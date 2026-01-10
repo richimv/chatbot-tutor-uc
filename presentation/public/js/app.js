@@ -85,6 +85,11 @@ function updateHeaderUI(user) {
                     <div class="user-menu-header">
                         <span class="user-menu-name">${user.name}</span>
                         <span class="user-menu-email">${user.email}</span>
+                        ${user.subscriptionStatus !== 'active' ? `
+                            <div class="usage-badge" style="background: #2563eb15; color: #2563eb; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-top: 8px; font-weight: 600; text-align: center; border: 1px solid #2563eb30;">
+                                🎁 Te quedan ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))} vistas gratis
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="user-menu-group">
                         ${user.role === 'admin' ? '<a href="/admin.html" class="user-menu-item"><i class="fas fa-user-shield"></i><span>Panel de Admin</span></a>' : ''}
@@ -126,31 +131,22 @@ function updateHeaderUI(user) {
 
 // --- Funciones globales para interactuar con el chat desde otros componentes ---
 
-function showLoginPrompt() {
-    const modal = document.getElementById('login-prompt-modal');
-    if (modal) modal.style.display = 'flex';
-}
+// --- Funciones globales para interactuar con el chat desde otros componentes ---
 
 window.openChat = function () {
-    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+    window.uiManager.checkAuthAndExecute(() => {
         if (window.chatComponent) window.chatComponent.openAndAsk('');
-    } else {
-        showLoginPrompt();
-    }
+    });
 };
 
 window.askAboutCourse = function (courseName) {
-    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+    window.uiManager.checkAuthAndExecute(() => {
         if (window.chatComponent) window.chatComponent.openAndAsk(`Háblame más sobre el curso "${courseName}"`);
-    } else {
-        showLoginPrompt();
-    }
+    });
 };
 
 window.askAboutTopic = function (topic) {
-    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+    window.uiManager.checkAuthAndExecute(() => {
         if (window.chatComponent) window.chatComponent.openAndAsk(`Explícame sobre "${topic}"`);
-    } else {
-        showLoginPrompt();
-    }
+    });
 };

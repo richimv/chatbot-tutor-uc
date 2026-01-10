@@ -366,12 +366,16 @@ function createContextualChatButtonHTML(type, name) {
 
 // ✅ NUEVO: Componente para la vista de un tema.
 function createTopicViewHTML(topic, description, books = [], showChatButton = false) {
-    // ✅ SOLUCIÓN: Renderizar los libros/recursos que se pasan como parámetro.
+    // ✅ SOLUCIÓN: Renderizar los libros/recursos de forma segura (Link Obfuscation)
     const booksHTML = books.length > 0
-        ? books.map(book => `
-            <!-- ✅ SOLUCIÓN: Eliminar target="_blank" para permitir que JS controle el clic. -->
-            <a href="${book.url}" class="material-item pdf">${book.title} (Autor: ${book.author})</a>
-          `).join('')
+        ? books.map(book => {
+            if (book.url) window.uiManager.registerMaterial(book.id, book.url);
+            return `
+            <div class="material-item pdf" role="button" tabindex="0" onclick="window.uiManager.openMaterial('${book.id}')" title="Ver material">
+                <i class="fas fa-file-pdf"></i> ${book.title} (Autor: ${book.author})
+            </div>
+            `;
+        }).join('')
         : '<span class="no-material">No hay bibliografía recomendada para este tema.</span>';
 
     return `
@@ -447,6 +451,11 @@ function create3DBookCardHTML(book) {
 
     const url = book.url || '#';
 
+    // ✅ NUEVO: Registrar la URL en el gestor seguro y no exponerla en el HTML
+    if (url && url !== '#') {
+        window.uiManager.registerMaterial(book.id, url);
+    }
+
     // ✅ NUEVO: Botones de acción para libros
     // Serializamos el objeto libro para pasarlo al modal de citación (escapando comillas dobles)
     const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
@@ -455,25 +464,26 @@ function create3DBookCardHTML(book) {
         <div class="card-actions" style="top: 0px; right: 0px;">
             <button class="action-btn save-btn" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
             <button class="action-btn fav-btn" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
-            <button class="action-btn cite-btn" onclick="window.openCitationModal(event, ${safeBook})" title="Citar"><i class="fas fa-quote-right"></i></button>
+            <button class="action-btn cite-btn" onclick="window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Citar"><i class="fas fa-quote-right"></i></button>
         </div>
     `;
 
+    // ✅ SEGURIDAD: Reemplazar <a> por <div> con onclick manejado por uiManager
     return `
         <div class="book-card-container" style="position: relative;">
             ${actionButtons}
-            <a href="${url}" class="book-card" onclick="event.preventDefault(); window.open('${url}', '_blank');" title="${title}">
+            <div class="book-card" role="button" tabindex="0" onclick="window.uiManager.openMaterial('${book.id}')" title="${title}" style="cursor: pointer;">
                 <div class="book-cover-container">
                     <img src="${coverUrl}" alt="${title}" class="book-cover-img" loading="lazy" onerror="this.src='https://placehold.co/150x220/1e293b/ffffff?text=Sin+Imagen'">
-                    <div class="book-overlay-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
+                    ${(!window.sessionManager?.getUser() || window.sessionManager.getUser().subscriptionStatus !== 'active')
+            ? `<div class="book-overlay-icon"><i class="fas fa-lock"></i></div>`
+            : ''}
                 </div>
                 <div class="book-info">
                     <h3 class="book-title">${title}</h3>
                     <div class="book-author">${author}</div>
                 </div>
-            </a>
+            </div>
         </div>
     `;
 }
