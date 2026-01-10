@@ -1,60 +1,64 @@
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'este-es-un-secreto-muy-largo-y-seguro-para-desarrollo';
+const supabase = require('../config/supabaseClient');
+const UserRepository = require('../../domain/repositories/userRepository');
+const userRepository = new UserRepository();
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
     const authHeader = req.header('Authorization');
 
     if (!authHeader) {
-        return res.status(401).json({ error: 'Acceso denegado. No se proveyó un token.' });
+        return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
     }
 
-    // El token debe venir en el formato "Bearer <token>"
     const token = authHeader.split(' ')[1];
-
     if (!token) {
-        return res.status(401).json({ error: 'Acceso denegado. Formato de token inválido.' });
+        return res.status(401).json({ error: 'Formato de token inválido.' });
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        // ✅ SOLUCIÓN DEFINITIVA: El payload del token ya es el objeto de usuario.
-        // No está anidado dentro de una propiedad 'user'.
-        req.user = decoded; // Asignamos el payload decodificado directamente a req.user
-        next();
-    } catch (ex) {
-        // ✅ MEJORA: Loguear el error específico para depuración
-        console.error('❌ Error de autenticación (JWT):', ex.message);
+        // 1. Verificar token con Supabase
+        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
 
-        // ✅ MEJORA: Devolver 401 (Unauthorized) en lugar de 400 (Bad Request)
-        // y un mensaje más específico si es posible.
-        if (ex.name === 'TokenExpiredError') {
-            return res.status(401).json({ error: 'Token expirado. Por favor, inicia sesión nuevamente.' });
+        if (error || !sbUser) {
+            // console.warn('⚠️ Token Supabase inválido:', error?.message);
+            return res.status(401).json({ error: 'Sesión inválida o expirada.' });
         }
-        res.status(401).json({ error: 'Token inválido.' });
+
+        // 2. Obtener usuario de nuestra Base de Datos (Roles, Usage, Subscription)
+        const dbUser = await userRepository.findById(sbUser.id);
+
+        if (!dbUser) {
+            // Caso raro: Existe en Auth pero no en DB (Sincronización fallida?)
+            console.error(`❌ Usuario Auth ${sbUser.id} no encontrado en DB Local.`);
+            return res.status(401).json({ error: 'Usuario no registrado en el sistema.' });
+        }
+
+        // 3. Adjuntar usuario completo a la request
+        req.user = dbUser;
+        next();
+
+    } catch (ex) {
+        console.error('❌ Error Auth Middleware:', ex.message);
+        res.status(500).json({ error: 'Error interno de autenticación.' });
     }
 }
 
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
     const authHeader = req.header('Authorization');
-
-    if (!authHeader) {
-        return next();
-    }
+    if (!authHeader) return next();
 
     const token = authHeader.split(' ')[1];
-    if (!token) {
-        return next();
-    }
+    if (!token) return next();
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (ex) {
-        // Si el token es inválido, simplemente continuamos sin usuario autenticado
-        // No bloqueamos la petición porque es una ruta pública
-        next();
+        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
+        if (sbUser) {
+            const dbUser = await userRepository.findById(sbUser.id);
+            if (dbUser) req.user = dbUser;
+        }
+    } catch (err) {
+        // Ignorar errores en auth opcional
     }
+    next();
 }
 
 const adminOnly = (req, res, next) => {

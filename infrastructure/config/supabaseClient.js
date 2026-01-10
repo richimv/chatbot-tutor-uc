@@ -1,13 +1,11 @@
-
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_KEY; // En Render, usa la ANON KEY o la SERVICE_ROLE (ambas funcionan para validar)
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️ ADVERTENCIA: SUPABASE_URL o SUPABASE_KEY no definidos. La subida de archivos fallará.');
+    console.error('❌ Faltan variables de entorno SUPABASE_URL o SUPABASE_KEY en el Backend.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
