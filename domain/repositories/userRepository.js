@@ -1,66 +1,80 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
-const db = require('../../infrastructure/database/db'); // ✅ 1. Importar el pool de conexiones
+const db = require('../../infrastructure/database/db');
 const crypto = require('crypto');
 
 class UserRepository {
+    // Helper privado para mapear fila de DB a Modelo
+    _mapRowToUser(row) {
+        if (!row) return null;
+        return new User(
+            row.id,
+            row.email,
+            row.password_hash,
+            row.role,
+            row.name,
+            row.subscription_status,
+            row.payment_id,
+            row.usage_count,    // DB envía snake_case
+            row.max_free_limit  // DB envía snake_case
+        );
+    }
+
     async findByEmail(email) {
         const res = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
-        if (res.rows.length === 0) return null;
-        // Mapear el resultado de la BD a nuestro objeto de dominio
-        const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
+        return this._mapRowToUser(res.rows[0]);
     }
 
     async findById(id) {
         const res = await db.query('SELECT * FROM users WHERE id = $1', [id]);
-        if (res.rows.length === 0) return null;
-        const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
+        return this._mapRowToUser(res.rows[0]);
     }
 
-    // ✅ NUEVO: Método para encontrar todos los usuarios de un rol específico.
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
-        // ✅ MEJORA: Devolver un array de instancias del modelo User con todos los campos.
-        return res.rows.map(row => new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit));
+        return res.rows.map(row => this._mapRowToUser(row));
     }
 
     async create(email, password, name, role = 'student') {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
         const id = crypto.randomUUID();
-        // ✅ ARQUITECTURA: Usamos el Stored Procedure para registrar el usuario.
+
         const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
         const values = [id, name, email.toLowerCase(), passwordHash, role];
 
         const res = await db.query(queryText, values);
-        const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
+        return this._mapRowToUser(res.rows[0]);
     }
 
-    // ✅ NUEVO: Método para actualizar solo la contraseña.
     async updatePassword(userId, newPasswordHash) {
         const res = await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newPasswordHash, userId]);
-        if (res.rowCount === 0) {
-            throw new Error('No se pudo actualizar la contraseña, usuario no encontrado.');
-        }
+        if (res.rowCount === 0) throw new Error('Usuario no encontrado.');
         return { success: true };
     }
 
-    // ✅ NUEVO: Método para actualizar datos de un usuario (DINÁMICO).
+    // ✅ ACTUALIZACIÓN ROBUSTA: Soporta camelCase y snake_case
     async update(id, userData) {
         const fields = [];
         const values = [];
         let idx = 1;
 
+        // Mapeo inteligente de campos
         if (userData.name !== undefined) { fields.push(`name = $${idx++}`); values.push(userData.name); }
         if (userData.email !== undefined) { fields.push(`email = $${idx++}`); values.push(userData.email); }
         if (userData.role !== undefined) { fields.push(`role = $${idx++}`); values.push(userData.role); }
-        // ✅ CRÍTICO: Permitir actualizar contadores de uso.
-        if (userData.usage_count !== undefined) { fields.push(`usage_count = $${idx++}`); values.push(userData.usage_count); }
-        if (userData.subscription_status !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscription_status); }
-        if (userData.payment_id !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.payment_id); }
+
+        // Manejo de suscripción
+        if (userData.subscriptionStatus !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscriptionStatus); }
+        else if (userData.subscription_status !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscription_status); }
+
+        // Manejo de Payment ID
+        if (userData.paymentId !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.paymentId); }
+        else if (userData.payment_id !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.payment_id); }
+
+        // ✅ CRÍTICO: Actualizar contadores (Soporta userData.usageCount o usage_count)
+        const usage = userData.usageCount !== undefined ? userData.usageCount : userData.usage_count;
+        if (usage !== undefined) { fields.push(`usage_count = $${idx++}`); values.push(usage); }
 
         if (fields.length === 0) return this.findById(id);
 
@@ -68,59 +82,31 @@ class UserRepository {
         const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
 
         const res = await db.query(query, values);
+        if (res.rows.length === 0) throw new Error(`Usuario ${id} no encontrado.`);
 
-        if (res.rows.length === 0) {
-            throw new Error(`Usuario con ID ${id} no encontrado.`);
-        }
-        const row = res.rows[0];
-        return new User(row.id, row.email, row.password_hash, row.role, row.name, row.subscription_status, row.payment_id, row.usage_count, row.max_free_limit);
+        return this._mapRowToUser(res.rows[0]);
     }
 
-    // ✅ NUEVO: Método para eliminar un usuario.
     async delete(id) {
         const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
-        if (rowCount === 0) {
-            throw new Error(`Usuario con ID ${id} no encontrado para eliminar.`);
-        }
+        if (rowCount === 0) throw new Error(`Usuario no encontrado.`);
         return { success: true };
     }
 }
 
-// --- Sembrar la base de datos con un usuario admin si no existe ---
+// Semilla admin (simplificada)
 const seedAdminUser = async () => {
     try {
         const adminEmail = 'admin@uc.edu';
-        // Verificar directamente en la base de datos
         const res = await db.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
-
-        const adminPassword = 'admin123';
-        const adminSalt = await bcrypt.genSalt(10);
-        const adminPasswordHash = await bcrypt.hash(adminPassword, adminSalt);
-
         if (res.rows.length === 0) {
-            console.log('🌱 Sembrando usuario administrador en PostgreSQL...');
+            console.log('🌱 Creando Admin...');
             const id = crypto.randomUUID();
-            const name = 'Admin UC';
-            const role = 'admin';
-            await db.query(
-                'INSERT INTO users(id, name, email, password_hash, role) VALUES($1, $2, $3, $4, $5)',
-                [id, name, adminEmail, adminPasswordHash, role]
-            );
-            console.log('✅ Usuario administrador CREADO en la base de datos PostgreSQL.');
-        } else {
-            // ✅ SOLUCIÓN: Si el usuario ya existe, no hacer nada para no sobrescribir la contraseña.
-            console.log('✅ Usuario administrador ya existe.');
+            const hash = await bcrypt.hash('admin123', 10);
+            await db.query('INSERT INTO users(id, name, email, password_hash, role) VALUES($1, $2, $3, $4, $5)', [id, 'Admin UC', adminEmail, hash, 'admin']);
         }
-
-        // ✅ SOLUCIÓN: Se ha eliminado la creación automática del usuario de prueba 'morales@uc.edu'
-        // para limpiar los logs de inicio, como se solicitó.
-
-    } catch (error) {
-        // Puede fallar si la tabla aún no existe durante la primera inicialización, es seguro ignorarlo en ese caso.
-        console.warn('⚠️ Advertencia al sembrar usuario admin (puede ser normal en el primer arranque):', error.message);
-    }
+    } catch (error) { console.warn('⚠️ Seed Admin:', error.message); }
 };
-
-seedAdminUser(); // Ejecutar la función de sembrado al iniciar la aplicación
+seedAdminUser();
 
 module.exports = UserRepository;

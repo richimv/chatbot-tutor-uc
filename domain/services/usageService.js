@@ -2,62 +2,39 @@ const UserRepository = require('../repositories/userRepository');
 
 class UsageService {
     constructor() {
-        // Singleton o inyección manual
         this.userRepository = new UserRepository();
     }
 
-    /**
-     * Verifica si el usuario puede acceder a un recurso premium.
-     * Incrementa el contador si es usuario gratuito.
-     * @param {string} userId - ID del usuario.
-     * @returns {Promise<{allowed: boolean, reason?: string, usage: number, limit: number}>}
-     */
     async checkAndIncrementUsage(userId) {
+        console.log(`🔍 [UsageService] Verificando: ${userId}`);
         const user = await this.userRepository.findById(userId);
-        if (!user) {
-            throw new Error('Usuario no encontrado');
-        }
 
-        // 1. Superusuarios: Acceso ilimitado (Admin/Profesor)
-        if (['admin', 'teacher'].includes(user.role)) {
-            return { allowed: true, plan: 'unlimited_role' };
-        }
+        if (!user) throw new Error('Usuario no encontrado');
 
-        // 2. Si la suscripción está activa (Premium), acceso ilimitado.
-        // ✅ FIX CRÍTICO: El modelo User usa camelCase (subscriptionStatus).
-        if (user.subscriptionStatus === 'active') {
-            return { allowed: true, plan: 'premium' };
-        }
+        // 1. Roles privilegiados
+        if (['admin', 'teacher'].includes(user.role)) return { allowed: true, plan: 'unlimited' };
 
-        // 3. Si es usuario Free, verificar límites.
-        const usage = parseInt(user.usage_count || 0, 10);
-        const limit = parseInt(user.max_free_limit || 3, 10);
+        // 2. Premium
+        if (user.subscriptionStatus === 'active') return { allowed: true, plan: 'premium' };
 
-        console.log(`🔍 Usage Check: User ${userId} | Count: ${usage} | Limit: ${limit}`);
+        // 3. Freemium - Lógica corregida usando las propiedades estandarizadas
+        // Ahora user.usageCount y user.maxFreeLimit existen y son números
+        const currentUsage = user.usageCount || 0;
+        const limit = user.maxFreeLimit || 3;
 
-        if (usage < limit) {
-            // Permitir y aumentar contador
-            const newUsage = usage + 1;
+        console.log(`📊 [Usage] Actual: ${currentUsage} / Límite: ${limit}`);
 
-            // Actualizar solo el usage_count en la BD
-            // Dependiendo del repository, puede haber un método específico o update genérico
-            await this.userRepository.update(userId, { usage_count: newUsage });
+        if (currentUsage < limit) {
+            // ✅ Permitir y aumentar
+            const newUsage = currentUsage + 1;
 
-            return {
-                allowed: true,
-                plan: 'free',
-                usage: newUsage,
-                limit: limit
-            };
+            // Usamos camelCase, el repositorio lo traducirá
+            await this.userRepository.update(userId, { usageCount: newUsage });
+
+            return { allowed: true, plan: 'free', usage: newUsage, limit: limit };
         } else {
-            // Límite alcanzado
-            return {
-                allowed: false,
-                plan: 'free',
-                usage: usage,
-                limit: limit,
-                reason: 'LIMIT_REACHED'
-            };
+            // ⛔ Bloquear
+            return { allowed: false, plan: 'free', usage: currentUsage, limit: limit, reason: 'LIMIT_REACHED' };
         }
     }
 }
