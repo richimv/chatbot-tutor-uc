@@ -45,7 +45,7 @@ exports.createOrder = async (req, res) => {
                     email: req.user.email,
                     name: req.user.name || 'Estudiante',
                 },
-                binary_mode: true, // Aprobación inmediata (Rechaza pagos pendientes como PagoEfectivo si quieres velocidad)
+                //binary_mode: true, // Aprobación inmediata (Rechaza pagos pendientes como PagoEfectivo si quieres velocidad)
                 external_reference: userId.toString(), // CLAVE: Aquí viaja el ID del usuario
 
                 // Rutas de retorno al Frontend
