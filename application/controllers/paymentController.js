@@ -3,35 +3,28 @@ const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const pool = require('../../infrastructure/database/db');
 
 // Configuración del cliente
+// IMPORTANTE: Asegúrate de que MP_ACCESS_TOKEN en Render sea el de PRODUCCIÓN (empieza con APP_USR-...)
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
 
 exports.createOrder = async (req, res) => {
     try {
-        const userId = req.user.id;
-
-        // ✅ VALIDACIÓN CRÍTICA: Asegurar que el usuario tenga email.
+        // Validar usuario
         if (!req.user || !req.user.email) {
             console.error('❌ Error: Usuario sin email intentando pagar.');
-            return res.status(400).json({ error: 'Usuario no válido. Se requiere email para el recibo.' });
+            return res.status(400).json({ error: 'Usuario no válido. Se requiere email.' });
         }
 
-        // 1. Configuración dinámica de URLs (Frontend vs Backend)
-        // APP_URL: URL del Frontend (Vercel) para redirecciones del usuario.
-        let baseUrl = process.env.APP_URL || 'http://localhost:3000';
+        const userId = req.user.id;
 
-        // BACKEND_URL: URL del Backend (Render) para notificaciones (Webhooks).
-        let backendUrl = process.env.BACKEND_URL || 'https://tutor-ia-backend.onrender.com';
+        // 1. Configuración de URLs (Simplificada y Robusta)
+        // En Render, process.env.RENDER_EXTERNAL_URL suele dar la URL pública HTTPS automáticamente.
+        // Si no, usamos la variable manual BACKEND_URL.
+        const backendUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://tutor-ia-backend.onrender.com';
 
-        // En desarrollo local, ambas son localhost:3000
-        if (baseUrl.includes('localhost')) {
-            backendUrl = 'http://localhost:3000';
-        }
-
-        // Asegurar que no haya slash final
-        if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-        if (backendUrl.endsWith('/')) backendUrl = backendUrl.slice(0, -1);
+        // Frontend URL (Debe venir de variables de entorno o hardcoded si es fija)
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.hubacademia.com';
 
         const preference = new Preference(client);
 
@@ -40,70 +33,89 @@ exports.createOrder = async (req, res) => {
                 items: [
                     {
                         id: 'suscripcion-vitalicia',
-                        title: 'Suscripción Biblioteca Académica',
-                        unit_price: 9.90,
+                        title: 'Suscripción Biblioteca Académica - Premium',
+                        description: 'Acceso ilimitado a libros y tutoría IA',
+                        picture_url: 'https://www.hubacademia.com/assets/logo.png', // Opcional: Logo de tu marca
+                        unit_price: 1.00,
                         currency_id: 'PEN',
                         quantity: 1,
                     }
                 ],
                 payer: {
-                    email: req.user.email // ✅ USO REAL: Email del usuario logueado para recibir el comprobante.
+                    email: req.user.email,
+                    name: req.user.name || 'Estudiante',
                 },
-                binary_mode: true, // Aprobación inmediata
-                external_reference: userId.toString(), // Vincula el pago a tu usuario
+                binary_mode: true, // Aprobación inmediata (Rechaza pagos pendientes como PagoEfectivo si quieres velocidad)
+                external_reference: userId.toString(), // CLAVE: Aquí viaja el ID del usuario
 
-                // Rutas de redirección a TU aplicación
+                // Rutas de retorno al Frontend
                 back_urls: {
-                    success: `${baseUrl}/dashboard.html`,
-                    failure: `${baseUrl}/pricing.html?status=failure`,
-                    pending: `${baseUrl}/pricing.html?status=pending`
+                    success: `${frontendUrl}/dashboard.html?payment=success`,
+                    failure: `${frontendUrl}/pricing.html?payment=failure`,
+                    pending: `${frontendUrl}/pricing.html?payment=pending`
                 },
                 auto_return: 'approved',
 
+                // Métodos de pago
                 payment_methods: {
                     excluded_payment_types: [
-                        { id: "ticket" }, // Excluir PagoEfectivo (tarda mucho)
-                        { id: "atm" }
+                        { id: "ticket" } // Excluye PagoEfectivo si quieres acceso inmediato
                     ],
-                    installments: 1
+                    installments: 1 // Solo 1 cuota (opcional)
                 },
 
-                // Webhook para confirmar el pago en segundo plano (Al Backend)
+                // Webhook: A dónde avisar (Debe ser HTTPS y Público)
                 notification_url: `${backendUrl}/api/payment/webhook`
             }
         });
 
+        console.log(`✅ Preferencia creada para ${req.user.email}. Webhook: ${backendUrl}/api/payment/webhook`);
         res.json({ init_point: result.init_point });
 
     } catch (error) {
-        console.error('❌ Error creando preferencia:', error);
+        console.error('❌ Error creando preferencia MP:', error);
         res.status(500).json({ error: 'Error al iniciar el pago' });
     }
 };
 
 exports.handleWebhook = async (req, res) => {
+    // Mercado Pago envía los datos en query string o body dependiendo de la versión
     const paymentId = req.query.id || req.query['data.id'];
-    const type = req.query.type;
+    const type = req.query.type || req.query.topic;
+
+    // Responder rápido a MP para que deje de enviar la notificación
+    // (Importante: MP espera un 200 OK en menos de 3 seg)
+    res.sendStatus(200);
 
     try {
-        if (type === 'payment' || req.query.topic === 'payment') {
+        if (type === 'payment' && paymentId) {
+            console.log(`🔔 Webhook recibido: Pago ID ${paymentId}`);
+
             const payment = new Payment(client);
             const data = await payment.get({ id: paymentId });
 
             if (data.status === 'approved') {
                 const userId = data.external_reference;
+                const paidAmount = data.transaction_amount;
 
-                // Actualizar estado del usuario en la BD
-                await pool.query(
-                    `UPDATE users SET subscription_status = 'active', payment_id = $1 WHERE id = $2`,
-                    [paymentId, userId]
-                );
-                console.log(`✅ Pago aprobado. Usuario ${userId} ahora es Premium.`);
+                // Verificación de seguridad extra: ¿Pagó lo correcto?
+                if (paidAmount >= 9.00) { // Tolerancia por si hay decimales raros
+                    await pool.query(
+                        `UPDATE users SET 
+                            subscription_status = 'active', 
+                            payment_id = $1,
+                            updated_at = NOW() 
+                         WHERE id = $2`,
+                        [paymentId, userId]
+                    );
+                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado.`);
+                } else {
+                    console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}`);
+                }
             }
         }
-        res.sendStatus(200);
     } catch (error) {
-        console.error('⚠️ Error en Webhook:', error);
-        res.sendStatus(500);
+        console.error('⚠️ Error procesando Webhook en segundo plano:', error.message);
+        // No enviamos error 500 porque ya respondimos 200 al inicio
     }
 };

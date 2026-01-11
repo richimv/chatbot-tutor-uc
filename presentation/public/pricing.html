@@ -54,11 +54,23 @@
     <!-- Configuration Script -->
     <script src="js/config.js"></script>
     <script>
-        // Check for payment status in URL (returned from MP success/failure)
+        // Check for payment status in URL
         const urlParams = new URLSearchParams(window.location.search);
         const paymentStatus = urlParams.get('payment');
+        const statusDetail = urlParams.get('status'); // MP a veces manda 'approved'
 
-        if (paymentStatus === 'failure') {
+        if (paymentStatus === 'success' || statusDetail === 'approved') {
+            // Limpiar URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Mostrar modal de éxito o alerta
+            // Idealmente usarías tu ConfirmationModal aquí, pero un alert funciona por ahora
+            alert('¡Pago exitoso! 🎉\nTu cuenta Premium ha sido activada. Disfruta de acceso ilimitado.');
+
+            // Redirigir al dashboard para que vea todo desbloqueado
+            setTimeout(() => window.location.href = 'dashboard.html', 1000);
+
+        } else if (paymentStatus === 'failure') {
             alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
         } else if (paymentStatus === 'pending') {
             alert('Tu pago está en proceso. Te notificaremos cuando se apruebe.');
