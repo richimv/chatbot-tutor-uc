@@ -99,7 +99,7 @@ exports.handleWebhook = async (req, res) => {
                 const paidAmount = data.transaction_amount;
 
                 // Verificación de seguridad extra: ¿Pagó lo correcto?
-                if (paidAmount >= 9.00) { // Tolerancia por si hay decimales raros
+                if (paidAmount >= 1.00) { // Tolerancia por si hay decimales raros
                     await pool.query(
                         `UPDATE users SET 
                             subscription_status = 'active', 
