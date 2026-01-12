@@ -36,7 +36,7 @@ exports.createOrder = async (req, res) => {
                         title: 'Suscripción Biblioteca Académica - Premium',
                         description: 'Acceso ilimitado a libros y tutoría IA',
                         picture_url: 'https://www.hubacademia.com/assets/logo.png', // Opcional: Logo de tu marca
-                        unit_price: 1.00,
+                        unit_price: 5.00,
                         currency_id: 'PEN',
                         quantity: 1,
                     }
