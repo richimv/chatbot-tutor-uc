@@ -44,23 +44,27 @@ class AuthApiService {
         };
     }
 
-    // ✅ NUEVO: Sincronizar usuario de Google (Frontend -> Backend)
+    // ✅ NUEVO: Método para enviar los datos de Google al Backend
     static async syncGoogleUser(supabaseUser) {
         const API_URL = this.getApiUrl();
-        const { email, id, user_metadata } = supabaseUser;
-        const name = user_metadata.full_name || user_metadata.name || 'Usuario Google';
 
-        console.log('🔄 Sincronizando usuario Google con Backend:', email);
+        // Extraemos los datos útiles de Supabase
+        const payload = {
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            // Google suele guardar el nombre en user_metadata
+            name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'Usuario Google'
+        };
 
         const response = await fetch(`${API_URL}/api/auth/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, id, name }),
+            body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al sincronizar usuario.');
+            throw new Error(errorData.error || 'Error al sincronizar usuario');
         }
 
         return await response.json();
