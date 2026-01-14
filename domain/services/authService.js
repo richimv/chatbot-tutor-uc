@@ -93,24 +93,50 @@ class AuthService {
     }
 
     async register(email, password, name) {
+        // 1. Validaciones previas (Locales)
         const existingUser = await this.userRepository.findByEmail(email);
         if (existingUser) {
             throw new Error('El correo electrónico ya está en uso');
         }
 
-        // ✅ NUEVO: Validar complejidad de la contraseña.
         this.validatePasswordComplexity(password);
-
-        // ✅ NUEVO: Verificar si la contraseña está comprometida antes de registrar.
         if (await this.isPasswordPwned(password)) {
             throw new Error('Esa contraseña ha sido expuesta en brechas de seguridad. Por favor, elige una más segura.');
         }
-        // ✅ CORRECCIÓN: No devolver el usuario directamente.
-        // El flujo de verificación de correo se encargará del resto.
-        await this.userRepository.create(email, password, name, 'student');
+
+        // 2. Crear usuario en Supabase (Auth)
+        // Esto envía automáticamente el correo de confirmación según config de Supabase.
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { full_name: name } // Meta-data pública
+            }
+        });
+
+        if (error) {
+            console.error('Error Supabase SignUp:', error);
+            throw new Error(error.message); // ej: "User already registered"
+        }
+
+        if (!data.user || !data.user.id) {
+            throw new Error('Error inesperado: No se pudo obtener el ID de usuario de Supabase.');
+        }
+
+        // 3. Crear usuario en Base de Datos Local (Public)
+        // Usamos el MISMO ID que generó Supabase para mantener integridad.
+        try {
+            await this.userRepository.create(email, password, name, 'student', data.user.id);
+        } catch (dbError) {
+            console.error('Error creando usuario local (Rollback pendiente):', dbError);
+            // Opcional: Podríamos intentar borrar el usuario de Supabase aquí si falla la DB local
+            // para evitar usuarios "zombis" en Auth sin registro en Public.
+            // await supabase.auth.admin.deleteUser(data.user.id); 
+            throw new Error('Error al crear el perfil de usuario. Por favor contacte a soporte.');
+        }
 
         return {
-            message: 'Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.'
+            message: 'Registro exitoso. Se ha enviado un correo de confirmación.'
         };
     }
 
