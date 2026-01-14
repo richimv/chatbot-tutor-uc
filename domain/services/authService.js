@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 // const jwt = require('jsonwebtoken'); // ❌ YA NO SE USA
 const crypto = require('crypto');
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ SUPABASE CLEINT
 
 const JWT_SECRET = process.env.JWT_SECRET || 'este-es-un-secreto-muy-largo-y-seguro-para-desarrollo';
@@ -194,20 +195,18 @@ class AuthService {
         // LA VERDADERA FORMA en backend con sdk JS: 
         // supabase.auth.setSession(signInData.session) -> NO ES THREAD SAFE en backend Node!!!
 
-        // SOLUCIÓN ROBUSTA: Usar Admin API (requiere SERVICE_ROLE_KEY).
-        // Si no tenemos SERVICE_ROLE_KEY, estamos limitados.
-        // REVISANDO supabaseClient.js: Usa process.env.SUPABASE_KEY. 
-        // Asumiremos que es una clave con permisos suficientes O usaremos la API de Admin.
 
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
+        // SOLUCIÓN ROBUSTA: Usar Admin API (requiere SERVICE_ROLE_KEY).
+        const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
             user.id, // ID Supabase (debe coincidir con nuestro ID local)
             { password: newPassword }
         );
 
         if (updateError) {
-            // Si falla admin (ej. falta de permisos), intentamos flujo alternativo o lanzamos error.
             console.error('Error Admin Update:', updateError);
-            throw new Error('Error actualizando contraseña en el proveedor de identidad. Contacte a soporte.');
+            throw new Error('Error actualizando contraseña. Contacte a soporte.');
         }
 
         // 4. Actualizar localmente también (Backup)
