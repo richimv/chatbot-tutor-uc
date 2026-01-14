@@ -30,6 +30,7 @@ router.post('/auth/register', authLimiter, authController.register);
 router.get('/auth/me', auth, authController.getMe);
 router.put('/auth/change-password', auth, authController.changePassword);
 router.post('/auth/forgot-password', authLimiter, authController.forgotPassword); // ✅ NUEVO
+router.post('/auth/sync', authLimiter, authController.syncUser); // ✅ NUEVO: Sync de Google
 router.get('/auth/verify-email', authController.verifyEmail);
 router.post('/auth/users/:id/reset-password', auth, adminOnly, authController.adminResetPassword);
 

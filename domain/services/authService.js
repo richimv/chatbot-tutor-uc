@@ -259,6 +259,26 @@ class AuthService {
 
         return { newPassword };
     }
+    // ✅ NUEVO: Sincronización impulsada por Frontend (Google Login)
+    async syncGoogleUser({ email, name, id }) {
+        let user = await this.userRepository.findByEmail(email);
+
+        if (!user) {
+            console.log(`🔄 Sincronizando usuario nuevo de Google: ${email}`);
+            // Crear usuario usando el ID de Supabase
+            // Generamos una contraseña aleatoria compleja ya que no la usarán (entran por Google)
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+
+            user = await this.userRepository.create(email, randomPassword, name || 'Usuario Google', 'student', id);
+        } else {
+            // Opcional: Podríamos verificar si el ID coincide, pero por ahora confiamos en el email
+            // Si el ID es diferente, podría ser un caso de login híbrido (manual previo + google despues)
+            // Postgres no cambiará el ID existente.
+            console.log(`✅ Usuario Google ya existe localmente: ${email}`);
+        }
+
+        return user;
+    }
 }
 
 module.exports = AuthService;

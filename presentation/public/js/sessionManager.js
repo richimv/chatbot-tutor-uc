@@ -13,7 +13,28 @@ class SessionManager {
      */
     async initialize() {
         try {
+            // 1. Intentar obtener usuario del backend
             this.currentUser = await AuthApiService.getMe();
+
+            // 2. Lógica de Sincronización (Google Login Fix)
+            if (!this.currentUser) {
+                // Verificar si hay sesión en Supabase
+                const { data } = await supabase.auth.getSession();
+                if (data && data.session && data.session.user) {
+                    console.warn('⚠️ Usuario autenticado en Supabase pero no en Backend. Intentando sincronizar...');
+                    try {
+                        await AuthApiService.syncGoogleUser(data.session.user);
+                        // Reintentar getMe
+                        this.currentUser = await AuthApiService.getMe();
+                        console.log('✅ Sincronización completada. Sesión restaurada.');
+                    } catch (syncError) {
+                        console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
+                        // Opcional: Cerrar sesión en Supabase si no se puede sincronizar
+                        // await supabase.auth.signOut();
+                    }
+                }
+            }
+
         } catch (error) {
             console.error("Error al inicializar sesión:", error);
             this.currentUser = null;

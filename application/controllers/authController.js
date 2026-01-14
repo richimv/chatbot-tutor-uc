@@ -10,6 +10,7 @@ class AuthController {
         this.adminResetPassword = this.adminResetPassword.bind(this); // ✅ NUEVO
         this.verifyEmail = this.verifyEmail.bind(this); // ✅ NUEVO
         this.forgotPassword = this.forgotPassword.bind(this); // ✅ NUEVO
+        this.syncUser = this.syncUser.bind(this); // ✅ NUEVO: Bind del método sync
     }
 
     async login(req, res) {
@@ -137,6 +138,23 @@ class AuthController {
             // Redirigir a la misma página pero con un mensaje de error.
             const errorMessage = encodeURIComponent(error.message);
             res.redirect(`/verification-status.html?success=false&message=${errorMessage}`);
+        }
+    }
+
+    // ✅ NUEVO: Endpoint para sincronización desde el frontend
+    async syncUser(req, res) {
+        const { email, name, id } = req.body;
+
+        if (!email || !id) {
+            return res.status(400).json({ error: 'Faltan datos requeridos (email, id).' });
+        }
+
+        try {
+            const user = await this.authService.syncGoogleUser({ email, name, id });
+            res.status(200).json({ message: 'Sincronización exitosa', user });
+        } catch (error) {
+            console.error('Error en syncUser:', error);
+            res.status(500).json({ error: 'Error al sincronizar usuario.' });
         }
     }
 }
