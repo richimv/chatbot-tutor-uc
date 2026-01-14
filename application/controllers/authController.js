@@ -43,8 +43,12 @@ class AuthController {
         try {
             // ✅ CORRECCIÓN: Devolver el mensaje del servicio directamente.
             const result = await this.authService.register(email, password, name);
+            // Aseguramos explícitamente el código 201 (Created)
             res.status(201).json(result);
         } catch (error) {
+            console.error('❌ Error en AuthController.register:', error);
+            // Solo devolvemos 400 si es un error controlado (mensaje del servicio)
+            // Si fuera un error inesperado, igual lo tratamos como BadRequest para no exponer 500 sin querer
             res.status(400).json({ error: error.message });
         }
     }

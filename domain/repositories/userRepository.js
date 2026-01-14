@@ -45,7 +45,12 @@ class UserRepository {
         const values = [id, name, email.toLowerCase(), passwordHash, role];
 
         const res = await db.query(queryText, values);
-        return this._mapRowToUser(res.rows[0]);
+        try {
+            return this._mapRowToUser(res.rows[0]);
+        } catch (mapError) {
+            console.warn('⚠️ Error al mapear usuario (Database Insert OK, Mapping Fail):', mapError.message);
+            return res.rows[0]; // Retornar data cruda para no romper el flujo
+        }
     }
 
     async updatePassword(userId, newPasswordHash) {
