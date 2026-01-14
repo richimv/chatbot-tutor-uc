@@ -35,10 +35,11 @@ class UserRepository {
         return res.rows.map(row => this._mapRowToUser(row));
     }
 
-    async create(email, password, name, role = 'student') {
+    async create(email, password, name, role = 'student', externalId = null) {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
-        const id = crypto.randomUUID();
+        // ✅ MEJORA: Permitir ID externo (Supabase) para mantener sincronización
+        const id = externalId || crypto.randomUUID();
 
         const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
         const values = [id, name, email.toLowerCase(), passwordHash, role];

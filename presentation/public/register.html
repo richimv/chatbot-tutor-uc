@@ -5,11 +5,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Tutor IA</title>
-    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/base.css">
-    <link rel="stylesheet" href="/css/auth.css">
-    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/auth.css">
+
+    <style>
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-google:hover {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+
+        .auth-separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .auth-separator::before,
+        .auth-separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .auth-separator::before {
+            margin-right: 0.5rem;
+        }
+
+        .auth-separator::after {
+            margin-left: 0.5rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -31,8 +86,20 @@
                     <input type="text" id="name" name="name" required autocomplete="name">
                 </div>
                 <div class="form-group">
-                    <label for="email">Correo Electrónico</label>
-                    <input type="email" id="email" name="email" required autocomplete="email">
+                    <label for="email-user">Correo Electrónico</label>
+                    <div class="email-input-group" style="display: flex; width: 100%;">
+                        <input type="text" id="email-user" name="email-user" required placeholder="usuario"
+                            autocomplete="off"
+                            style="width: 70%; border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;">
+                        <select id="email-domain" name="email-domain"
+                            style="width: 30%; background-color: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 0 8px 8px 0; padding: 0.75rem 0.5rem; outline: none; cursor: pointer;">
+                            <option value="@gmail.com">@gmail.com</option>
+                            <option value="@outlook.com">@outlook.com</option>
+                            <option value="@hotmail.com">@hotmail.com</option>
+                            <option value="@yahoo.com">@yahoo.com</option>
+                            <option value="@icloud.com">@icloud.com</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="password">Contraseña</label>
@@ -57,6 +124,14 @@
                     <div id="password-match-error" class="password-match-error">Las contraseñas no coinciden</div>
                 </div>
                 <button type="submit" class="btn-primary" id="register-button">Registrarse</button>
+
+                <!-- ✅ SEPARADOR Y BOTÓN GOOGLE -->
+                <div class="auth-separator">o</div>
+                <button type="button" class="btn-google" id="google-register-btn">
+                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="G">
+                    Registrarse con Google
+                </button>
+
                 <div class="auth-switch-link">
                     ¿Ya tienes una cuenta? <a href="/login.html">Inicia sesión</a>
                 </div>
@@ -68,6 +143,9 @@
         </div>
     </div>
 
+    <!-- ✅ SUPABASE JS (Requerido para Google Login) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- ✅ SweetAlert2 -->
     <script src="/js/config.js"></script> <!-- ✅ NUEVO: Configuración global -->
 
     <script src="/js/services/authApiService.js"></script>
@@ -147,56 +225,14 @@
                 }
             });
 
-            // ✅ NUEVO: Validación de Lista Blanca de Correos (Whitelist)
-            const emailInput = document.getElementById('email');
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
-            const allowedDomains = ['gmail.com', 'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es'];
+            // ✅ LÓGICA DE EMAIL COMPUESTO (Usuario + Dominio)
+            const emailUserInput = document.getElementById('email-user');
+            const emailDomainSelect = document.getElementById('email-domain');
 
-            function validateEmailDomain(email) {
-                if (!emailRegex.test(email)) return { valid: false, msg: 'Formato de correo inválido.' };
-                const domain = email.split('@')[1].toLowerCase();
-                // Permitir dominios exactos de la lista o que terminen en .edu / .edu.pe
-                const isAllowed = allowedDomains.includes(domain) || domain.endsWith('.edu') || domain.endsWith('.edu.pe');
-
-                if (!isAllowed) {
-                    return { valid: false, msg: 'Por favor, usa un correo personal (Gmail, Outlook, Hotmail) o institucional (.edu).' };
-                }
-                return { valid: true };
-            }
-
-            emailInput.addEventListener('input', () => {
-                const val = emailInput.value;
-                if (val.length === 0) {
-                    emailInput.style.borderColor = '';
-                    errorDiv.style.display = 'none';
-                    registerButton.disabled = false;
-                    return;
-                }
-
-                // Validación visual rápida
-                const result = validateEmailDomain(val);
-                emailInput.style.borderColor = result.valid ? 'var(--success)' : '#ef4444';
-
-                // Si es inválido y parece completo, bloquear botón
-                if (!result.valid && val.includes('@') && val.includes('.')) {
-                    registerButton.disabled = true;
-                } else {
-                    registerButton.disabled = false;
-                }
-            });
-
-            emailInput.addEventListener('blur', () => {
-                const val = emailInput.value;
-                if (val.length > 0) {
-                    const result = validateEmailDomain(val);
-                    if (!result.valid) {
-                        errorDiv.textContent = result.msg;
-                        errorDiv.style.display = 'block';
-                        registerButton.disabled = true;
-                    } else {
-                        errorDiv.style.display = 'none';
-                    }
-                }
+            // Validación simple del input usuario
+            emailUserInput.addEventListener('input', () => {
+                // Eliminar cualquier caracter no válido para email username (ej: espacios, @)
+                emailUserInput.value = emailUserInput.value.replace(/[^a-zA-Z0-9._-]/g, '');
             });
 
             // --- 2. Lógica de envío del formulario ---
@@ -204,19 +240,19 @@
                 e.preventDefault();
                 errorDiv.style.display = 'none';
 
-                const email = emailInput.value; // Ya tenemos la referencia
+                // CONCATENAR EMAIL
+                const username = emailUserInput.value;
+                const domain = emailDomainSelect.value;
+                const email = `${username}${domain}`;
+
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
                 const name = document.getElementById('name').value;
                 const matchError = document.getElementById('password-match-error');
 
-                // ✅ VALIDACIÓN WHITELIST ANTES DE ENVIAR
-                const emailValidation = validateEmailDomain(email);
-                if (!emailValidation.valid) {
-                    errorDiv.textContent = emailValidation.msg;
+                if (!username) {
+                    errorDiv.textContent = "Por favor ingresa tu nombre de usuario de correo.";
                     errorDiv.style.display = 'block';
-                    emailInput.style.borderColor = '#ef4444';
-                    emailInput.focus();
                     return;
                 }
 
@@ -232,17 +268,23 @@
                 registerButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registrando...';
 
                 try {
-                    // ✅ CORRECCIÓN: El registro ya no inicia sesión, solo muestra un mensaje.
+                    // ✅ Caso A: Registro Manual con SweetAlert y Redirección al Login
                     const response = await AuthApiService.register(name, email, password);
-                    registerForm.style.display = 'none'; // Ocultar el formulario
-                    document.querySelector('.auth-panel-right').innerHTML = `
-                        <div class="success-message" style="display: block; text-align: center; padding: 2rem;">
-                            <i class="fas fa-envelope-circle-check" style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;"></i>
-                            <h2>¡Revisa tu correo!</h2>
-                            <p>${response.message || 'Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.'}</p>
-                            <p style="margin-top: 1.5rem;">Una vez verificado, podrás <a href="/login.html">iniciar sesión</a>.</p>
-                        </div>
-                    `;
+
+                    // Mostrar Alerta SweetAlert
+                    await Swal.fire({
+                        title: '¡Casi listo!',
+                        text: 'Hemos enviado un enlace de confirmación a tu correo. Verifícalo para entrar.',
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#f8fafc',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#2563eb'
+                    });
+
+                    // Redirigir al Login al cerrar la alerta
+                    window.location.href = '/login.html';
+
                 } catch (error) {
                     errorDiv.textContent = error.message;
                     errorDiv.style.display = 'block';
@@ -251,6 +293,44 @@
                     registerButton.textContent = 'Registrarse';
                 }
             });
+
+            // ✅ LÓGICA GOOGLE REGISTER (Caso B)
+            const googleBtn = document.getElementById('google-register-btn');
+            if (googleBtn) {
+                googleBtn.addEventListener('click', async () => {
+                    console.log('🔵 Iniciando Registro con Google...');
+
+                    if (!window.AppConfig.SUPABASE_URL || window.AppConfig.SUPABASE_URL.includes('INSERT')) {
+                        alert('⚠️ Error de Configuración: Falta configurar SUPABASE_URL en js/config.js');
+                        return;
+                    }
+
+                    try {
+                        const { createClient } = supabase;
+                        const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+
+                        // ✅ Redirigir directamente al dashboard/index porque Google valida el email
+                        const redirectUrl = window.location.hostname === 'localhost'
+                            ? 'http://localhost:3000/index.html'
+                            : `${window.location.origin}/index.html`;
+
+                        const { data, error } = await sb.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: {
+                                redirectTo: redirectUrl
+                            }
+                        });
+
+
+                        if (error) throw error;
+                        console.log('🟢 Redirigiendo a Google...', data);
+
+                    } catch (err) {
+                        console.error('❌ Error Google Register:', err);
+                        alert('Error al registrarse con Google: ' + err.message);
+                    }
+                });
+            }
         });
     </script>
 </body>

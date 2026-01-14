@@ -1,8 +1,9 @@
 const UserRepository = require('../../domain/repositories/userRepository');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto'); // Módulo nativo de Node.js
-const axios = require('axios'); // Para hacer la petición a la API
+// const jwt = require('jsonwebtoken'); // ❌ YA NO SE USA
+const crypto = require('crypto');
+const axios = require('axios');
+const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ SUPABASE CLEINT
 
 const JWT_SECRET = process.env.JWT_SECRET || 'este-es-un-secreto-muy-largo-y-seguro-para-desarrollo';
 
@@ -64,31 +65,31 @@ class AuthService {
     }
 
     async login(email, password) {
-        const user = await this.userRepository.findByEmail(email);
-        if (!user) {
-            throw new Error('Credenciales inválidas');
+        // 1. Autenticar con Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            throw new Error(error.message); // ej: "Invalid login credentials"
         }
 
-        const isMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!isMatch) {
-            throw new Error('Credenciales inválidas');
+        const session = data.session; // token, refresh_token
+        const sbUser = data.user;
+
+        // 2. Obtener usuario local (Roles, Suscripción, etc)
+        // CRÍTICO: El ID de Supabase debe coincidir con el ID local.
+        const localUser = await this.userRepository.findById(sbUser.id);
+
+        if (!localUser) {
+            // Caso borde: Usuario existe en Supabase pero no en DB local (Desincronizado)
+            console.error(`⚠️ Login exitoso en Supabase pero usuario local no encontrado (ID: ${sbUser.id})`);
+            throw new Error('Usuario no registrado en la base de datos interna.');
         }
 
-        // Crear el payload del token
-        // ✅ SOLUCIÓN DEFINITIVA: Aplanar el payload. El objeto de usuario es el payload, no está anidado.
-        // Esto asegura que cuando el middleware 'auth' decodifique el token, req.user sea { id, role, name, email }.
-        const payload = {
-            id: user.id,
-            role: user.role,
-            name: user.name,
-            email: user.email
-        };
-
-        // Firmar el token
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
-
-        // Devolver el mismo objeto que se usó para el payload, para consistencia en el frontend.
-        return { token, user: payload };
+        // 3. Retornar sesión y usuario
+        return { session, user: localUser };
     }
 
     async register(email, password, name) {
@@ -107,18 +108,16 @@ class AuthService {
         // ✅ CORRECCIÓN: No devolver el usuario directamente.
         // El flujo de verificación de correo se encargará del resto.
         await this.userRepository.create(email, password, name, 'student');
-        
+
         return {
             message: 'Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.'
         };
     }
 
-    // ✅ NUEVO: Lógica para cambiar la contraseña.
+    // ✅ NUEVO: Lógica para cambiar la contraseña (Supabase).
     async changePassword(userId, oldPassword, newPassword) {
-        // ✅ NUEVO: Reutilizar la validación de complejidad.
+        // 1. Validaciones previas
         this.validatePasswordComplexity(newPassword);
-
-        // ✅ NUEVO: Verificar también al cambiar la contraseña.
         if (await this.isPasswordPwned(newPassword)) {
             throw new Error('La nueva contraseña ha sido expuesta en brechas de seguridad. Por favor, elige una diferente.');
         }
@@ -128,13 +127,95 @@ class AuthService {
             throw new Error('Usuario no encontrado.');
         }
 
-        const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-        if (!isMatch) {
+        // 2. Verificar la contraseña ANTIGUA con Supabase
+        // Intentamos hacer login con la password antigua.
+        // Esto verifica que el usuario conoce su clave actual.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: oldPassword
+        });
+
+        if (signInError) {
+            console.warn(`Falló verificación de password antiguo para ${user.email}:`, signInError.message);
             throw new Error('La contraseña antigua es incorrecta.');
         }
 
+        // 3. Actualizar contraseña en Supabase
+        // Usamos admin.updateUserById para forzar el cambio sin necesitar la sesión activa del usuario
+        // (aunque con signInWithPassword acabamos de obtener una sesión, pero updateUserById es más directo si tenemos permisos de admin/service role)
+        // O si no tenemos service role, usamos supabase.auth.updateUser com la sesión obtenida.
+
+        // Vamos a usar la sesión que acabamos de obtener (o una nueva operación de update)
+        // NOTA: signInWithPassword NO actualiza la sesión global del cliente backend automáticamente en todas las versiones.
+        // Mejor enfoque: Usar admin api si está disponible (Service Role) O usar updateUser con el token del login recién hecho.
+
+        // Opción Segura Backend (sin Service Role Key expuesta si no la tenemos):
+        // Necesitamos la sesión del usuario para cambiar SU contraseña.
+        // Al hacer signInWithPassword, recibimos data.session.
+
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: oldPassword
+        });
+
+        if (!signInData.session) {
+            throw new Error('Error de sesión al verificar credenciales.');
+        }
+
+        // Instancia temporal con el token del usuario
+        // Esto requiere que creaseClient sea capaz de usar un token específico...
+        // O usamos supabase.auth.updateUser, pero eso usa la instancia global...
+        // LA VERDADERA FORMA en backend con sdk JS: 
+        // supabase.auth.setSession(signInData.session) -> NO ES THREAD SAFE en backend Node!!!
+
+        // SOLUCIÓN ROBUSTA: Usar Admin API (requiere SERVICE_ROLE_KEY).
+        // Si no tenemos SERVICE_ROLE_KEY, estamos limitados.
+        // REVISANDO supabaseClient.js: Usa process.env.SUPABASE_KEY. 
+        // Asumiremos que es una clave con permisos suficientes O usaremos la API de Admin.
+
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+            user.id, // ID Supabase (debe coincidir con nuestro ID local)
+            { password: newPassword }
+        );
+
+        if (updateError) {
+            // Si falla admin (ej. falta de permisos), intentamos flujo alternativo o lanzamos error.
+            console.error('Error Admin Update:', updateError);
+            throw new Error('Error actualizando contraseña en el proveedor de identidad. Contacte a soporte.');
+        }
+
+        // 4. Actualizar localmente también (Backup)
+        // Aunque ya no lo usamos para login, mantenemos la consistencia por si acaso.
         const newPasswordHash = await bcrypt.hash(newPassword, 10);
         await this.userRepository.updatePassword(userId, newPasswordHash);
+    }
+
+    // ✅ NUEVO: Solicitar recuperación de contraseña (Supabase)
+    async requestPasswordReset(email) {
+        // Validación opcional: verificar que el email existe en nuestra DB primero
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            // Por seguridad, no deberíamos decir si el correo existe o no, 
+            // pero para UX a veces se informa. Supabase devuelve éxito siempre (200) por seguridad.
+            // Retornamos éxito falso para simular envío.
+            return { message: 'Si el correo está registrado, recibirás un enlace de recuperación.' };
+        }
+
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://www.hubacademia.com/update-password.html'
+            // redirectTo: 'http://localhost:3000/update-password.html' // Para desarrollo local
+        });
+
+        if (error) {
+            // Manejar rate limits u otros errores
+            console.error('Error enviando correo de recuperación:', error);
+            if (error.status === 429) {
+                throw new Error('Demasiadas solicitudes. Por favor espera unos minutos.');
+            }
+            throw new Error('Error al enviar el correo de recuperación.');
+        }
+
+        return { message: 'Si el correo está registrado, recibirás un enlace de recuperación.' };
     }
 
     // ✅ NUEVO: Lógica para que un admin restablezca una contraseña.

@@ -9,15 +9,32 @@ class AuthController {
         this.changePassword = this.changePassword.bind(this); // ✅ NUEVO
         this.adminResetPassword = this.adminResetPassword.bind(this); // ✅ NUEVO
         this.verifyEmail = this.verifyEmail.bind(this); // ✅ NUEVO
+        this.forgotPassword = this.forgotPassword.bind(this); // ✅ NUEVO
     }
 
     async login(req, res) {
         const { email, password } = req.body;
         try {
-            const { token, user } = await this.authService.login(email, password);
-            res.json({ token, user });
+            // ✅ REFACTOR: Login Delegado a Supabase
+            // El servicio ahora devuelve { session, user }
+            // 'session' es la sesión de Supabase (access_token, refresh_token)
+            // 'user' es el usuario de NUESTRA base de datos (con roles, vidas, etc)
+            const { session, user } = await this.authService.login(email, password);
+
+            // Devolvemos:
+            // - token: El access_token de Supabase (que espera el middleware)
+            // - user: El objeto completo de nuestra DB
+            res.json({
+                token: session.access_token,
+                user: user
+            });
         } catch (error) {
-            res.status(401).json({ error: error.message });
+            console.error('❌ Error en AuthController.login:', error.message);
+            // Diferenciar errores de credenciales vs errores de servidor
+            if (error.message.includes('Credenciales') || error.message.includes('Invalid login')) {
+                return res.status(401).json({ error: 'Credenciales inválidas' });
+            }
+            res.status(400).json({ error: error.message });
         }
     }
 
@@ -81,6 +98,22 @@ class AuthController {
             res.json({ message: 'Contraseña restablecida con éxito.', newPassword });
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    }
+
+    // ✅ NUEVO: Controlador para solicitar recuperación de contraseña.
+    async forgotPassword(req, res) {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'El correo electrónico es requerido.' });
+        }
+        try {
+            const result = await this.authService.requestPasswordReset(email);
+            res.json(result);
+        } catch (error) {
+            // No exponemos el error interno exacto por seguridad, a menos que sea algo controlado
+            console.error('Error en forgotPassword:', error);
+            res.status(500).json({ error: 'Error al procesar la solicitud.' });
         }
     }
 

@@ -1,0 +1,215 @@
+/* === login.css === */
+
+/* ✅ ESTILOS GOOGLE */
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-google:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.btn-google img {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+}
+
+.auth-separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+.auth-separator::before,
+.auth-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-separator::before {
+    margin-right: 0.5rem;
+}
+
+.auth-separator::after {
+    margin-left: 0.5rem;
+}
+
+/* ✅ CSS Modal Fix - Rediseño Dark Mode */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #1e293b;
+    /* Slate 800 */
+    border: 1px solid #334155;
+    /* Slate 700 */
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    /* Sombra suave */
+    padding: 30px;
+    max-width: 450px;
+    width: 90%;
+    position: relative;
+    color: #f8fafc;
+    /* Texto claro */
+    /* Resetear herencias */
+    text-align: left;
+}
+
+.modal-header h2 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    margin-top: 0;
+}
+
+.modal-body p {
+    color: #94a3b8;
+    /* Slate 400 */
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* Input Estilizado Dark */
+#forgot-password-form input[type="email"] {
+    background-color: #0f172a;
+    /* Slate 900 */
+    border: 1px solid #334155;
+    color: #fff;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    /* Asegurar padding */
+}
+
+#forgot-password-form input[type="email"]:focus {
+    border-color: #3b82f6;
+    /* Blue 500 */
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+#forgot-password-form label {
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Botones del Modal */
+#forgot-password-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+#forgot-password-modal .btn-secondary {
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid transparent;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#forgot-password-modal .btn-secondary:hover {
+    color: #fff;
+    background: #334155;
+}
+
+#forgot-password-modal .btn-primary {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+}
+
+#forgot-password-modal .btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #64748b;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close-btn:hover {
+    color: #fff;
+}
+
+/* ✅ Animación Shake para Error */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+.shake {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
