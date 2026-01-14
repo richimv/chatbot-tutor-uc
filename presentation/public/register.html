@@ -240,23 +240,20 @@
                 e.preventDefault();
                 errorDiv.style.display = 'none';
 
-                // CONCATENAR EMAIL
-                const username = emailUserInput.value;
-                const domain = emailDomainSelect.value;
-                const email = `${username}${domain}`;
+                // 1. Sanitización de Email (Trim + Concatenación)
+                if (!emailUserInput.value.trim()) {
+                    errorDiv.textContent = "Por favor ingresa tu nombre de usuario de correo.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                const email = emailUserInput.value.trim() + emailDomainSelect.value;
 
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
                 const name = document.getElementById('name').value;
                 const matchError = document.getElementById('password-match-error');
 
-                if (!username) {
-                    errorDiv.textContent = "Por favor ingresa tu nombre de usuario de correo.";
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-
-                // ✅ VALIDACIÓN: Verificar que las contraseñas coincidan
+                // Validar que las contraseñas coincidan
                 if (password !== confirmPassword) {
                     matchError.classList.add('show');
                     confirmPasswordInput.focus();
@@ -264,31 +261,38 @@
                 }
                 matchError.classList.remove('show');
 
+                // 2. Prevención de Doble Click (UI Feedback)
                 registerButton.disabled = true;
-                registerButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registrando...';
+                registerButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
 
                 try {
-                    // ✅ Caso A: Registro Manual con SweetAlert y Redirección al Login
+                    // Llamada al servicio
                     const response = await AuthApiService.register(name, email, password);
 
-                    // Mostrar Alerta SweetAlert
-                    await Swal.fire({
-                        title: '¡Casi listo!',
-                        text: 'Hemos enviado un enlace de confirmación a tu correo. Verifícalo para entrar.',
-                        icon: 'success',
-                        background: '#1e293b',
-                        color: '#f8fafc',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#2563eb'
-                    });
-
-                    // Redirigir al Login al cerrar la alerta
-                    window.location.href = '/login.html';
+                    // 3. Manejo de Respuesta 201 (Created)
+                    if (response.status === 201) {
+                        await Swal.fire({
+                            title: '¡Casi listo!',
+                            text: 'Hemos enviado un enlace de confirmación a tu correo. Verifícalo para entrar.',
+                            icon: 'success',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        window.location.href = '/login.html';
+                    } else {
+                        // Caso borde (ej: 200 si el backend cambia)
+                        throw new Error(response.data.message || 'Error inesperado en el registro.');
+                    }
 
                 } catch (error) {
+                    // 4. Manejo de Error y Reactivación
+                    console.error('Error Registro:', error);
                     errorDiv.textContent = error.message;
                     errorDiv.style.display = 'block';
-                } finally {
+
+                    // Reactivar botón para reintentar
                     registerButton.disabled = false;
                     registerButton.textContent = 'Registrarse';
                 }

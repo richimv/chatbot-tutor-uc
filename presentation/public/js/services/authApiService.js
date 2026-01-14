@@ -37,7 +37,11 @@ class AuthApiService {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Error en el registro');
         }
-        return response.json();
+
+        return {
+            status: response.status,
+            data: await response.json()
+        };
     }
 
     // ✅ MEJORA: Manejo silencioso de 401 para evitar ruido excesivo

@@ -47,8 +47,13 @@ class AuthController {
             res.status(201).json(result);
         } catch (error) {
             console.error('❌ Error en AuthController.register:', error);
+
+            // Manejo específico para errores de duplicados (Postgres o Service)
+            if (error.message.includes('duplicate key') || error.message.includes('already in use') || error.message.includes('ya está en uso')) {
+                return res.status(409).json({ error: 'El correo electrónico ya está registrado. Intenta iniciar sesión.' });
+            }
+
             // Solo devolvemos 400 si es un error controlado (mensaje del servicio)
-            // Si fuera un error inesperado, igual lo tratamos como BadRequest para no exponer 500 sin querer
             res.status(400).json({ error: error.message });
         }
     }
