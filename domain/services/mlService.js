@@ -178,12 +178,18 @@ class MLService {
             });
 
             if (matchedBooks.length > 0) {
-                contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS PARA TU BÚSQUEDA]\n` +
+                contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS]\n` +
                     matchedBooks.map(b =>
-                        `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
-                    ).join('\n') +
-                    `\n[FIN RECURSOS ENCONTRADOS]\n`;
-                console.log(`🚀 Pre-fetching: ${matchedBooks.length} recursos inyectados directamente.`);
+                        `* Título: "${b.title}"
+                           Autor: ${b.author || 'Desconocido'}
+                           Año: ${b.publication_year || 's.f.'}
+                           Editorial: ${b.publisher || 'No especificada'}
+                           Edición: ${b.edition || 'No especificada'}
+                           Ciudad: ${b.city || 'No especificada'}
+                           URL: ${b.url}`
+                    ).join('\n---\n') + // Separador claro
+                    `\n[FIN RECURSOS]\n`;
+                console.log(`🚀 Pre-fetching: ${matchedBooks.length} recursos inyectados con metadatos completos.`);
             }
 
             // 2. Buscar por TEMA (usando la lógica existente de entidades)
@@ -197,14 +203,13 @@ class MLService {
                 if (topic) {
                     const topicBooks = allBooks.filter(b => (topic.bookIds || []).includes(b.id));
 
-                    contextInjection += `\n[BIBLIOTECA: RECURSOS DISPONIBLES PARA EL TEMA "${topic.name}"]\n` +
-                        `Descripción Tema: ${topic.description || "No disponible"}\n` +
-                        `Recursos:\n` +
+                    contextInjection += `\n[BIBLIOTECA: RECURSOS DEL TEMA "${topic.name}"]\n` +
+                        `Descripción: ${topic.description || "No disponible"}\n` +
+                        `Libros relacionados:\n` +
                         topicBooks.map(b =>
-                            `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
+                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
                         `\n[FIN RECURSOS TEMA]\n`;
-                    console.log(`🚀 Pre-fetching: Datos del tema "${topic.name}" inyectados.`);
                 }
             }
 
@@ -217,14 +222,13 @@ class MLService {
                 if (course) {
                     const courseBooks = allBooks.filter(b => (course.materials || []).some(m => m.id === b.id) || (course.bookIds || []).includes(b.id));
 
-                    contextInjection += `\n[BIBLIOTECA: INFORMACIÓN DEL CURSO "${course.name}"]\n` +
-                        `Descripción Curso: ${course.description || "No disponible"}\n` +
-                        `Libros del Curso:\n` +
+                    contextInjection += `\n[BIBLIOTECA: CURSO "${course.name}"]\n` +
+                        `Descripción: ${course.description || "No disponible"}\n` +
+                        `Bibliografía:\n` +
                         courseBooks.map(b =>
-                            `* "${b.title}" por ${b.author || 'Desconocido'} (${b.publication_year || 's.f.'}). URL: ${b.url}. Tipo: ${b.resource_type || 'Libro'}`
+                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
-                        `\n[FIN INFORMACIÓN CURSO]\n`;
-                    console.log(`🚀 Pre-fetching: Datos del curso "${course.name}" inyectados.`);
+                        `\n[FIN INFO CURSO]\n`;
                 }
             }
 
@@ -255,9 +259,7 @@ class MLService {
                 parts: [{ text: msg.content }]
             }));
 
-            const chat = model.startChat({
-                history: historyForAPI
-            });
+            const chat = model.startChat({ history: historyForAPI });
 
             // Si hay contexto pre-cargado, lo adjuntamos al mensaje del usuario de forma invisible para él.
             const finalMessage = contextInjection ? `${contextInjection}\n\nUsuario: ${message}` : message;

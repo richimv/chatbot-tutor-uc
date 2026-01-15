@@ -191,7 +191,8 @@ class LibraryManager {
                     id,
                     title: item.name || item.title,
                     image: item.image_url || 'assets/images/placeholder.jpg',
-                    updated_at: new Date(item.updated_at)
+                    updated_at: new Date(item.updated_at),
+                    url: item.url // ✅ NUEVO: URL externa para libros
                 });
             }
         };
@@ -211,15 +212,24 @@ class LibraryManager {
             return;
         }
 
-        container.innerHTML = items.map(item => `
-            <div class="library-item" onclick="window.location.href='${item.type}.html?id=${item.id}'">
+        container.innerHTML = items.map(item => {
+            // ✅ LÓGICA DE CLICK:
+            // Cursos -> Link interno (course.html)
+            // Libros -> Link externo (item.url)
+            const clickAction = item.type === 'course'
+                ? `window.location.href='course.html?id=${item.id}'`
+                : `window.open('${item.url}', '_blank')`;
+
+            return `
+            <div class="library-item" onclick="${clickAction}">
                 <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/60?text=${item.type[0].toUpperCase()}'">
                 <div class="library-item-info">
                     <div class="library-item-title">${item.title}</div>
                     <div class="library-item-type">${item.type === 'course' ? 'Curso' : 'Libro'}</div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     toggleDrawer() {

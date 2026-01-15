@@ -3,6 +3,7 @@ const AnalyticsService = require('../../domain/services/analyticsService');
 const KnowledgeBaseRepository = require('../../domain/repositories/knowledgeBaseRepository');
 const CourseRepository = require('../../domain/repositories/courseRepository');
 const CareerRepository = require('../../domain/repositories/careerRepository');
+const BookRepository = require('../../domain/repositories/bookRepository');
 // ✅ FASE II: Importar el nuevo servicio de chat para manejar el historial.
 const ChatService = require('../../domain/services/chatService');
 
@@ -82,6 +83,7 @@ class ChatController {
                     knowledgeBaseRepo: this.knowledgeBaseRepo,
                     courseRepo: new CourseRepository(),
                     careerRepo: new CareerRepository(),
+                    bookRepo: new BookRepository(),
                     knowledgeBaseSet: loadedKBSet
                 });
                 console.log('✅ Respuesta de LLM recibida:', classification);

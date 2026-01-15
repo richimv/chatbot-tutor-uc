@@ -67,7 +67,7 @@ class LibraryRepository {
         // Fetch Books (Resources)
         const booksQuery = `
             SELECT 
-                r.id, r.title, r.image_url, r.resource_type,
+                r.id, r.title, r.image_url, r.resource_type, r.url,
                 ubl.is_saved, ubl.is_favorite, ubl.updated_at
             FROM user_book_library ubl
             JOIN resources r ON r.id = ubl.book_id
