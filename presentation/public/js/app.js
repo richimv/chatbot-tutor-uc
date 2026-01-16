@@ -14,6 +14,30 @@ console.log('🌍 Entorno:', isLocal ? 'Local' : 'Producción', '| API:', window
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 DOM completamente cargado. Inicializando componentes...');
 
+    // ✅ TRACKING AUTOMÁTICO DE VISTAS (Career / Course)
+    try {
+        if (window.AnalyticsApiService) {
+            const path = window.location.pathname;
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (id) {
+                if (path.includes('career.html')) {
+                    window.AnalyticsApiService.recordView('career', id);
+                    console.log('📊 Vista registrada: Carrera', id);
+                } else if (path.includes('course.html')) {
+                    window.AnalyticsApiService.recordView('course', id);
+                    console.log('📊 Vista registrada: Curso', id);
+                } else if (path.includes('topic.html')) {
+                    window.AnalyticsApiService.recordView('topic', id);
+                    console.log('📊 Vista registrada: Tema', id);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('⚠️ Error en tracking automático:', err);
+    }
+
     // --- PASO 1: Componentes Globales ---
     if (typeof ChatComponent !== 'undefined') window.chatComponent = new ChatComponent();
 

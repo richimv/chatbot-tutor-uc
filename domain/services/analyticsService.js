@@ -66,11 +66,10 @@ class AnalyticsService {
 
     async recordView(entityType, entityId, userId) {
         try {
-            const queryText = `
-                INSERT INTO page_views(entity_type, entity_id, user_id)
-                VALUES($1, $2, $3)
-            `;
-            await db.query(queryText, [entityType, entityId, userId]);
+            // ✅ REFACTOR: Delegar en el repositorio
+            const AnalyticsRepository = require('../repositories/analyticsRepository');
+            const repo = new AnalyticsRepository();
+            await repo.recordView(entityType, entityId, userId);
         } catch (error) {
             console.error(`❌ Error al registrar la vista para ${entityType} ${entityId}:`, error);
         }

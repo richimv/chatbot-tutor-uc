@@ -1,5 +1,5 @@
 -- Database Schema Dump
--- Generated at: 2026-01-06T05:16:44.039Z
+-- Generated at: 2026-01-16T18:38:34.237Z
 
 -- Table: careers
 CREATE TABLE IF NOT EXISTS public.careers (
@@ -159,6 +159,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     id UUID NOT NULL,
     subscription_status CHARACTER VARYING(50) DEFAULT 'pending'::character varying,
     payment_id CHARACTER VARYING(255) DEFAULT NULL::character varying,
+    usage_count INTEGER DEFAULT 0,
+    max_free_limit INTEGER DEFAULT 3,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 

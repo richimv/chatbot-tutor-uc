@@ -215,10 +215,10 @@ class LibraryManager {
         container.innerHTML = items.map(item => {
             // ✅ LÓGICA DE CLICK:
             // Cursos -> Link interno (course.html)
-            // Libros -> Link externo (item.url)
+            // Libros -> Link externo (item.url) + Tracking
             const clickAction = item.type === 'course'
                 ? `window.location.href='course.html?id=${item.id}'`
-                : `window.open('${item.url}', '_blank')`;
+                : `window.openBook('${item.url}', '${item.id}')`;
 
             return `
             <div class="library-item" onclick="${clickAction}">

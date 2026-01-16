@@ -82,6 +82,13 @@ class AnalyticsRepository {
         const { rows } = await db.query(safeQuery, [days, ...queries]);
         return rows;
     }
+    async recordView(entityType, entityId, userId) {
+        const query = `
+            INSERT INTO page_views(entity_type, entity_id, user_id, created_at)
+            VALUES($1, $2, $3, NOW())
+        `;
+        await db.query(query, [entityType, entityId, userId]);
+    }
 }
 
 module.exports = AnalyticsRepository;

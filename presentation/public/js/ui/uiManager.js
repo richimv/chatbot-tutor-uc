@@ -42,6 +42,12 @@ class UIManager {
 
                 if (response.ok && data.allowed) {
                     // ✅ Éxito: Abrir el material
+                    // ✅ TRACKING: Registrar la vista del recurso
+                    if (window.AnalyticsApiService) {
+                        try {
+                            window.AnalyticsApiService.recordView('book', id);
+                        } catch (e) { console.warn('Tracking error', e); }
+                    }
                     window.open(url, '_blank');
                 } else if (response.status === 403) {
                     // ⛔ Límite alcanzado: Mostrar Paywall
