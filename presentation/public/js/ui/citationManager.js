@@ -68,6 +68,77 @@ class CitationManager {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
+    /**
+     * ✅ MEJORA: Función de formateo de autores robusta.
+     * Soporta múltiples autores separados por PUNTO Y COMA (;).
+     * Ejemplo entrada: "Drake, Richard L.; Vogl, Wayne; Mitchell, Adam"
+     */
+    formatAuthors(authorString, style) {
+        if (!authorString) return "Autor desconocido";
+
+        // 1. Convertir el string "Apellido, Nombre; Apellido, Nombre" a una lista de objetos
+        const authors = authorString.split(';').map(a => {
+            const parts = a.trim().split(',');
+            return {
+                surname: parts[0].trim(),
+                name: parts[1] ? parts[1].trim() : ''
+            };
+        });
+
+        // 2. Formatear según el estilo
+        if (style === 'APA') {
+            // APA: Drake, R. L., & Vogl, A. W.
+            return authors.map((a, index) => {
+                // Convertir "Richard L." -> "R. L."
+                const initials = a.name.split(' ').map(n => n[0] + '.').join(' ');
+                const isLast = index === authors.length - 1;
+                const prefix = (isLast && authors.length > 1) ? '& ' : '';
+                // Si es el primero no lleva amperstand, si es el ultimo y hay mas de uno si.
+                // Correccion logica join:
+                if (index === 0) return `${a.surname}, ${initials}`;
+                if (isLast) return `& ${a.surname}, ${initials}`;
+                return `${a.surname}, ${initials}`;
+            }).join(', ');
+            // NOTA: La lógica del usuario para APA era un poco simple en el map. 
+            // Ajustamos para que el join se encargue de las comas, y el amperstand se maneje con lógica de array.
+            // Mejor implementación exacta a lo pedido:
+            /*
+            return authors.map((a, index) => {
+               const initials = a.name.split(' ').map(n => n[0] + '.').join(' ');
+               return `${a.surname}, ${initials}`;
+            }).join(', ').replace(/, ([^,]*)$/, ', & $1'); // Reemplazar la última coma por ", &" es un hack común para APA.
+            */
+            // Usemos la lógica literal del usuario pero corregida para el map/join context:
+            return authors.map((a, index) => {
+                const initials = a.name.split(' ').map(n => n[0] + '.').join(' ');
+                const isLast = index === authors.length - 1;
+                // APA standard: a list separated by commas, with "&" before the last one.
+                // User logic: const prefix = (isLast && authors.length > 1) ? '& ' : '';
+                // return `${prefix}${a.surname}, ${initials}`;
+                // This would result in "Drake, R. L., & Vogl, A. W." if joined by ", ".
+                // Let's stick to the user's intent:
+                return `${(isLast && authors.length > 1) ? '& ' : ''}${a.surname}, ${initials}`;
+            }).join(', ');
+        }
+
+        else if (style === 'Vancouver') {
+            // Vancouver: Drake RL, Vogl AW
+            return authors.map(a => {
+                const initials = a.name.split(' ').map(n => n[0]).join(''); // Sin puntos
+                return `${a.surname} ${initials}`;
+            }).join(', ');
+        }
+
+        else if (style === 'ISO') {
+            // ISO 690: DRAKE, Richard L.
+            return authors.map(a => {
+                return `${a.surname.toUpperCase()}, ${a.name}`;
+            }).join('; ');
+        }
+
+        return authorString; // Fallback
+    }
+
     exposeGlobalFunctions() {
         window.openCitationModal = (event, resource) => {
             if (event) {
@@ -83,7 +154,7 @@ class CitationManager {
 
             // Mapeo seguro de propiedades (DB vs Frontend)
             const title = resource.title || resource.name;
-            const author = resource.author;
+            const rawAuthor = resource.author;
             const year = resource.publication_year || resource.year;
             const publisher = resource.publisher;
             const edition = resource.edition;
@@ -101,20 +172,32 @@ class CitationManager {
             // Formateadores Seguros
             const safe = (str) => str || '';
 
+            // ✅ USAR NUEVA FUNCIÓN DE FORMATEO
+            // Nota: 'this' puede perderse en la función global. Usamos la instancia global 'window.citationManager' o guardamos contexto.
+            // Dado que estamos definiendo la función inside exposeGlobalFunctions que es parte de la clase...
+            // La función 'openCitationModal' es una arrow function, así que 'this' debería ser la instancia de Class.
+            const fmt = (s, style) => this.formatAuthors(s, style);
+
             if (type === 'book') {
                 // APA 7
-                apaText = `${safe(author)}. (${year || 's.f.'}). <i>${safe(title)}</i>${edition ? ` (${edition})` : ''}.${publisher ? ` ${publisher}.` : ''}`;
+                const authorAPA = fmt(rawAuthor, 'APA');
+                apaText = `${authorAPA} (${year || 's.f.'}). <i>${safe(title)}</i>${edition ? ` (${edition})` : ''}.${publisher ? ` ${publisher}.` : ''}`;
+
                 // Vancouver
-                vancouverText = `${safe(author)}. ${safe(title)}.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher};` : ''}${year ? ` ${year}.` : ''}`;
+                const authorVan = fmt(rawAuthor, 'Vancouver');
+                vancouverText = `${authorVan}. ${safe(title)}.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher};` : ''}${year ? ` ${year}.` : ''}`;
+
                 // ISO 690
-                const authorUpper = safe(author).split(',')[0].toUpperCase() + (safe(author).includes(',') ? ',' + safe(author).split(',')[1] : '');
-                isoText = `${authorUpper}. <i>${safe(title)}</i>.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher},` : ''}${year ? ` ${year}.` : ''}${isbn ? ` ISBN ${isbn}.` : ''}`;
+                const authorISO = fmt(rawAuthor, 'ISO');
+                isoText = `${authorISO}. <i>${safe(title)}</i>.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher},` : ''}${year ? ` ${year}.` : ''}${isbn ? ` ISBN ${isbn}.` : ''}`;
             } else {
-                // Generar para otros recursos
-                apaText = `${safe(author)}. (${year || 's.f.'}). ${safe(title)} [${type === 'video' ? 'Video' : 'Recurso en línea'}]. Recuperado de ${url || '#'}`;
-                vancouverText = `${safe(author)}. ${safe(title)} [Internet].${year ? ` ${year}` : ''} [citado el ${accessDate}]. Disponible en: ${url || '#'}`;
-                const authorUpper = safe(author).split(',')[0].toUpperCase();
-                isoText = `${authorUpper}. <i>${safe(title)}</i> [en línea].${year ? ` ${year}.` : ''} Disponible en: ${url || '#'}`;
+                // Generar para otros recursos (usamos APA formatter para autor igual)
+                const authorAPA = fmt(rawAuthor, 'APA');
+                const authorISO = fmt(rawAuthor, 'ISO');
+
+                apaText = `${authorAPA} (${year || 's.f.'}). ${safe(title)} [${type === 'video' ? 'Video' : 'Recurso en línea'}]. Recuperado de ${url || '#'}`;
+                vancouverText = `${fmt(rawAuthor, 'Vancouver')}. ${safe(title)} [Internet].${year ? ` ${year}` : ''} [citado el ${accessDate}]. Disponible en: ${url || '#'}`;
+                isoText = `${authorISO}. <i>${safe(title)}</i> [en línea].${year ? ` ${year}.` : ''} Disponible en: ${url || '#'}`;
             }
 
             document.getElementById('citation-text-apa').innerHTML = apaText;

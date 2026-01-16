@@ -621,17 +621,36 @@ class AdminManager {
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', currentItem?.title || '', true)}
                     </div>
                     <div style="grid-column: 1 / -1;">
-                        ${this.createFormGroup('text', 'generic-author', 'Autor/Creador (*)', currentItem?.author || '', true)}
+                        <!-- ✅ UX MEJORA: Campo Autor Validado -->
+                        <div class="form-group">
+                            <label for="generic-author">Autor/Creador (*)</label>
+                            <input type="text" id="generic-author" name="generic-author" value="${currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
+                            <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
+                                <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Apellido, Nombre</b>. Separa múltiples autores con punto y coma (;).
+                            </small>
+                        </div>
                     </div>
                     
                     <!-- Metadata Fields Container -->
                     <div id="metadata-fields" style="display: contents;">
                         ${this.createFormGroup('number', 'generic-year', 'Año (Publicación)', currentItem?.publication_year || '')}
-                        ${this.createFormGroup('text', 'generic-edition', 'Edición (Ej: 7ma)', currentItem?.edition || '')}
-                        ${this.createFormGroup('text', 'generic-city', 'Ciudad', currentItem?.city || '')}
-                        ${this.createFormGroup('text', 'generic-publisher', 'Editorial', currentItem?.publisher || '')}
+                        
+                        <!-- ✅ UX MEJORA: Campos de Metadatos con Placeholders -->
+                        <div class="form-group">
+                            <label for="generic-edition">Edición</label>
+                            <input type="text" id="generic-edition" name="generic-edition" value="${currentItem?.edition || ''}" placeholder="Ej: 3ª ed.">
+                        </div>
+                         <div class="form-group">
+                            <label for="generic-city">Ciudad</label>
+                            <input type="text" id="generic-city" name="generic-city" value="${currentItem?.city || ''}" placeholder="Ej: Madrid">
+                        </div>
+                         <div class="form-group">
+                            <label for="generic-publisher">Editorial</label>
+                            <input type="text" id="generic-publisher" name="generic-publisher" value="${currentItem?.publisher || ''}" placeholder="Ej: Elsevier España">
+                        </div>
+
                         <div style="grid-column: 1 / -1;">
-                            ${this.createFormGroup('text', 'generic-isbn', 'ISBN (Opcional)', currentItem?.isbn || '')}
+                             ${this.createFormGroup('text', 'generic-isbn', 'ISBN (Opcional)', currentItem?.isbn || '')}
                         </div>
                     </div>
 

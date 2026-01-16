@@ -160,36 +160,61 @@ class MLService {
     static async classifyIntent(message, conversationHistory, dependencies) {
         console.log(`🤖 MLService: Generando respuesta con LLM para: ${message}`);
 
-        // ✅ SOLUCIÓN: Usar los repositorios pasados como argumentos.
+        // Usar los repositorios pasados como argumentos.
         const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet } = dependencies;
 
         // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite)
         let contextInjection = "";
         try {
-            // 1. Buscar coincidencias directas de libros (Metadata Search)
+            // 1. Buscar coincidencias directas de libros (Metadata Search - MEJORADO 🧠)
             const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
             const normalizedMsg = normalizeText(message);
 
-            // Buscar libros cuyo título o autor coincida con el mensaje
+            // Lista de palabras comunes a ignorar para enfocarnos en lo importante
+            const stopWords = [
+                'el', 'la', 'los', 'las', 'un', 'una', 'de', 'del', 'y', 'o', 'en', 'con', 'por', 'para',
+                'citame', 'citar', 'cita', 'dame', 'quiero', 'libro', 'libros', 'texto', 'textos',
+                'busco', 'necesito', 'tienes', 'formato', 'apa', 'vancouver', 'iso', 'edicion'
+            ];
+
+            // Extraemos las palabras clave (tokens) del mensaje del usuario
+            const msgTokens = normalizedMsg.split(/\s+/)
+                .filter(w => w.length > 2 && !stopWords.includes(w)); // Solo palabras > 2 letras y que no sean stopWords
+
             const matchedBooks = allBooks.filter(b => {
-                const titleMatch = normalizeText(b.title).includes(normalizedMsg);
-                const authorMatch = b.author && normalizeText(b.author).includes(normalizedMsg);
-                return (titleMatch || authorMatch) && normalizedMsg.length > 3; // Evitar matches con "el", "la"
+                const normTitle = normalizeText(b.title);
+                const normAuthor = b.author ? normalizeText(b.author) : '';
+
+                // A. Coincidencia Exacta (Como antes, por si acaso)
+                if (normTitle.includes(normalizedMsg)) return true;
+
+                // B. Coincidencia Inteligente por Palabras Clave
+                if (msgTokens.length > 0) {
+                    // Si el usuario dijo "Gray", buscamos si "Gray" está en el título o autor
+                    // Usamos 'every' para ser estrictos (todas las keywords deben estar) 
+                    // o 'some' para ser flexibles. 'some' es mejor para chats.
+                    return msgTokens.some(token => normTitle.includes(token) || normAuthor.includes(token));
+                }
+                return false;
             });
 
             if (matchedBooks.length > 0) {
+                // Limitamos a 5 resultados para no saturar el contexto si la búsqueda es muy genérica
+                const topMatches = matchedBooks.slice(0, 5);
+
                 contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS]\n` +
-                    matchedBooks.map(b =>
+                    topMatches.map(b =>
                         `* Título: "${b.title}"
                            Autor: ${b.author || 'Desconocido'}
                            Año: ${b.publication_year || 's.f.'}
                            Editorial: ${b.publisher || 'No especificada'}
                            Edición: ${b.edition || 'No especificada'}
                            Ciudad: ${b.city || 'No especificada'}
+                           ISBN: ${b.isbn || 'No disponible'}
                            URL: ${b.url}`
-                    ).join('\n---\n') + // Separador claro
+                    ).join('\n---\n') +
                     `\n[FIN RECURSOS]\n`;
-                console.log(`🚀 Pre-fetching: ${matchedBooks.length} recursos inyectados con metadatos completos.`);
+                console.log(`🚀 Pre-fetching Inteligente: ${topMatches.length} recursos inyectados (Keywords: ${msgTokens.join(', ')}).`);
             }
 
             // 2. Buscar por TEMA (usando la lógica existente de entidades)
@@ -207,6 +232,7 @@ class MLService {
                         `Descripción: ${topic.description || "No disponible"}\n` +
                         `Libros relacionados:\n` +
                         topicBooks.map(b =>
+                            // ✅ CORRECCIÓN 2: Metadatos completos aquí también
                             `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
                         `\n[FIN RECURSOS TEMA]\n`;
@@ -226,6 +252,7 @@ class MLService {
                         `Descripción: ${course.description || "No disponible"}\n` +
                         `Bibliografía:\n` +
                         courseBooks.map(b =>
+                            // ✅ CORRECCIÓN 3: Metadatos completos para el curso
                             `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
                         `\n[FIN INFO CURSO]\n`;
@@ -376,9 +403,6 @@ class MLService {
                         }
                     }]);
                     response = result.response;
-
-
-                    // Legacy tools 'getInstructorInfo' and 'listAllInstructors' removed.
 
                 } else {
                     console.warn(`⚠️ Herramienta solicitada no encontrada o eliminada: ${call.name}`);
