@@ -244,24 +244,49 @@ Puedo ayudarte con:
             // ✅ NUEVO: Listener para los botones de feedback.
             const messagesContainer = document.getElementById('chatbot-messages');
             messagesContainer.addEventListener('click', (e) => {
+                // 1. Manejo de Feedback (Ya existente)
                 const feedbackBtn = e.target.closest('.feedback-btn');
                 if (feedbackBtn && !feedbackBtn.disabled) {
                     const isHelpful = feedbackBtn.dataset.helpful === 'true';
                     const parentMessage = feedbackBtn.closest('.message');
                     const query = parentMessage.dataset.query;
                     const response = parentMessage.dataset.response;
-                    const messageId = parentMessage.dataset.messageId; // Get the messageId
+                    const messageId = parentMessage.dataset.messageId;
 
-                    // 1. ✅ MEJORA: Enviar el messageId a la API.
                     AnalyticsApiService.recordFeedback(query, response, isHelpful, messageId);
 
-                    // 2. ✅ SOLUCIÓN: Ya no guardamos en localStorage.
-                    // La persistencia real la manejará el backend. La UI se actualizará
-                    // al recibir la confirmación o al recargar la conversación.
-
-                    // Deshabilitar botones y mostrar agradecimiento
                     const feedbackContainer = feedbackBtn.parentElement;
                     feedbackContainer.innerHTML = '<span class="feedback-thanks">¡Gracias por tu feedback!</span>';
+                    return;
+                }
+
+                // 2. ✅ INTERCEPTOR DE CLICS DE SEGURIDAD (Freemium Bypass Fix)
+                const link = e.target.closest('a');
+                if (link && messagesContainer.contains(link)) {
+                    // Si el link es interno (botón simulado) o algo del sistema, ignorar o manejar diferente.
+                    // Pero aquí nos preocupan los recursos externos (href http...).
+
+                    if (window.sessionManager && window.sessionManager.getUser()) {
+                        const user = window.sessionManager.getUser();
+                        // Validar campos camelCase o snake_case
+                        const status = user.subscriptionStatus || user.subscription_status;
+                        const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+
+                        // Lógica de Bloqueo
+                        if (status === 'pending' && usage >= limit) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.warn('⛔ Acceso a recurso bloqueado por límite Freemium en Chat.');
+                            window.uiManager.showPaywallModal();
+                            return;
+                        }
+
+                        // ✅ OPCIONAL: Tracking de consumo si es un recurso.
+                        // Si el link tiene estructura de recurso conocido, podríamos llamar a verify.
+                        // Por ahora, permitimos el paso si tiene vidas.
+                        console.log('✅ Acceso permitido a recurso desde Chat.');
+                    }
                 }
             });
         }

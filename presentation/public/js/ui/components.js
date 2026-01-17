@@ -456,9 +456,9 @@ function create3DBookCardHTML(book) {
 
     const actionButtons = `
         <div class="card-actions"> <!-- Inline styles moved to CSS -->
-            <button class="action-btn save-btn" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-            <button class="action-btn fav-btn" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
-            <button class="action-btn cite-btn" onclick="window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Citar"><i class="fas fa-quote-right"></i></button>
+            <button class="action-btn save-btn" onclick="return window.uiManager.validateFreemiumAction(event)" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+            <button class="action-btn fav-btn" onclick="return window.uiManager.validateFreemiumAction(event)" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+            <button class="action-btn cite-btn" onclick="if(window.uiManager.validateFreemiumAction(event)) window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Citar"><i class="fas fa-quote-right"></i></button>
         </div>
     `;
 

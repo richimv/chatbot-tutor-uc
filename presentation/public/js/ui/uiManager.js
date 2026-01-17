@@ -62,6 +62,33 @@ class UIManager {
         });
     }
 
+    /**
+     * ✅ Valida límites freemium para acciones secundarias (Citar, Guardar, Favorito).
+     * Retorna FALSE si el usuario está bloqueado, TRUE si puede proceder.
+     */
+    validateFreemiumAction(event) {
+        if (!window.sessionManager) return true;
+        const user = window.sessionManager.getUser();
+
+        // Si no hay usuario, dejamos pasar (el checkAuth posterior lo atrapará)
+        if (!user) return true;
+
+        // Validar campos camelCase o snake_case por robustez
+        const status = user.subscriptionStatus || user.subscription_status;
+        const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+
+        if (status === 'pending' && usage >= limit) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation(); // Detener propagación a listeners globales
+            }
+            this.showPaywallModal();
+            return false;
+        }
+        return true;
+    }
+
     showPaywallModal() {
         const modalId = 'paywall-modal';
         let modal = document.getElementById(modalId);
