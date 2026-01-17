@@ -18,25 +18,36 @@ class SessionManager {
 
             // 2. Lógica de Sincronización (Si el backend falló, pero Supabase tiene sesión)
             if (!this.currentUser) {
-                // Verificar si hay sesión en Supabase (Usando cliente global)
                 if (window.supabaseClient) {
-
                     const { data } = await window.supabaseClient.auth.getSession();
 
                     if (data && data.session && data.session.user) {
-                        console.log('⚠️ Usuario Google detectado en Supabase. Sincronizando con Backend...');
                         try {
-                            // Sincronizar (Crear en BD Local)
-                            await AuthApiService.syncGoogleUser(data.session.user);
-                            console.log('✅ Sincronización enviada. Reintentando obtener perfil...');
+                            // Mostrar loading en UI mientras sincronizamos
+                            const userControls = document.getElementById('user-session-controls');
+                            if (userControls) userControls.innerHTML = '<span class="loading-user"><i class="fas fa-spinner fa-spin"></i> Sincronizando...</span>';
 
-                            // Reintentar getMe (Ahora sí debería funcionar y devolver 200)
-                            this.currentUser = await AuthApiService.getMe();
-                            console.log('🎉 Sesión recuperada exitosamente.');
+                            // ✅ CORRECCIÓN RACE CONDITION: Esperar respuesta del backend con el perfil REAL
+                            const syncResponse = await AuthApiService.syncGoogleUser(data.session.user);
+
+                            if (syncResponse && syncResponse.user) {
+                                // ✅ Usar el usuario retornado por el backend (con subscriptionStatus real)
+                                this.currentUser = syncResponse.user;
+
+                                // Guardar token de Supabase para futuras peticiones
+                                localStorage.setItem('authToken', data.session.access_token);
+
+                                console.log('🎉 Sesión sincronizada y recuperada correctamente.');
+                            } else {
+                                // Fallback: Si sync no devuelve user, intentar getMe
+                                this.currentUser = await AuthApiService.getMe();
+                            }
+
                         } catch (syncError) {
                             console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
-                            // Opcional: Cerrar sesión en Supabase si falla la sincronización para evitar estado corrupto
-                            // window.supabaseClient.auth.signOut(); 
+                            // Si falla la sincronización crítica, limpiamos para no dejar estados zombies
+                            this.logout();
+                            return;
                         }
                     }
                 }
