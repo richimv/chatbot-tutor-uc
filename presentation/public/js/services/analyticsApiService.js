@@ -91,6 +91,32 @@ class AnalyticsApiService {
         return this._get(`${API_URL}/api/analytics/feedback`);
     }
 
+    // ✅ NUEVO: Helper para peticiones GET públicas (sin requerir token)
+    static async _getPublic(endpoint) {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * Obtiene los libros destacados basados en visitas.
+     * @param {number} limit 
+     */
+    static async getFeaturedBooks(limit = 10) {
+        return this._getPublic(`${API_URL}/api/analytics/featured-books?limit=${limit}`);
+    }
+
+    /**
+     * Obtiene los cursos destacados basados en visitas.
+     * @param {number} limit 
+     */
+    static async getFeaturedCourses(limit = 10) {
+        return this._getPublic(`${API_URL}/api/analytics/featured-courses?limit=${limit}`);
+    }
+
     /**
      * ✅ NUEVO: Registra una vista de página.
      * Se envía en modo "fire-and-forget", no necesitamos esperar la respuesta.
@@ -116,3 +142,6 @@ class AnalyticsApiService {
         });
     }
 }
+
+// ✅ EXPORTAR GLOBALMENTE
+window.AnalyticsApiService = AnalyticsApiService;

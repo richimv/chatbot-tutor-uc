@@ -3,8 +3,10 @@
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-main);
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    /* Reducido */
+    padding-bottom: 0.25rem;
+    /* Reducido */
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -261,13 +263,41 @@
    ========================================= */
 
 /* Action Buttons Container (Top Right of Card) */
+/* Action Buttons Container (Top Right of Card) */
 .card-actions {
     position: absolute;
     top: 10px;
     right: 10px;
     display: flex;
     gap: 8px;
-    z-index: 10;
+    z-index: 20;
+    /* Increased z-index */
+
+    /* Default state: Visible (for mobile/touch) */
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ✅ UPDATE: Hover effect ONLY for devices that support hover (Desktop) */
+@media (hover: hover) {
+    .card-actions {
+        opacity: 0;
+        /* Hidden by default on desktop */
+        transform: translateY(-5px);
+        /* Slide down effect */
+        pointer-events: none;
+        /* Prevent accidental clicks when hidden */
+    }
+
+    /* Show on hover of any parent card container */
+    .browse-card:hover .card-actions,
+    .book-card-container:hover .card-actions,
+    .full-image-card:hover .card-actions,
+    .course-card:hover .card-actions {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
 }
 
 .action-btn {
@@ -489,8 +519,100 @@
     color: var(--text-muted);
 }
 
-.empty-state i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+/* =========================================
+   CAROUSEL / SLIDER STYLES
+   ========================================= */
+.carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 0 0 0.5rem 0;
+    /* ✅ UPDATE: Margen ultra-compacto solicitado */
+}
+
+.carousel-track-container {
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Firefox */
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.5rem 0.25rem;
+    /* Padding para mostrar sombras sin cortar */
+}
+
+.carousel-track-container::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+/* Botones de navegación del carrusel */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    opacity: 0.8;
+}
+
+.carousel-btn:hover {
+    background: var(--primary);
+    color: white;
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn.prev {
+    left: 0;
+}
+
+.carousel-btn.next {
+    right: 0;
+}
+
+/* Ocultar botones si no son necesarios o en móvil si se prefiere scroll */
+@media (max-width: 768px) {
+    .carousel-btn {
+        display: none;
+        /* En móvil es mejor el scroll nativo */
+    }
+}
+
+/* Ajuste para las cards dentro del carrusel */
+/* Ajuste para las cards dentro del carrusel */
+.carousel-item {
+    flex: 0 0 auto;
+    /* Default width fallback */
+    width: 260px;
+}
+
+/* ✅ UPDATE: Dimensiones específicas para igualar vistas originales */
+.carousel-item.book-item {
+    width: 160px;
+    /* Matching course.css grid minmax(145px, 1fr) approx */
+}
+
+.carousel-item.course-item {
+    width: 280px;
+    /* Matching browse.css grid minmax(260px, 1fr) approx */
+}
+
+.carousel-item .browse-card,
+.carousel-item .book-card-container {
+    height: 100%;
+    width: 100%;
+    /* Ensure internal card takes full width */
 }

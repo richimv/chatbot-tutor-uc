@@ -25,5 +25,15 @@
 
     console.log('✅ Configuración Cargada Exitosamente.');
     console.log('📍 API:', window.AppConfig.API_URL);
-    console.log('📍 Supabase URL:', window.AppConfig.SUPABASE_URL);
+    // console.log('📍 Supabase URL:', window.AppConfig.SUPABASE_URL);
+
+    // ✅ SUPABASE SINGLETON INITIALIZATION
+    // Inicializamos el cliente una sola vez para evitar advertencias de "Multiple GoTrueClient instances".
+    if (typeof supabase !== 'undefined') {
+        window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+        console.log('✅ Supabase Singleton Initialized.');
+    } else {
+        console.warn('⚠️ Librería Supabase no detectada al cargar config.js');
+    }
+
 })();

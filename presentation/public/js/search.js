@@ -21,9 +21,19 @@ class SearchComponent {
 
         // Estado de la vista para la navegación de retorno
         this.viewStack = []; // Pila para gestionar el historial de navegación
-        this.currentView = {}; // Vista actual
+        this.currentView = { name: 'home', args: [] }; // Vista actual
 
         this.init();
+
+        // ✅ NUEVO: Escuchar cambios en la sesión para actualizar la UI (ej. quitar candados)
+        if (window.sessionManager) {
+            window.sessionManager.onStateChange(() => {
+                console.log('🔄 Sesión actualizada. Re-renderizando vista actual:', this.currentView.name);
+                if (this.currentView.name) {
+                    this.renderView(this.currentView.name, ...this.currentView.args);
+                }
+            });
+        }
     }
 
     async init() {
@@ -70,6 +80,22 @@ class SearchComponent {
         } catch (error) {
             console.error("Error loading all data for browsing:", error);
             this.browseContainer.innerHTML = `<p class="error-state">No se pudo cargar la información para explorar.</p>`;
+        }
+    }
+
+    async loadFeaturedContent() {
+        try {
+            // ✅ CARGA PARALELA DE CONTENIDO DESTACADO
+            const [featuredBooks, featuredCourses] = await Promise.all([
+                AnalyticsApiService.getFeaturedBooks(10),
+                AnalyticsApiService.getFeaturedCourses(10)
+            ]);
+            this.featuredBooks = featuredBooks || [];
+            this.featuredCourses = featuredCourses || [];
+        } catch (error) {
+            console.warn("⚠️ Error cargando contenido destacado:", error);
+            this.featuredBooks = [];
+            this.featuredCourses = [];
         }
     }
 
@@ -166,6 +192,9 @@ class SearchComponent {
      * Dispatcher centralizado para renderizar vistas.
      */
     renderView(viewName, ...args) {
+        // ✅ Mantener registro de la vista actual para re-renderizado por cambios de sesión
+        this.currentView = { name: viewName, args: args };
+
         // ✅ LÓGICA DE VISIBILIDAD DEL HERO Y BOTÓN VOLVER GLOBAL
         const headerBackBtn = document.getElementById('header-back-btn');
         const searchSection = document.querySelector('.search-section');
@@ -444,7 +473,7 @@ class SearchComponent {
     // ✅ FIN: SECCIÓN AÑADIDA
     // =================================================================
 
-    renderInitialView() {
+    async renderInitialView() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
 
@@ -454,61 +483,53 @@ class SearchComponent {
             return;
         }
 
-        // ==========================================
-        // 1. SECCIÓN: LIBROS DESTACADOS (MEDICINA)
-        // ==========================================
-        let featuredBooks = [];
-        // Intentamos encontrar un curso de Medicina para mostrar sus libros.
-        const medicineCourse = this.allData.courses.find(c => c.name.toLowerCase().includes('medicina'));
-
-        if (medicineCourse && medicineCourse.materials && medicineCourse.materials.length > 0) {
-            featuredBooks = medicineCourse.materials.slice(0, 6); // Límite de 6 libros
-        } else if (this.allData.books && this.allData.books.length > 0) {
-            // Fallback: mostrar libros genéricos si no hay curso de medicina
-            featuredBooks = this.allData.books.slice(0, 6);
+        // ✅ CARGAR DATOS DESTACADOS SI NO EXISTEN
+        if (!this.featuredBooks || !this.featuredCourses || this.featuredBooks.length === 0 && this.featuredCourses.length === 0) {
+            this.browseContainer.innerHTML = `<div class="loading-state">Cargando destacados...</div>`;
+            await this.loadFeaturedContent();
         }
 
+        // ==========================================
+        // 1. SECCIÓN: LIBROS DESTACADOS (Analytics)
+        // ==========================================
         let featuredBooksSection = '';
-        if (featuredBooks.length > 0) {
-            const booksHTML = featuredBooks.map(book => create3DBookCardHTML(book)).join('');
+        if (this.featuredBooks.length > 0) {
+            // ✅ UPDATE: Clase .book-item para tamaño correcto (Portrait)
+            const booksHTML = this.featuredBooks.map(book => `
+                <div class="carousel-item book-item">
+                    ${create3DBookCardHTML(book)}
+                </div>
+            `).join('');
+
             featuredBooksSection = `
                 <section class="featured-section">
                     <div class="section-header">
                         <h2 class="browse-title" style="margin-bottom: 0;">Libros Destacados</h2>
-                        <span class="section-subtitle" style="display:block; color: var(--text-muted); margin-top: 4px; margin-bottom: 0.5rem;">Recursos esenciales de Medicina y Salud</span>
                     </div>
-                    <div class="books-grid">
-                        ${booksHTML}
-                    </div>
+                    ${createCarouselHTML('featured-books-carousel', booksHTML)}
                 </section>
                 <div class="section-spacer" style="height: 1rem;"></div>
             `;
         }
 
         // ==========================================
-        // 1.5. SECCIÓN: CURSOS DESTACADOS
+        // 1.5. SECCIÓN: CURSOS DESTACADOS (Analytics)
         // ==========================================
-        let featuredCourses = this.allData.courses.filter(c => c.image_url && c.image_url.trim() !== "").slice(0, 4);
-        // Si no hay cursos con imágenes, o son muy pocos, completamos con los primeros disponibles
-        if (featuredCourses.length < 4) {
-            const remaining = 4 - featuredCourses.length;
-            const others = this.allData.courses.filter(c => !featuredCourses.includes(c)).slice(0, remaining);
-            featuredCourses = [...featuredCourses, ...others];
-        }
-
         let featuredCoursesSection = '';
-        if (featuredCourses.length > 0) {
-            const coursesHTML = featuredCourses.map(course => createBrowseCardHTML(course, 'course')).join('');
+        if (this.featuredCourses.length > 0) {
+            // ✅ UPDATE: Clase .course-item para tamaño correcto (Landscape)
+            const coursesHTML = this.featuredCourses.map(course => `
+                <div class="carousel-item course-item">
+                    ${createBrowseCardHTML(course, 'course')}
+                </div>
+            `).join('');
+
             featuredCoursesSection = `
                 <section class="featured-section">
                     <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0;">Cursos Destacados</h2>
-                        <span class="section-subtitle" style="display:block; color: var(--text-muted); margin-top: 4px; margin-bottom: 0.5rem;">Descubre nuestros cursos más populares</span>
+                        <h2 class="browse-title" style="margin-bottom: 0;">Cursos Populares</h2>
                     </div>
-                    <!-- Usamos browse-grid para mantener consistencia con las tarjetas de curso -->
-                    <div class="browse-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                        ${coursesHTML}
-                    </div>
+                    ${createCarouselHTML('featured-courses-carousel', coursesHTML)}
                 </section>
                 <div class="section-spacer" style="height: 1rem;"></div>
             `;
@@ -572,7 +593,6 @@ class SearchComponent {
             ${featuredCoursesSection}
             <div class="section-header">
                 <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
-                <p class="section-subtitle" style="margin-bottom: 0.25rem; color: var(--text-muted); margin-top: 4px;">Explora nuestra oferta académica por disciplina</p>
             </div>
             ${areasHTML}
             <div class="section-spacer" style="height: 1rem;"></div>

@@ -469,6 +469,18 @@ class AnalyticsService {
         }
     }
 
+    async getFeaturedBooks(limit = 10) {
+        const AnalyticsRepository = require('../repositories/analyticsRepository');
+        const repo = new AnalyticsRepository();
+        return repo.getFeaturedBooks(limit);
+    }
+
+    async getFeaturedCourses(limit = 10) {
+        const AnalyticsRepository = require('../repositories/analyticsRepository');
+        const repo = new AnalyticsRepository();
+        return repo.getFeaturedCourses(limit);
+    }
+
     getTopInstructorsFromSearches(rawTerms) {
         if (!rawTerms || !Array.isArray(rawTerms)) return [];
         const classifiedTerms = rawTerms.map(term => ({

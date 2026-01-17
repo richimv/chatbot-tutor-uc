@@ -18,14 +18,10 @@ class SessionManager {
 
             // 2. Lógica de Sincronización (Si el backend falló, pero Supabase tiene sesión)
             if (!this.currentUser) {
-                // Verificar si hay sesión en Supabase (Usando la variable global window.supabase)
-                if (window.supabase && window.AppConfig) {
-                    // Si no has inicializado el cliente antes, hazlo aquí (o reutiliza si tienes una instancia global)
-                    // Nota: Si ya tienes una instancia global window.sb, úsala. Si no, créala:
-                    const { createClient } = window.supabase;
-                    const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+                // Verificar si hay sesión en Supabase (Usando cliente global)
+                if (window.supabaseClient) {
 
-                    const { data } = await sb.auth.getSession();
+                    const { data } = await window.supabaseClient.auth.getSession();
 
                     if (data && data.session && data.session.user) {
                         console.log('⚠️ Usuario Google detectado en Supabase. Sincronizando con Backend...');
@@ -40,7 +36,7 @@ class SessionManager {
                         } catch (syncError) {
                             console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
                             // Opcional: Cerrar sesión en Supabase si falla la sincronización para evitar estado corrupto
-                            // sb.auth.signOut(); 
+                            // window.supabaseClient.auth.signOut(); 
                         }
                     }
                 }
@@ -62,9 +58,8 @@ class SessionManager {
     logout() {
         localStorage.removeItem('authToken');
         // También cerramos sesión en Supabase para limpiar todo
-        if (window.supabase && window.AppConfig) {
-            const sb = window.supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-            sb.auth.signOut();
+        if (window.supabaseClient) {
+            window.supabaseClient.auth.signOut();
         }
         this.currentUser = null;
         this.notifyStateChange();

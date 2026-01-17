@@ -5,8 +5,247 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suscripción Premium - Biblioteca Académica</title>
-    <link rel="stylesheet" href="css/pricing.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- CSS Base (Variables Hub Academia) -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Estilos Específicos para Pricing Dark Mode */
+        body {
+            background-color: var(--bg-main);
+            /* #0f172a */
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: var(--font-main);
+        }
+
+        .pricing-container {
+            width: 100%;
+            max-width: 480px;
+            /* Tarjeta centrada y contenida */
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .pricing-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .pricing-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pricing-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Tarjeta Premium */
+        .plan-card {
+            background: var(--bg-secondary);
+            /* #1e293b */
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            /* Sombra profunda */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* Borde sutil */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Efecto de borde brillante superior */
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+
+        .plan-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .plan-price {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--info);
+            /* Cyan/Azul brillante para resaltar */
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .plan-price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Lista de beneficios */
+        .plan-benefits {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .plan-benefits li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .plan-benefits li i {
+            color: var(--success);
+            /* Check verde */
+            margin-top: 4px;
+            /* Alinear con primera línea de texto */
+            font-size: 1rem;
+        }
+
+        /* Botón de Pago */
+        .btn-pay {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .btn-pay:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Elementos de Confianza */
+        .trust-badges {
+            margin-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1rem;
+        }
+
+        .secure-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .secure-text i {
+            color: var(--success);
+        }
+
+        .payment-logos {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            opacity: 0.6;
+            /* Monocromático visual */
+            filter: grayscale(100%);
+            transition: opacity 0.3s;
+        }
+
+        .payment-logos:hover {
+            opacity: 1;
+            filter: grayscale(0%);
+        }
+
+        .payment-logos i {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .logout-link {
+            margin-top: 2rem;
+            display: inline-block;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--text-muted);
+            padding-bottom: 2px;
+        }
+
+        .logout-link:hover {
+            color: var(--text-main);
+            border-bottom-style: solid;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -14,35 +253,50 @@
     <div class="pricing-container">
         <div class="pricing-header">
             <h1>Desbloquea tu Potencial</h1>
-            <p>Acceso ilimitado a todos los recursos académicos.</p>
+            <p>Únete a la comunidad académica más avanzada.</p>
         </div>
 
         <div class="plan-card">
-            <h3>Acceso Vitalicio</h3>
+            <h3 class="plan-title">Acceso Vitalicio</h3>
             <div class="plan-price">S/ 9.90 <span>/ único</span></div>
 
             <ul class="plan-benefits">
-                <li><i class="fas fa-check-circle"></i> Acceso total a todos los libros y cursos</li>
-                <li><i class="fas fa-check-circle"></i> Tutor IA ilimitado 24/7</li>
-                <li><i class="fas fa-check-circle"></i> Sin publicidad ni interrupciones</li>
-                <li><i class="fas fa-check-circle"></i> Nuevos contenidos cada mes</li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Leer y descargar</strong> libros completos (Acceso total a la biblioteca).</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Tutor IA ilimitado 24/7</strong> (Chat inteligente para dudas complejas).</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Gestionar tus materiales</strong> (Guarda favoritos y organiza tu estudio).</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Citar automáticamente</strong> (APA, Vancouver e ISO al instante).</span>
+                </li>
             </ul>
 
-            <button id="pay-button" class="btn-pay">
+            <button id="pay-button" class="btn-pay"> <!-- Mantenemos ID crítico -->
                 Pagar con Mercado Pago <i class="fas fa-arrow-right"></i>
             </button>
+
+            <div class="trust-badges">
+                <div class="secure-text">
+                    <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
+                </div>
+                <div class="payment-logos">
+                    <i class="fab fa-cc-visa" title="Visa"></i>
+                    <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+                    <!-- Icono genérico para Yape/Plin ya que FA no tiene, usamos mobile-alt como ref visual -->
+                    <i class="fas fa-mobile-alt" title="Yape/Plin"></i>
+                </div>
+            </div>
         </div>
 
-        <div class="secure-payment">
-            <i class="fas fa-lock"></i> Pago 100% Seguro vía Mercado Pago
-        </div>
-        <div style="margin-top: 10px; font-size: 0.8rem; color: #999;">
-            Aceptamos Yape, Plin, Visa, Mastercard
-        </div>
-        <div style="margin-top: 20px;">
-            <a href="#" onclick="logout()" style="color: #666; text-decoration: underline; font-size: 0.9rem;">Cerrar
-                Sesión</a>
-        </div>
+        <a href="#" onclick="logout()" class="logout-link">Cerrar Sesión</a>
     </div>
 
     <!-- Loading Overlay -->
@@ -63,12 +317,11 @@
             // Limpiar URL
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            // Mostrar modal de éxito o alerta
-            // Idealmente usarías tu ConfirmationModal aquí, pero un alert funciona por ahora
+            // Mostrar feedback
             alert('¡Pago exitoso! 🎉\nTu cuenta Premium ha sido activada. Disfruta de acceso ilimitado.');
 
             // Redirigir al dashboard para que vea todo desbloqueado
-            setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            setTimeout(() => window.location.href = 'index.html', 1000); // Updated to index.html (Dashboard view)
 
         } else if (paymentStatus === 'failure') {
             alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
@@ -78,16 +331,23 @@
 
         // Logout helper
         function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userValues');
-            window.location.href = 'login.html';
+            // ✅ CORRECCIÓN: Usar el nuevo manejador de sesión si es posible, o mantener el fallback
+            if (window.sessionManager) {
+                window.sessionManager.logout();
+            } else {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userValues');
+                window.location.href = 'login.html';
+            }
         }
 
         document.getElementById('pay-button').addEventListener('click', async () => {
+            // ✅ CORRECCIÓN: Obtener el token correctamente
             const token = localStorage.getItem('authToken');
+
+            // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
             if (!token) {
-                // If somehow here without token, go to login
-                window.location.href = 'login.html';
+                window.location.href = 'login.html?redirect=pricing.html';
                 return;
             }
 
@@ -95,6 +355,7 @@
             loading.classList.remove('hidden');
 
             try {
+                // ✅ Mantener lógica de conexión intacta
                 const response = await fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
                     method: 'POST',
                     headers: {
@@ -104,13 +365,14 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error al iniciar el pago');
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Error al iniciar el pago');
                 }
 
                 const data = await response.json();
 
                 if (data.init_point) {
-                    // Redirect to Mercado Pago
+                    // Redirect to Mercado Pago logic
                     window.location.href = data.init_point;
                 } else {
                     alert('Error: No se recibió el link de pago.');
@@ -118,8 +380,8 @@
                 }
 
             } catch (error) {
-                console.error(error);
-                alert('Hubo un problema al conectar con el servidor de pagos.');
+                console.error("Error de pago:", error);
+                alert('Hubo un problema al conectar con el servidor de pagos. ' + error.message);
                 loading.classList.add('hidden');
             }
         });

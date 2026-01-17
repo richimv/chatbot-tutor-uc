@@ -19,6 +19,8 @@ class AnalyticsController {
         this.getTimeSeriesData = this.getTimeSeriesData.bind(this);
         this.getCourseTimeSeriesData = this.getCourseTimeSeriesData.bind(this); // NUEVO
         this.getTopicTimeSeriesData = this.getTopicTimeSeriesData.bind(this); // NUEVO
+        this.getFeaturedBooks = this.getFeaturedBooks.bind(this); // NUEVO
+        this.getFeaturedCourses = this.getFeaturedCourses.bind(this); // NUEVO
     }
 
     async getAnalytics(req, res) {
@@ -134,6 +136,28 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error obteniendo todos los feedbacks:', error);
             res.status(500).json({ error: 'Error al obtener los datos de feedback.' });
+        }
+    }
+
+    async getFeaturedBooks(req, res) {
+        try {
+            const limit = parseInt(req.query.limit, 10) || 10;
+            const books = await this.analyticsService.getFeaturedBooks(limit);
+            res.json(books);
+        } catch (error) {
+            console.error('❌ Error obteniendo libros destacados:', error);
+            res.status(500).json({ error: 'Error al obtener libros destacados.' });
+        }
+    }
+
+    async getFeaturedCourses(req, res) {
+        try {
+            const limit = parseInt(req.query.limit, 10) || 10;
+            const courses = await this.analyticsService.getFeaturedCourses(limit);
+            res.json(courses);
+        } catch (error) {
+            console.error('❌ Error obteniendo cursos destacados:', error);
+            res.status(500).json({ error: 'Error al obtener cursos destacados.' });
         }
     }
 

@@ -9,8 +9,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // ✅ NUEVO: Almacenar ID para recarga
+    window.currentCourseId = courseId;
+    window.currentCourseData = null; // Cache básico
+
     await loadCourseData(courseId);
     setupSearch();
+
+    // ✅ NUEVO: Listener para actualizar UI cuando la sesión cargue
+    if (window.sessionManager) {
+        window.sessionManager.onStateChange(() => {
+            console.log("🔄 Sesión actualizada en Course Page. Re-renderizando...");
+            if (window.currentCourseData) {
+                renderCourse(window.currentCourseData, document.getElementById('course-content'));
+            } else if (window.currentCourseId) {
+                loadCourseData(window.currentCourseId);
+            }
+        });
+    }
 });
 
 async function loadCourseData(id) {
@@ -33,6 +49,7 @@ async function loadCourseData(id) {
         }
 
         renderCourse(course, container);
+        window.currentCourseData = course; // Guardar en caché para re-renders
     } catch (error) {
         console.error('Error loading course:', error);
         container.innerHTML = `<div class="error-state">

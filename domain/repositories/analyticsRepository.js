@@ -89,6 +89,33 @@ class AnalyticsRepository {
         `;
         await db.query(query, [entityType, entityId, userId]);
     }
+
+    async getFeaturedBooks(limit = 10) {
+        const query = `
+            SELECT r.*, COUNT(pv.id) as view_count
+            FROM resources r
+            LEFT JOIN page_views pv ON r.id = pv.entity_id AND pv.entity_type = 'book'
+            WHERE r.resource_type = 'book'
+            GROUP BY r.id
+            ORDER BY view_count DESC
+            LIMIT $1
+        `;
+        const { rows } = await db.query(query, [limit]);
+        return rows;
+    }
+
+    async getFeaturedCourses(limit = 10) {
+        const query = `
+            SELECT c.*, COUNT(pv.id) as view_count
+            FROM courses c
+            LEFT JOIN page_views pv ON c.id = pv.entity_id AND pv.entity_type = 'course'
+            GROUP BY c.id
+            ORDER BY view_count DESC
+            LIMIT $1
+        `;
+        const { rows } = await db.query(query, [limit]);
+        return rows;
+    }
 }
 
 module.exports = AnalyticsRepository;

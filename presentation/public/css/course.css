@@ -191,7 +191,8 @@
 }
 
 .book-info {
-    padding-top: 0.5rem;
+    padding-top: 0.25rem;
+    /* ✅ UPDATE: Reducido de 0.5rem a 0.25rem para acercar el título */
     text-align: center;
     /* ✅ UPDATE: Centrado para mayor elegancia */
 }

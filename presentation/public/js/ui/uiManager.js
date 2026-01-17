@@ -71,7 +71,7 @@ class UIManager {
             <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex;">
                 <div class="modal-content" style="border: 2px solid #ffd700;"> <!-- Gold border -->
                     <div class="modal-header">
-                        <h2>¡Te encantó la prueba! 🌟</h2>
+                        <h2>¡Te encantó la prueba!</h2>
                         <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -141,7 +141,7 @@ class UIManager {
             <div id="${this.modalId}" class="modal auth-prompt-modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>¡Únete a nuestra Comunidad! 🚀</h2>
+                        <h2>¡Únete a nuestra Comunidad!</h2>
                         <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -154,11 +154,10 @@ class UIManager {
                         <div class="auth-prompt-benefits">
                             <p>Beneficios de tu cuenta:</p>
                             <ul>
-                                <li><i class="fas fa-check-circle"></i> Leer libros completos</li>
+                                <li><i class="fas fa-check-circle"></i> Leer y descargar libros completos</li>
                                 <li><i class="fas fa-check-circle"></i> Chatear con el Tutor IA ilimitadamente</li>
-                                <li><i class="fas fa-check-circle"></i> Guardar tus favoritos</li>
-                                <li><i class="fas fa-check-circle"></i> Citar material académico (APA, ISO)</li>
-                                <li><i class="fas fa-check-circle"></i> Descargar materiales de estudio</li>
+                                <li><i class="fas fa-check-circle"></i> Gestionar tus materiales académicos</li>
+                                <li><i class="fas fa-check-circle"></i> Citar material académico</li>
                             </ul>
                         </div>
                     </div>

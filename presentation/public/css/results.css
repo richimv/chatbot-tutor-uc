@@ -7,21 +7,26 @@
 }
 
 /* Header de resultados */
+/* Header de resultados */
 .results-header-container {
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    /* Reducido de xl */
+    padding-bottom: var(--spacing-sm);
+    /* Reducido de md */
     border-bottom: 1px solid var(--border);
 }
 
 .results-breadcrumb {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: 0.25rem;
+    /* Reducido de spacing-sm */
 }
 
 .back-button-simple {
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    /* Ligeramente más pequeño */
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
@@ -32,9 +37,11 @@
 }
 
 .results-main-title {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
+    /* Reducido de 1.8rem */
     color: var(--text-main);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: 0.25rem;
+    /* Reducido de spacing-sm */
     font-weight: 700;
 }
 

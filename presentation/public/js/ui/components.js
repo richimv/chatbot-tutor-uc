@@ -439,51 +439,71 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
 
 function create3DBookCardHTML(book) {
     const title = book.title || 'Sin Título';
-    const author = book.author || 'Autor Desconocido';
+    // const author = book.author || 'Autor Desconocido'; // ✅ UPDATE: Autor oculto en vista destacada
 
-    // ✅ CORRECCIÓN: Usar 'image_url' que es la propiedad correcta de Supabase.
-    // También chequeamos 'coverUrl' por compatibilidad hacia atrás si fuera necesario.
     const rawCoverUrl = book.image_url || book.coverUrl;
-
     const coverUrl = (rawCoverUrl && rawCoverUrl.trim() !== "")
         ? rawCoverUrl
         : 'https://placehold.co/150x220/1e293b/ffffff?text=Libro';
 
     const url = book.url || '#';
 
-    // ✅ NUEVO: Registrar la URL en el gestor seguro y no exponerla en el HTML
     if (url && url !== '#') {
         window.uiManager.registerMaterial(book.id, url);
     }
 
-    // ✅ NUEVO: Botones de acción para libros
-    // Serializamos el objeto libro para pasarlo al modal de citación (escapando comillas dobles)
     const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
 
     const actionButtons = `
-        <div class="card-actions" style="top: 0px; right: 0px;">
+        <div class="card-actions"> <!-- Inline styles moved to CSS -->
             <button class="action-btn save-btn" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
             <button class="action-btn fav-btn" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
             <button class="action-btn cite-btn" onclick="window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Citar"><i class="fas fa-quote-right"></i></button>
         </div>
     `;
 
-    // ✅ SEGURIDAD: Reemplazar <a> por <div> con onclick manejado por uiManager
+    // ✅ DISEÑO TIPO REFERENCE (Title Overlay)
     return `
-        <div class="book-card-container" style="position: relative;">
+        <div class="book-card-container" style="position: relative; height: 100%;">
             ${actionButtons}
-            <div class="book-card" role="button" tabindex="0" onclick="window.uiManager.openMaterial('${book.id}')" title="${title}" style="cursor: pointer;">
-                <div class="book-cover-container">
-                    <img src="${coverUrl}" alt="${title}" class="book-cover-img" loading="lazy" onerror="this.src='https://placehold.co/150x220/1e293b/ffffff?text=Sin+Imagen'">
-                    ${(!window.sessionManager?.getUser() || window.sessionManager.getUser().subscriptionStatus !== 'active')
-            ? `<div class="book-overlay-icon"><i class="fas fa-lock"></i></div>`
+            <div class="book-card overlay-style" role="button" tabindex="0" onclick="window.uiManager.openMaterial('${book.id}')" title="${title}" style="cursor: pointer; height: 100%; border-radius: 8px; overflow: hidden; position: relative;">
+                
+                <div class="book-cover-container" style="height: 100%;">
+                    <img src="${coverUrl}" alt="${title}" class="book-cover-img" loading="lazy" style="height: 100%; width: 100%; object-fit: cover;" onerror="this.src='https://placehold.co/150x220/1e293b/ffffff?text=Sin+Imagen'">
+                    
+                    <!-- ✅ Overlay Gradient & Title -->
+                    <div class="book-gradient-overlay" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%); display: flex; align-items: flex-end; padding: 10px;">
+                        <h3 class="book-title-overlay" style="color: white; font-size: 0.9rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin: 0; line-height: 1.25;">${title}</h3>
+                    </div>
+
+                    ${(!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'))
+            ? `<div class="book-overlay-icon" style="bottom: 50%; right: 50%; transform: translate(50%, 50%);"><i class="fas fa-lock"></i></div>`
             : ''}
                 </div>
-                <div class="book-info">
-                    <h3 class="book-title">${title}</h3>
-                    <div class="book-author">${author}</div>
-                </div>
+                
+                <!-- Info externa eliminada -->
             </div>
+        </div>
+    `;
+}
+
+/**
+ * Crea un contenedor de carrusel para una lista de items.
+ * @param {string} id - ID único para el carrusel.
+ * @param {string} contentHTML - HTML de los items (tarjetas).
+ */
+function createCarouselHTML(id, contentHTML) {
+    return `
+        <div class="carousel-container" id="${id}">
+            <button class="carousel-btn prev" onclick="document.getElementById('${id}-track').scrollBy({left: -300, behavior: 'smooth'})">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="carousel-track-container" id="${id}-track">
+                ${contentHTML}
+            </div>
+            <button class="carousel-btn next" onclick="document.getElementById('${id}-track').scrollBy({left: 300, behavior: 'smooth'})">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     `;
 }

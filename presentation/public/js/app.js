@@ -54,13 +54,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await window.sessionManager.initialize();
 
         // ✅ PASO 3: INTEGRACIÓN GOOGLE AUTH (SUPABASE)
-        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
+        if (window.supabaseClient) {
             try {
-                const { createClient } = supabase;
-                const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-
                 // Escuchamos eventos de Login (Google o Email)
-                sb.auth.onAuthStateChange(async (event, session) => {
+                window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
                     console.log('🔄 Estado Auth Supabase:', event);
 
                     if (event === 'SIGNED_IN' && session) {
@@ -178,10 +175,8 @@ window.handleLogout = async () => {
 
     try {
         // 1. Cerrar sesión en Supabase explícitamente
-        if (typeof supabase !== 'undefined' && window.AppConfig?.SUPABASE_URL) {
-            const { createClient } = supabase;
-            const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-            await sb.auth.signOut();
+        if (window.supabaseClient) {
+            await window.supabaseClient.auth.signOut();
         }
     } catch (error) {
         console.warn("⚠️ Error al cerrar sesión en Supabase:", error);

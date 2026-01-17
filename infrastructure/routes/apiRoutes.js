@@ -50,6 +50,10 @@ router.get('/courses', coursesController.getCourses);
 router.get('/topics', coursesController.getTopics);
 router.get('/books', coursesController.getBooks);
 
+// ✅ RUTAS DE CONTENIDO DESTACADO (Analytics)
+router.get('/analytics/featured-books', analyticsController.getFeaturedBooks);
+router.get('/analytics/featured-courses', analyticsController.getFeaturedCourses);
+
 // ✅ NUEVO: Rutas para obtener detalles por ID
 router.get('/careers/:id', coursesController.getCareerById);
 router.get('/courses/:id', coursesController.getCourseById);

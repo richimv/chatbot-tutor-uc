@@ -90,6 +90,11 @@ class Server {
     configureStaticFiles() {
         // ✅ Servir archivos estáticos (CSS, JS, imágenes) desde la carpeta 'public'
         this.app.use(express.static(path.join(__dirname, '../../presentation/public')));
+
+        // ✅ Servir favicon.ico desde la raíz del proyecto
+        this.app.get('/favicon.ico', (req, res) => {
+            res.sendFile(path.join(__dirname, '../../favicon.ico'));
+        });
     }
 
     configureRoutes() {

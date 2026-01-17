@@ -258,3 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pequeño delay para asegurar que otros scripts cargaron
     setTimeout(() => libraryManager.init(), 100);
 });
+
+// ✅ Helper global para abrir libros con tracking (llamado desde HTML inline)
+window.openBook = function (url, id) {
+    if (window.AnalyticsApiService) {
+        try {
+            window.AnalyticsApiService.recordView('book', id);
+        } catch (e) { console.error("Tracking error:", e); }
+    }
+    window.open(url, '_blank');
+};
