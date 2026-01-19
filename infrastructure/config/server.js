@@ -103,6 +103,13 @@ class Server {
         const { globalApiLimiter } = require('./rateLimiters');
         const apiRoutes = require('../routes/apiRoutes');
 
+        // ✅ HEALTH CHECK (Anti Cold Start)
+        // Este endpoint es ultraligero y NO toca la base de datos.
+        // Se usa para mantener el servidor "despierto" o verificar que responde.
+        this.app.get('/health', (req, res) => {
+            res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+        });
+
         // ======================
         // 🔗 RUTAS API
         // ======================
