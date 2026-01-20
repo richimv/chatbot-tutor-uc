@@ -576,14 +576,22 @@ class SearchComponent {
         });
 
         let areasHTML = '';
-        sortedAreas.forEach(area => {
+        sortedAreas.forEach((area, index) => {
             const careers = careersByArea[area];
-            const careersHTML = careers.map(career => createBrowseCardHTML(career, 'career')).join('');
+            // WRAP EACH CARD IN .carousel-item.career-item
+            const careersHTML = careers.map(career => `
+                <div class="carousel-item career-item">
+                    ${createBrowseCardHTML(career, 'career')}
+                </div>
+            `).join('');
+
+            // USE createCarouselHTML INSTEAD OF .browse-grid
+            const safeAreaId = `area-carousel-${index}`;
 
             areasHTML += `
                 <div class="area-section">
                     <h3 class="area-title">${area}</h3>
-                    <div class="browse-grid">${careersHTML}</div>
+                    ${createCarouselHTML(safeAreaId, careersHTML)}
                 </div>
             `;
         });

@@ -610,6 +610,11 @@
     /* Matching browse.css grid minmax(260px, 1fr) approx */
 }
 
+.carousel-item.career-item {
+    width: 300px;
+    /* Slightly wider for career cards */
+}
+
 .carousel-item .browse-card,
 .carousel-item .book-card-container {
     height: 100%;
