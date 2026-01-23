@@ -94,6 +94,14 @@
                 <h2>Crear Cuenta</h2>
                 <p class="form-subtitle">Completa tus datos para registrarte.</p>
                 <div id="error-message" class="error-message" style="display:none;"></div>
+
+                <!-- ✅ BOTÓN GOOGLE (Movido al inicio) -->
+                <button type="button" class="btn-google" id="google-register-btn">
+                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="G">
+                    Registrarse con Google
+                </button>
+
+                <div class="auth-separator">o</div>
                 <div class="form-group">
                     <label for="name">Nombre Completo</label>
                     <input type="text" id="name" name="name" required autocomplete="name">
@@ -139,11 +147,6 @@
                 <button type="submit" class="btn-primary" id="register-button">Registrarse</button>
 
                 <!-- ✅ SEPARADOR Y BOTÓN GOOGLE -->
-                <div class="auth-separator">o</div>
-                <button type="button" class="btn-google" id="google-register-btn">
-                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="G">
-                    Registrarse con Google
-                </button>
 
                 <div class="auth-switch-link">
                     ¿Ya tienes una cuenta? <a href="/login.html">Inicia sesión</a>

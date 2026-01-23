@@ -345,50 +345,55 @@
         <p>Procesando solicitud de pago...</p>
     </div>
 
-    <!-- Configuration Script -->
+    <!-- Configuration Script (Load AFTER Supabase to avoid warning) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+
     <script>
-        // ✅ Smart Pricing Logic
+        // ✅ Smart Pricing Logic (SessionManager)
         document.addEventListener('DOMContentLoaded', async () => {
-            // Esperar a que sessionManager inicialice (si es asíncrono o ya tiene datos)
-            // Asumimos que window.sessionManager ya está cargado por el orden de scripts en otras paginas, 
-            // pero aqui pricing.html no tiene todos los scripts inyectados igual que index. 
-            // VEO QUE NO ESTA sessionManager.js INCLUIDO EN PRICING.HTML EN EL VIEW_FILE ANTERIOR 
-            // AUNQUE SÍ ESTABA EN EL PRICING.HTML LEIDO. VOY A VERIFICAR SI NECESITO INCLUIRLO.
-            // En el file content previo SI estaba sessionManager logic inline en logout pero no el script file.
-            // REVISARÉ EL SCRIPT LIST PRIMERO.
+            // Inicializar SessionManager
+            if (window.sessionManager) {
+                await window.sessionManager.initialize();
 
-            // ... Logica de smart pricing ...
-            // Pero primero, añadimos el script de sessionManager si falta, 
-            // o usamos la lógica existente.
+                // Suscribirse a cambios de estado
+                window.sessionManager.onStateChange((user) => {
+                    checkPremiumStatus(user);
+                });
 
-            // Para simplificar y asegurar consistencia, usaré localStorage direct 
-            // si sessionManager no está disponible, o inyectaré sessionManager.
-
-            // Mejor inyecto sessionManager y AuthApiService antes de este bloque si no están.
-            // Revisando pricing.html actual... no tiene sessionManager.js linkeado explícitamente en el head o body, 
-            // solo config.js y logica inline.
-
-            checkPremiumStatus();
+                // Verificar estado inicial si ya cargó
+                checkPremiumStatus(window.sessionManager.getUser());
+            } else {
+                console.error("SessionManager no cargado. Verifique imports.");
+            }
         });
 
-        function checkPremiumStatus() {
+        function checkPremiumStatus(user) {
+            if (!user) return; // Si no hay usuario, mostrar pricing por defecto (Free)
+
             try {
-                // Obtener usuario del localStorage (SessionManager guarda 'userValues')
-                const userStr = localStorage.getItem('userValues');
-                if (userStr) {
-                    const user = JSON.parse(userStr);
+                // Verificar status (Soporte para camelCase y snake_case)
+                const status = user.subscriptionStatus || user.subscription_status;
+                const role = user.role;
 
-                    // Verificar status
-                    // El status puede ser 'active' o 'premium' dependiendo de tu backend.
-                    // Asumiremos 'active' basado en conversaciones previas o 'paid'.
-                    // En el prompt dice: "Caso Usuario Premium (active)"
+                console.log("💎 Verificando Estatus Premium:", status);
 
-                    if (user.subscription_status === 'active') {
-                        // Ocultar Pricing
-                        document.getElementById('pricing-content').style.display = 'none';
-                        // Mostrar Premium
-                        document.getElementById('premium-content').style.display = 'block';
+                // Lógica: Si es 'active' o 'premium' o es admin (para pruebas)
+                if (status === 'active' || status === 'premium' || role === 'admin') {
+                    // Ocultar Pricing
+                    const pricingContent = document.getElementById('pricing-content');
+                    if (pricingContent) pricingContent.style.display = 'none';
+
+                    // Mostrar Premium
+                    const premiumContent = document.getElementById('premium-content');
+                    if (premiumContent) {
+                        premiumContent.style.display = 'block';
+                        // Trigger reflow for animation if needed
+                        premiumContent.style.animation = 'none';
+                        premiumContent.offsetHeight; /* trigger reflow */
+                        premiumContent.style.animation = 'fadeIn 0.5s ease-in-out';
                     }
                 }
             } catch (e) {
@@ -417,14 +422,13 @@
             alert('Tu pago está en proceso. Te notificaremos cuando se apruebe.');
         }
 
-        // Logout helper
+        // Logout helper (Usando SessionManager)
         function logout() {
-            // ✅ CORRECCIÓN: Usar el nuevo manejador de sesión si es posible, o mantener el fallback
+            // ✅ CORRECCIÓN: Usar el nuevo manejador de sesión
             if (window.sessionManager) {
                 window.sessionManager.logout();
             } else {
                 localStorage.removeItem('authToken');
-                localStorage.removeItem('userValues');
                 window.location.href = 'login.html';
             }
         }
