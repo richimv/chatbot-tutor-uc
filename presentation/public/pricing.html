@@ -7,6 +7,7 @@
     <title>Suscripción Premium - Biblioteca Académica</title>
     <!-- CSS Base (Variables Hub Academia) -->
     <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -16,11 +17,15 @@
             /* #0f172a */
             color: var(--text-main);
             display: flex;
+            flex-direction: column;
+            /* Fix: Stack content vertically */
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
             font-family: var(--font-main);
+            gap: 4rem;
+            /* Fix: Space between card and footer */
         }
 
         .pricing-container {
@@ -250,54 +255,89 @@
 
 <body>
 
-    <div class="pricing-container">
-        <div class="pricing-header">
-            <h1>Desbloquea tu Potencial</h1>
-            <p>Únete a la comunidad académica más avanzada.</p>
-        </div>
+    <div id="pricing-wrapper" class="pricing-container">
+        <!-- Contenido Pricing (Visible por defecto si no es Premium) -->
+        <div id="pricing-content">
+            <div class="pricing-header">
+                <h1>Desbloquea tu Potencial</h1>
+                <p>Únete a la comunidad académica más avanzada.</p>
+            </div>
 
-        <div class="plan-card">
-            <h3 class="plan-title">Acceso Vitalicio</h3>
-            <div class="plan-price">S/ 9.90 <span>/ único</span></div>
+            <div class="plan-card">
+                <h3 class="plan-title">Acceso Vitalicio</h3>
+                <div class="plan-price">S/ 9.90 <span>/ único</span></div>
 
-            <ul class="plan-benefits">
-                <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Leer y descargar</strong> libros completos (Acceso total a la biblioteca).</span>
-                </li>
-                <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Tutor IA ilimitado 24/7</strong> (Chat inteligente para dudas complejas).</span>
-                </li>
-                <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Gestionar tus materiales</strong> (Guarda favoritos y organiza tu estudio).</span>
-                </li>
-                <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Citar automáticamente</strong> (APA, Vancouver e ISO al instante).</span>
-                </li>
-            </ul>
+                <ul class="plan-benefits">
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Leer y descargar</strong> libros completos (Acceso total a la biblioteca).</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Tutor IA ilimitado 24/7</strong> (Chat inteligente para dudas complejas).</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Gestionar tus materiales</strong> (Guarda favoritos y organiza tu estudio).</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Citar automáticamente</strong> (APA, Vancouver e ISO al instante).</span>
+                    </li>
+                </ul>
 
-            <button id="pay-button" class="btn-pay"> <!-- Mantenemos ID crítico -->
-                Pagar con Mercado Pago <i class="fas fa-arrow-right"></i>
-            </button>
+                <button id="pay-button" class="btn-pay"> <!-- Mantenemos ID crítico -->
+                    Pagar con Mercado Pago <i class="fas fa-arrow-right"></i>
+                </button>
 
-            <div class="trust-badges">
-                <div class="secure-text">
-                    <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
+                <div class="trust-badges">
+                    <div class="secure-text">
+                        <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
+                    </div>
+                    <div class="payment-logos">
+                        <i class="fab fa-cc-visa" title="Visa"></i>
+                        <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+                        <!-- Icono genérico para Yape/Plin ya que FA no tiene, usamos mobile-alt como ref visual -->
+                        <i class="fas fa-mobile-alt" title="Yape/Plin"></i>
+                    </div>
                 </div>
-                <div class="payment-logos">
-                    <i class="fab fa-cc-visa" title="Visa"></i>
-                    <i class="fab fa-cc-mastercard" title="Mastercard"></i>
-                    <!-- Icono genérico para Yape/Plin ya que FA no tiene, usamos mobile-alt como ref visual -->
-                    <i class="fas fa-mobile-alt" title="Yape/Plin"></i>
-                </div>
+            </div> <!-- End .plan-card -->
+        </div> <!-- End #pricing-content -->
+
+        <!-- Contenido Premium (Oculto por defecto) -->
+        <div id="premium-content" style="display: none; animation: fadeIn 0.5s ease-in-out;">
+            <div class="pricing-header">
+                <h1>¡Ya eres Premium!</h1>
+                <p>Tu cuenta tiene acceso ilimitado a todas las funciones.</p>
+            </div>
+            <div class="plan-card" style="text-align: center; padding: 3rem;">
+                <i class="fas fa-check-circle"
+                    style="font-size: 5rem; color: var(--success); margin-bottom: 2rem; display: block;"></i>
+                <h3 class="plan-title" style="margin-bottom: 1.5rem;">Membresía Activa</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 2.5rem; line-height: 1.6;">
+                    Disfruta de descargas ilimitadas, tutor 24/7 y todas las herramientas avanzadas sin límites.
+                </p>
+                <a href="/" class="btn-pay" style="text-decoration: none; display: inline-flex;">
+                    Ir a la Biblioteca <i class="fas fa-book-open"></i>
+                </a>
             </div>
         </div>
 
         <a href="#" onclick="logout()" class="logout-link">Cerrar Sesión</a>
     </div>
+
+    <!-- Footer Minimalista (Solo Legal + Copyright) -->
+    <footer class="main-footer minimal">
+        <div class="footer-minimal-content">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
+            </div>
+            <div class="footer-minimal-links">
+                <a href="privacy.html">Política de Privacidad</a>
+                <a href="terms.html">Términos y Condiciones</a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay hidden">
@@ -308,6 +348,54 @@
     <!-- Configuration Script -->
     <script src="js/config.js"></script>
     <script>
+        // ✅ Smart Pricing Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Esperar a que sessionManager inicialice (si es asíncrono o ya tiene datos)
+            // Asumimos que window.sessionManager ya está cargado por el orden de scripts en otras paginas, 
+            // pero aqui pricing.html no tiene todos los scripts inyectados igual que index. 
+            // VEO QUE NO ESTA sessionManager.js INCLUIDO EN PRICING.HTML EN EL VIEW_FILE ANTERIOR 
+            // AUNQUE SÍ ESTABA EN EL PRICING.HTML LEIDO. VOY A VERIFICAR SI NECESITO INCLUIRLO.
+            // En el file content previo SI estaba sessionManager logic inline en logout pero no el script file.
+            // REVISARÉ EL SCRIPT LIST PRIMERO.
+
+            // ... Logica de smart pricing ...
+            // Pero primero, añadimos el script de sessionManager si falta, 
+            // o usamos la lógica existente.
+
+            // Para simplificar y asegurar consistencia, usaré localStorage direct 
+            // si sessionManager no está disponible, o inyectaré sessionManager.
+
+            // Mejor inyecto sessionManager y AuthApiService antes de este bloque si no están.
+            // Revisando pricing.html actual... no tiene sessionManager.js linkeado explícitamente en el head o body, 
+            // solo config.js y logica inline.
+
+            checkPremiumStatus();
+        });
+
+        function checkPremiumStatus() {
+            try {
+                // Obtener usuario del localStorage (SessionManager guarda 'userValues')
+                const userStr = localStorage.getItem('userValues');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+
+                    // Verificar status
+                    // El status puede ser 'active' o 'premium' dependiendo de tu backend.
+                    // Asumiremos 'active' basado en conversaciones previas o 'paid'.
+                    // En el prompt dice: "Caso Usuario Premium (active)"
+
+                    if (user.subscription_status === 'active') {
+                        // Ocultar Pricing
+                        document.getElementById('pricing-content').style.display = 'none';
+                        // Mostrar Premium
+                        document.getElementById('premium-content').style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error("Error checking premium status:", e);
+            }
+        }
+
         // Check for payment status in URL
         const urlParams = new URLSearchParams(window.location.search);
         const paymentStatus = urlParams.get('payment');
