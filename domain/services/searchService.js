@@ -2,7 +2,6 @@ const CourseRepository = require('../../domain/repositories/courseRepository');
 const AnalyticsService = require('../../domain/services/analyticsService');
 const PythonMLService = require('../../domain/services/pythonMLService'); // Servicio principal de ML
 const TopicRepository = require('../../domain/repositories/topicRepository'); // Importar repositorio de temas
-const relatedCoursePredictor = require('../../domain/predictors/relatedCoursePredictor'); // Predictor de JS como fallback
 const CareerRepository = require('../../domain/repositories/careerRepository');
 const BookRepository = require('../../domain/repositories/bookRepository'); // ✅ NUEVO: Repositorio de Libros
 const { normalizeText } = require('../../domain/utils/textUtils');
@@ -45,16 +44,23 @@ class SearchService {
         const books = bookResults.map(b => ({ ...b, type: 'book' }));
         const courses = courseResults.map(c => ({ ...c, type: 'course' }));
 
-        // 3. Fallback inteligente para Cursos (si no hay resultados directos)
+        // 3. Fallback Mejorado: Búsqueda por Categoría/Carrera (Smart Context)
         let finalCourses = courses;
-        if (finalCourses.length === 0 && query.length > 3) {
-            // Intento por categoría de carrera
-            // Solo si no tiene espacios (palabra clave simple) para evitar falsos positivos largos
-            if (!query.includes(' ')) {
-                const careerCourses = await this.courseRepository.findByCareerCategory(query);
-                if (careerCourses.length > 0) {
-                    finalCourses = careerCourses.map(c => ({ ...c, type: 'course' }));
-                }
+
+        // Si la búsqueda directa trajo pocos resultados o es una query compuesta ("medicina humana")
+        if (finalCourses.length < 3 && query.length > 3) {
+            // Intentar buscar cursos que pertenezcan a una carrera que coincida con la query
+            // Eliminamos la restricción de espacios para permitir "Medicina Humana"
+            const careerCourses = await this.courseRepository.findByCareerCategory(query);
+
+            if (careerCourses.length > 0) {
+                // Fusionar evitando duplicados
+                const currentIds = new Set(finalCourses.map(c => c.id));
+                const newCourses = careerCourses
+                    .filter(c => !currentIds.has(c.id))
+                    .map(c => ({ ...c, type: 'course', _matchType: 'career_context' }));
+
+                finalCourses = [...finalCourses, ...newCourses];
             }
         }
 

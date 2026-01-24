@@ -427,19 +427,18 @@ class SearchComponent {
 
         // 5. Secciones inferiores (Recomendaciones + Chat)
         let bottomSectionsHTML = '';
-        const classification = data.queryClassification || 'General';
 
-        if (data.isEducationalQuery || (data.results && data.results.length === 0)) {
-            bottomSectionsHTML = `
-                ${createSpecificChatPromoHTML(data.searchQuery, classification)}
-                ${createRecommendationsSectionHTML(data.recommendations)}
-            `;
-        } else {
-            bottomSectionsHTML = `
-                ${createRecommendationsSectionHTML(data.recommendations)}
-                ${createChatPromoSectionHTML()}
-            `;
+        // ✅ NUEVO: Tarjeta de IA educativa si se detecta intención de pregunta
+        let educationalCardHTML = '';
+        if (data.isEducationalQuery) {
+            educationalCardHTML = createEducationalIntentCardHTML(data.searchQuery);
         }
+
+        // Recomendaciones siempre visibles
+        bottomSectionsHTML = `
+            ${createRecommendationsSectionHTML(data.recommendations)}
+            ${!data.isEducationalQuery ? createChatPromoSectionHTML() : ''}
+        `;
 
         // 6. Renderizar Vista "Biblioteca Digital"
         // ✅ CORRECCIÓN DE DISEÑO: Alineación y Botón Volver consistente
@@ -456,6 +455,7 @@ class SearchComponent {
 
                 <!-- CONTENIDO PRINCIPAL (Separado) -->
                 <div style="min-height: 40vh;">
+                     ${educationalCardHTML} <!-- ✅ PRIORIDAD: Mostrar tarjeta educativa primero -->
                      ${contentHTML}
                 </div>
 

@@ -178,58 +178,104 @@
 
 /* Banner Promocional del Chat */
 .chat-promo-banner {
-    /* ✅ MEJORADO: Fondo más oscuro para mejor visibilidad en tema claro */
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 2rem;
-    margin-top: var(--spacing-lg);
+    /* ✅ MEJORADO: Fondo degradado más premium y moderno */
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, #1e293b 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Borde sutil */
+    border-radius: 20px;
+    /* Bordes más redondeados */
+    padding: 2.5rem;
+    margin-top: var(--spacing-xl);
+    margin-bottom: 4rem;
+    /* Separación del footer solicitada */
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    /* Sombra 3D mejorada */
+    position: relative;
+    overflow: hidden;
+    /* Sombra profunda para efecto flotante */
     box-shadow:
-        4px 4px 16px rgba(0, 0, 0, 0.12),
-        -2px -2px 8px rgba(255, 255, 255, 0.1);
+        0 10px 30px -10px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Efecto de brillo de fondo sutil */
+.chat-promo-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+    pointer-events: none;
 }
 
 .chat-promo-banner-icon {
-    font-size: 2.5rem;
-    color: var(--accent);
+    font-size: 3rem;
+    color: var(--primary-light);
     margin-bottom: var(--spacing-md);
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.05);
-    /* Fondo sutil para el icono */
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
     border-radius: 50%;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+    /* Glow effect */
+    z-index: 1;
 }
 
 .chat-promo-banner-content {
     flex-grow: 1;
+    z-index: 1;
+    max-width: 600px;
+    /* Limitar ancho para mejor lectura */
 }
 
 .chat-promo-banner-title {
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    /* Más grande */
+    font-weight: 800;
     color: var(--text-main);
-    /* Asegurar texto visible */
-    margin: 0 0 var(--spacing-sm);
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.5px;
 }
 
 .chat-promo-banner-text {
-    color: var(--text-muted);
-    margin-bottom: var(--spacing-md);
-    line-height: 1.5;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+    /* Más espacio antes del botón */
+    line-height: 1.6;
 }
 
-/* ✅ MEJORA: Botón más prominente y con mejor hover */
+/* ✅ BOTÓN REIMAGINADO */
+.chat-promo-banner-cta {
+    background: var(--primary);
+    color: white !important;
+    padding: 1rem 2.5rem;
+    /* Mucho más padding (ancho y alto) */
+    border-radius: 50px;
+    /* Pill shape */
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    /* Sombra de color */
+    transform: translateY(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .chat-promo-banner-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background: var(--primary-hover);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+    /* Sombra más intensa al hover */
 }
 
 /* --- Botones de Navegación en el Chat --- */
@@ -460,97 +506,138 @@
 }
 
 /* =================================================== */
-/* == NUEVOS ESTILOS: Tarjeta de Promo Específica   == */
+/* == NUEVO: Tarjeta de Intención Educativa Premium == */
 /* =================================================== */
 
-.specific-promo-card {
-    /* ✅ MEJORA: Aplicar un diseño premium similar al banner principal del chat */
+.educational-intent-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-left: 4px solid var(--accent);
+    /* Acento lateral */
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.educational-intent-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Efecto de destello de fondo */
+.educational-intent-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 70%);
+    pointer-events: none;
+}
+
+.intent-card-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 1rem;
-    background: var(--surface-alt);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-top: 2.5rem;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    /* Sombra más suave por defecto */
+    width: 100%;
+    z-index: 1;
 }
 
-/* ✅ NUEVO: Icono encapsulado para consistencia */
-.specific-promo-icon {
-    font-size: 2rem;
-    background: var(--accent-dark);
-    /* Variable adaptativa */
+.intent-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    background: rgba(99, 102, 241, 0.15);
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--accent);
-    /* Variable adaptativa */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
+    font-size: 1.5rem;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
 }
 
-.specific-promo-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-main);
-    /* Variable adaptativa */
-    margin: 0 0 1rem 0;
+.intent-text-group {
+    flex: 1;
 }
 
-.specific-promo-query {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0 auto 1rem auto;
-    max-width: 90%;
-    font-style: normal;
+.intent-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-light);
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.intent-description {
     color: var(--text-main);
-    /* Variable adaptativa */
     font-size: 1rem;
-    word-wrap: break-word;
+    line-height: 1.6;
+    margin: 0;
 }
 
-.specific-promo-subtitle {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    /* Variable adaptativa */
-    margin: 0 0 1.5rem 0;
+.intent-description strong {
+    color: white;
+    font-weight: 600;
 }
 
-.specific-promo-cta {
-    font-size: 0.9rem;
-    font-weight: 500;
-    padding: 0.6rem 1.25rem;
-    border-radius: 8px;
+.intent-actions {
+    z-index: 1;
+}
+
+.intent-cta-btn {
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     display: inline-flex;
-    /* Para centrar el botón y su contenido */
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
 }
 
-/* ✅ MEJORA: Layout horizontal en pantallas más grandes */
+.intent-cta-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+}
+
+/* Responsive: Horizontal en escritorio */
 @media (min-width: 768px) {
-    .specific-promo-card {
+    .educational-intent-card {
         flex-direction: row;
+        justify-content: space-between;
         text-align: left;
-        padding: 2rem;
+        padding: 2rem 2.5rem;
+    }
+
+    .intent-card-content {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
         gap: 1.5rem;
     }
 
-    .specific-promo-content {
-        flex-grow: 1;
-    }
-
-    .specific-promo-query,
-    .specific-promo-subtitle {
-        margin-left: 0;
-        margin-right: 0;
-        max-width: 100%;
+    .intent-description {
+        max-width: 500px;
     }
 }
 

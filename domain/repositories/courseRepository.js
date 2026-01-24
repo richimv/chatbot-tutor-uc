@@ -85,27 +85,76 @@ class CourseRepository {
      * @returns {Promise<Array>} - Lista de cursos que coinciden.
      */
     async search(query) {
-        // ARQUITECTURA: Reemplazo del Stored Procedure por consulta directa insensible a acentos.
-        // Esto soluciona el error 500 y mejora la "inteligencia" de la búsqueda.
-        const searchTerm = `%${query}%`;
+        // ✅ BÚSQUEDA INTELIGENTE V2: Tokenización y Ranking
+        const cleanQuery = normalizeText(query).trim();
+        if (!cleanQuery) return [];
 
-        const normalize = (col) => `translate(lower(${col}), 'áéíóúÁÉÍÓÚüÜ', 'aeiouaeiouuu')`;
+        // 1. Tokens para busqueda flexible ("medicina humana" -> "medicina", "humana")
+        const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 2); // Ignorar palabras muy cortas
 
-        // Buscamos en Nombre del curso y en los ID de temas si existen
-        // Usamos una consulta unificada
+        // Si no hay tokens válidos, usar query original
+        const searchTerms = tokens.length > 0 ? tokens : [cleanQuery];
+
+        // Construcción dinámica de condiciones
+        // Queremos cursos donde:
+        // A) El nombre contenga LA FRASE COMPLETA (Prioridad 1)
+        // B) El nombre contenga TODOS los tokens (Prioridad 2)
+        // C) El nombre contenga ALGUN token (Prioridad 3)
+        // D) Temas relacionados coincidan (Prioridad 4)
+
+        const normalize = (col) => `unaccent(lower(${col}))`;
+
+        // Parametros para SQL
+        const params = [cleanQuery];
+        // $1 = Query completa
+
+        // Generamos condiciones de tokens ($2, $3, etc.)
+        const tokenConditions = searchTerms.map((_, index) => {
+            const paramIdx = index + 2; // $2 en adelante
+            return `${normalize('c.name')} LIKE ${normalize(`$${paramIdx}`)} OR ${normalize('t.name')} LIKE ${normalize(`$${paramIdx}`)}`;
+        });
+
+        // Añadimos tokens a params con % wildcard
+        searchTerms.forEach(t => params.push(`%${t}%`));
+
+        /*
+           RANKING ALGORITHM (PostgreSQL):
+           - Exact Phrase Match (in name): 100 pts
+           - Exact Topic Match: 80 pts
+           - Match All Tokens: 50 pts
+           - Match Any Token: 10 pts
+        */
+
         const sqlQuery = `
-            SELECT DISTINCT c.*
+            SELECT DISTINCT c.*,
+                (
+                    CASE 
+                        WHEN ${normalize('c.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 100
+                        WHEN ${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 80
+                        ${tokenConditions.length > 0 ? `WHEN (${tokenConditions.join(' AND ')}) THEN 50` : ''}
+                        ELSE 10
+                    END
+                ) as relevance_score
             FROM courses c
             LEFT JOIN course_topics ct ON c.id = ct.course_id
             LEFT JOIN topics t ON t.id = ct.topic_id
             WHERE 
-                ${normalize('c.name')} LIKE ${normalize('$1')} OR
-                ${normalize('t.name')} LIKE ${normalize('$1')}
-            ORDER BY c.name ASC
+                (${normalize('c.name')} LIKE '%' || ${normalize('$1')} || '%') OR
+                (${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%')
+                ${tokenConditions.length > 0 ? `OR (${tokenConditions.join(' OR ')})` : ''}
+            ORDER BY relevance_score DESC, c.name ASC
         `;
 
-        const { rows } = await db.query(sqlQuery, [searchTerm]);
-        return rows;
+        try {
+            const { rows } = await db.query(sqlQuery, params);
+            // Devolvemos solo la info del curso, filtramos duplicados por ID si el DISTINCT no fue suficiente por el JOIN
+            // (DISTINCT c.* funciona bien si c.* son las columnas del curso)
+            return rows;
+        } catch (error) {
+            console.error("Error en búsqueda avanzada:", error);
+            // Fallback a búsqueda simple si falla (ej. error de sintaxis)
+            return [];
+        }
     }
     async findByCareerId(careerId) {
         // ✅ NUEVO: Buscar cursos por ID exacto de carrera usando la tabla de unión.

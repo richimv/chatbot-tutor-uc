@@ -337,44 +337,28 @@ function createBackButtonHTML() {
     return `<button class="back-button" aria-label="Volver a la página anterior">‹ Volver</button>`;
 }
 
-// ✅ NUEVO: Componente para la promoción de chat específica a una pregunta.
-function createSpecificChatPromoHTML(searchQuery, classification = 'General') {
-    let title = "¿No encontraste lo que buscabas?";
-    let subtitle = "Nuestro Tutor IA puede ayudarte a encontrar la respuesta.";
-    let buttonText = "Preguntar al Tutor";
-    let icon = "fa-search";
-
-    // ✅ PERSONALIZACIÓN: Adaptar el mensaje según el contexto
-    if (classification === 'Carrera') {
-        title = "¿Te interesa esta carrera?";
-        subtitle = "Pregúntame sobre la malla curricular, campo laboral o perfil del egresado.";
-        buttonText = "Consultar sobre la carrera";
-        icon = "fa-user-graduate";
-    } else if (classification === 'Curso') {
-        title = "¿Tienes dudas sobre este curso?";
-        subtitle = "Puedo explicarte el sílabo, temas difíciles o recomendarte libros.";
-        buttonText = "Consultar sobre el curso";
-        icon = "fa-book-open";
-    } else if (classification === 'Tema') {
-        title = "Explora este tema a fondo";
-        subtitle = "Obtén explicaciones detalladas, ejemplos y recursos de estudio.";
-        buttonText = "Aprender más sobre esto";
-        icon = "fa-lightbulb";
-    }
-
+// ✅ NUEVO: Tarjeta de Intención Educativa (Diseño Premium para Preguntas)
+function createEducationalIntentCardHTML(query) {
     return /*html*/`
-        <div class="specific-promo-card">
-            <div class="specific-promo-icon"><i class="fas ${icon}"></i></div>
-            <div class="specific-promo-content">
-                <h4 class="specific-promo-title">${title}</h4>
-                <div class="specific-promo-query">
-                    "${searchQuery}"
+        <div class="educational-intent-card">
+            <div class="intent-card-content">
+                <div class="intent-icon-wrapper">
+                    <i class="fas fa-brain"></i>
                 </div>
-                <p class="specific-promo-subtitle">${subtitle}</p>
+                <div class="intent-text-group">
+                    <h3 class="intent-title">Pregunta Profunda Detectada</h3>
+                    <p class="intent-description">
+                        "<strong>${query}</strong>" parece un tema complejo. 
+                        <br>En lugar de buscar en libros, ¿quieres que te lo explique paso a paso?
+                    </p>
+                </div>
             </div>
-            <button class="btn-primary specific-promo-cta" onclick="window.askAboutTopic('${searchQuery}')">
-                ${buttonText}
-            </button>
+            <div class="intent-actions">
+                <button class="btn-primary intent-cta-btn" onclick="window.askAboutTopic('${query}')">
+                    <i class="fas fa-sparkles"></i>
+                    Explicar con IA
+                </button>
+            </div>
         </div>
     `;
 }

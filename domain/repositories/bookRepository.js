@@ -67,25 +67,58 @@ class BookRepository {
      * @returns {Promise<Array>} - Lista de libros que coinciden.
      */
     async search(query) {
-        // Mantenemos el query original para el replace, solo añadimos %
-        const searchTerm = `%${query}%`;
+        // ✅ BÚSQUEDA AVANZADA (Libros): Tokens & Ranking
+        const { normalizeText } = require('../utils/textUtils'); // Lazy require para evitar ciclos si fuera necesario
+        const cleanQuery = normalizeText(query || '').trim();
+        if (!cleanQuery) return [];
 
-        // Función helper para construir la parte SQL de normalización
-        const normalize = (col) => `translate(lower(${col}), 'áéíóúÁÉÍÓÚüÜ', 'aeiouaeiouuu')`;
+        const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 2);
+        const searchTerms = tokens.length > 0 ? tokens : [cleanQuery];
+
+        const normalize = (col) => `unaccent(lower(${col}))`;
+        const params = [cleanQuery];
+
+        // Condiciones dinámicas para tokens
+        const tokenConditions = searchTerms.map((_, index) => {
+            const paramIdx = index + 2;
+            return `
+                ${normalize('r.title')} LIKE ${normalize(`$${paramIdx}`)} OR 
+                ${normalize('r.author')} LIKE ${normalize(`$${paramIdx}`)} OR
+                ${normalize('t.name')} LIKE ${normalize(`$${paramIdx}`)}
+            `;
+        });
+
+        searchTerms.forEach(t => params.push(`%${t}%`));
 
         const sqlQuery = `
-            SELECT * FROM resources 
+            SELECT DISTINCT r.*,
+                (
+                    CASE 
+                        WHEN ${normalize('r.title')} LIKE '%' || ${normalize('$1')} || '%' THEN 100
+                        WHEN ${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 80
+                        ${tokenConditions.length > 0 ? `WHEN (${tokenConditions.join(' AND ')}) THEN 60` : ''}
+                        ELSE 20
+                    END
+                ) as relevance_score
+            FROM resources r
+            LEFT JOIN topic_resources tr ON r.id = tr.resource_id
+            LEFT JOIN topics t ON t.id = tr.topic_id
             WHERE 
-                ${normalize('title')} LIKE ${normalize('$1')} OR 
-                ${normalize('author')} LIKE ${normalize('$1')} OR 
-                ${normalize('publisher')} LIKE ${normalize('$1')} OR
-                isbn ILIKE $1
-            ORDER BY title
+                (${normalize('r.title')} LIKE '%' || ${normalize('$1')} || '%') OR 
+                (${normalize('r.author')} LIKE '%' || ${normalize('$1')} || '%') OR
+                (${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%') OR
+                r.isbn ILIKE $1
+                ${tokenConditions.length > 0 ? `OR (${tokenConditions.join(' OR ')})` : ''}
+            ORDER BY relevance_score DESC, r.title
         `;
 
-        // Usamos LIKE porque ya estamos normalizando todo a minúsculas
-        const { rows } = await db.query(sqlQuery, [searchTerm]);
-        return rows;
+        try {
+            const { rows } = await db.query(sqlQuery, params);
+            return rows;
+        } catch (error) {
+            console.error("Error en búsqueda avanzada libros:", error);
+            return [];
+        }
     }
 }
 
