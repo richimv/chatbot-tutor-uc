@@ -19,10 +19,8 @@ body.hero-hidden .hero-wrapper {
 
 .hero {
     height: 360px;
-    background: linear-gradient(90deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.7) 45%, rgba(15, 23, 42, 0.1) 100%), url('../assets/portada.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    /* Removed static background-image in favor of video */
+    background: var(--bg-main);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -31,6 +29,29 @@ body.hero-hidden .hero-wrapper {
     transition: height 0.5s ease, opacity 0.5s ease;
     position: relative;
     overflow: hidden;
+}
+
+/* ✅ Video Background */
+.hero-bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+/* ✅ Overlay to ensure text readability */
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    /* Dark Blue overlay */
+    z-index: 1;
 }
 
 .hero-content {
