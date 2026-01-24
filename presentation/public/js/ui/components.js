@@ -6,6 +6,33 @@
  * Esto ayuda a mantener la lógica de la aplicación (en search.js, admin.js) separada de la presentación.
  */
 
+// ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
+window.carouselInterval = null;
+
+window.startCarouselScroll = function (trackId, direction) {
+    const track = document.getElementById(trackId);
+    if (!track) return;
+
+    window.stopCarouselScroll(); // Limpiar previo si existe
+
+    // Velocidad de desplazamiento (pixels por frame)
+    const speed = 2;
+
+    function step() {
+        track.scrollLeft += direction * speed;
+        window.carouselInterval = requestAnimationFrame(step);
+    }
+
+    window.carouselInterval = requestAnimationFrame(step);
+};
+
+window.stopCarouselScroll = function () {
+    if (window.carouselInterval) {
+        cancelAnimationFrame(window.carouselInterval);
+        window.carouselInterval = null;
+    }
+};
+
 // --- Componentes para la página de Búsqueda (search.js) ---
 
 /**
@@ -495,13 +522,19 @@ function create3DBookCardHTML(book) {
 function createCarouselHTML(id, contentHTML) {
     return `
         <div class="carousel-container" id="${id}">
-            <button class="carousel-btn prev" onclick="document.getElementById('${id}-track').scrollBy({left: -300, behavior: 'smooth'})">
+            <button class="carousel-btn prev" 
+                onmouseenter="startCarouselScroll('${id}-track', -1)" 
+                onmouseleave="stopCarouselScroll()"
+                onclick="document.getElementById('${id}-track').scrollBy({left: -300, behavior: 'smooth'})">
                 <i class="fas fa-chevron-left"></i>
             </button>
             <div class="carousel-track-container" id="${id}-track">
                 ${contentHTML}
             </div>
-            <button class="carousel-btn next" onclick="document.getElementById('${id}-track').scrollBy({left: 300, behavior: 'smooth'})">
+            <button class="carousel-btn next" 
+                onmouseenter="startCarouselScroll('${id}-track', 1)" 
+                onmouseleave="stopCarouselScroll()"
+                onclick="document.getElementById('${id}-track').scrollBy({left: 300, behavior: 'smooth'})">
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>

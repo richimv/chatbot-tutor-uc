@@ -532,7 +532,7 @@
 
 .carousel-track-container {
     overflow-x: auto;
-    scroll-behavior: smooth;
+    /* scroll-behavior: smooth;  <-- REMOVED: Conflicts with JS auto-scroll */
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     /* Firefox */
@@ -563,15 +563,24 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10;
-    transition: all 0.2s;
-    opacity: 0.8;
+    z-index: 100;
+    /* ✅ UPDATE: Much higher to stay above cards and actions */
+    transition: all 0.3s ease;
+    opacity: 0;
+    /* ✅ UPDATE: Invisible por defecto */
+    pointer-events: none;
+    /* Evita clicks accidentales cuando está invisible */
+}
+
+/* ✅ UPDATE: Visible solo al hacer hover en el contenedor */
+.carousel-container:hover .carousel-btn {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .carousel-btn:hover {
     background: var(--primary);
     color: white;
-    opacity: 1;
     transform: translateY(-50%) scale(1.1);
 }
 

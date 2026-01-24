@@ -99,7 +99,7 @@ exports.handleWebhook = async (req, res) => {
                 const paidAmount = data.transaction_amount;
 
                 // Verificación de seguridad extra: ¿Pagó lo correcto?
-                if (paidAmount >= 1.00) { // Tolerancia por si hay decimales raros
+                if (paidAmount >= 1.00) {
                     await pool.query(
                         `UPDATE users SET 
                             subscription_status = 'active', 
@@ -108,10 +108,12 @@ exports.handleWebhook = async (req, res) => {
                          WHERE id = $2`,
                         [paymentId, userId]
                     );
-                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado.`);
+                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado. Monto: ${paidAmount}`);
                 } else {
                     console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}`);
                 }
+            } else {
+                console.log(`ℹ️ Webhook procesado: Pago ID ${paymentId} está en estado: ${data.status}`);
             }
         }
     } catch (error) {
