@@ -2,16 +2,20 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController } = require('../../application/controllers');
+// --- Importar Controladores ---
+const { coursesController, analyticsController, authController, chatController, usageController, adminController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
-const usageMiddleware = require('../middleware/usageMiddleware'); // ✅ NUEVO
+const usageMiddleware = require('../middleware/usageMiddleware');
 const { authLimiter } = require('../config/rateLimiters');
 
 // ======================
 // 🔗 RUTAS API
 // ======================
+
+// ✅ NUEVO: Admin Dashboard (Stats Maestras)
+router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboardStats);
 
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
@@ -115,6 +119,7 @@ router.get('/analytics/time-series', auth, adminOnly, analyticsController.getTim
 router.get('/analytics/courses-time-series', auth, adminOnly, analyticsController.getCourseTimeSeriesData); // ✅ NUEVO
 router.get('/analytics/topics-time-series', auth, adminOnly, analyticsController.getTopicTimeSeriesData); // ✅ NUEVO
 router.get('/analytics/predictions', auth, adminOnly, analyticsController.getPopularCoursePrediction);
+router.get('/analytics/ai', auth, adminOnly, analyticsController.getAIAnalytics); // ✅ NUEVO: KPIs de IA
 router.get('/analytics/feedback', auth, adminOnly, analyticsController.getFeedback);
 router.post('/analytics/feedback', auth, analyticsController.recordFeedback);
 // ✅ NUEVO: Ruta para registrar una vista de página.

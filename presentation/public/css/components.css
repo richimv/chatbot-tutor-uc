@@ -333,19 +333,13 @@
 }
 
 /* =================================
-   Sección de Recomendaciones (Descubre más)
+   Sección de Descubre más (ELIMINADA)
    ================================= */
-
-.discover-more-section {
-    /* ✅ MEJORADO: Sin borde negro superior, más sutil */
-    background-color: transparent;
-    border: 1px solid var(--border);
-    /* Borde superior removido para tema claro */
-    border-radius: 16px;
-    padding: var(--spacing-lg);
-    margin-top: var(--spacing-xl);
-    background: var(--surface-alt);
-}
+/* 
+.discover-more-section { ... }
+.recommendations-section { ... }
+... (Estilos eliminados para limpiar) 
+*/
 
 .discover-title {
     font-size: 1.4rem;

@@ -84,6 +84,14 @@ class AnalyticsApiService {
     }
 
     /**
+     * ✅ NUEVO: Obtiene las métricas de rendimiento de IA (CTR, Impresiones).
+     * @param {number} days 
+     */
+    static async getAIAnalytics(days = 30) {
+        return this._get(`${API_URL}/api/analytics/ai?days=${days}`);
+    }
+
+    /**
      * Obtiene todos los registros de feedback.
      * @returns {Promise<Array>}
      */

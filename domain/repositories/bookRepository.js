@@ -67,49 +67,71 @@ class BookRepository {
      * @returns {Promise<Array>} - Lista de libros que coinciden.
      */
     async search(query) {
-        // ✅ BÚSQUEDA AVANZADA (Libros): Tokens & Ranking
-        const { normalizeText } = require('../utils/textUtils'); // Lazy require para evitar ciclos si fuera necesario
-        const cleanQuery = normalizeText(query || '').trim();
+        // ✅ BÚSQUEDA AVANZADA (Libros): Tokens & Ranking + CONTEXTO DE CURSO + CONTEXTO DE CARRERA
+        const textUtils = require('../utils/textUtils');
+        const cleanQuery = textUtils.normalizeText(query || '').trim();
         if (!cleanQuery) return [];
 
-        const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 2);
-        const searchTerms = tokens.length > 0 ? tokens : [cleanQuery];
+        /*
+            ESTRATEGIA "CONTEXT-AWARE" V2:
+            1. Match Título/Autor/Tema (Directo)
+            2. Match Curso (Relación Directa): "Cardio" -> Curso Cardiología -> Libro Manual AMIR
+            3. Match Carrera (Relación Profunda): "Ingeniería" -> Carrera Ingeniería Civil -> Curso X -> Libro Y
+        */
 
-        const normalize = (col) => `unaccent(lower(${col}))`;
         const params = [cleanQuery];
-
-        // Condiciones dinámicas para tokens
-        const tokenConditions = searchTerms.map((_, index) => {
-            const paramIdx = index + 2;
-            return `
-                ${normalize('r.title')} LIKE ${normalize(`$${paramIdx}`)} OR 
-                ${normalize('r.author')} LIKE ${normalize(`$${paramIdx}`)} OR
-                ${normalize('t.name')} LIKE ${normalize(`$${paramIdx}`)}
-            `;
-        });
-
-        searchTerms.forEach(t => params.push(`%${t}%`));
 
         const sqlQuery = `
             SELECT DISTINCT r.*,
                 (
                     CASE 
-                        WHEN ${normalize('r.title')} LIKE '%' || ${normalize('$1')} || '%' THEN 100
-                        WHEN ${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 80
-                        ${tokenConditions.length > 0 ? `WHEN (${tokenConditions.join(' AND ')}) THEN 60` : ''}
-                        ELSE 20
+                        -- Prioridad 1: Match Exacto Título Libro (100 pts)
+                        WHEN unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
+                        
+                        -- Prioridad 2: Match Exacto Nombre Curso (95 pts)
+                        WHEN unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 95
+
+                        -- Prioridad 3: Match Exacto Tema (80 pts)
+                        WHEN unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 80
+                        
+                        -- Prioridad 4: Match Exacto Carrera (70 pts)
+                        WHEN unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 70
+
+                        -- Prioridad 5: Match Difuso (Typos) en Título (Score variable)
+                        ELSE (similarity(unaccent(lower(r.title)), unaccent(lower($1))) * 60)
                     END
                 ) as relevance_score
             FROM resources r
             LEFT JOIN topic_resources tr ON r.id = tr.resource_id
             LEFT JOIN topics t ON t.id = tr.topic_id
+            LEFT JOIN course_books cb ON r.id = cb.resource_id
+            LEFT JOIN courses c ON c.id = cb.course_id
+            -- ✅ NUEVOS JOINS para contexto de carrera (Deep Search)
+            LEFT JOIN course_careers cc ON c.id = cc.course_id
+            LEFT JOIN careers car ON car.id = cc.career_id
             WHERE 
-                (${normalize('r.title')} LIKE '%' || ${normalize('$1')} || '%') OR 
-                (${normalize('r.author')} LIKE '%' || ${normalize('$1')} || '%') OR
-                (${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%') OR
+                -- Match Título Libro
+                (unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%'))) OR 
+                (word_similarity(unaccent(lower($1)), unaccent(lower(r.title))) > 0.3) OR
+                
+                -- Match Autor
+                (unaccent(lower(r.author)) LIKE unaccent(lower('%' || $1 || '%'))) OR
+
+                -- Match Tema
+                (unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(unaccent(lower($1)), unaccent(lower(t.name))) > 0.3) OR
+
+                -- Match Contexto Curso
+                (unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3) OR
+
+                -- ✅ NUEVO Match: Contexto Carrera
+                (unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.3) OR
+
                 r.isbn ILIKE $1
-                ${tokenConditions.length > 0 ? `OR (${tokenConditions.join(' OR ')})` : ''}
             ORDER BY relevance_score DESC, r.title
+            LIMIT 20
         `;
 
         try {

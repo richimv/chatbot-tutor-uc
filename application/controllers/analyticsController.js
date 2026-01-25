@@ -21,6 +21,7 @@ class AnalyticsController {
         this.getTopicTimeSeriesData = this.getTopicTimeSeriesData.bind(this); // NUEVO
         this.getFeaturedBooks = this.getFeaturedBooks.bind(this); // NUEVO
         this.getFeaturedCourses = this.getFeaturedCourses.bind(this); // NUEVO
+        this.getAIAnalytics = this.getAIAnalytics.bind(this); // ✅ NUEVO: Bindeo para método de IA
     }
 
     async getAnalytics(req, res) {
@@ -158,6 +159,17 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error obteniendo cursos destacados:', error);
             res.status(500).json({ error: 'Error al obtener cursos destacados.' });
+        }
+    }
+
+    async getAIAnalytics(req, res) {
+        try {
+            const days = parseInt(req.query.days, 10) || 30;
+            const data = await this.analyticsService.getAIAnalytics(days);
+            res.json(data);
+        } catch (error) {
+            console.error('❌ Error obteniendo analítica de IA:', error);
+            res.status(500).json({ error: 'Error al obtener estadísticas de IA.' });
         }
     }
 

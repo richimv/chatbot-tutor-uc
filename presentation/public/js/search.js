@@ -436,7 +436,6 @@ class SearchComponent {
 
         // Recomendaciones siempre visibles
         bottomSectionsHTML = `
-            ${createRecommendationsSectionHTML(data.recommendations)}
             ${!data.isEducationalQuery ? createChatPromoSectionHTML() : ''}
         `;
 
@@ -455,8 +454,8 @@ class SearchComponent {
 
                 <!-- CONTENIDO PRINCIPAL (Separado) -->
                 <div style="min-height: 40vh;">
-                     ${educationalCardHTML} <!-- ✅ PRIORIDAD: Mostrar tarjeta educativa primero -->
                      ${contentHTML}
+                     ${educationalCardHTML} <!-- ✅ MOVIDO: Mostrar tarjeta educativa al final -->
                 </div>
 
                 <!-- SECCIONES INFERIORES -->

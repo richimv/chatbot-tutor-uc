@@ -163,8 +163,8 @@ function updateHeaderUI(user) {
     } else {
         // --- MODO: INVITADO ---
         container.innerHTML = `
-            <a href="/login.html" class="nav-link">Iniciar Sesión</a>
-            <a href="/register.html" class="btn-primary">Registrarse</a>
+            <a href="/login.html" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Ingresar</span></a>
+            <a href="/register.html" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Registrarse</span></a>
         `;
     }
 }

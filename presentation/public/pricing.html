@@ -18,14 +18,9 @@
             color: var(--text-main);
             display: flex;
             flex-direction: column;
-            /* Fix: Stack content vertically */
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
             margin: 0;
             font-family: var(--font-main);
-            gap: 4rem;
-            /* Fix: Space between card and footer */
+            /* gap: 4rem; REMOVED to let margin-auto handle spacing */
         }
 
         .pricing-container {
@@ -34,6 +29,8 @@
             /* Tarjeta centrada y contenida */
             padding: 2rem;
             text-align: center;
+            margin: auto;
+            /* ✅ Centers content vertically and horizontally */
         }
 
         .pricing-header {
@@ -326,15 +323,50 @@
         <a href="#" onclick="logout()" class="logout-link">Cerrar Sesión</a>
     </div>
 
-    <!-- Footer Minimalista (Solo Legal + Copyright) -->
-    <footer class="main-footer minimal">
-        <div class="footer-minimal-content">
+    <!-- Footer Standard Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Col 1 -->
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course.html" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Biblioteca</a></li>
+                    <li><a href="pricing.html" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy.html" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms.html" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
             <div class="copyright">
                 © 2026 Hub Academia. Todos los derechos reservados.
             </div>
-            <div class="footer-minimal-links">
-                <a href="privacy.html">Política de Privacidad</a>
-                <a href="terms.html">Términos y Condiciones</a>
+            <div class="footer-socials">
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
             </div>
         </div>
     </footer>

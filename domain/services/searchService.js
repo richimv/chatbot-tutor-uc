@@ -68,23 +68,10 @@ class SearchService {
         // Esto cumple con "Libros y cursos, segun a la busqueda".
         const finalResults = [...books, ...finalCourses];
 
-        // 5. ML Recommendations (Solo enviamos contexto de cursos para no romper el ML actual)
+        // 5. ML Recommendations (ELIMINADO: Era redundante con la búsqueda principal)
+        // El usuario reportó que "Related Resources" solo repetía información o daba resultados de baja calidad.
+        // Se ha pivoteado la estrategia para usar ML en "Deep Question Answering".
         let recommendations = null;
-        try {
-            const courseIds = finalCourses.map(c => c.id);
-            // Solo pedimos recomendaciones si hay al menos un curso de contexto o si es una query larga
-            if (courseIds.length > 0 || query.length > 4) {
-                const mlResponse = await PythonMLService.getRecommendations(query, courseIds);
-                if (mlResponse) {
-                    recommendations = {
-                        relatedCourses: mlResponse.relatedCourses || [],
-                        relatedTopics: mlResponse.relatedTopics || []
-                    };
-                }
-            }
-        } catch (e) {
-            console.warn('ML Service unavailable:', e.message);
-        }
 
         // 6. Analytics
         if (this.analyticsService && this.analyticsService.ensureReady) {

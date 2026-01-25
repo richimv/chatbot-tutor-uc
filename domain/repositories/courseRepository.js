@@ -85,74 +85,64 @@ class CourseRepository {
      * @returns {Promise<Array>} - Lista de cursos que coinciden.
      */
     async search(query) {
-        // ✅ BÚSQUEDA INTELIGENTE V2: Tokenización y Ranking
+        // ✅ BÚSQUEDA INTELIGENTE V3: FUZZY SEARCH (pg_trgm)
+        // Soporta errores tipográficos ("cadiologia" -> "cardiología") usando trigramas.
+
         const cleanQuery = normalizeText(query).trim();
         if (!cleanQuery) return [];
 
-        // 1. Tokens para busqueda flexible ("medicina humana" -> "medicina", "humana")
-        const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 2); // Ignorar palabras muy cortas
+        // Configuración de umbral de similitud (0.0 - 1.0)
+        // 0.3 suele ser un buen balance para errores tipográficos moderados.
+        // Pero usamos un filtrado híbrido: Coincidencia exacta O Similitud > X.
 
-        // Si no hay tokens válidos, usar query original
-        const searchTerms = tokens.length > 0 ? tokens : [cleanQuery];
-
-        // Construcción dinámica de condiciones
-        // Queremos cursos donde:
-        // A) El nombre contenga LA FRASE COMPLETA (Prioridad 1)
-        // B) El nombre contenga TODOS los tokens (Prioridad 2)
-        // C) El nombre contenga ALGUN token (Prioridad 3)
-        // D) Temas relacionados coincidan (Prioridad 4)
-
-        const normalize = (col) => `unaccent(lower(${col}))`;
-
-        // Parametros para SQL
         const params = [cleanQuery];
-        // $1 = Query completa
-
-        // Generamos condiciones de tokens ($2, $3, etc.)
-        const tokenConditions = searchTerms.map((_, index) => {
-            const paramIdx = index + 2; // $2 en adelante
-            return `${normalize('c.name')} LIKE ${normalize(`$${paramIdx}`)} OR ${normalize('t.name')} LIKE ${normalize(`$${paramIdx}`)}`;
-        });
-
-        // Añadimos tokens a params con % wildcard
-        searchTerms.forEach(t => params.push(`%${t}%`));
 
         /*
-           RANKING ALGORITHM (PostgreSQL):
-           - Exact Phrase Match (in name): 100 pts
-           - Exact Topic Match: 80 pts
-           - Match All Tokens: 50 pts
-           - Match Any Token: 10 pts
+           ESTRATEGIA DE RANKING:
+           1. Coincidencia Exacta de Frase (ILIKE) -> 100 pts
+           2. Similitud de Trigramas (similarity) -> Score variable (0-1) * 100
+           
+           Usamos 'word_similarity' si queremos que "cadiologia" haga match con "Curso de Cardiologia".
+           'similarity' compara el string completo. 'word_similarity' busca la subcadena más parecida.
         */
 
         const sqlQuery = `
             SELECT DISTINCT c.*,
                 (
                     CASE 
-                        WHEN ${normalize('c.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 100
-                        WHEN ${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%' THEN 80
-                        ${tokenConditions.length > 0 ? `WHEN (${tokenConditions.join(' AND ')}) THEN 50` : ''}
-                        ELSE 10
+                        -- Prioridad 1: Coincidencia exacta o parcial fuerte (LIKE)
+                        WHEN unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
+                        
+                        -- Prioridad 2: Similitud Difusa (Trigramas)
+                        -- Multiplicamos por 100 para normalizar con el puntaje anterior.
+                        ELSE (similarity(unaccent(lower(c.name)), unaccent(lower($1))) * 80)
                     END
                 ) as relevance_score
             FROM courses c
             LEFT JOIN course_topics ct ON c.id = ct.course_id
             LEFT JOIN topics t ON t.id = ct.topic_id
             WHERE 
-                (${normalize('c.name')} LIKE '%' || ${normalize('$1')} || '%') OR
-                (${normalize('t.name')} LIKE '%' || ${normalize('$1')} || '%')
-                ${tokenConditions.length > 0 ? `OR (${tokenConditions.join(' OR ')})` : ''}
+                -- 1. Coincidencia clásica (rápida)
+                unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) 
+                OR unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%'))
+                
+                -- 2. Coincidencia difusa (Typos)
+                -- "word_similarity" es ideal parciales: word_similarity('cadiologia', 'Curso de Cardiologia') es alto.
+                -- Nota: Requiere pg_trgm. Verificamos que estaba instalado.
+                OR word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3
+                OR word_similarity(unaccent(lower($1)), unaccent(lower(t.name))) > 0.3
             ORDER BY relevance_score DESC, c.name ASC
+            LIMIT 20
         `;
 
         try {
+            // Nota: Configurar el límite de word_similarity localmente para esta query si fuera necesario
+            // await db.query("SET pg_trgm.word_similarity_threshold = 0.3"); 
+
             const { rows } = await db.query(sqlQuery, params);
-            // Devolvemos solo la info del curso, filtramos duplicados por ID si el DISTINCT no fue suficiente por el JOIN
-            // (DISTINCT c.* funciona bien si c.* son las columnas del curso)
             return rows;
         } catch (error) {
-            console.error("Error en búsqueda avanzada:", error);
-            // Fallback a búsqueda simple si falla (ej. error de sintaxis)
+            console.error("Error en búsqueda fuzzy:", error);
             return [];
         }
     }

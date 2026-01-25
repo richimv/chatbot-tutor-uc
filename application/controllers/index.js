@@ -31,7 +31,7 @@ module.exports = {
     authController: new AuthController(authService), // Ahora authService tiene su repositorio.
     chatController: new ChatController(chatService, analyticsService, usageService), // ✅ Nuevo: Inyectar usageService
     analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.
-    analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.
     coursesController: new CoursesController(searchService, adminService),
-    usageController: new UsageController(usageService) // ✅ NUEVO
+    usageController: new UsageController(usageService), // ✅ NUEVO
+    adminController: require('./adminController') // ✅ NUEVO: Importar la instancia singleton directamente
 };

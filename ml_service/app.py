@@ -8,7 +8,7 @@ from .db_connector import get_courses_data, get_books_data, get_search_trends_da
 from .predictors import (
     popular_course_predictor, 
     popular_resource_predictor,
-    related_resource_predictor
+
 )
 
 app = Flask(__name__)
@@ -73,36 +73,7 @@ initialize_app()
 
 # --- 3. ENDPOINTS (RUTAS API) ---
 
-@app.route('/api/recommendations', methods=['POST'])
-def recommendations():
-    """
-    🔍 RECOMENDADOR SEMÁNTICO (Búsqueda)
-    Usa: related_course_predictor + related_topic_predictor
-    """
-    data = request.json
-    query = data.get('query', '')
-    direct_ids = data.get('directResultsIds', []) # IDs que ya mostró el buscador normal
-
-    if not query:
-        return jsonify({"relatedCourses": [], "relatedTopics": []})
-
-    # Objeto caché para pasar al predictor
-    # (Simulamos la estructura que espera el refactor anterior)
-    # 1. Predecir Recursos (Cursos + Libros) Relacionados
-    rec_courses = related_resource_predictor.predict(
-        query, 
-        direct_ids, 
-        global_data["courses_df"], 
-        global_data["books_df"],
-        global_data["embeddings"],
-        global_data["book_embeddings"],
-        ml_model
-    )
-
-    return jsonify({
-        "relatedCourses": rec_courses,
-        "relatedTopics": [] 
-    })
+# @app.route('/api/recommendations') ELIMINADO: Redundante.
 
 
 @app.route('/api/trends', methods=['GET'])

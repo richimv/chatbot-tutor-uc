@@ -40,7 +40,7 @@ body.hero-hidden .hero-wrapper {
 }
 
 .hero-content {
-    max-width: 600px;
+    max-width: 800px;
     color: white;
     z-index: 2;
     animation: slideInLeft 0.8s ease-out;
@@ -121,9 +121,50 @@ body.hero-hidden .hero-wrapper {
 }
 
 /* Responsive adjustments */
+/* Responsive adjustments */
 .hero-features {
-    justify-content: center;
+    justify-content: flex-start;
+    /* ✅ FIX: Alinear con el texto a la izquierda */
     flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        height: auto;
+        /* ✅ FIX: Altura automática para evitar cortes */
+        min-height: 480px;
+        /* Altura mínima para asegurar espacio */
+        padding-top: 5rem;
+        /* Espacio para header */
+        padding-bottom: 5rem;
+        /* Espacio para buscador */
+        align-items: flex-start;
+        /* Alinear arriba */
+        justify-content: center;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        text-align: center;
+        /* Centrar texto móvil */
+    }
+
+    .hero-content {
+        text-align: center;
+        margin: 0 auto;
+    }
+
+    .hero-features {
+        justify-content: center;
+        gap: 0.5rem;
+        /* Gap más pequeño */
+    }
+
+    /* ✅ FIX: Badges más pequeños en móvil para que entren en línea */
+    .hero-features li {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        white-space: nowrap;
+        /* Evitar quiebres de texto internos */
+    }
 }
 
 /* ✅ Desktop: Show Video & Remove Image Background */
@@ -143,8 +184,11 @@ body.hero-hidden .hero-wrapper {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(15, 23, 42, 0.6);
-        /* Semi-transparent overlay requested */
+        background: linear-gradient(90deg,
+                rgba(15, 23, 42, 0.95) 0%,
+                rgba(15, 23, 42, 0.8) 45%,
+                rgba(15, 23, 42, 0.2) 80%,
+                rgba(15, 23, 42, 0.05) 100%);
         z-index: 1;
     }
 

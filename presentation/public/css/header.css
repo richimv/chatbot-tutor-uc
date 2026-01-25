@@ -285,25 +285,50 @@
 
 @media (max-width: 768px) {
     .main-header {
-        padding: 0.5rem 1rem;
-        /* Smaller padding */
+        padding: 0.5rem 0.8rem;
+        gap: 0.5rem;
     }
 
     .logo-img {
-        height: 28px;
-        /* Smaller logo */
+        height: 24px;
+        /* Más pequeño para dar espacio */
     }
 
-    .nav-link span {
+    /* Ocultar texto del link "Ingresar" */
+    #user-session-controls .nav-link span {
         display: none;
     }
 
-    .header-nav {
-        gap: 0.5rem;
-        /* Tighter gap */
+    #user-session-controls .nav-link i {
+        font-size: 1.1rem;
+        margin: 0;
     }
 
-    /* Ensure user menu doesn't overflow */
+    /* ✅ UPDATE: Ocultar texto "Registrarse" en móvil, solo icono */
+    #user-session-controls .btn-primary {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        /* Sin gap porque no hay texto */
+    }
+
+    #user-session-controls .btn-primary span {
+        display: none;
+        /* Oculto texto */
+    }
+
+    #user-session-controls .btn-primary i {
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    .header-nav {
+        gap: 0.25rem;
+    }
+
     .user-menu-dropdown {
         right: -10px;
         min-width: 200px;

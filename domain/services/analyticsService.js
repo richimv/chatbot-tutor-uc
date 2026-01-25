@@ -214,55 +214,46 @@ class AnalyticsService {
     isQueryEducational(queryText) {
         if (!queryText || typeof queryText !== 'string') return false;
 
-        const normalizeQuery = (text) => {
-            return text
-                .toLowerCase()
-                .trim()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/^[¿?¡!]+|[¿?¡!]+$/g, '');
-        };
+        const { normalizeText } = require('../utils/textUtils'); // ✅ Usar utilidad centralizada (Path corregido)
+        const query = normalizeText(queryText);
 
-        const query = normalizeQuery(queryText);
+        // 1. Detectar Patrones de Pregunta (PRIORIDAD ALTA)
+        // Se busca intención explícita de aprendizaje o duda.
+        const educationalPatterns = [
+            // Preguntas directas e indirectas
+            /(que|cual|como|por que|para que|donde|cuando|quien)\s+(es|son|sirve|funciona|hacer|estudiar)/i,
+            /\b(definicion|concepto|significado|explicacion|resumen)\s+(de|del|sobre)\b/i,
+            /\b(diferencia|comparacion|versus|vs)\b/i,
+            /\b(ejemplos?|tipos?|caracteristicas|ventajas?|desventajas?)\s+(de|del)\b/i,
+            /\b(ayuda|necesito|busco|quiero)\s+(aprender|saber|entender|conocer)\b/i,
+            /\b(pasos|guia|tutorial|manual)\s+(para|de)\b/i,
+            /\b(recomienda|sugiere)\s+(un|el|la|los|las)\b/i
+        ];
 
-        const entityClassification = this.classifySearchTerm(queryText);
-        if (entityClassification !== 'General') return true;
+        // Si coincide con un patrón de pregunta, es educativo (Pregunta Profunda)
+        if (educationalPatterns.some(pattern => pattern.test(query))) return true;
 
+        // 2. Detectar Entidades Exactas (PRIORIDAD MEDIA)
+        // Si el usuario busca "Medicina Humana" (nombre exacto de carrera), es una búsqueda navegacional, NO una pregunta profunda.
+        const entityType = this.classifySearchTerm(queryText);
+
+        // Si el sistema reconoce la entidad y NO hubo patrón de pregunta, asumimos que quiere VER la entidad (navigational intent).
+        // Por lo tanto, NO es "educational query" en el sentido de "necesito explicación", sino "necesito el recurso".
+        if (entityType !== 'General') {
+            return false; // ✅ CORRECCIÓN: "Medicina Humana" -> False (Mostrar resultados, no banner de pregunta)
+        }
+
+        // 3. Palabras Clave Académicas Genéricas (PRIORIDAD BAJA)
+        // Si no es un patrón de pregunta ni una entidad conocida, buscamos keywords sueltas.
         const academicKeywords = [
-            'curso', 'materia', 'asignatura', 'tema', 'topico', 'unidad',
-            'leccion', 'capitulo', 'modulo', 'carrera', 'programa', 'malla',
-            'curricular', 'plan de estudios', 'creditos', 'semestre', 'ciclo',
-            'profesor', 'docente', 'instructor', 'maestro', 'catedratico',
-            'clase', 'horario', 'examen', 'evaluacion', 'tarea', 'trabajo',
-            'practica', 'laboratorio', 'taller', 'seminario', 'libro', 'pdf',
-            'material', 'recurso', 'guia', 'manual', 'apuntes', 'bibliografia', 'lectura'
+            'aprender', 'estudiar', 'entender', 'explicar', 'resolver'
         ];
 
         if (academicKeywords.some(keyword => new RegExp(`\\b${keyword}\\b`, 'i').test(query))) return true;
 
-        const noiseWords = ['hola', 'gracias', 'adios', 'buenos dias', 'buenas tardes', 'buenas noches', 'buenas', 'test', 'prueba', 'ok', 'si', 'no', 'bien', 'mal', 'ayuda', 'chao'];
-        if (noiseWords.some(noise => query === noise || query === noise.replace(/ /g, ''))) return false;
-
-        if (query.length < 3) return false;
-
-        const educationalPatterns = [
-            /(que|que)\s+(es|son)\b/i, /\bdefinicion\s+(de|del)\b/i, /\bconcepto\s+(de|del)\b/i,
-            /\bsignificado\s+(de|del)\b/i, /\bque\s+significa\b/i, /(como|como)\s+(se|puedo|hacer|funciona)\b/i,
-            /\bpasos\s+para\b/i, /\bproceso\s+(de|para)\b/i, /\bforma\s+de\b/i, /(por\s*que|porque)\b/i,
-            /\bcausa\s+(de|del)\b/i, /\bmotivo\s+(de|del)\b/i, /\brazon\s+(de|del)\b/i, /(para\s*que|para\s*que)\b/i,
-            /\bobjetivo\s+(de|del)\b/i, /(donde|donde)\b/i, /(cuando|cuando)\b/i, /\bayudame\s+con\b/i,
-            /\bnecesito\s+(ayuda|informacion|info)\b/i, /\bpodrias\s+(explicar|decirme|mostrar)\b/i,
-            /\bpuedes\s+(explicar|decirme|mostrar)\b/i, /\bmaterial\s+(sobre|de)\b/i, /\bejemplos?\s+(de|del)\b/i,
-            /\brecomienda(s|me)?\b/i, /\bdiferencia\s+(entre|de)\b/i, /\bcomparar\b/i, /\bversus\b/i, /\bvs\b/i,
-            /\ba\s+diferencia\s+de\b/i, /\blista\s+(de|del)\b/i, /\btipos\s+(de|del)\b/i, /\bcuales\s+son\b/i,
-            /\bque\s+son\b/i, /\benumera\b/i, /\bexplica(me)?\b/i, /\bexplicacion\s+(de|del)\b/i,
-            /\bque\s+es\s+el\b/i, /\bque\s+es\s+la\b/i, /\baprender\b/i, /\bestudiar\b/i, /\bentender\b/i,
-            /\bcomprender\b/i, /\bresolver\b/i, /\bense(n|ñ)ar\b/i,
-            /\b(matematicas?|fisica|quimica|historia|biologia|lenguaje|geografia|filosofia|arte)\b/i,
-            /\b(libro|libros|bibliografia)\s+(de|sobre|para)\b/i,
-            /\b(ejercicios?|problemas?)\s+(de|sobre|resueltos)\b/i
-        ];
-
-        if (educationalPatterns.some(pattern => pattern.test(query))) return true;
+        // 4. Heurística de Longitud
+        // Búsquedas muy largas que no coincidieron con nada anterior pueden ser preguntas complejas no estructuradas.
+        if (query.split(/\s+/).length > 4) return true;
 
         return false;
     }
@@ -483,6 +474,11 @@ class AnalyticsService {
 
     getTopInstructorsFromSearches(rawTerms) {
         if (!rawTerms || !Array.isArray(rawTerms)) return [];
+        // ✅ SAFETY CHECK: Si no hay instructores cargados, retornar vacío.
+        if (!this.knowledgeBaseRepo.instructorNames || this.knowledgeBaseRepo.instructorNames.size === 0) {
+            return [];
+        }
+
         const classifiedTerms = rawTerms.map(term => ({
             ...term,
             type: this.classifySearchTerm(term.query)
@@ -495,6 +491,7 @@ class AnalyticsService {
 
         for (const term of rawTerms) {
             if (foundQueries.has(term.query)) continue;
+            // Usa Array.from solo si estamos seguros, pero ya validamos el size arriba.
             const isInstructor = Array.from(this.knowledgeBaseRepo.instructorNames).some(name =>
                 name.includes(term.query.toLowerCase()) || term.query.toLowerCase().includes(name)
             );
@@ -701,14 +698,88 @@ class AnalyticsService {
         };
     }
 
+    // ==========================================
+    // MÉTODOS DE ANALÍTICA DE IA (NUEVO)
+    // ==========================================
+
+    /**
+     * Registra una interacción específica con las funciones de IA.
+     * @param {string} query - La consulta del usuario.
+     * @param {string} intentType - 'deep_question', 'navigational', etc.
+     * @param {string} eventType - 'impression', 'click_explanation', etc.
+     * @param {string} userId - ID del usuario (opcional).
+     */
+    async logAIInteraction(query, intentType, eventType, userId = null) {
+        console.log(`🤖 AI Event: ${eventType} [${intentType}] for "${query}"`);
+        try {
+            const queryText = `
+                INSERT INTO ai_analytics(query, intent_type, event_type, user_id)
+                VALUES($1, $2, $3, $4)
+            `;
+            await db.query(queryText, [query, intentType, eventType, userId]);
+        } catch (error) {
+            console.error('❌ Error registrando interacción de IA:', error);
+        }
+    }
+
+    async getAIAnalytics(days = 30) {
+        const query = `
+            SELECT 
+                COUNT(*) FILTER (WHERE event_type = 'impression') as impressions,
+                COUNT(*) FILTER (WHERE event_type = 'click_explanation') as clicks,
+                COUNT(DISTINCT query) as unique_questions
+            FROM ai_analytics
+            WHERE created_at >= NOW() - INTERVAL '${days} days'
+        `;
+        const res = await db.query(query);
+        const stats = res.rows[0];
+
+        // Calcular CTR
+        const ctr = stats.impressions > 0
+            ? ((parseInt(stats.clicks) / parseInt(stats.impressions)) * 100).toFixed(1)
+            : 0;
+
+        return {
+            impressions: parseInt(stats.impressions),
+            clicks: parseInt(stats.clicks),
+            uniqueQuestions: parseInt(stats.unique_questions),
+            ctr: ctr
+        };
+    }
+
+    async getTopDeepQuestions(days = 30) {
+        // Preguntas profundas más populares donde hubo clic (Interés Real)
+        const query = `
+            SELECT query, COUNT(*) as count
+            FROM ai_analytics
+            WHERE event_type = 'click_explanation'
+            AND created_at >= NOW() - INTERVAL '${days} days'
+            GROUP BY query
+            ORDER BY count DESC
+            LIMIT 5
+        `;
+        const res = await db.query(query);
+        return res.rows;
+    }
+
     async predictPopularCourse(days = 30) {
         console.log(`🤖 Obteniendo predicciones de tendencias (Last ${days} days)...`);
         try {
-            const trends = await PythonMLService.getTrends(days);
-            return trends || { popularCourse: 'No disponible', popularTopic: 'No disponible' };
+            // ✅ FETCH DESDE SERVICIO PYTHON (Endpoints internos)
+            // Aseguramos que la petición sea interna y rápida.
+            const stats = await PythonMLService.getTrends(days);
+
+            // Si el servicio responde null/vacío, devolvemos fallback structure
+            if (!stats) return { popularCourse: null, popularTopic: null };
+
+            return {
+                popularCourse: stats.popularCourse,
+                popularTopic: stats.popularTopic,
+                popularBook: stats.popularBook // ✅ NUEVO: Incluir libro
+            };
         } catch (error) {
             console.warn(`⚠️ No se pudieron obtener las predicciones de ML: ${error.message}`);
-            return { popularCourse: 'No disponible', popularTopic: 'No disponible' };
+            return { popularCourse: null, popularTopic: null };
         }
     }
 
@@ -717,6 +788,7 @@ class AnalyticsService {
         return res.rows;
     }
 
+    // ... (Mantener resto de métodos getTimeSeriesData) ...
     async getTimeSeriesData(days = 30) {
         const AnalyticsRepository = require('../repositories/analyticsRepository');
         const repo = new AnalyticsRepository();
