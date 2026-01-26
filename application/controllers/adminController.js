@@ -11,7 +11,9 @@ const ROOT_DIR = process.cwd();
 const DATA_DIR = path.join(ROOT_DIR, 'data_dump');
 const ML_SCRIPT = path.join(ROOT_DIR, 'ml_service', 'run_batch.py');
 const PREDICTIONS_FILE = path.join(DATA_DIR, 'ai_predictions.json');
-const PYTHON_PATH = 'C:/Python313/python.exe';
+const PYTHON_PATH = isWindows
+    ? 'C:/Python313/python.exe'  // Tu ruta local
+    : 'python3';
 
 // Asegurar carpeta temporal
 if (!fs.existsSync(DATA_DIR)) {
