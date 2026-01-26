@@ -1,6 +1,6 @@
 const CourseRepository = require('../../domain/repositories/courseRepository');
 const AnalyticsService = require('../../domain/services/analyticsService');
-const PythonMLService = require('../../domain/services/pythonMLService'); // Servicio principal de ML
+
 const TopicRepository = require('../../domain/repositories/topicRepository'); // Importar repositorio de temas
 const CareerRepository = require('../../domain/repositories/careerRepository');
 const BookRepository = require('../../domain/repositories/bookRepository'); // ✅ NUEVO: Repositorio de Libros

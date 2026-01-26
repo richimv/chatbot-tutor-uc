@@ -145,6 +145,7 @@ body {
 
 /* Charts Grid */
 .charts-grid {
+    margin-top: 3rem;
     grid-area: charts;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -269,4 +270,23 @@ body {
     text-align: center;
     color: #64748b;
     border: 1px dashed #475569;
+}
+
+/* ✅ NUEVO: Grid para AI Cards (Curso + Libro) */
+.ai-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .ai-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ai-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }

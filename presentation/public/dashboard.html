@@ -29,7 +29,7 @@
             </div>
             <div class="header-actions">
                 <a href="/" class="btn"><i class="fas fa-home"></i> Volver al Inicio</a>
-                <button onclick="window.location.reload()" class="btn"><i class="fas fa-sync-alt"></i>
+                <button id="btn-update-ai" class="btn"><i class="fas fa-sync-alt"></i>
                     Actualizar</button>
             </div>
         </header>
@@ -89,11 +89,6 @@
                     </div>
                 </div>
 
-                <div id="ai-insights-container" style="margin-bottom: 2rem;">
-                    <div class="ai-loading-card">
-                        <i class="fas fa-brain fa-pulse"></i> Esperando análisis de IA...
-                    </div>
-                </div>
             </div>
 
             <!-- Charts -->
@@ -114,6 +109,14 @@
                     <div style="height: 300px;">
                         <canvas id="chart-books"></canvas>
                     </div>
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div id="ai-insights-container" style="margin-top: 3rem; margin-bottom: 3rem;">
+                <div class="ai-loading-card"
+                    style="background: #1e293b; padding: 2rem; border-radius: 12px; text-align: center; border: 1px dashed #475569; color: #94a3b8;">
+                    <i class="fas fa-brain fa-pulse"></i> Esperando análisis de IA...
                 </div>
             </div>
 

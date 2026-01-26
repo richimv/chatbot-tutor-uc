@@ -1,5 +1,5 @@
 const db = require('../../infrastructure/database/db');
-const PythonMLService = require('./pythonMLService');
+
 const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository');
 
 class AnalyticsService {
@@ -763,25 +763,11 @@ class AnalyticsService {
     }
 
     async predictPopularCourse(days = 30) {
-        console.log(`🤖 Obteniendo predicciones de tendencias (Last ${days} days)...`);
-        try {
-            // ✅ FETCH DESDE SERVICIO PYTHON (Endpoints internos)
-            // Aseguramos que la petición sea interna y rápida.
-            const stats = await PythonMLService.getTrends(days);
-
-            // Si el servicio responde null/vacío, devolvemos fallback structure
-            if (!stats) return { popularCourse: null, popularTopic: null };
-
-            return {
-                popularCourse: stats.popularCourse,
-                popularTopic: stats.popularTopic,
-                popularBook: stats.popularBook // ✅ NUEVO: Incluir libro
-            };
-        } catch (error) {
-            console.warn(`⚠️ No se pudieron obtener las predicciones de ML: ${error.message}`);
-            return { popularCourse: null, popularTopic: null };
-        }
+        // ✅ PYTHON SERVICE DEPRECATED
+        // Ahora el AdminController lee directamente el JSON generado por el script batch.
+        return { popularCourse: null, popularTopic: null };
     }
+
 
     async getAllFeedback() {
         const res = await db.query('SELECT * FROM feedback ORDER BY created_at DESC');

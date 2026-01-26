@@ -1,16 +1,21 @@
-const db = require('../../infrastructure/database/db'); // Tu conexión pool
+const db = require('../../infrastructure/database/db');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-// RUTAS (Ajustadas a tu estructura)
-const ROOT_DIR = path.join(__dirname, '../../../');
+// ==========================================
+// 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
+// ==========================================
+// process.cwd() obtiene la carpeta raíz donde ejecutas "npm run dev"
+const ROOT_DIR = process.cwd();
 const DATA_DIR = path.join(ROOT_DIR, 'data_dump');
-const PREDICTIONS_FILE = path.join(DATA_DIR, 'ai_predictions.json');
 const ML_SCRIPT = path.join(ROOT_DIR, 'ml_service', 'run_batch.py');
+const PREDICTIONS_FILE = path.join(DATA_DIR, 'ai_predictions.json');
+const PYTHON_PATH = 'C:/Python313/python.exe';
 
 // Asegurar carpeta temporal
 if (!fs.existsSync(DATA_DIR)) {
+    console.log('📁 Creando carpeta data_dump en:', DATA_DIR);
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
@@ -27,6 +32,11 @@ class AdminController {
         const rows = res.rows.map(row =>
             Object.values(row).map(val => {
                 if (val === null) return '';
+
+                // NUEVO: Si es fecha, convertir a ISO (formato universal)
+                if (val instanceof Date) {
+                    return `"${val.toISOString()}"`;
+                }
                 // Limpiar saltos de línea y comillas para CSV simple
                 const cleanVal = String(val).replace(/"/g, '""').replace(/\n/g, ' ');
                 return `"${cleanVal}"`;
@@ -42,6 +52,14 @@ class AdminController {
      */
     async runAiAnalysis(req, res) {
         try {
+            // --- 🚨 INICIO DE DEBUGGING 🚨 ---
+            console.log('📍 [DEBUG] Controlador runAiAnalysis activado');
+            console.log('📍 [DEBUG] Directorio actual del archivo (__dirname):', __dirname);
+            console.log('📍 [DEBUG] Ruta calculada para ROOT_DIR:', ROOT_DIR);
+            console.log('📍 [DEBUG] Ruta calculada para DATA_DIR:', DATA_DIR);
+            console.log('📍 [DEBUG] ¿Existe DATA_DIR?:', fs.existsSync(DATA_DIR));
+            // ---------------------------------
+
             console.log('🤖 Iniciando proceso Batch de IA...');
 
             // 1. Exportar datos frescos a CSV
@@ -51,14 +69,12 @@ class AdminController {
             // Exportamos Search History (Querys) y Courses (Nombres)
             await this._exportTableToCSV('search_history', 'search_history.csv', 'query, created_at');
             await this._exportTableToCSV('courses', 'courses.csv', 'id, name');
-            // Si usas libros, descomenta:
-            // await this._exportTableToCSV('resources', 'resources.csv', 'id, title');
+            await this._exportTableToCSV('resources', 'resources.csv', 'id, title');
 
             console.log(`🐍 Ejecutando script: ${ML_SCRIPT}`);
 
             // 2. Spawn Python
-            const pythonProcess = spawn('python', [ML_SCRIPT]);
-            // NOTA: Si en Render usas python3, cambia 'python' por 'python3'
+            const pythonProcess = spawn(PYTHON_PATH, [ML_SCRIPT], { cwd: ROOT_DIR });
 
             pythonProcess.stdout.on('data', (data) => console.log(`[PY]: ${data}`));
             pythonProcess.stderr.on('data', (data) => console.error(`[PY ERROR]: ${data}`));

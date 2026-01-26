@@ -17,6 +17,8 @@ const { authLimiter } = require('../config/rateLimiters');
 // ✅ NUEVO: Admin Dashboard (Stats Maestras)
 router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboardStats);
 
+router.post('/admin/run-ai', auth, adminOnly, adminController.runAiAnalysis);
+
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
 router.use('/payment', paymentRoutes);

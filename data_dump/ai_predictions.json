@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-01-26T01:15:45.360808",
+  "course_prediction": {
+    "predictedCourse": "Anatom\u00eda Humana",
+    "confidence": 0.86,
+    "reason": "Tendencia basada en 107 b\u00fasquedas directas.",
+    "searchCount": 107
+  },
+  "book_prediction": {
+    "predictedBook": "Preguntas de Anatom\u00eda",
+    "confidence": 1.0,
+    "reason": "Popularidad en 58 b\u00fasquedas.",
+    "searchCount": 58
+  }
+}

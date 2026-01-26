@@ -4,7 +4,20 @@ import math
 import re
 from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
-from ..utils import normalize_text
+# --- CORRECCIÓN DE IMPORTACIÓN ---
+import sys
+import os
+
+# Agregamos la raíz del proyecto al path para poder importar 'ml_service'
+# Esto funciona tanto para Flask como para el script batch
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
+try:
+    from ml_service.utils import normalize_text
+except ImportError:
+    # Fallback por si se ejecuta desde otra ubicación
+    from utils import normalize_text
+# ---------------------------------
 
 def calculate_decay_weight(date_obj, lambda_val=0.05):
     """

@@ -1,0 +1,9 @@
+{
+    "ignore": [
+        "data_dump/*",
+        "ml_service/__pycache__/*",
+        "*.csv",
+        "*.json"
+    ],
+    "ext": "js,mjs,cjs,json"
+}

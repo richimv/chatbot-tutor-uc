@@ -3,7 +3,7 @@ const { VertexAI } = require('@google-cloud/vertexai');
 const CourseRepository = require('../repositories/courseRepository');
 const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository');
 const CareerRepository = require('../repositories/careerRepository'); // ✅ 1. Importar el repositorio de carreras
-const PythonMLService = require('./pythonMLService');
+
 const { normalizeText } = require('../utils/textUtils'); // ✅ SOLUCIÓN: Importar la función que faltaba.
 
 // === INICIO: VERIFICACIÓN DE API KEY ===
@@ -529,16 +529,11 @@ class MLService {
      * Obtiene recomendaciones de cursos y temas relacionados.
      */
     static async getRecommendations(query, directResultsIds = []) {
-        // ... (Tu lógica de recomendaciones aquí, no necesita cambios) ...
-        console.log(`🤖 MLService: Obteniendo recomendaciones para "${query}"`);
-        try {
-            const recommendations = await PythonMLService.getRecommendations(query, directResultsIds);
-            return recommendations || { relatedCourses: [], relatedTopics: [] };
-        } catch (error) {
-            console.error('❌ Error en MLService al obtener recomendaciones:', error);
-            return { relatedCourses: [], relatedTopics: [] };
-        }
+        // ✅ RECOMMENDATIONS DISABLED (Python Service Removed)
+        // La lógica de recomendaciones ahora se maneja en el flujo principal o RAG.
+        return { relatedCourses: [], relatedTopics: [] };
     }
+
 
     /**
      * Genera una descripción concisa y académica para un curso específico.

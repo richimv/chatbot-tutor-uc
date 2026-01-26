@@ -2,6 +2,7 @@ class DashboardManager {
     constructor() {
         this.apiUrl = '/api/admin/dashboard-stats';
         this.aiUrl = '/api/admin/run-ai'; // Endpoint para activar Python
+        this.charts = {}; // Store chart instances
         this.token = localStorage.getItem('authToken');
 
         // Verificar autenticación antes de iniciar
@@ -89,8 +90,8 @@ class DashboardManager {
         const container = document.getElementById('ai-insights-container');
         if (!container) return;
 
-        // Caso: No hay datos aún
-        if (!aiData || !aiData.course_prediction || !aiData.course_prediction.predictedCourse) {
+        // Si no hay data de nada
+        if (!aiData) {
             container.innerHTML = `
                 <div class="ai-loading-card">
                     <i class="fas fa-robot"></i> Sin análisis reciente.
@@ -99,29 +100,42 @@ class DashboardManager {
             return;
         }
 
-        const pred = aiData.course_prediction;
-        const confidencePercent = Math.round(pred.confidence * 100);
+        // Helper para generar tarjeta
+        const createCard = (title, icon, pred, typeIcon) => {
+            // Detectar nombre de predicción en cualquiera de las llaves posibles
+            const predictionName = pred ? (pred.predictedCourse || pred.predictedBook || pred.predictedResource) : null;
 
-        container.innerHTML = `
+            if (!predictionName) {
+                // Tarjeta vacía/placeholder
+                return `
+                <div class="ai-card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.7;">
+                   <div style="font-size:3rem; margin-bottom:1rem; color:#334155;">${typeIcon}</div>
+                   <div style="color:#64748b;">Sin suficientes datos para ${title}</div>
+                </div>`;
+            }
+
+            const confidencePercent = Math.round(pred.confidence * 100);
+
+            return `
             <div class="ai-card">
                 <div class="ai-header">
-                    <div class="ai-title"><i class="fas fa-brain"></i> Tendencia Detectada (IA)</div>
-                    <div style="color: #94a3b8; font-size: 0.8rem;">
-                        Basado en ${pred.searchCount} búsquedas recientes
+                    <div class="ai-title"><i class="${icon}"></i> ${title}</div>
+                    <div style="color: #94a3b8; font-size: 0.75rem;">
+                        Basado en ${pred.searchCount || 0} búsquedas
                     </div>
                 </div>
                 
                 <div class="ai-prediction">
-                    🚀 ${pred.predictedCourse}
+                    ${typeIcon} ${predictionName}
                 </div>
                 
                 <div class="ai-reason">
                     "${pred.reason}"
                 </div>
 
-                <div class="confidence-section">
+                <div class="confidence-section" style="margin-top:auto;">
                     <div style="display:flex; justify-content:space-between; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 5px;">
-                        <span>Confianza del Modelo</span>
+                        <span>Confianza</span>
                         <span>${confidencePercent}%</span>
                     </div>
                     <div class="confidence-bar-bg">
@@ -129,7 +143,13 @@ class DashboardManager {
                     </div>
                 </div>
             </div>
-        `;
+            `;
+        };
+
+        const courseCard = createCard('Curso Tendencia', 'fas fa-graduation-cap', aiData.course_prediction, '🚀');
+        const bookCard = createCard('Libro Tendencia', 'fas fa-book', aiData.book_prediction, '📚');
+
+        container.innerHTML = `<div class="ai-grid">${courseCard}${bookCard}</div>`;
     }
 
     async triggerAiUpdate(btn) {
@@ -162,22 +182,29 @@ class DashboardManager {
         }
     }
 
+
+
     createBarChart(canvasId, items, label, color) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
+
+        // Destroy existing chart if it exists
+        if (this.charts[canvasId]) {
+            this.charts[canvasId].destroy();
+        }
 
         const ctx = canvas.getContext('2d');
 
         // Handle Empty Data
         if (!items || items.length === 0) {
-            // Podrías dibujar texto "Sin datos" aquí
             return;
         }
 
         const labels = items.map(i => i.name.length > 25 ? i.name.substring(0, 25) + '...' : i.name);
         const values = items.map(i => parseInt(i.visits));
 
-        new Chart(ctx, {
+        // Save new instance
+        this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
