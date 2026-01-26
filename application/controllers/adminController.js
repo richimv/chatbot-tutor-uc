@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
 // ==========================================
+const isWindows = process.platform === 'win32';
 // process.cwd() obtiene la carpeta raíz donde ejecutas "npm run dev"
 const ROOT_DIR = process.cwd();
 const DATA_DIR = path.join(ROOT_DIR, 'data_dump');
