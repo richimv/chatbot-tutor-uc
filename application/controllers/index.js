@@ -33,5 +33,6 @@ module.exports = {
     analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.
     coursesController: new CoursesController(searchService, adminService),
     usageController: new UsageController(usageService), // ✅ NUEVO
-    adminController: require('./adminController') // ✅ NUEVO: Importar la instancia singleton directamente
+    adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
+    quizController: require('./quizController') // ✅ NUEVO: QuizController
 };

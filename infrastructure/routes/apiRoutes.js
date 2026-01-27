@@ -3,7 +3,7 @@ const router = express.Router();
 
 // --- Importar Controladores ---
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController } = require('../../application/controllers');
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
@@ -130,5 +130,11 @@ router.post('/analytics/view', auth, analyticsController.recordView.bind(analyti
 // --- Rutas Internas (para servicios de ML) ---
 router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
 router.get('/internal/ml-data', coursesController.getDataForML);
+
+// --- Rutas de Quiz (Gamificación) ---
+router.post('/quiz/start', auth, quizController.startQuiz);
+router.post('/quiz/submit', auth, quizController.submitScore);
+router.get('/quiz/stats', auth, quizController.getStats);
+router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
 
 module.exports = router;

@@ -101,12 +101,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.modal, .pdf-modal').forEach(m => m.style.display = 'none');
     };
 
+    // ✅ FIX: Restaurar listener global de cierre de modales
     document.body.addEventListener('click', (event) => {
         if (event.target.closest('.modal-close, .pdf-modal-close-btn') || event.target.classList.contains('modal-overlay')) {
             closeAllModals();
         }
     });
 });
+
+// ✅ LÓGICA DEL BOTÓN "HUB QUIZ ARENA"
+const btnQuiz = document.getElementById('btn-quiz-arena');
+if (btnQuiz) {
+    btnQuiz.addEventListener('click', () => {
+        // 1. Usar el SessionManager global para verificar
+        // ✅ CRITICAL FIX: El método correcto es isLoggedIn(), no isAuthenticated()
+        if (!window.sessionManager || !window.sessionManager.isLoggedIn()) {
+            // 2. Si no es autenticado, modal de Login
+            const loginModal = document.getElementById('login-prompt-modal');
+            if (loginModal) loginModal.style.display = 'flex';
+        } else {
+            // 3. Si autenticado, ir al juego
+            console.log('🎮 Iniciando Hub Quiz Arena...');
+            window.location.href = '/quiz.html';
+        }
+    });
+}
 
 // ✅ FUNCIÓN DE UI (Solo pinta, no modifica datos para evitar bucles)
 function updateHeaderUI(user) {

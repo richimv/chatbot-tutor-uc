@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Quiz Arena | Chatbot Tutor UC</title>
+
+    <!-- Fuentes y Estilos -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Estilos Core -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/quiz.css"> <!-- Estilos específicos del juego -->
+
+    <!-- Dependencias JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="quiz-body">
+
+    <!-- 1. HEADER HIGH-END -->
+    <header class="main-header">
+        <div class="brand-section">
+            <a href="/" class="quiz-logo">
+                <img src="assets/logo.png" alt="Hub logo" class="logo-img">
+                <span class="logo-text">HUB <span class="text-neon">ACADEMIA</span></span>
+            </a>
+        </div>
+
+        <div class="user-info" id="header-user-section">
+            <!-- JS Inject: Avatar + Salir -->
+        </div>
+    </header>
+
+    <!-- ... (MAIN content is unchanged until HUD) ... -->
+
+    <!-- CONTENEDOR PRINCIPAL DEL JUEGO -->
+    <main id="quiz-app">
+
+        <!-- VISTA 1: LOBBY (Setup + Leaderboard) -->
+        <section id="view-lobby" class="quiz-view active">
+            <!-- ... (Lobby content remains same but verify logic) ... -->
+            <h1 class="glitch-text" data-text="HUB QUIZ ARENA">HUB QUIZ ARENA</h1>
+            <p class="subtitle">Demuestra tu dominio académico</p>
+            <div class="lobby-grid">
+                <div class="lobby-setup">
+                    <div class="input-group">
+                        <label>Tema del Desafío</label>
+                        <input type="text" id="topic-input" placeholder="Ej: Historia del Perú..." autocomplete="off">
+                    </div>
+                    <div class="difficulty-selector">
+                        <label>Nivel de Dificultad</label>
+                        <div class="cards-container">
+                            <div class="difficulty-card" data-level="Básico"><i
+                                    class="fas fa-seedling"></i><span>Básico</span></div>
+                            <div class="difficulty-card selected" data-level="Profesional"><i
+                                    class="fas fa-briefcase"></i><span>Profesional</span></div>
+                            <div class="difficulty-card" data-level="Experto"><i
+                                    class="fas fa-dragon"></i><span>Experto</span></div>
+                        </div>
+                    </div>
+                    <button id="btn-start-game" class="btn-neon">INICIAR DESAFÍO <i class="fas fa-rocket"></i></button>
+                    <!-- Stats Personales Gamificados -->
+                    <div class="personal-stats-card">
+                        <div class="p-stat-row">
+                            <div class="p-stat-icon"><i class="fas fa-trophy" style="color: #fbbf24;"></i></div>
+                            <div class="stat-content"><span class="stat-label">Mejor Puntuación</span><span
+                                    class="stat-value" id="lobby-high-score">0</span></div>
+                        </div>
+                        <div class="p-stat-row">
+                            <div class="p-stat-icon"><i class="fas fa-gamepad" style="color: #3b82f6;"></i></div>
+                            <div class="stat-content"><span class="stat-label">Partidas Jugadas</span><span
+                                    class="stat-value" id="lobby-games-played">0</span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Columna Derecha: Leaderboard -->
+                <div class="lobby-leaderboard">
+                    <div class="leaderboard-header">
+                        <h3><i class="fas fa-trophy"></i> Top 10 Global</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Estudiante</th>
+                                    <th>Score</th>
+                                    <th>Tema</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <tr>
+                                    <td colspan="4" class="loading-cell">Cargando ranking...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 2: LOADING -->
+        <section id="view-loading" class="quiz-view">
+            <div class="loading-content">
+                <div class="brain-loader"><i class="fas fa-brain fa-pulse"></i></div>
+                <h2>Gemini está construyendo tu arena...</h2>
+                <p id="loading-text">Analizando complejidad del tema...</p>
+            </div>
+        </section>
+
+        <!-- VISTA 3: GAME -->
+        <section id="view-game" class="quiz-view">
+            <!-- 2. HUD DE JUEGO (Timer Visual) -->
+            <div class="game-hud">
+                <div class="lives-container" id="lives-display">
+                    <!-- JS Injects Icons -->
+                </div>
+
+                <div class="timer-track">
+                    <div id="timer-bar" class="timer-fill"></div>
+                </div>
+
+                <!-- COMODINES -->
+                <div class="hud-right-group" style="display: flex; align-items: center; gap: 15px;">
+                    <div class="powerups-container">
+                        <button id="btn-powerup-5050" class="powerup-btn" title="50/50 (Elimina 2 incorrectas)">
+                            <i class="fas fa-percent"></i>
+                            <span class="powerup-badge">1</span>
+                        </button>
+                        <button id="btn-powerup-skip" class="powerup-btn" title="Saltar Pregunta">
+                            <i class="fas fa-forward"></i>
+                            <span class="powerup-badge">1</span>
+                        </button>
+                    </div>
+
+                    <div class="score-display" style="position: relative;">
+                        <!-- Combo Text Injected via JS here -->
+                        <span id="score-display">0</span> pts
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pregunta -->
+            <div class="question-container">
+                <span class="badged-question">Pregunta <span id="current-question-num">1</span>/10</span>
+                <h2 id="question-text">Cargando pregunta...</h2>
+            </div>
+
+            <!-- Opciones -->
+            <div class="options-grid" id="options-container">
+                <!-- JS Injects Buttons -->
+            </div>
+        </section>
+
+        <!-- 3. MODAL DE FEEDBACK (Glassmorphism Overlay) -->
+        <div id="feedback-overlay" class="glass-modal hidden">
+            <div class="modal-content">
+                <div class="feedback-header">
+                    <i id="feedback-icon" class="fas fa-check-circle"></i>
+                    <h2 id="feedback-title">¡Correcto!</h2>
+                </div>
+                <div id="feedback-text-container" class="feedback-body">
+                    <p id="feedback-text">Texto educativo...</p>
+                </div>
+                <button id="btn-next-question" class="btn-glow">
+                    Siguiente Nivel <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- VISTA 4: RESULTS -->
+        <section id="view-results" class="quiz-view">
+            <div class="results-card">
+                <h2 id="results-title">DESAFÍO COMPLETADO</h2>
+
+                <div id="new-record-badge" class="hidden">
+                    <i class="fas fa-crown"></i> ¡NUEVO RÉCORD!
+                </div>
+
+                <div class="final-score">
+                    <span id="final-score-val">0</span>
+                    <small>Puntos</small>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">Aciertos</span>
+                        <span class="value" id="final-correct">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Rondas</span>
+                        <span class="value" id="final-rounds">10</span>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="btn-retry" class="btn-secondary"><i class="fas fa-redo"></i> Jugar Otro</button>
+                    <a href="/" class="btn-neon"><i class="fas fa-home"></i> Volver al Hub</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts Core -->
+    <script src="js/config.js"></script>
+    <script src="js/services/authApiService.js"></script> <!-- Required by SessionManager -->
+    <script src="js/sessionManager.js"></script> <!-- Auth Check -->
+    <script src="js/quiz.js?v=cyber1"></script> <!-- Lógica del Juego -->
+
+</body>
+
+</html>
