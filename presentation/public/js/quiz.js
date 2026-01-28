@@ -40,9 +40,15 @@ class QuizGame {
         if (window.sessionManager) {
             window.sessionManager.initialize();
             const currentUser = window.sessionManager.getUser();
-            if (currentUser) this.renderHeader(currentUser);
+            if (currentUser) {
+                this.renderHeader(currentUser);
+                this.applyPremiumLocks(currentUser); // 🔒 NEW
+            }
             window.sessionManager.onStateChange((user) => {
-                if (user) this.renderHeader(user);
+                if (user) {
+                    this.renderHeader(user);
+                    this.applyPremiumLocks(user); // 🔒 NEW
+                }
             });
         }
         this.fetchLobbyData();
@@ -60,6 +66,26 @@ class QuizGame {
         }
 
         this.setupEventListeners();
+    }
+
+    applyPremiumLocks(user) {
+        // Fix: Use camelCase logic verified in previous steps
+        const isPremium = user.subscriptionStatus === 'active' || user.role === 'admin';
+        const expertCard = document.querySelector('.difficulty-card[data-level="Experto"]');
+
+        if (expertCard) {
+            if (!isPremium) {
+                expertCard.classList.add('locked');
+                // visual lock icon
+                if (!expertCard.querySelector('.lock-icon')) {
+                    expertCard.innerHTML += `<div class="lock-icon" style="position:absolute; top:10px; right:10px; color: #f43f5e; font-size: 1.2rem;"><i class="fas fa-lock"></i></div>`;
+                }
+            } else {
+                expertCard.classList.remove('locked');
+                const lock = expertCard.querySelector('.lock-icon');
+                if (lock) lock.remove();
+            }
+        }
     }
 
     renderHeader(user = null) {
@@ -166,6 +192,47 @@ class QuizGame {
         // Selector Dificultad (Visual only - Logic handled by Backend Round System)
         document.querySelectorAll('.difficulty-card').forEach(card => {
             card.addEventListener('click', () => {
+                // 🔒 Premium Lock Check
+                if (card.classList.contains('locked')) {
+                    // Show custom lock modal reused from showFeedback but avoiding conflicts
+                    const htmlContent = `
+                        <div style="text-align: center;">
+                            <i class="fas fa-lock" style="font-size: 3rem; color: #f43f5e; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.5));"></i>
+                            <h3 style="color: #fff; margin-bottom: 10px; font-family: 'Outfit', sans-serif;">Nivel Experto Bloqueado</h3>
+                            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 20px;">
+                                Solo los usuarios Premium pueden acceder a la dificultad máxima.
+                            </p>
+                            <button onclick="window.location.href='pricing.html'" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
+                                <i class="fas fa-crown"></i> Desbloquear Ahora
+                            </button>
+                        </div>
+                    `;
+
+                    // We use the existing feedback overlay for simplicity
+                    const overlay = document.getElementById('feedback-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                        const body = overlay.querySelector('.feedback-body');
+                        const title = overlay.querySelector('.feedback-header h2');
+                        const icon = overlay.querySelector('.feedback-header i');
+                        const btn = document.getElementById('btn-next-question');
+
+                        if (body) body.innerHTML = htmlContent;
+                        if (title) title.textContent = "Acceso Restringido";
+                        if (icon) icon.className = "fas fa-user-lock";
+                        if (btn) btn.style.display = 'none'; // Hide next button
+
+                        // Restore on close
+                        overlay.onclick = (e) => {
+                            if (e.target === overlay) {
+                                overlay.classList.add('hidden');
+                                if (btn) btn.style.display = 'block';
+                            }
+                        }
+                    }
+                    return;
+                }
+
                 document.querySelectorAll('.difficulty-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 // Nota: El backend decidirá la dificultad real basada en la ronda
@@ -224,10 +291,7 @@ class QuizGame {
     usePowerUpSkip() {
         if (!this.powerups['skip']) return;
 
-        // Visual Feedback
-        alert("⏩ ¡Pregunta Saltada!");
-
-        // Move next without penalty
+        // Disable PowerUp
         this.powerups['skip'] = false;
         const btn = document.getElementById('btn-powerup-skip');
         if (btn) {
@@ -235,15 +299,25 @@ class QuizGame {
             btn.querySelector('.powerup-badge').style.display = 'none';
         }
 
-        // Trick: Treat as correct but 0 points? Or just move?
-        // Let's just go next check
-        this.currentQuestionIndex++;
-        if (this.currentQuestionIndex >= this.questions.length) {
-            // End of round logic (reuse updateHUD or next logic partial)
-            // Simular correcto pero sin puntos
-            this.showFeedback(true, "Saltada con éxito (Sin puntos).", "Pregunta saltada sin penalización.");
-        } else {
-            this.loadRound();
+        // Show Feedback Modal (High-End UI) instead of alert
+        const htmlContent = `
+            <p style="font-size: 1.1rem; color: #cbd5e1;">
+                Has utilizado el comodín de salto. 
+                <span style="color: #60a5fa; font-weight: bold;">No ganas puntos</span>, 
+                pero conservas tus vidas.
+            </p>
+        `;
+
+        // Treat it as a "Correct" outcome visually (Green Check) but explain it's a skip
+        this.showFeedback(true, htmlContent, "¡Pregunta Saltada!");
+
+        // Update Title via DOM directly since showFeedback sets it to "Excelente!"
+        const overlay = document.getElementById('feedback-overlay');
+        if (overlay) {
+            const title = overlay.querySelector('.feedback-header h2');
+            const icon = overlay.querySelector('.feedback-header i');
+            if (title) title.textContent = "¡Salto Temporal!";
+            if (icon) icon.className = "fas fa-forward";
         }
     }
 
@@ -331,9 +405,72 @@ class QuizGame {
             const data = await response.json();
 
             // Check 403 (Limit Reached)
-            if (response.status === 403) {
-                alert(`⛔ ${data.error}\n\nActualiza a Premium.`);
-                this.showView('lobby');
+            if (response.status === 403 && data.error) {
+                this.showView('lobby'); // Return to lobby
+
+                // Show Premium Wall Modal
+                let titleText = "Límite Diario Alcanzado";
+                let mainMessage = data.error;
+                let subMessage = "Los usuarios Free tienen un límite de 3 partidas cada 24 horas.";
+                let iconClass = "fas fa-clock"; // Default (Limit)
+
+                // 🔒 Premium Lock specific content
+                if (data.premiumLock) {
+                    titleText = "Nivel Bloqueado";
+                    subMessage = "Los niveles Profesional y Experto (Rondas 3-5) son exclusivos de Premium.";
+                    iconClass = "fas fa-lock";
+
+                    // 🚨 CRITICAL: Save progress to count this as a played game!
+                    // Even if locked, the user played 2 rounds, so we must track it.
+                    this.submitScore(this.currentRound - 1);
+                }
+
+                const htmlContent = `
+                    <div style="text-align: center; color: #cbd5e1;">
+                        <p style="font-size: 1.1rem; margin-bottom: 20px;">
+                            ${mainMessage}
+                        </p>
+                        <p style="font-size: 0.95rem; opacity: 0.8;">
+                            ${subMessage}
+                        </p>
+                        <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
+                            <button onclick="window.location.href='/'" class="btn-secondary" style="padding: 10px 20px; border-radius: 8px;">
+                                Volver al Inicio
+                            </button>
+                            <button onclick="window.location.href='pricing.html'" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
+                                <i class="fas fa-crown"></i> Ser Premium
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                this.showFeedback(false, htmlContent, titleText);
+
+                // Customize Modal Appearance for "Limit Reached" or "Locked"
+                const overlay = document.getElementById('feedback-overlay');
+                if (overlay) {
+                    const title = overlay.querySelector('.feedback-header h2');
+                    const icon = overlay.querySelector('.feedback-header i');
+                    const nextBtn = document.getElementById('btn-next-question'); // Changed from feedback-next-btn to btn-next-question
+
+                    if (title) {
+                        title.textContent = titleText === "Nivel Bloqueado" ? "¡Nivel Superior!" : "¡Vuelve Mañana!";
+                        title.style.color = "var(--neon-rose)";
+                    }
+                    if (icon) {
+                        icon.className = iconClass;
+                        icon.style.color = "var(--neon-rose)";
+                    }
+                    // Hide the default "Next" button since we provided custom actions
+                    if (nextBtn) nextBtn.style.display = 'none';
+
+                    // Restore button when modal closes (optional cleanup)
+                    overlay.onclick = (e) => {
+                        if (e.target === overlay) {
+                            if (nextBtn) nextBtn.style.display = 'block'; // Reset for next game
+                        }
+                    }
+                }
                 return;
             }
 
@@ -528,7 +665,13 @@ class QuizGame {
                     btnNext.innerHTML = 'Ver Resultados <i class="fas fa-flag-checkered"></i>';
                     btnNext.className = 'btn-glow game-over-btn'; // Optional styling
                 } else if (isRoundEnd && this.currentRound < this.maxRounds) {
-                    btnNext.innerHTML = 'Siguiente Nivel <i class="fas fa-level-up-alt"></i>';
+                    // 🔒 Premium Lock Visual
+                    if (this.currentRound === 2 && !this.isPremiumContext) {
+                        btnNext.innerHTML = 'Desbloquear Nivel 3 <i class="fas fa-lock" style="margin-left: 8px;"></i>';
+                        btnNext.className = 'btn-premium-unlock'; // Custom Premium Style
+                    } else {
+                        btnNext.innerHTML = 'Siguiente Nivel <i class="fas fa-level-up-alt"></i>';
+                    }
                 } else if (isRoundEnd && this.currentRound >= this.maxRounds) {
                     btnNext.innerHTML = 'Finalizar Desafío <i class="fas fa-trophy"></i>';
                 } else {
@@ -599,23 +742,15 @@ class QuizGame {
         }
     }
 
-    async endGame() {
-        // Hide Overlay if open
-        const overlay = document.getElementById('feedback-overlay');
-        if (overlay) overlay.classList.add('hidden');
-
-        this.showView('results');
-
-        document.getElementById('final-score-val').textContent = this.score;
-        document.getElementById('final-correct').textContent = Math.round(this.score / 120); // Aproximación
-        document.getElementById('final-rounds').textContent = `${this.currentRound}`;
-
+    async submitScore(roundsOverride = null) {
         try {
             const token = localStorage.getItem('authToken');
 
             // Use the persisted difficulty (or fallback if undefined)
-            // Fixes bug where 'Profesional' was saved as 'Básico'
             let finalDiff = this.currentDifficulty || 'Básico';
+
+            // Determine rounds count
+            const finalRounds = roundsOverride || this.currentRound;
 
             const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/submit`, {
                 method: 'POST',
@@ -628,19 +763,39 @@ class QuizGame {
                     difficulty: finalDiff,
                     score: this.score,
                     correct_answers_count: Math.floor(this.score / 100),
-                    total_questions: this.currentRound * 10
+                    total_questions: finalRounds * 10,
+                    rounds_completed: finalRounds
                 })
             });
             const data = await res.json();
 
-            if (data.isNewRecord) {
-                document.getElementById('new-record-badge').classList.remove('hidden');
-            } else {
-                document.getElementById('new-record-badge').classList.add('hidden');
-            }
+            // Return data mainly for endGame to update stats
+            return data;
 
         } catch (e) {
             console.error("Error guardando puntaje", e);
+            return null;
+        }
+    }
+
+    async endGame() {
+        // Hide Overlay if open
+        const overlay = document.getElementById('feedback-overlay');
+        if (overlay) overlay.classList.add('hidden');
+
+        this.showView('results');
+
+        document.getElementById('final-score-val').textContent = this.score;
+        document.getElementById('final-correct').textContent = Math.round(this.score / 120); // Aproximación
+        document.getElementById('final-rounds').textContent = `${this.currentRound}`;
+
+        // Uses extracted method
+        const data = await this.submitScore();
+
+        if (data && data.isNewRecord) {
+            document.getElementById('new-record-badge').classList.remove('hidden');
+        } else {
+            document.getElementById('new-record-badge').classList.add('hidden');
         }
     }
 

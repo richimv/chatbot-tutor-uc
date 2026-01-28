@@ -18,7 +18,9 @@ class QuizController {
             }
 
             // 1. Lógica FREEMIUM: Verificar Límite Diario (Solo en Ronda 1)
-            const isPremium = user.subscription_status === 'active' || user.role === 'admin';
+            // Fix: User model uses camelCase (subscriptionStatus), DB row uses snake_case. 
+            // Repository maps it to camelCase.
+            const isPremium = user.subscriptionStatus === 'active' || user.role === 'admin';
 
             if (round === 1 && !isPremium) {
                 const today = new Date().toISOString().split('T')[0];
@@ -38,6 +40,16 @@ class QuizController {
                         limitReached: true
                     });
                 }
+            }
+
+            // 🎯 NEW: Round Cap for Free Users
+            // Rounds 1-2: Free
+            // Rounds 3-5: Premium Only
+            if (round > 2 && !isPremium) {
+                return res.status(403).json({
+                    error: 'Los niveles Profesional y Experto son exclusivos de usuarios Premium.',
+                    premiumLock: true
+                });
             }
 
             // 2. Ajuste Dinámico de Dificultad por Ronda
@@ -80,7 +92,7 @@ class QuizController {
      */
     async submitScore(req, res) {
         try {
-            const { topic, difficulty, score, correct_answers_count, total_questions } = req.body;
+            const { topic, difficulty, score, correct_answers_count, total_questions, rounds_completed } = req.body;
             const userId = req.user.id;
 
             if (score === undefined || !topic) {
@@ -89,11 +101,11 @@ class QuizController {
 
             const queryInsert = `
                 INSERT INTO quiz_scores 
-                (user_id, topic, difficulty, score, correct_answers_count, total_questions_played)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                (user_id, topic, difficulty, score, correct_answers_count, total_questions_played, rounds_completed)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id
             `;
-            const values = [userId, topic, difficulty, score, correct_answers_count, total_questions || 10];
+            const values = [userId, topic, difficulty, score, correct_answers_count, total_questions || 10, rounds_completed || 1];
             await db.query(queryInsert, values);
 
             const queryMax = `SELECT MAX(score) as high_score FROM quiz_scores WHERE user_id = $1`;

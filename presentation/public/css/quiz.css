@@ -234,6 +234,8 @@ main#quiz-app {
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
+    position: relative;
+    /* 🔒 Fix for Lock Icon */
 }
 
 .difficulty-card i {
@@ -531,7 +533,8 @@ main#quiz-app {
     display: none;
 }
 
-.modal-content {
+/* Scoped to quiz body to prevent leaking to global modals */
+.quiz-body .modal-content {
     background: rgba(30, 41, 59, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 3rem;
@@ -544,7 +547,7 @@ main#quiz-app {
     color: var(--text-primary);
 }
 
-.modal-content::before {
+.quiz-body .modal-content::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -568,12 +571,12 @@ main#quiz-app {
     margin-bottom: 1rem;
 }
 
-.modal-content.correct i {
+.quiz-body .modal-content.correct i {
     color: var(--neon-green);
     text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
 }
 
-.modal-content.wrong i {
+.quiz-body .modal-content.wrong i {
     color: var(--neon-rose);
     text-shadow: 0 0 20px rgba(244, 63, 94, 0.5);
 }
@@ -604,6 +607,13 @@ main#quiz-app {
     box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
 }
 
+/* 🔧 Fix: Force Center Next Button */
+#btn-next-question {
+    display: block;
+    margin: 1.5rem auto 0 auto;
+    min-width: 200px;
+}
+
 /* RESULTS VIEW */
 .results-card {
     text-align: center;
@@ -630,8 +640,28 @@ main#quiz-app {
 
 .actions {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     justify-content: center;
+    width: 100%;
+}
+
+.actions button,
+.actions a {
+    flex: 1;
+    max-width: 250px;
+    /* Prevent them from becoming too wide */
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    text-decoration: none;
+    /* Ensure link looks like button */
+    height: 56px;
+    /* Explicit height for alignment */
 }
 
 /* RESPONSIVE */
@@ -910,5 +940,69 @@ main#quiz-app {
 
     100% {
         transform: scale(1);
+    }
+}
+
+/* 🔓 PREMIUM UNLOCK BUTTON */
+.btn-premium-unlock {
+    background: linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #d4af37 100%);
+    border: 2px solid #FDB931;
+    color: #422006;
+    /* Dark brown/gold text for contrast */
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(253, 185, 49, 0.4);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: block;
+    margin: 1.5rem auto 0 auto;
+    /* Force Center */
+    min-width: 240px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-premium-unlock i {
+    color: #422006;
+    font-size: 1.2rem;
+    filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.4));
+}
+
+.btn-premium-unlock:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 0 40px rgba(253, 185, 49, 0.6);
+    background: linear-gradient(135deg, #ffe57f 0%, #ffc107 100%);
+}
+
+.btn-premium-unlock::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+
+    20% {
+        transform: translateX(100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) rotate(45deg);
     }
 }

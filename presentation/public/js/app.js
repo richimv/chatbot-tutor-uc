@@ -113,16 +113,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 const btnQuiz = document.getElementById('btn-quiz-arena');
 if (btnQuiz) {
     btnQuiz.addEventListener('click', () => {
-        // 1. Usar el SessionManager global para verificar
-        // ✅ CRITICAL FIX: El método correcto es isLoggedIn(), no isAuthenticated()
-        if (!window.sessionManager || !window.sessionManager.isLoggedIn()) {
-            // 2. Si no es autenticado, modal de Login
-            const loginModal = document.getElementById('login-prompt-modal');
-            if (loginModal) loginModal.style.display = 'flex';
+        // ✅ STANDARD AUTH CHECK: Use UI Manager to handle Auth or Show Paywall Modal
+        if (window.uiManager) {
+            window.uiManager.checkAuthAndExecute(() => {
+                console.log('🎮 Iniciando Hub Quiz Arena...');
+                window.location.href = '/quiz.html';
+            });
         } else {
-            // 3. Si autenticado, ir al juego
-            console.log('🎮 Iniciando Hub Quiz Arena...');
-            window.location.href = '/quiz.html';
+            // Fallback if UIManager not loaded
+            if (!window.sessionManager || !window.sessionManager.isLoggedIn()) {
+                window.location.href = '/login.html';
+            } else {
+                window.location.href = '/quiz.html';
+            }
         }
     });
 }
