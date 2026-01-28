@@ -524,3 +524,34 @@ function createCarouselHTML(id, contentHTML) {
         </div>
     `;
 }
+
+// ✅ NUEVO: Banner Promocional del Juego (Mid-Page)
+function createGamePromoSectionHTML() {
+    return /*html*/`
+        <section class="game-promo-banner">
+            <div class="game-promo-content">
+                <div class="game-promo-text">
+                    <span class="game-promo-badge"><i class="fas fa-trophy"></i> Nuevo Desafío</span>
+                    <h2 class="game-promo-title">Hub Quiz Arena</h2>
+                    <p class="game-promo-description">
+                        Convierte el estudio en un juego. 🏆<br>
+                        Desbloquea logros, repasa conceptos clave y visualiza tu progreso académico.
+                    </p>
+                    <button class="btn-gamified" onclick="window.uiManager.checkAuthAndExecute(() => window.location.href='quiz.html')">
+                        <i class="fas fa-gamepad"></i> Jugar Ahora
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Background Art -->
+            <div class="game-promo-bg">
+                <picture>
+                    <source media="(max-width: 768px)" srcset="assets/quiz-bg-mobile.png">
+                    <img src="assets/quiz-bg-desktop.png" alt="Quiz Arena Art" loading="lazy">
+                </picture>
+                <div class="game-promo-overlay"></div>
+            </div>
+        </section>
+        <div class="section-spacer" style="height: 2.5rem;"></div>
+    `;
+}

@@ -642,6 +642,8 @@ main#quiz-app {
     display: flex;
     gap: 1.5rem;
     justify-content: center;
+    align-items: center;
+    /* Helper to ensure vertical centering */
     width: 100%;
 }
 
@@ -650,7 +652,8 @@ main#quiz-app {
     flex: 1;
     max-width: 250px;
     /* Prevent them from becoming too wide */
-    padding: 1rem;
+    padding: 0 1rem;
+    /* Use horizontal padding, vertical centering is handled by flex */
     font-size: 1rem;
     border-radius: 12px;
     display: flex;
@@ -662,6 +665,12 @@ main#quiz-app {
     /* Ensure link looks like button */
     height: 56px;
     /* Explicit height for alignment */
+    margin: 0;
+    /* Remove default margins */
+    box-sizing: border-box;
+    /* Ensure padding doesn't affect total height */
+    line-height: 1;
+    /* Normalize text height */
 }
 
 /* RESPONSIVE */

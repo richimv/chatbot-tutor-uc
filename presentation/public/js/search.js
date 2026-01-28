@@ -598,6 +598,10 @@ class SearchComponent {
         this.browseContainer.innerHTML = /*html*/`
             ${featuredBooksSection}
             ${featuredCoursesSection}
+            
+            <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
+            ${createGamePromoSectionHTML()}
+
             <div class="section-header">
                 <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
             </div>

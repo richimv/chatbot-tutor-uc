@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/course.css">
     <link rel="stylesheet" href="css/quiz.css"> <!-- ✅ NUEVO: Estilos Quiz -->
+    <link rel="stylesheet" href="css/hero.css"> <!-- ✅ NUEVO: Estilos Slider -->
     <!-- Legacy CSS files removed -->
     <!--Añadir Font Awesome para que se vean los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -49,34 +50,78 @@
 
     <div class="hero-wrapper">
         <div class="hero-wrapper">
-            <section class="hero hero-section">
-                <!-- Video Background (Visible only on Desktop) -->
-                <video autoplay muted loop playsinline poster="assets/portada.png" class="hero-video">
-                    <source src="assets/hero-bg.webm" type="video/webm">
-                    <source src="assets/hero-bg.mp4" type="video/mp4">
-                </video>
+            <!-- HERO SLIDER -->
+            <section id="hero-slider">
+                <div class="slider-container">
 
-                <!-- Overlay Gradient (Maintained via CSS or here if needed, but CSS handles it usually) -->
+                    <!-- SLIDE 1: Hub Académico (Video/Image Hybrid) -->
+                    <div class="slide active">
+                        <!-- Video Background (Desktop Only) -->
+                        <video autoplay muted loop playsinline poster="assets/portada.png"
+                            class="slide-bg hero-video desktop-only">
+                            <source src="assets/hero-bg.webm" type="video/webm">
+                            <source src="assets/hero-bg.mp4" type="video/mp4">
+                        </video>
+                        <!-- Image Fallback (Mobile Only) -->
+                        <img src="assets/hero-bg-mobile.png" alt="Hub Background" class="slide-bg mobile-only">
 
-                <div class="hero-content">
-                    <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
-                    <p class="hero-subtitle">
-                        Potencia tu aprendizaje con acceso instantáneo a recursos, libros y un tutor IA personalizado
-                        disponible 24/7.
-                    </p>
-                    <ul class="hero-features">
-                        <li><i class="fas fa-book-open"></i> Biblioteca Digital</li>
-                        <li><i class="fas fa-robot"></i> Tutor IA Personal</li>
-                        <li><i class="fas fa-check-circle"></i> Recursos Académicos</li>
-                    </ul>
+                        <div class="slide-overlay"></div>
 
-                    <!-- ✅ NUEVO: Botón de Gamificación -->
-                    <div class="hero-actions" style="margin-top: 2rem;">
-                        <button id="btn-quiz-arena" class="btn-gamified">
-                            <i class="fas fa-gamepad"></i> Hub Quiz Arena
-                            <span class="btn-badge">IA</span>
-                        </button>
+                        <div class="hero-content">
+                            <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
+                            <p class="hero-subtitle">
+                                Potencia tu aprendizaje con acceso instantáneo a recursos, libros y un tutor IA
+                                personalizado
+                                disponible 24/7.
+                            </p>
+                            <ul class="hero-features">
+                                <li><i class="fas fa-book-open"></i> Biblioteca Digital</li>
+                                <li><i class="fas fa-robot"></i> Tutor IA Personal</li>
+                                <li><i class="fas fa-check-circle"></i> Recursos Académicos</li>
+                            </ul>
+                        </div>
                     </div>
+
+                    <!-- SLIDE 2: Hub Quiz Arena (Art Direction) -->
+                    <div class="slide">
+                        <picture class="slide-bg">
+                            <!-- Mobile Vertical Image -->
+                            <source media="(max-width: 768px)" srcset="assets/quiz-bg-mobile.png">
+                            <!-- Desktop Horizontal Image -->
+                            <img src="assets/quiz-bg-desktop.png" alt="Quiz Arena Background" class="slide-bg">
+                        </picture>
+
+                        <div class="slide-overlay"></div>
+
+                        <div class="hero-content">
+                            <h1 class="hero-title">Hub Quiz Arena <span class="highlight-text"
+                                    style="background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">⚔️</span>
+                            </h1>
+                            <p class="hero-subtitle">
+                                Supera desafíos académicos. Refuerza lo aprendido de tus cursos y mide tu dominio de las
+                                materias en el ranking global.
+                            </p>
+                            <div class="hero-actions" style="margin-top: 2rem;">
+                                <!-- Utiliza el script existente btn-quiz-arena para auth -->
+                                <button id="btn-quiz-arena" class="btn-gamified">
+                                    <i class="fas fa-gamepad"></i> Jugar Ahora
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Navigation -->
+                <div class="slider-nav">
+                    <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
+                    <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+
+                <!-- Dots -->
+                <div class="slider-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
                 </div>
             </section>
 
@@ -198,6 +243,7 @@
         <script src="js/ui/citationManager.js"></script> <!-- ✅ NUEVO: Gestor de Citación -->
         <script src="js/library.js"></script> <!-- ✅ NUEVO: Gestor de Biblioteca (Favoritos/Guardados) -->
         <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
+        <script src="js/hero-slider.js"></script> <!-- ✅ NUEVO: Lógica del Slider -->
         <script src="js/app.js"></script> <!-- Archivo principal de inicialización, al final -->
 
 </body>

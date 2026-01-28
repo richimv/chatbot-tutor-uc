@@ -13,6 +13,7 @@ class QuizGame {
         this.score = 0;
         this.lives = 3;
         this.streak = 0; // Combo System
+        this.maxStreak = 0; // 🏆 Achievement Tracking
         this.timer = null;
         this.timeLeft = 0;
 
@@ -562,6 +563,8 @@ class QuizGame {
         if (isCorrect) {
             // Streak Logic
             this.streak++;
+            if (this.streak > this.maxStreak) this.maxStreak = this.streak; // 🏆 Track Max
+
             let multiplier = 1;
             if (this.streak > 2) multiplier = 1.5;
 
@@ -707,7 +710,7 @@ class QuizGame {
         if (overlay) overlay.classList.add('hidden');
 
         if (this.lives === 0) {
-            this.endGame();
+            this.endGame(false);
             return;
         }
 
@@ -737,7 +740,7 @@ class QuizGame {
                 }, 2000);
             } else {
                 // Fin del Juego (Ganado)
-                this.endGame();
+                this.endGame(true);
             }
         }
     }
@@ -778,7 +781,7 @@ class QuizGame {
         }
     }
 
-    async endGame() {
+    async endGame(isWin = false) {
         // Hide Overlay if open
         const overlay = document.getElementById('feedback-overlay');
         if (overlay) overlay.classList.add('hidden');
@@ -797,6 +800,107 @@ class QuizGame {
         } else {
             document.getElementById('new-record-badge').classList.add('hidden');
         }
+
+        // 🏆 GAMIFICATIONS CHECK
+        // Using a rough accuracy estimate or just score/lives
+        const possibleScore = this.currentRound * 10 * 100; // 10 questions per round, 100 pts each base
+        const accuracy = Math.min(100, Math.round((this.score / possibleScore) * 100));
+        this.checkAchievements(isWin, accuracy);
+    }
+
+    // 🏆 NEW: Achievement System
+    checkAchievements(isWin, accuracy) {
+        const achievements = [];
+
+        // 1. "Primera Sangre" (First Win)
+        // Logic: Trigger if they won at least 1 round (isWin) OR if they submitted a score > 0 (even if lost later)
+        if (isWin || this.score > 0) {
+            achievements.push({ title: 'Primer Paso', desc: 'Completaste una sesión de estudio.', icon: '🎯' });
+        }
+
+        // 2. "Perfeccionista" (High Accuracy)
+        if (accuracy >= 90) {
+            achievements.push({ title: 'Mente Brillante', desc: 'Precisión superior al 90%.', icon: '🧠' });
+        }
+
+        // 3. "Racha de Fuego" (Use MAX Streak, not current)
+        if (this.maxStreak >= 5) {
+            achievements.push({ title: 'En Llamas', desc: 'Racha de 5+ respuestas correctas.', icon: '🔥' });
+        }
+
+        // 4. "Sobreviviente" (Win with exactly 1 life)
+        if (isWin && this.lives === 1) {
+            achievements.push({ title: 'Sobreviviente', desc: 'Ganaste con solo 1 vida restante.', icon: '🚑' });
+        }
+
+        // Show them sequentially
+        achievements.forEach((ach, index) => {
+            setTimeout(() => {
+                this.triggerAchievement(ach.title, ach.desc, ach.icon);
+            }, index * 1500 + 1000); // Delay to let results screen settle
+        });
+    }
+
+    triggerAchievement(title, desc, icon) {
+        // Create Toast Element
+        const toast = document.createElement('div');
+        toast.className = 'achievement-toast';
+        toast.innerHTML = `
+            <div class="ach-icon">${icon}</div>
+            <div class="ach-content">
+                <div class="ach-title">¡Logro Desbloqueado!</div>
+                <div class="ach-name">${title}</div>
+                <div class="ach-desc">${desc}</div>
+            </div>
+        `;
+
+        // Style injected dynamically (saving a CSS file edit)
+        if (!document.getElementById('ach-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ach-styles';
+            style.innerHTML = `
+                .achievement-toast {
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(-100px);
+                    background: rgba(15, 23, 42, 0.95);
+                    border: 1px solid rgba(139, 92, 246, 0.5);
+                    border-left: 4px solid #8B5CF6;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                    z-index: 10000;
+                    opacity: 0;
+                    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                    min-width: 300px;
+                }
+                .achievement-toast.show {
+                    transform: translateX(-50%) translateY(0);
+                    opacity: 1;
+                }
+                .ach-icon { font-size: 2rem; }
+                .ach-content { text-align: left; }
+                .ach-title { font-size: 0.75rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; }
+                .ach-name { font-size: 1.1rem; font-weight: bold; color: #fff; margin: 2px 0; }
+                .ach-desc { font-size: 0.85rem; color: #94a3b8; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(toast);
+
+        // Animate In
+        requestAnimationFrame(() => toast.classList.add('show'));
+
+        // Animate Out & Remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
     }
 
     updateHUD() {

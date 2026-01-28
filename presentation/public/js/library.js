@@ -50,11 +50,16 @@ class LibraryManager {
             this.library.saved.clear();
             this.library.favorites.clear();
 
-            data.forEach(item => {
-                const key = `${item.type}-${item.id}`;
-                if (item.is_saved) this.library.saved.add(key);
-                if (item.is_favorite) this.library.favorites.add(key);
-            });
+            // ✅ SAFE CHECK: Ensure data is an array before iterating
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    const key = `${item.type}-${item.id}`;
+                    if (item.is_saved) this.library.saved.add(key);
+                    if (item.is_favorite) this.library.favorites.add(key);
+                });
+            } else {
+                console.warn('Library status response was not an array:', data);
+            }
 
             // Actualizar botones visibles
             this.updateButtons();
