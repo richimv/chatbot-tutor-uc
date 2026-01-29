@@ -20,20 +20,28 @@ class LibraryManager {
         }
 
         // 4. Escuchar clics globales para manejar toggles
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('.action-btn');
-            if (btn) {
-                e.preventDefault();
-                e.stopPropagation();
+        // 4. (Listener global eliminado en favor de manejadores explícitos para mayor control)
+    }
 
-                // ✅ NUEVO: Bloqueo Soft para usuarios no registrados
-                window.uiManager.checkAuthAndExecute(() => {
-                    const type = btn.dataset.type;
-                    const id = btn.dataset.id;
-                    const action = btn.dataset.action; // 'save' | 'favorite'
-                    this.toggleItem(type, id, action, btn);
-                });
-            }
+    // ✅ NUEVO: Manejador Global unificado para acciones de tarjetas (Guardar/Fav)
+    // Se llama directamente desde el onclick del HTML para frenar la propagación inmediatamente.
+    handleCardAction(event, id, type, action) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation(); // 🛑 CRÍTICO: Evitar que el clic abra la tarjeta (curso/libro)
+        }
+
+        const btn = event.currentTarget;
+
+        // 1. Validar estado Freemium (Pendiente/Bloqueado)
+        // Retorna false si el usuario está bloqueado por límites
+        if (window.uiManager && !window.uiManager.validateFreemiumAction(event)) {
+            return;
+        }
+
+        // 2. Validar Autenticación general (Usuario registrado)
+        window.uiManager.checkAuthAndExecute(() => {
+            this.toggleItem(type, id, action, btn);
         });
     }
 
@@ -273,3 +281,6 @@ window.openBook = function (url, id) {
     }
     window.open(url, '_blank');
 };
+
+// ✅ Exponer el manejador de acciones globalmente
+window.handleCardAction = (e, id, t, a) => libraryManager.handleCardAction(e, id, t, a);

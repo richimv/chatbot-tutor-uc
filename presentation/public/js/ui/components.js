@@ -119,11 +119,10 @@ function createBrowseCardHTML(item, type) {
     if (type === 'course') {
         const codeHTML = item.code ? `<span class="course-card-code">${item.code}</span>` : '';
 
-        // ✅ NUEVO: Botones de acción (Guardar/Favorito)
         const actionButtons = `
             <div class="card-actions">
-                <button class="action-btn save-btn" data-type="course" data-id="${item.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-                <button class="action-btn fav-btn" data-type="course" data-id="${item.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+                <button class="action-btn save-btn" onclick="handleCardAction(event, '${item.id}', 'course', 'save')" title="Guardar"><i class="far fa-bookmark"></i></button>
+                <button class="action-btn fav-btn" onclick="handleCardAction(event, '${item.id}', 'course', 'favorite')" title="Favorito"><i class="far fa-heart"></i></button>
             </div>
         `;
 
@@ -467,8 +466,8 @@ function create3DBookCardHTML(book) {
 
     const actionButtons = `
         <div class="card-actions"> <!-- Inline styles moved to CSS -->
-            <button class="action-btn save-btn" onclick="return window.uiManager.validateFreemiumAction(event)" data-type="book" data-id="${book.id}" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-            <button class="action-btn fav-btn" onclick="return window.uiManager.validateFreemiumAction(event)" data-type="book" data-id="${book.id}" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+            <button class="action-btn save-btn" onclick="handleCardAction(event, '${book.id}', 'book', 'save')" title="Guardar"><i class="far fa-bookmark"></i></button>
+            <button class="action-btn fav-btn" onclick="handleCardAction(event, '${book.id}', 'book', 'favorite')" title="Favorito"><i class="far fa-heart"></i></button>
             <button class="action-btn cite-btn" onclick="if(window.uiManager.validateFreemiumAction(event)) window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Generar Referencia Bibliográfica"><i class="fas fa-quote-right"></i></button>
         </div>
     `;
