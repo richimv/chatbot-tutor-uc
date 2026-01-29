@@ -23,7 +23,7 @@ class CitationManager {
         <div id="citation-modal" class="modal">
             <div class="modal-content" style="max-width: 600px;">
                 <div class="modal-header">
-                    <h2><i class="fas fa-quote-right" style="color:var(--accent)"></i> Generar Cita Bibliográfica</h2>
+                    <h2><i class="fas fa-quote-right" style="color:var(--accent)"></i> Generar Referencia Bibliográfica</h2>
                     <button class="modal-close-btn" onclick="closeCitationModal()">×</button>
                 </div>
                 <!-- ✅ MEJORA: Overflow handling para evitar desbordes -->
@@ -76,12 +76,12 @@ class CitationManager {
     formatAuthors(authorString, style) {
         if (!authorString) return "Autor desconocido";
 
-        // 1. Convertir el string "Apellido, Nombre; Apellido, Nombre" a una lista de objetos
+        // 1. Convertir el string "Nombre, Apellido; Nombre, Apellido" a una lista de objetos
         const authors = authorString.split(';').map(a => {
             const parts = a.trim().split(',');
             return {
-                surname: parts[0].trim(),
-                name: parts[1] ? parts[1].trim() : ''
+                surname: parts[1] ? parts[1].trim() : parts[0].trim(), // Si no hay coma, usamos todo como apellido/nombre único
+                name: parts[1] ? parts[0].trim() : ''
             };
         });
 

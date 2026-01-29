@@ -2,6 +2,8 @@ const SearchService = require('../../domain/services/searchService');
 const AdminService = require('../../domain/services/adminService'); // Importar el nuevo servicio
 const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ IMPORTAR CLIENTE SUPABASE
+const fs = require('fs');
+const path = require('path');
 
 class CoursesController {
     constructor(searchService, adminService) {
@@ -201,22 +203,31 @@ class CoursesController {
             // Se ha eliminado por completo la llamada a GeminiService desde aquí, ya que era incorrecta.
 
             // ✅ MANEJO DE ARCHIVOS: SUBIDA A SUPABASE (Creación)
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA A LOCAL (Creación)
             if (req.file) {
-                if (['book', 'course', 'career'].includes(entityType)) {
-                    const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
-                    const { data, error } = await supabase.storage
-                        .from('portadas')
-                        .upload(fileName, req.file.buffer, {
-                            contentType: req.file.mimetype,
-                            upsert: false
-                        });
+                const folderMap = {
+                    'book': 'libros',
+                    'course': 'cursos',
+                    'career': 'carreras'
+                };
+                const subFolder = folderMap[entityType] || 'uploads';
 
-                    if (error) throw new Error(`Error subiendo a Supabase: ${error.message}`);
-                    const { data: publicData } = supabase.storage.from('portadas').getPublicUrl(fileName);
-                    req.body.image_url = publicData.publicUrl;
+                if (['book', 'course', 'career'].includes(entityType)) {
+                    // Asegurar directorio
+                    const uploadDir = path.join(__dirname, '../../presentation/public/assets', subFolder);
+                    if (!fs.existsSync(uploadDir)) {
+                        fs.mkdirSync(uploadDir, { recursive: true });
+                    }
+
+                    const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+                    const fullPath = path.join(uploadDir, fileName);
+
+                    fs.writeFileSync(fullPath, req.file.buffer);
+
+                    // URL Relativa
+                    req.body.image_url = `assets/${subFolder}/${fileName}`;
                 } else {
-                    // Fallback para otros tipos si los hubiera
-                    // req.body.image_url = ...
+                    // Fallback
                 }
             }
 
@@ -269,38 +280,54 @@ class CoursesController {
                 : parseInt(req.params.id, 10);
 
             // ✅ MANEJO DE ARCHIVOS: SUBIDA A SUPABASE
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA A SISTEMA DE ARCHIVOS LOCAL (Assets)
+            // Reemplaza la lógica anterior de Supabase para ahorrar ancho de banda.
             if (req.file) {
+                // Mapeo de Entidad a Carpeta
+                const folderMap = {
+                    'book': 'libros',
+                    'course': 'cursos',
+                    'career': 'carreras'
+                };
+                const subFolder = folderMap[entityType] || 'uploads';
+
                 // CASO 1: Subida de nueva imagen
                 if (['book', 'course', 'career'].includes(entityType)) {
-                    // Borrar anterior si existe
                     const oldItem = await this.adminService.getById(entityType, entityId);
+
+                    // Borrar imagen anterior (Local o Supabase)
                     if (oldItem && oldItem.image_url) {
                         try {
-                            // Extraer el path relativo para borrar de Supabase si es URL de Supabase
                             const oldUrl = oldItem.image_url;
                             if (oldUrl.includes('supabase.co')) {
+                                // Borrar de Supabase legacy
                                 const oldPath = oldUrl.split('/portadas/')[1];
                                 await supabase.storage.from('portadas').remove([oldPath]);
+                            } else if (!oldUrl.startsWith('http')) {
+                                // Borrar archivo local
+                                // Asumimos URL relativa como "assets/cursos/foto.jpg"
+                                const oldLocalPath = path.join(__dirname, '../../presentation/public', oldUrl);
+                                if (fs.existsSync(oldLocalPath)) {
+                                    fs.unlinkSync(oldLocalPath);
+                                }
                             }
-                        } catch (err) { console.error('Error deleting old Supabase image:', err); }
+                        } catch (err) { console.error('Error deleting old image:', err); }
                     }
 
-                    // Subir nueva al bucket 'portadas'
+                    // Guardar nueva imagen localmente
+                    const uploadDir = path.join(__dirname, '../../presentation/public/assets', subFolder);
+                    if (!fs.existsSync(uploadDir)) {
+                        fs.mkdirSync(uploadDir, { recursive: true });
+                    }
+
                     const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
-                    const { data, error } = await supabase.storage
-                        .from('portadas')
-                        .upload(fileName, req.file.buffer, {
-                            contentType: req.file.mimetype,
-                            upsert: false
-                        });
+                    const fullPath = path.join(uploadDir, fileName);
 
-                    if (error) throw new Error(`Error subiendo a Supabase: ${error.message}`);
+                    fs.writeFileSync(fullPath, req.file.buffer);
 
-                    // Generar URL Pública
-                    const { data: publicData } = supabase.storage.from('portadas').getPublicUrl(fileName);
-                    req.body.image_url = publicData.publicUrl;
+                    // Guardar URL relativa en BD (accesible via http://domain/assets/...)
+                    req.body.image_url = `assets/${subFolder}/${fileName}`;
                 }
-
             } else if (['book', 'course', 'career'].includes(entityType) && req.body.deleteImage === 'true') {
                 // CASO 2: Solicitud explícita de borrar imagen
                 const oldItem = await this.adminService.getById(entityType, entityId);
@@ -310,13 +337,16 @@ class CoursesController {
                         if (oldUrl.includes('supabase.co')) {
                             const oldPath = oldUrl.split('/portadas/')[1];
                             await supabase.storage.from('portadas').remove([oldPath]);
+                        } else if (!oldUrl.startsWith('http')) {
+                            const oldLocalPath = path.join(__dirname, '../../presentation/public', oldUrl);
+                            if (fs.existsSync(oldLocalPath)) fs.unlinkSync(oldLocalPath);
                         }
                     } catch (err) { console.error(err); }
                 }
                 req.body.image_url = null; // Enviar NULL para borrar en BD
-
-                // CASO 3: Edición de otros campos
-                delete req.body.image_url;
+                delete req.body.image_url; // Wait, update handles undefined? No, explicit null is better if supported.
+                // adminService.update filters undefined? Let's assume sending null updates it to null.
+                req.body.image_url = null;
             }
 
             // ✅ CRITICAL BUGFIX: Cuando `FormData` envía arrays, los convierte en Strings JSON (e.g. "[1,2]").

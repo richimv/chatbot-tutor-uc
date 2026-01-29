@@ -13,24 +13,6 @@ class CourseRepository {
                 c.name,
                 c.image_url, 
                 (
-                    SELECT COALESCE(JSON_AGG(
-                        JSON_BUILD_OBJECT(
-                            'id', t.id,
-                            'name', t.name,
-                            'unit', ct.unit_name
-                        ) ORDER BY ct.unit_name, t.name
-                    ), '[]')
-                    FROM course_topics ct
-                    JOIN topics t ON t.id = ct.topic_id
-                    WHERE ct.course_id = c.id
-                ) AS topics,
-                (
-                    SELECT COALESCE(JSON_AGG(r.*), '[]')
-                    FROM course_books cb
-                    JOIN resources r ON r.id = cb.resource_id
-                    WHERE cb.course_id = c.id
-                ) AS materials,
-                (
                     SELECT COALESCE(JSON_AGG(cc.career_id), '[]')
                     FROM course_careers cc
                     WHERE cc.course_id = c.id
@@ -61,7 +43,16 @@ class CourseRepository {
                     WHERE ct.course_id = c.id
                 ) AS topics,
                 (
-                    SELECT COALESCE(JSON_AGG(r.*), '[]')
+                    SELECT COALESCE(JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id', r.id, 
+                            'title', r.title, 
+                            'author', r.author,
+                            'image_url', r.image_url,
+                            'type', r.resource_type,
+                            'url', r.url
+                        )
+                    ), '[]')
                     FROM course_books cb
                     JOIN resources r ON r.id = cb.resource_id
                     WHERE cb.course_id = c.id
@@ -107,7 +98,12 @@ class CourseRepository {
         */
 
         const sqlQuery = `
-            SELECT DISTINCT c.*,
+            SELECT DISTINCT 
+                c.id, 
+                c.name, 
+                c.description, 
+                c.image_url, 
+                c.course_id,
                 (
                     CASE 
                         -- Prioridad 1: Coincidencia exacta o parcial fuerte (LIKE)

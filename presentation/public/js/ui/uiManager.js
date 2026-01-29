@@ -184,7 +184,7 @@ class UIManager {
                                 <li><i class="fas fa-check-circle"></i> Leer y descargar libros completos</li>
                                 <li><i class="fas fa-check-circle"></i> Chatear con el Tutor IA ilimitadamente</li>
                                 <li><i class="fas fa-check-circle"></i> Gestionar tus materiales académicos</li>
-                                <li><i class="fas fa-check-circle"></i> Citar material académico</li>
+                                <li><i class="fas fa-check-circle"></i> Generar Referencias Bibliográficas</li>
                             </ul>
                         </div>
                     </div>

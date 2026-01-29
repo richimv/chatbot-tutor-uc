@@ -68,14 +68,34 @@ class AdminManager {
         // ✅ SOLUCIÓN DEFINITIVA: Devolver el control del modal a admin.js.
         // Este listener se encarga de cerrar el modal genérico desde el panel de admin,
         // evitando conflictos con la lógica global de app.js.
+        // ✅ SOLUCIÓN UX: Prevenir cierres accidentales al seleccionar texto y soltar fuera.
+        // Solo cerramos si el click EMPEZÓ y TERMINÓ en el fondo.
+        let isMouseDownOnBackdrop = false;
+
+        this.genericModal.addEventListener('mousedown', (e) => {
+            if (e.target === this.genericModal) {
+                isMouseDownOnBackdrop = true;
+            } else {
+                isMouseDownOnBackdrop = false;
+            }
+        });
+
         this.genericModal.addEventListener('click', (e) => {
-            // Cerrar si se hace clic en el fondo (overlay) o en un botón con la clase .modal-close
-            if (e.target === this.genericModal || e.target.closest('.modal-close')) {
-                // Detenemos la propagación para que el listener global de app.js no interfiera.
-                // Esto asegura que solo admin.js controle el cierre de este modal específico.
+            // Cerrar si se da al botón X
+            if (e.target.closest('.modal-close')) {
+                e.stopPropagation();
+                this.closeGenericModal();
+                return;
+            }
+
+            // Cerrar si se hace clic en el fondo (overlay), PERO solo si el mousedown también fue ahí.
+            if (e.target === this.genericModal && isMouseDownOnBackdrop) {
                 e.stopPropagation();
                 this.closeGenericModal();
             }
+
+            // Resetear por seguridad
+            isMouseDownOnBackdrop = false;
         });
 
         // ✅ SOLUCIÓN: Listener centralizado para todos los componentes interactivos dentro del modal genérico.
@@ -626,7 +646,7 @@ class AdminManager {
                             <label for="generic-author">Autor/Creador (*)</label>
                             <input type="text" id="generic-author" name="generic-author" value="${currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
                             <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
-                                <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Apellido, Nombre</b>. Separa múltiples autores con punto y coma (;).
+                                <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
                             </small>
                         </div>
                     </div>

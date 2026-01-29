@@ -3,7 +3,7 @@ const db = require('../../infrastructure/database/db');
 class BookRepository {
 
     async findAll() {
-        const { rows } = await db.query('SELECT * FROM resources ORDER BY title');
+        const { rows } = await db.query('SELECT id, title, author, image_url, url, resource_type, isbn, publication_year, publisher, edition, city FROM resources ORDER BY title');
         return rows;
     }
 
@@ -82,7 +82,14 @@ class BookRepository {
         const params = [cleanQuery];
 
         const sqlQuery = `
-            SELECT DISTINCT r.*,
+            SELECT DISTINCT 
+                r.id, 
+                r.title, 
+                r.author, 
+                r.image_url, 
+                r.url, 
+                r.resource_type, 
+                r.isbn,
                 (
                     CASE 
                         -- Prioridad 1: Match Exacto Título Libro (100 pts)
