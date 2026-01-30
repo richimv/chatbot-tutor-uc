@@ -172,7 +172,8 @@ function createBrowseCardHTML(item, type) {
             </div>
         `;
     } else if (type === 'topic') {
-        clickAction = `onclick="window.location.href='topic.html?id=${item.id}'"`;
+        // ✅ CORRECCIÓN: Eliminado onclick a topic.html (muerto). search.js intercepta.
+        clickAction = '';
         contentHTML = `
             <div class="browse-card-icon">
                 <i class="fas ${iconClass}"></i>

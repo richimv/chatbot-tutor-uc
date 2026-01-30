@@ -49,199 +49,199 @@
     </header>
 
     <div class="hero-wrapper">
-        <div class="hero-wrapper">
-            <!-- HERO SLIDER -->
-            <section id="hero-slider">
-                <div class="slider-container">
 
-                    <!-- SLIDE 1: Hub Académico (Video/Image Hybrid) -->
-                    <div class="slide active">
-                        <!-- Video Background (Desktop Only) -->
-                        <!-- Static Image (Desktop) -->
-                        <img src="assets/portada.png" alt="Hub Background" class="slide-bg desktop-only">
-                        <!-- Image Fallback (Mobile Only) -->
-                        <img src="assets/hero-bg-mobile.png" alt="Hub Background" class="slide-bg mobile-only">
+        <!-- HERO SLIDER -->
+        <section id="hero-slider">
+            <div class="slider-container">
 
-                        <div class="slide-overlay"></div>
+                <!-- SLIDE 1: Hub Académico (Video/Image Hybrid) -->
+                <div class="slide active">
+                    <!-- Video Background (Desktop Only) -->
+                    <!-- Static Image (Desktop) -->
+                    <img src="assets/portada.png" alt="Hub Background" class="slide-bg desktop-only">
+                    <!-- Image Fallback (Mobile Only) -->
+                    <img src="assets/hero-bg-mobile.png" alt="Hub Background" class="slide-bg mobile-only">
 
-                        <div class="hero-content">
-                            <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
-                            <p class="hero-subtitle">
-                                Potencia tu aprendizaje con acceso instantáneo a recursos, libros y un tutor IA
-                                personalizado
-                                disponible 24/7.
-                            </p>
-                            <ul class="hero-features">
-                                <li><i class="fas fa-book-open"></i> Biblioteca Digital</li>
-                                <li><i class="fas fa-robot"></i> Tutor IA Personal</li>
-                                <li><i class="fas fa-check-circle"></i> Recursos Académicos</li>
-                            </ul>
+                    <div class="slide-overlay"></div>
+
+                    <div class="hero-content">
+                        <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
+                        <p class="hero-subtitle">
+                            Potencia tu aprendizaje con acceso instantáneo a recursos, libros y un tutor IA
+                            personalizado
+                            disponible 24/7.
+                        </p>
+                        <ul class="hero-features">
+                            <li><i class="fas fa-book-open"></i> Biblioteca Digital</li>
+                            <li><i class="fas fa-robot"></i> Tutor IA Personal</li>
+                            <li><i class="fas fa-check-circle"></i> Recursos Académicos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: Hub Quiz Arena (Art Direction) -->
+                <div class="slide">
+                    <picture class="slide-bg">
+                        <!-- Mobile Vertical Image -->
+                        <source media="(max-width: 768px)" srcset="assets/quiz-bg-mobile.png">
+                        <!-- Desktop Horizontal Image -->
+                        <img src="assets/quiz-bg-desktop.png" alt="Quiz Arena Background" class="slide-bg">
+                    </picture>
+
+                    <div class="slide-overlay"></div>
+
+                    <div class="hero-content">
+                        <h1 class="hero-title">Hub Quiz Arena <span class="highlight-text"
+                                style="background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">⚔️</span>
+                        </h1>
+                        <p class="hero-subtitle">
+                            Supera desafíos académicos. Refuerza lo aprendido de tus cursos y mide tu dominio de las
+                            materias en el ranking global.
+                        </p>
+                        <div class="hero-actions" style="margin-top: 2rem;">
+                            <!-- Utiliza el script existente btn-quiz-arena para auth -->
+                            <button id="btn-quiz-arena" class="btn-gamified">
+                                <i class="fas fa-gamepad"></i> Jugar Ahora
+                            </button>
                         </div>
                     </div>
-
-                    <!-- SLIDE 2: Hub Quiz Arena (Art Direction) -->
-                    <div class="slide">
-                        <picture class="slide-bg">
-                            <!-- Mobile Vertical Image -->
-                            <source media="(max-width: 768px)" srcset="assets/quiz-bg-mobile.png">
-                            <!-- Desktop Horizontal Image -->
-                            <img src="assets/quiz-bg-desktop.png" alt="Quiz Arena Background" class="slide-bg">
-                        </picture>
-
-                        <div class="slide-overlay"></div>
-
-                        <div class="hero-content">
-                            <h1 class="hero-title">Hub Quiz Arena <span class="highlight-text"
-                                    style="background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">⚔️</span>
-                            </h1>
-                            <p class="hero-subtitle">
-                                Supera desafíos académicos. Refuerza lo aprendido de tus cursos y mide tu dominio de las
-                                materias en el ranking global.
-                            </p>
-                            <div class="hero-actions" style="margin-top: 2rem;">
-                                <!-- Utiliza el script existente btn-quiz-arena para auth -->
-                                <button id="btn-quiz-arena" class="btn-gamified">
-                                    <i class="fas fa-gamepad"></i> Jugar Ahora
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
-                <!-- Navigation -->
-                <div class="slider-nav">
-                    <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                    <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
-                </div>
-
-                <!-- Dots -->
-                <div class="slider-dots">
-                    <div class="dot active"></div>
-                    <div class="dot"></div>
-                </div>
-            </section>
-
-            <section class="search-section">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Buscar por curso, temas y libro...">
-                    <button id="searchButton" class="btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            viewBox="0 0 16 16">
-                            <path
-                                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                        </svg>
-                        Buscar
-                    </button>
-                </div>
-            </section>
-        </div>
-
-        <div class="main-container">
-
-            <div id="content-container">
-                <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
-                <div id="browse-container"></div>
-                <div id="results-container" class="hidden"></div>
             </div>
+
+            <!-- Navigation -->
+            <div class="slider-nav">
+                <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
+                <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Dots -->
+            <div class="slider-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+            </div>
+        </section>
+
+        <section class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar por curso, temas y libro...">
+                <button id="searchButton" class="btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                    </svg>
+                    Buscar
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <div class="main-container">
+
+        <div id="content-container">
+            <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
+            <div id="browse-container"></div>
+            <div id="results-container" class="hidden"></div>
         </div>
+    </div>
 
-        <!-- (Eliminado: Modal de Login Obsoleto) -->
+    <!-- (Eliminado: Modal de Login Obsoleto) -->
 
-        <!-- ✅ NUEVO: Modal para filtros en móvil -->
-        <div id="filter-modal" class="modal filter-modal modal-overlay" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Filtrar Resultados</h2>
-                    <button class="modal-close-btn filter-modal-close modal-close">×</button>
-                </div>
-                <div class="modal-body" id="filter-modal-body"></div>
+    <!-- ✅ NUEVO: Modal para filtros en móvil -->
+    <div id="filter-modal" class="modal filter-modal modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Filtrar Resultados</h2>
+                <button class="modal-close-btn filter-modal-close modal-close">×</button>
+            </div>
+            <div class="modal-body" id="filter-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
+    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2000;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="confirmation-modal-title">Confirmación</h2>
+                <button class="modal-close-btn modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-modal-message">¿Estás seguro de realizar esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmation-modal-cancel" class="btn-secondary">Cancelar</button>
+                <button id="confirmation-modal-confirm" class="btn-primary">Confirmar</button>
             </div>
         </div>
+    </div>
 
-        <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
-        <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2000;">
-            <div class="modal-content" style="max-width: 400px;">
-                <div class="modal-header">
-                    <h2 id="confirmation-modal-title">Confirmación</h2>
-                    <button class="modal-close-btn modal-close">×</button>
-                </div>
-                <div class="modal-body">
-                    <p id="confirmation-modal-message">¿Estás seguro de realizar esta acción?</p>
-                </div>
-                <div class="modal-footer">
-                    <button id="confirmation-modal-cancel" class="btn-secondary">Cancelar</button>
-                    <button id="confirmation-modal-confirm" class="btn-primary">Confirmar</button>
-                </div>
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Col 1 -->
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course.html" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Biblioteca</a></li>
+                    <li><a href="pricing.html" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy.html" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms.html" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
             </div>
         </div>
 
-        <!-- Footer Injection -->
-        <footer class="main-footer">
-            <div class="footer-container">
-                <!-- Col 1 -->
-                <div class="footer-brand">
-                    <a href="/" class="footer-logo">
-                        <img src="assets/logo.png" alt="Hub Academia Logo">
-                        Hub Academia
-                    </a>
-                    <p class="footer-slogan">
-                        Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
-                    </p>
-                </div>
-
-                <!-- Col 2 -->
-                <div class="footer-links-col">
-                    <h4 class="footer-heading">Explorar</h4>
-                    <ul class="footer-links-list">
-                        <li><a href="/" class="footer-link">Inicio</a></li>
-                        <li><a href="course.html" class="footer-link">Cursos</a></li>
-                        <li><a href="/" class="footer-link">Biblioteca</a></li>
-                        <li><a href="pricing.html" class="footer-link">Precios</a></li>
-                    </ul>
-                </div>
-
-                <!-- Col 3 -->
-                <div class="footer-links-col">
-                    <h4 class="footer-heading">Legal y Ayuda</h4>
-                    <ul class="footer-links-list">
-                        <li><a href="privacy.html" class="footer-link">Política de Privacidad</a></li>
-                        <li><a href="terms.html" class="footer-link">Términos y Condiciones</a></li>
-                        <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
-                    </ul>
-                </div>
+        <div class="footer-bottom">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
             </div>
-
-            <div class="footer-bottom">
-                <div class="copyright">
-                    © 2026 Hub Academia. Todos los derechos reservados.
-                </div>
-                <div class="footer-socials">
-                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                </div>
+            <div class="footer-socials">
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
             </div>
-        </footer>
+        </div>
+    </footer>
 
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        <!-- ✅ CORRECCIÓN CRÍTICA: Cargar scripts en el orden correcto y app.js al final -->
-        <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración global antes de todo -->
+    <!-- ✅ CORRECCIÓN CRÍTICA: Cargar scripts en el orden correcto y app.js al final -->
+    <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración global antes de todo -->
 
-        <script src="js/ui/components.js"></script> <!-- Componentes de UI primero -->
-        <script src="js/services/authApiService.js"></script> <!-- Servicio de API de Auth -->
-        <script src="js/services/analyticsApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Analytics -->
-        <script src="js/sessionManager.js"></script> <!-- Gestor de sesión -->
-        <script src="js/ui/uiManager.js"></script> <!-- ✅ NUEVO: Gestor de UI y Bloqueo Soft -->
-        <script src="js/search.js"></script> <!-- Lógica de búsqueda -->
-        <script src="js/chat.js"></script> <!-- Lógica del chat -->
-        <script src="js/ui/confirmationModal.js"></script> <!-- ✅ NUEVO: Modal de confirmación -->
-        <script src="js/ui/citationManager.js"></script> <!-- ✅ NUEVO: Gestor de Citación -->
-        <script src="js/library.js"></script> <!-- ✅ NUEVO: Gestor de Biblioteca (Favoritos/Guardados) -->
-        <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
-        <script src="js/hero-slider.js"></script> <!-- ✅ NUEVO: Lógica del Slider -->
-        <script src="js/app.js"></script> <!-- Archivo principal de inicialización, al final -->
+    <script src="js/ui/components.js"></script> <!-- Componentes de UI primero -->
+    <script src="js/services/authApiService.js"></script> <!-- Servicio de API de Auth -->
+    <script src="js/services/analyticsApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Analytics -->
+    <script src="js/sessionManager.js"></script> <!-- Gestor de sesión -->
+    <script src="js/ui/uiManager.js"></script> <!-- ✅ NUEVO: Gestor de UI y Bloqueo Soft -->
+    <script src="js/search.js"></script> <!-- Lógica de búsqueda -->
+    <script src="js/chat.js"></script> <!-- Lógica del chat -->
+    <script src="js/ui/confirmationModal.js"></script> <!-- ✅ NUEVO: Modal de confirmación -->
+    <script src="js/ui/citationManager.js"></script> <!-- ✅ NUEVO: Gestor de Citación -->
+    <script src="js/library.js"></script> <!-- ✅ NUEVO: Gestor de Biblioteca (Favoritos/Guardados) -->
+    <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
+    <script src="js/hero-slider.js"></script> <!-- ✅ NUEVO: Lógica del Slider -->
+    <script src="js/app.js"></script> <!-- Archivo principal de inicialización, al final -->
 
 </body>
 

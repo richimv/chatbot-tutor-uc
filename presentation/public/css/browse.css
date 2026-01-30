@@ -1,13 +1,43 @@
 /* --- Estilos para la sección de Exploración --- */
 .browse-title {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    /* ✅ REDUCED: Was 1.5rem */
     font-weight: 600;
     color: var(--text-main);
     margin-bottom: 0.25rem;
-    /* Reducido */
     padding-bottom: 0.25rem;
     /* Reducido */
-    border-bottom: 1px solid var(--border-color);
+    /* border-bottom: 1px solid var(--border-color);  <-- REMOVED: Line covering carousel */
+}
+
+/* ✅ NUEVO: Estilo Premium para botón "Ver Todos" */
+.view-all-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-all-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+.view-all-btn i {
+    transition: transform 0.2s;
+}
+
+.view-all-btn:hover i {
+    transform: translateX(2px);
 }
 
 /* Grid Layout */

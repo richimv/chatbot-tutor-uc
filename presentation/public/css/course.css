@@ -50,7 +50,13 @@
 .section-header {
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--border-color);
+    /* ✅ FIXED: Visible color */
+    display: flex;
+    /* ✅ NEW: Flex layout for buttons */
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
 .section-title {
@@ -60,6 +66,60 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* ✅ NEW: Course/Catalog Header Styles (Fixed Green Strip Issue) */
+.course-main-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+    /* ✅ REDUCED: Was 2rem */
+    padding-bottom: 1rem;
+    /* ✅ REDUCED: Was 1.5rem */
+    border-bottom: 1px solid var(--border);
+}
+
+.course-header-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.course-header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-view-title {
+    font-size: 1.5rem;
+    /* ✅ REDUCED: Was 2rem */
+    font-weight: 600;
+    /* ✅ REDUCED: Was 700 */
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.course-badge {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    align-self: flex-start;
+    border: 1px solid var(--border);
+}
+
+.detail-navigation {
+    margin-bottom: 1rem;
 }
 
 /* =========================================

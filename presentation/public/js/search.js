@@ -198,18 +198,23 @@ class SearchComponent {
         // ✅ LÓGICA DE VISIBILIDAD DEL HERO Y BOTÓN VOLVER GLOBAL
         const headerBackBtn = document.getElementById('header-back-btn');
         const searchSection = document.querySelector('.search-section');
+        const heroSlider = document.getElementById('hero-slider'); // ✅ NUEVO: Referencia directa al slider
 
         if (viewName === 'home') {
             document.body.classList.remove('hero-hidden');
             if (searchSection) searchSection.classList.remove('sticky');
+            if (heroSlider) heroSlider.style.display = 'block'; // ✅ Mostrar slider en Home
+
             if (headerBackBtn) {
-                headerBackBtn.classList.add('hidden'); // Ensure hidden class is added
+                headerBackBtn.classList.add('hidden');
                 headerBackBtn.classList.remove('visible');
             }
         } else {
             document.body.classList.add('hero-hidden');
+            if (heroSlider) heroSlider.style.display = 'none'; // ✅ Ocultar slider en otras vistas (Resultados, Cursos, etc.)
+
             if (headerBackBtn) {
-                headerBackBtn.classList.remove('hidden'); // Ensure hidden class is removed so visible works
+                headerBackBtn.classList.remove('hidden');
                 headerBackBtn.classList.add('visible');
             }
         }
@@ -221,7 +226,12 @@ class SearchComponent {
             case 'course':
                 this.renderUnifiedCourseView(...args);
                 break;
-            // ... (resto igual)
+            case 'all-books': // ✅ NUEVO
+                this.renderAllBooks(...args);
+                break;
+            case 'all-courses': // ✅ NUEVO
+                this.renderAllCourses(...args);
+                break;
             case 'topic':
                 this.renderTopicView(...args);
                 break;
@@ -272,23 +282,24 @@ class SearchComponent {
             return;
         }
 
-        // ✅ LÓGICA DE NAVEGACIÓN UNIFICADA: Maneja clics en tarjetas de exploración (carrera, curso, tema).
+        // ✅ LÓGICA DE NAVEGACIÓN PROGRESIVA:
+        // - Topics: Navegación SPA interna (navigateTo).
+        // - Carreras/Cursos: Navegación estándar MPA (window.location).
         const browseCard = e.target.closest('[data-type]');
         if (browseCard) {
-            // ✅ REFACTOR MPA: Ya no interceptamos con preventDefault().
-            // Dejamos que el onclick definido en el HTML (components.js) haga la redirección:
-            // window.location.href = 'page.html?id=...'
-
-            // Si por alguna razón el onclick no está, forzamos la redirección aquí como fallback.
             const type = browseCard.dataset.type;
             const id = browseCard.dataset.id;
 
-            if (type && id) {
-                // Si el elemento ya tiene un onclick que maneja la navegación, esto es redundante pero seguro.
-                // Pero para asegurar que NO se use navigateTo (SPA), simplemente retornamos.
-                // El onclick del HTML se encargará.
+            if (type === 'topic') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.navigateTo('topic', id);
                 return;
             }
+
+            // Para otros tipos (career, course), dejamos que el onclick del HTML
+            // (definido en components.js) maneje la redirección a .html
+            return;
         }
 
         // ✅ SOLUCIÓN: Manejar clics en las tarjetas de recomendación.
@@ -329,6 +340,16 @@ class SearchComponent {
             // Esto elimina la necesidad del visor PDF heredado.
             window.open(url, '_blank');
             return;
+        }
+
+        // ✅ NUEVO: Manejo de botones "Ver Todos"
+        const viewAllBtn = e.target.closest('.view-all-btn');
+        if (viewAllBtn) {
+            e.preventDefault();
+            const target = viewAllBtn.dataset.view; // 'all-books' o 'all-courses'
+            if (target) {
+                this.navigateTo(target);
+            }
         }
     }
 
@@ -472,6 +493,174 @@ class SearchComponent {
     // ✅ FIN: SECCIÓN AÑADIDA
     // =================================================================
 
+    // ✅ NUEVO: Renderizar Catálogo de Libros POR ÁREAS
+    renderAllBooks() {
+        this.resultsContainer.classList.add('hidden');
+        this.browseContainer.classList.remove('hidden');
+
+        const allBooks = this.allData.books || [];
+
+        // 1. Agrupar libros por Área
+        const booksByArea = {};
+        const noAreaKey = 'Recursos Generales';
+
+        allBooks.forEach(book => {
+            const areas = (book.areas && book.areas.length > 0) ? book.areas : [noAreaKey];
+
+            areas.forEach(area => {
+                if (!booksByArea[area]) booksByArea[area] = [];
+                // Evitar duplicados por ID en la misma área (paranoya check)
+                if (!booksByArea[area].find(b => b.id === book.id)) {
+                    booksByArea[area].push(book);
+                }
+            });
+        });
+
+        // 2. Ordenar Áreas
+        const sortedAreas = Object.keys(booksByArea).sort((a, b) => {
+            if (a === noAreaKey) return 1; // General al final
+            if (b === noAreaKey) return -1;
+            return a.localeCompare(b);
+        });
+
+        // 3. Generar HTML por secciones
+        let areasHTML = '';
+        sortedAreas.forEach(area => {
+            const books = booksByArea[area];
+            const booksGrid = books.map(book => create3DBookCardHTML(book)).join('');
+
+            areasHTML += `
+                <div class="area-group-section" style="margin-bottom: 3rem;">
+                     <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
+                         <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <i class="fas fa-layer-group" style="color: var(--accent); font-size: 1rem;"></i>
+                            ${area}
+                         </h3>
+                         <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
+                    </button>
+                    <div class="books-grid"> 
+                        ${booksGrid}
+                    </div>
+                </div>
+            `;
+        });
+
+        this.browseContainer.innerHTML = /*html*/`
+            <div class="detail-view-container">
+                <!-- ✅ CLEANUP: Botón volver eliminado -->
+
+                
+                <div class="course-main-header">
+                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #10b981, #059669);">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="course-header-title">
+                        <h2 class="detail-view-title">Biblioteca por Áreas</h2>
+                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${allBooks.length} Recursos Disponibles</span>
+                    </div>
+                </div>
+
+                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
+                    <div class="course-main-content">
+                        ${areasHTML.length > 0 ? areasHTML : '<p class="empty-state">No hay libros disponibles.</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ✅ NUEVO: Renderizar Catálogo de Cursos POR ÁREAS
+    renderAllCourses() {
+        this.resultsContainer.classList.add('hidden');
+        this.browseContainer.classList.remove('hidden');
+
+        const allCourses = this.allData.courses || [];
+        const allCareers = this.allData.careers || [];
+
+        // 1. Agrupar cursos por Área (usando Carreras)
+        const coursesByArea = {};
+        const noAreaKey = 'Formación General';
+
+        allCourses.forEach(course => {
+            let assignedToArea = false;
+
+            // course.careerIds viene del backend como array de IDs
+            if (course.careerIds && course.careerIds.length > 0) {
+                course.careerIds.forEach(careerId => {
+                    const career = allCareers.find(c => c.id === careerId);
+                    if (career && career.area) {
+                        const area = career.area;
+                        if (!coursesByArea[area]) coursesByArea[area] = [];
+
+                        // Evitar duplicados en la misma área
+                        if (!coursesByArea[area].find(c => c.id === course.id)) {
+                            coursesByArea[area].push(course);
+                        }
+                        assignedToArea = true;
+                    }
+                });
+            }
+
+            // Si no se asignó a ninguna área (sin carrera o carrera sin área)
+            if (!assignedToArea) {
+                if (!coursesByArea[noAreaKey]) coursesByArea[noAreaKey] = [];
+                coursesByArea[noAreaKey].push(course);
+            }
+        });
+
+        // 2. Ordenar Áreas
+        const sortedAreas = Object.keys(coursesByArea).sort((a, b) => {
+            if (a === noAreaKey) return 1;
+            if (b === noAreaKey) return -1;
+            return a.localeCompare(b);
+        });
+
+        // 3. Renderizar
+        let areasHTML = '';
+        sortedAreas.forEach(area => {
+            const courses = coursesByArea[area];
+            const coursesGrid = courses.map(course => createBrowseCardHTML(course, 'course')).join('');
+
+            areasHTML += `
+                 <div class="area-group-section" style="margin-bottom: 3rem;">
+                    <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
+                         <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <i class="fas fa-university" style="color: var(--accent); font-size: 1rem;"></i>
+                            ${area}
+                         </h3>
+                         <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
+                    </button>
+                    <div class="browse-grid"> 
+                        ${coursesGrid}
+                    </div>
+                </div>
+            `;
+        });
+
+        this.browseContainer.innerHTML = /*html*/`
+             <div class="detail-view-container">
+                <!-- ✅ CLEANUP: Botón volver eliminado -->
+
+                
+                <div class="course-main-header">
+                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #3b82f6, #2563eb);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="course-header-title">
+                        <h2 class="detail-view-title">Cursos por Área Académica</h2>
+                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${allCourses.length} Cursos Disponibles</span>
+                    </div>
+                </div>
+
+                <div class="course-detail-grid" style="grid-template-columns: 1fr;">
+                    <div class="course-main-content">
+                         ${areasHTML.length > 0 ? areasHTML : '<p class="empty-state">No hay cursos disponibles.</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     async renderInitialView() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -504,6 +693,10 @@ class SearchComponent {
                 <section class="featured-section">
                     <div class="section-header">
                         <h2 class="browse-title" style="margin-bottom: 0;">Libros Destacados</h2>
+                        <!-- ✅ NUEVO: Botón Ver Todos Libros -->
+                        <button class="btn-text view-all-btn" data-view="all-books" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
+                            Ver todos los libros <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </button>
                     </div>
                     ${createCarouselHTML('featured-books-carousel', booksHTML)}
                 </section>
@@ -525,8 +718,12 @@ class SearchComponent {
 
             featuredCoursesSection = `
                 <section class="featured-section">
-                    <div class="section-header">
+                     <div class="section-header">
                         <h2 class="browse-title" style="margin-bottom: 0;">Cursos Populares</h2>
+                        <!-- ✅ NUEVO: Botón Ver Todos Cursos -->
+                        <button class="btn-text view-all-btn" data-view="all-courses" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
+                            Ver todos los cursos <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </button>
                     </div>
                     ${createCarouselHTML('featured-courses-carousel', coursesHTML)}
                 </section>
@@ -639,9 +836,8 @@ class SearchComponent {
 
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
-                <div class="detail-navigation">
-                    ${createBackButtonHTML()}
-                </div>
+                <!-- ✅ CLEANUP: Botón volver eliminado -->
+
                 
                 <div class="course-main-header">
                     <div class="course-header-icon" style="background: linear-gradient(to bottom right, var(--bg-tertiary), var(--bg-secondary));">
@@ -727,9 +923,8 @@ class SearchComponent {
 
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
-                <div class="detail-navigation">
-                    ${createBackButtonHTML()}
-                </div>
+                <!-- ✅ CLEANUP: Botón volver eliminado -->
+
                 
                 <div class="course-main-header">
                     <div class="course-header-icon">
@@ -809,9 +1004,8 @@ class SearchComponent {
 
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
-                <div class="detail-navigation">
-                    ${createBackButtonHTML()}
-                </div>
+                <!-- ✅ CLEANUP: Botón volver eliminado -->
+
                 
                 <div class="course-main-header">
                     <div class="course-header-icon">

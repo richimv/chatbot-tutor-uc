@@ -3,7 +3,23 @@ const db = require('../../infrastructure/database/db');
 class BookRepository {
 
     async findAll() {
-        const { rows } = await db.query('SELECT id, title, author, image_url, url, resource_type, isbn, publication_year, publisher, edition, city FROM resources ORDER BY title');
+        // ✅ MEJORA: Incluir Áreas Académicas para agrupación en catálogo.
+        const query = `
+            SELECT 
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, 
+                r.isbn, r.publication_year, r.publisher, r.edition, r.city,
+                (
+                    SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
+                    FROM course_books cb
+                    JOIN course_careers cc ON cb.course_id = cc.course_id
+                    JOIN careers car ON cc.career_id = car.id
+                    WHERE cb.resource_id = r.id AND car.area IS NOT NULL
+                ) as areas
+            FROM resources r
+            WHERE r.resource_type = 'book' 
+            ORDER BY r.title
+        `;
+        const { rows } = await db.query(query);
         return rows;
     }
 
@@ -77,9 +93,23 @@ class BookRepository {
             1. Match Título/Autor/Tema (Directo)
             2. Match Curso (Relación Directa): "Cardio" -> Curso Cardiología -> Libro Manual AMIR
             3. Match Carrera (Relación Profunda): "Ingeniería" -> Carrera Ingeniería Civil -> Curso X -> Libro Y
+            4. ✅ NUEVO: Match por Tipo de Recurso ("Libro", "Articulo")
         */
 
+        // Detección de intención de tipo (Type Intent)
+        const typeMap = {
+            'libro': 'book', 'libros': 'book', 'book': 'book', 'books': 'book',
+            'articulo': 'article', 'articulos': 'article', 'article': 'article', 'paper': 'article',
+            'video': 'video', 'videos': 'video'
+        };
+
+        // Verificamos si la query completa es una palabra clave de tipo (ej: "libros")
+        // O si contiene la palabra (ej: "libros de anatomia" -> intent: book + query: anatomia)
+        // Por ahora, mantendremos la query completa pero impulsaremos el score si coincide el tipo.
+        const detectedType = typeMap[cleanQuery.toLowerCase()] || null;
+
         const params = [cleanQuery];
+        if (detectedType) params.push(detectedType);
 
         const sqlQuery = `
             SELECT DISTINCT 
@@ -92,6 +122,10 @@ class BookRepository {
                 r.isbn,
                 (
                     CASE 
+                        -- Prioridad 0: Match Exacto de TIPO (Usuario busca "Libros") -> 50 pts base
+                        -- Esto asegura que aparezcan, pero títulos específicos seguirán ganando.
+                        ${detectedType ? `WHEN r.resource_type = $2 THEN 50` : ''}
+
                         -- Prioridad 1: Match Exacto Título Libro (100 pts)
                         WHEN unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
                         
@@ -117,6 +151,9 @@ class BookRepository {
             LEFT JOIN course_careers cc ON c.id = cc.course_id
             LEFT JOIN careers car ON car.id = cc.career_id
             WHERE 
+                -- ✅ Match TIPO (Si se detectó)
+                ${detectedType ? `(r.resource_type = $2) OR` : ''}
+
                 -- Match Título Libro
                 (unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%'))) OR 
                 (word_similarity(unaccent(lower($1)), unaccent(lower(r.title))) > 0.3) OR

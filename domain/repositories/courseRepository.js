@@ -88,24 +88,26 @@ class CourseRepository {
 
         const params = [cleanQuery];
 
+        // Detección de intención genérica "Ver todos los cursos"
+        const isGenericCourseQuery = ['curso', 'cursos', 'course', 'courses', 'clase', 'clases'].includes(cleanQuery.toLowerCase());
+
         /*
            ESTRATEGIA DE RANKING:
            1. Coincidencia Exacta de Frase (ILIKE) -> 100 pts
            2. Similitud de Trigramas (similarity) -> Score variable (0-1) * 100
-           
-           Usamos 'word_similarity' si queremos que "cadiologia" haga match con "Curso de Cardiologia".
-           'similarity' compara el string completo. 'word_similarity' busca la subcadena más parecida.
         */
 
         const sqlQuery = `
             SELECT DISTINCT 
                 c.id, 
                 c.name, 
-                c.description, 
                 c.image_url, 
                 c.course_id,
                 (
                     CASE 
+                        -- Prioridad 0: Intención Genérica 'Curso' -> 50 pts
+                        ${isGenericCourseQuery ? `WHEN 1=1 THEN 50` : ''}
+
                         -- Prioridad 1: Coincidencia exacta o parcial fuerte (LIKE)
                         WHEN unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
                         
@@ -118,13 +120,14 @@ class CourseRepository {
             LEFT JOIN course_topics ct ON c.id = ct.course_id
             LEFT JOIN topics t ON t.id = ct.topic_id
             WHERE 
+                -- ✅ NUEVO: Si la query es "cursos", traer todo (o los mejores)
+                ${isGenericCourseQuery ? `(1=1) OR` : ''}
+
                 -- 1. Coincidencia clásica (rápida)
                 unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) 
                 OR unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%'))
                 
                 -- 2. Coincidencia difusa (Typos)
-                -- "word_similarity" es ideal parciales: word_similarity('cadiologia', 'Curso de Cardiologia') es alto.
-                -- Nota: Requiere pg_trgm. Verificamos que estaba instalado.
                 OR word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3
                 OR word_similarity(unaccent(lower($1)), unaccent(lower(t.name))) > 0.3
             ORDER BY relevance_score DESC, c.name ASC
