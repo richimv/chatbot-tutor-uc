@@ -61,45 +61,120 @@ async function loadCourseData(id) {
 }
 
 function renderCourse(course, container) {
-    // Materials (Books/Resources)
-    let materialsHTML = '';
+
+    // Materials Categorization
+    let contentHTML = '';
 
     if (course.materials && course.materials.length > 0) {
-        // ✅ UPDATED: Use the shared 3D Card component to ensure consistency and include Save/Fav buttons.
-        // We wrap them in a grid container compatible with the 3D transforms.
-        materialsHTML = `<div class="books-grid">
-            ${course.materials.map(book => create3DBookCardHTML(book)).join('')}
-        </div>`;
+        // Filter by type
+        const books = course.materials.filter(m => !m.type || m.type === 'book');
+        const videos = course.materials.filter(m => m.type === 'video');
+        const articles = course.materials.filter(m => m.type === 'article');
+        const others = course.materials.filter(m => m.type === 'other');
+
+        // 1. VIDEOS SECTION (First as requested in some contexts, or high priority)
+        // Order requested: Books -> Articles -> Other -> Videos? 
+        // User asked: "Categorizar los recursos del curso en: Libros, Artículos, Videos (con vista especial de YouTube) y Otros."
+        // Usually Videos are high engagement, but let's stick to a logical flow. 
+        // Let's go: Videos (Visual) -> Books (Core) -> Articles/Others (Supplements).
+
+        // Orden Solicitado: Libros -> Videos -> Artículos -> Otros
+
+        // 1. VIDEOS (High priority requested second) - WAIT, user said: Libros -> Videos -> Artículos -> Otro Recursos
+
+        // A. BOOKS (Core)
+        if (books.length > 0) {
+            contentHTML += `
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-book" style="color:var(--accent)"></i> Bibliografía</h2>
+                </div>
+                <div class="books-grid">
+                    ${books.map(book => create3DBookCardHTML(book)).join('')}
+                </div>
+                <div class="section-spacer" style="height: 2rem;"></div>
+            `;
+        }
+
+        // B. VIDEOS (YouTube Embeds)
+        if (videos.length > 0) {
+            contentHTML += `
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-play-circle" style="color:var(--accent)"></i> Videos Clave</h2>
+                </div>
+                <div class="video-grid">
+                    ${videos.map(v => createVideoCardHTML(v)).join('')}
+                </div>
+                <div class="section-spacer" style="height: 2rem;"></div>
+            `;
+        }
+
+        // C. ARTICLES (Generic Cards)
+        if (articles.length > 0) {
+            contentHTML += `
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-newspaper" style="color:var(--accent)"></i> Artículos</h2>
+                </div>
+                <div class="resources-grid">
+                    ${articles.map(a => createResourceCardHTML(a)).join('')}
+                </div>
+                <div class="section-spacer" style="height: 2rem;"></div>
+            `;
+        }
+
+        // D. OTHERS (Generic Cards)
+        if (others.length > 0) {
+            contentHTML += `
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-archive" style="color:var(--accent)"></i> Otros Recursos</h2>
+                </div>
+                <div class="resources-grid">
+                    ${others.map(o => createResourceCardHTML(o)).join('')}
+                </div>
+            `;
+        }
+
     } else {
-        materialsHTML = '<p class="empty-state-small">No hay material bibliográfico registrado.</p>';
+        contentHTML = '<p class="empty-state-small">No hay material bibliográfico registrado.</p>';
     }
 
-    // Modal de Citación manejado por citationManager.js
-
-    container.innerHTML = `
-        <!-- HERO BANNER -->
-        <div class="hero-banner">
-            <div class="hero-content">
-                <div class="hero-identity">
-                    <div class="hero-text">
-                        <h1 class="hero-title">${course.name}</h1>
+    // ✅ OPTIMIZATION: Check if Hero already exists to prevent Animation Replay
+    const existingHero = container.querySelector('.hero-title');
+    if (existingHero && existingHero.textContent === course.name) {
+        console.log('⚡ UI Optimized: Updating only materials, preserving Hero animation.');
+        // Locate the content area
+        const sectionBlock = container.querySelector('.section-block');
+        if (sectionBlock) {
+            sectionBlock.innerHTML = contentHTML;
+        } else {
+            // Should not happen if structure is maintained, but fallback:
+            const wrapper = container.querySelector('.overlap-container');
+            if (wrapper) wrapper.innerHTML = `<div class="section-block">${contentHTML}</div>`;
+        }
+    } else {
+        // 🚀 First Render (Full)
+        container.innerHTML = `
+            <!-- HERO BANNER -->
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <div class="hero-identity">
+                        <div class="hero-text">
+                            <h1 class="hero-title">${course.name}</h1>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- CONTENT WORKSPACE -->
-        <div class="overlap-container">
-             <!-- Full Width Layout -->
-            <div class="section-block">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-book" style="color:var(--accent)"></i> Bibliografía y Recursos</h2>
+            <!-- CONTENT WORKSPACE -->
+            <div class="overlap-container">
+                 <!-- Full Width Layout -->
+                <div class="section-block">
+                    ${contentHTML}
                 </div>
-                ${materialsHTML}
             </div>
-        </div>
-        </div>
-    `;
+            </div>
+        `;
+    }
+
 
     // Sincronizar estado de botones (Guardado/Favorito)
     if (window.libraryManager) {

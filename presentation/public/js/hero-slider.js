@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Config
         let currentSlide = 0;
-        const INTERVAL_MS = 8000;
+        const INTERVAL_MS = 5000;
 
         // 1. Initialize State
         const initializeSlider = () => {

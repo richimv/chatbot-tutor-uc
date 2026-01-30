@@ -107,6 +107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeAllModals();
         }
     });
+
+    // ✅ KEEP-ALIVE: Ping al servidor cada 5 minutos para evitar que Render se duerma
+    setInterval(() => {
+        fetch('/health')
+            .then(res => {
+                if (!res.ok) console.warn('⚠️ Keep-alive ping failed');
+            })
+            .catch(err => console.warn('⚠️ Keep-alive error:', err));
+    }, 5 * 60 * 1000); // 5 minutos
 });
 
 // ✅ LÓGICA DEL BOTÓN "HUB QUIZ ARENA"

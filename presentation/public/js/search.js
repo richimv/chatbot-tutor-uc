@@ -71,7 +71,7 @@ class SearchComponent {
                 fetch(`${window.AppConfig.API_URL}/api/careers`),
                 fetch(`${window.AppConfig.API_URL}/api/courses`),
                 fetch(`${window.AppConfig.API_URL}/api/topics`),
-                fetch(`${window.AppConfig.API_URL}/api/books`) // ✅ AÑADIDO: Cargar los libros
+                fetch(`${window.AppConfig.API_URL}/api/books?type=book`) // ✅ AÑADIDO: Cargar los libros (Filtrado solo a libros reales)
             ]);
             this.allData.careers = await careersRes.json();
             this.allData.courses = await coursesRes.json();
@@ -405,45 +405,72 @@ class SearchComponent {
         this.resultsContainer.classList.remove('hidden');
 
         // 2. Separar resultados por tipo para visualización específica
+        // Gracias al fix en searchService.js, ahora 'type' refleja 'video', 'article', etc.
         const foundBooks = data.results.filter(item => item.type === 'book' || item.resource_type === 'book');
+        const foundVideos = data.results.filter(item => item.type === 'video' || item.resource_type === 'video');
+        const foundArticles = data.results.filter(item => item.type === 'article' || item.resource_type === 'article' || item.type === 'other' || item.resource_type === 'other');
+        // Cursos (type 'course' o undefined)
         const foundCourses = data.results.filter(item => item.type === 'course' || (!item.type && !item.resource_type));
 
-        // 3. Construir HTML de Libros (Tamaño pequeño - Grid de Libros)
-        let booksSectionHTML = '';
+        // Orden Solicitado: Libros -> Videos -> Materiales -> Cursos
+
+        let contentHTML = '';
+
+        // 1. SECCIÓN: LIBROS
         if (foundBooks.length > 0) {
             const booksHTML = foundBooks.map(book => create3DBookCardHTML(book)).join('');
-            booksSectionHTML = `
+            contentHTML += `
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Libros Encontrados (${foundBooks.length})</h3>
                 </div>
-                <!-- ✅ USAMOS books-grid PARA TAMAÑO CORRECTO (Igual que en Home) -->
                 <div class="books-grid"> 
                     ${booksHTML}
                 </div>
             `;
         }
 
-        // 4. Construir HTML de Cursos (Tamaño grande - Exploración)
-        let coursesSectionHTML = '';
+        // 2. SECCIÓN: VIDEOS
+        if (foundVideos.length > 0) {
+            const videosHTML = foundVideos.map(video => createVideoCardHTML(video)).join('');
+            contentHTML += `
+                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
+                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Videos Relacionados (${foundVideos.length})</h3>
+                </div>
+                <!-- Usamos 'video-grid' definido en course.css -->
+                <div class="video-grid" style="margin-top: 0.5rem;"> 
+                    ${videosHTML}
+                </div>
+            `;
+        }
+
+        // 3. SECCIÓN: ARTÍCULOS Y RECURSOS
+        if (foundArticles.length > 0) {
+            const articlesHTML = foundArticles.map(resource => createResourceCardHTML(resource)).join('');
+            contentHTML += `
+                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
+                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Materiales y Lecturas (${foundArticles.length})</h3>
+                </div>
+                <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 0.5rem;"> 
+                    ${articlesHTML}
+                </div>
+            `;
+        }
+
+        // 4. SECCIÓN: CURSOS (Ahora al final)
         if (foundCourses.length > 0) {
-            // ✅ Asegurar que usamos 'course' para el estilo correcto
             const coursesHTML = foundCourses.map(course => createBrowseCardHTML(course, 'course')).join('');
-            coursesSectionHTML = `
-                <div class="section-header" style="margin-top: 2.5rem; border-bottom: none;">
+            contentHTML += `
+                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
                      <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Cursos Encontrados (${foundCourses.length})</h3>
                 </div>
-                <!-- ✅ USAMOS browse-grid PARA TARJETAS GRANDES -->
                 <div class="browse-grid" style="margin-top: 0.5rem;"> 
                      ${coursesHTML}
                 </div>
             `;
         }
 
-        let contentHTML = '';
-        if (foundBooks.length === 0 && foundCourses.length === 0) {
+        if (contentHTML === '') {
             contentHTML = `<p class="empty-state" style="margin-top: 2rem;">No se encontraron resultados para "${data.searchQuery}".</p>`;
-        } else {
-            contentHTML = booksSectionHTML + coursesSectionHTML;
         }
 
         // 5. Secciones inferiores (Recomendaciones + Chat)

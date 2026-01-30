@@ -468,8 +468,8 @@ class AdminManager {
         // ✅ APLICAR ORDENAMIENTO
         const sortedBooks = this.sortData(this.allBooks, 'book', 'tab-books');
         const itemsHTML = sortedBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
-        const content = this._createTabHeaderHTML('book', 'Añadir Libro', 'tab-books') +
-            (itemsHTML || '<p class="empty-state">No hay libros.</p>');
+        const content = this._createTabHeaderHTML('book', 'Añadir Recurso', 'tab-books') +
+            (itemsHTML || '<p class="empty-state">No hay recursos.</p>');
         container.innerHTML = content;
     }
 
@@ -557,7 +557,7 @@ class AdminManager {
                     // ✅ NUEVO: Selector de Carreras
                     this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, currentItem?.careerIds || [], 'career') +
                     // this.createUnitManager(...) Eliminado
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
+                    this.createCheckboxList('Recursos de Referencia', 'generic-books', this.allBooks, currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
 
                 // ✅ NUEVO: Previsualización de imagen para Curso
                 let courseImagePreview = '';

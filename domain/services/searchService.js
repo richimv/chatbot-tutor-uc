@@ -41,7 +41,7 @@ class SearchService {
         ]);
 
         // 2. Normalización y Tagging
-        const books = bookResults.map(b => ({ ...b, type: 'book' }));
+        const books = bookResults.map(b => ({ ...b, type: b.resource_type || 'book' }));
         const courses = courseResults.map(c => ({ ...c, type: 'course' }));
 
         // 3. Fallback Mejorado: Búsqueda por Categoría/Carrera (Smart Context)

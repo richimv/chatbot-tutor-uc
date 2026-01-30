@@ -158,7 +158,8 @@ class CoursesController {
 
     async getBooks(req, res) {
         try {
-            const books = await this.adminService.getAll('book'); // ✅ CORREGIDO: Usar adminService
+            const { type } = req.query; // ✅ Soporte para filtrado
+            const books = await this.adminService.getAll('book', { type });
             res.json(books);
         } catch (error) {
             console.error('❌ Error al obtener los libros:', error);
@@ -206,13 +207,15 @@ class CoursesController {
             // ✅ MANEJO DE ARCHIVOS: SUBIDA A LOCAL (Creación)
             if (req.file) {
                 const folderMap = {
-                    'book': 'libros',
+                    'book': 'recursos', // ✅ RENOMBRADO: Antes 'libros'
                     'course': 'cursos',
-                    'career': 'carreras'
+                    'career': 'carreras',
+                    'resource': 'recursos', // ✅ FIX: Mapear recursos genéricos
+                    'other': 'recursos'     // ✅ FIX: Mapear recursos genéricos
                 };
-                const subFolder = folderMap[entityType] || 'uploads';
+                const subFolder = folderMap[entityType] || 'recursos'; // Default seguro a recursos
 
-                if (['book', 'course', 'career'].includes(entityType)) {
+                if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
                     // Asegurar directorio
                     const uploadDir = path.join(__dirname, '../../presentation/public/assets', subFolder);
                     if (!fs.existsSync(uploadDir)) {
@@ -284,15 +287,18 @@ class CoursesController {
             // Reemplaza la lógica anterior de Supabase para ahorrar ancho de banda.
             if (req.file) {
                 // Mapeo de Entidad a Carpeta
+                // Mapeo de Entidad a Carpeta
                 const folderMap = {
-                    'book': 'libros',
+                    'book': 'recursos', // ✅ FIX: Renombrado de 'libros'
                     'course': 'cursos',
-                    'career': 'carreras'
+                    'career': 'carreras',
+                    'resource': 'recursos', // ✅ FIX: Soporte
+                    'other': 'recursos'     // ✅ FIX: Soporte
                 };
-                const subFolder = folderMap[entityType] || 'uploads';
+                const subFolder = folderMap[entityType] || 'recursos'; // Default seguro
 
                 // CASO 1: Subida de nueva imagen
-                if (['book', 'course', 'career'].includes(entityType)) {
+                if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
                     const oldItem = await this.adminService.getById(entityType, entityId);
 
                     // Borrar imagen anterior (Local o Supabase)

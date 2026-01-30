@@ -32,14 +32,14 @@ class AdminService {
         return repo;
     }
 
-    async getAll(entityType) {
+    async getAll(entityType, options = {}) {
         // ✅ LÓGICA MEJORADA: Si es instructor o student, usar el repo de usuarios.
         if (entityType === 'student') {
             return this.repositories.user.findByRole(entityType);
         }
 
         const repo = this._getRepository(entityType);
-        const items = await repo.findAll(); // Asumiendo que findAll existe en los repositorios
+        const items = await repo.findAll(options); // Asumiendo que findAll existe en los repositorios
         return items; // Los repositorios ya deben devolver el 'id' numérico correcto.
     }
 

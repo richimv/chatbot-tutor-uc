@@ -9,17 +9,28 @@
 // ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
 window.carouselInterval = null;
 
-window.startCarouselScroll = function (trackId, direction) {
+// ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
+window.carouselInterval = null;
+
+/**
+ * Inicia el desplazamiento suave del carrusel.
+ * @param {string} trackId - ID del contenedor.
+ * @param {number} direction - -1 (izq) o 1 (der).
+ * @param {number} speedMultiplier - Multiplicador de velocidad (Default: 1).
+ */
+window.startCarouselScroll = function (trackId, direction, speedMultiplier = 1) {
     const track = document.getElementById(trackId);
     if (!track) return;
 
     window.stopCarouselScroll(); // Limpiar previo si existe
 
-    // Velocidad de desplazamiento (pixels por frame)
-    const speed = 2;
+    // Velocidad Base (pixels por frame)
+    const baseSpeed = 2;
+    const speed = baseSpeed * speedMultiplier;
 
     function step() {
         track.scrollLeft += direction * speed;
+        // Continuar loop
         window.carouselInterval = requestAnimationFrame(step);
     }
 
@@ -32,6 +43,33 @@ window.stopCarouselScroll = function () {
         window.carouselInterval = null;
     }
 };
+
+// ... (Resto del archivo) ...
+
+// EN createCarouselHTML (Más abajo en el archivo, se actualiza la llamada):
+function createCarouselHTML(id, contentHTML) {
+    return `
+        <div class="carousel-container">
+            <button class="carousel-btn prev" 
+                onmouseenter="startCarouselScroll('${id}', -1, 1)" 
+                onmousedown="startCarouselScroll('${id}', -1, 4)" 
+                onmouseup="startCarouselScroll('${id}', -1, 1)" 
+                onmouseleave="stopCarouselScroll()">
+                &#10094;
+            </button>
+            <div class="carousel-track" id="${id}">
+                ${contentHTML}
+            </div>
+            <button class="carousel-btn next" 
+                onmouseenter="startCarouselScroll('${id}', 1, 1)" 
+                onmousedown="startCarouselScroll('${id}', 1, 4)" 
+                onmouseup="startCarouselScroll('${id}', 1, 1)" 
+                onmouseleave="stopCarouselScroll()">
+                &#10095;
+            </button>
+        </div>
+    `;
+}
 
 // --- Componentes para la página de Búsqueda (search.js) ---
 
@@ -455,7 +493,7 @@ function create3DBookCardHTML(book) {
     const rawCoverUrl = book.image_url || book.coverUrl;
     const coverUrl = (rawCoverUrl && rawCoverUrl.trim() !== "")
         ? rawCoverUrl
-        : 'https://placehold.co/150x220/1e293b/ffffff?text=Libro';
+        : 'https://placehold.co/150x220/1e293b/ffffff?text=Material';
 
     const url = book.url || '#';
 
@@ -498,8 +536,106 @@ function create3DBookCardHTML(book) {
     `;
 }
 
+
+/**
+ * Crea una tarjeta de video (YouTube) PROTEGIDA.
+ * Muestra miniatura + botón Play. Al hacer clic, valida auth/uso y luego reproduce.
+ */
+function createVideoCardHTML(video) {
+    let videoId = '';
+    try {
+        const urlObj = new URL(video.url);
+        if (urlObj.hostname.includes('youtube.com')) videoId = urlObj.searchParams.get('v');
+        else if (urlObj.hostname.includes('youtu.be')) videoId = urlObj.pathname.slice(1);
+    } catch (e) { console.warn('URL de video inválida:', video.url); }
+
+    if (!videoId) return createResourceCardHTML(video, 'fa-play-circle');
+
+    // Registrar URL para seguridad
+    window.uiManager.registerMaterial(video.id, video.url);
+
+    const safeId = video.id || `vid_${Math.random().toString(36).substr(2, 9)}`;
+    const containerId = `video-container-${safeId}`;
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+    // Estado de bloqueo visual (si invitado o sin suscripción activa)
+    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
+
+    // ✅ UI: Thumbnail con Overlay
+    return `
+        <div class="video-card">
+            <div class="video-frame-container" style="position: relative; cursor: pointer;" 
+                 onclick="window.uiManager.unlockResource('${video.id}', 'video')">
+                
+                <img src="${thumbnailUrl}" alt="${video.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                
+                <!-- Overlay Oscuro -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">
+                    <!-- Botón Play o Candado -->
+                    <div style="width: 50px; height: 50px; background: rgba(255,0,0,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
+                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="video-info">
+                <h4 class="video-title" title="${video.title}">${video.title}</h4>
+                ${video.author ? `<span class="video-author">${video.author}</span>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Crea una tarjeta genérica para recursos PROTEGIDA.
+ */
+function createResourceCardHTML(resource, iconClass = 'fa-external-link-alt') {
+    if (resource.type === 'article') iconClass = 'fa-newspaper';
+    if (resource.type === 'other') iconClass = 'fa-file-alt';
+    if (resource.url && resource.url.endsWith('.pdf')) iconClass = 'fa-file-pdf';
+
+    // Registrar URL
+    window.uiManager.registerMaterial(resource.id, resource.url);
+
+    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
+
+    // ✅ New Layout: Left Info | Right Visual
+    const typeLabel = resource.type === 'other' ? 'Material' : 'Artículo';
+
+    // Determine Visual Content (Image or Icon)
+    let visualHTML = '';
+    if (resource.image_url && resource.image_url.trim() !== '') {
+        visualHTML = `<img src="${resource.image_url}" alt="${resource.title}">`;
+    } else {
+        visualHTML = `<i class="fas ${iconClass} resource-visual-icon"></i>`;
+    }
+
+    return `
+        <div class="resource-card generic-resource" role="button" tabindex="0"
+             onclick="window.uiManager.unlockResource('${resource.id}', '${resource.type || 'article'}')"
+             title="${resource.title}">
+            
+            <!-- Left Info -->
+            <div class="resource-info">
+                <h4 class="resource-title">${resource.title}</h4>
+                ${resource.author ? `<span class="resource-author">${resource.author}</span>` : ''}
+                
+                <div class="resource-meta-row">
+                     <span class="resource-type-badge">${typeLabel}</span>
+                     ${isLocked ? '<i class="fas fa-lock" style="font-size: 0.7rem; color: var(--text-muted);"></i>' : ''}
+                </div>
+            </div>
+
+            <!-- Right Visual -->
+            <div class="resource-visual">
+                ${visualHTML}
+            </div>
+        </div>
+    `;
+}
+
 /**
  * Crea un contenedor de carrusel para una lista de items.
+
  * @param {string} id - ID único para el carrusel.
  * @param {string} contentHTML - HTML de los items (tarjetas).
  */
@@ -507,7 +643,9 @@ function createCarouselHTML(id, contentHTML) {
     return `
         <div class="carousel-container" id="${id}">
             <button class="carousel-btn prev" 
-                onmouseenter="startCarouselScroll('${id}-track', -1)" 
+                onmouseenter="startCarouselScroll('${id}-track', -1, 1)" 
+                onmousedown="startCarouselScroll('${id}-track', -1, 6)" 
+                onmouseup="startCarouselScroll('${id}-track', -1, 1)" 
                 onmouseleave="stopCarouselScroll()"
                 onclick="document.getElementById('${id}-track').scrollBy({left: -300, behavior: 'smooth'})">
                 <i class="fas fa-chevron-left"></i>
@@ -516,7 +654,9 @@ function createCarouselHTML(id, contentHTML) {
                 ${contentHTML}
             </div>
             <button class="carousel-btn next" 
-                onmouseenter="startCarouselScroll('${id}-track', 1)" 
+                onmouseenter="startCarouselScroll('${id}-track', 1, 1)" 
+                onmousedown="startCarouselScroll('${id}-track', 1, 6)" 
+                onmouseup="startCarouselScroll('${id}-track', 1, 1)" 
                 onmouseleave="stopCarouselScroll()"
                 onclick="document.getElementById('${id}-track').scrollBy({left: 300, behavior: 'smooth'})">
                 <i class="fas fa-chevron-right"></i>

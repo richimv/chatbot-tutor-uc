@@ -2,8 +2,14 @@ const db = require('../../infrastructure/database/db');
 
 class BookRepository {
 
-    async findAll() {
+    async findAll(filters = {}) {
         // ✅ MEJORA: Incluir Áreas Académicas para agrupación en catálogo.
+        const { type } = filters;
+
+        const whereClause = type ? `WHERE r.resource_type = '${type}'` : ''; // Simple sanitization, ideally use params but for fixed types it's ok or use param array.
+        // Better security: use params. But findAll query is complex with subquery.
+        // Let's use string template for now as 'type' comes from strict set in controller or empty.
+
         const query = `
             SELECT 
                 r.id, r.title, r.author, r.image_url, r.url, r.resource_type, 
@@ -16,10 +22,12 @@ class BookRepository {
                     WHERE cb.resource_id = r.id AND car.area IS NOT NULL
                 ) as areas
             FROM resources r
-            WHERE r.resource_type = 'book' 
+            ${type ? 'WHERE r.resource_type = $1' : ''}
             ORDER BY r.title
         `;
-        const { rows } = await db.query(query);
+
+        const params = type ? [type] : [];
+        const { rows } = await db.query(query, params);
         return rows;
     }
 
@@ -169,9 +177,10 @@ class BookRepository {
                 (unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
                 (word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3) OR
 
-                -- ✅ NUEVO Match: Contexto Carrera
+                -- ✅ NUEVO Match: Contexto Carrera (STRICT MODE)
+                -- Solo si coincide MUCHO con el nombre de la carrera (evitar "Humana" -> "Medicina Humana" -> traer todo)
                 (unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
-                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.3) OR
+                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.75) OR
 
                 r.isbn ILIKE $1
             ORDER BY relevance_score DESC, r.title

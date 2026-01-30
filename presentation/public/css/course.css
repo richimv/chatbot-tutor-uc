@@ -431,7 +431,205 @@
     transition: background 0.2s;
 }
 
+
 .btn-copy-large:hover {
     background: #059669;
     transform: translateY(-1px);
+}
+
+/* =========================================
+   🎥 Video Grid & Cards (Minimalist & Compact)
+   ========================================= */
+.video-grid {
+    display: grid;
+    /* ✅ UPDATE: Celdas más pequeñas para que "encajen" mejor y no ocupen todo */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.video-card {
+    background: transparent;
+    /* Minimalist: Fondo transparente hasta hover */
+    border-radius: 8px;
+    overflow: hidden;
+    /* ✅ UPDATE: Borde invisible por defecto */
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    max-width: 450px;
+    /* Limit max width so single videos don't stretch */
+}
+
+.video-card:hover {
+    background: var(--surface);
+    border-color: var(--border);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.video-frame-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: black;
+    border-radius: 8px;
+    /* Redondear el video */
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.video-info {
+    padding: 0.5rem 0.25rem;
+    /* Padding reducido */
+}
+
+.video-title {
+    font-size: 0.95rem;
+    /* Fuente más pequeña */
+    font-weight: 500;
+    margin: 0 0 0.2rem 0;
+    color: var(--text-main);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-author {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   📄 Generic Resources Grid (Articles/Other)
+   ========================================= */
+/* =========================================
+   📄 Generic Resources Grid (Articles/Other)
+   ========================================= */
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    /* Slightly wider for new layout */
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.resource-card {
+    display: flex;
+    justify-content: space-between;
+    /* Split Left/Right */
+    align-items: center;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    /* Softer corners */
+    text-decoration: none;
+    transition: all 0.2s ease;
+    gap: 1rem;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.resource-card:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Left Column: Information */
+.resource-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    /* Prevent text overflow issues */
+    gap: 4px;
+}
+
+.resource-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    /* Max 2 lines */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+.resource-author {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.resource-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.resource-type-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Right Column: Visual (Square Image or Icon) */
+.resource-visual {
+    width: 72px;
+    height: 72px;
+    /* Fixed Square Size */
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-main);
+    /* Fallback bg */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+}
+
+.resource-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Ensures image fills square without distortion */
+}
+
+/* Icon Fallback style inside visual container */
+.resource-visual-icon {
+    font-size: 1.8rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* Locked Overlay for Resource (Optional but good for consistency) */
+.resource-lock-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.05);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }

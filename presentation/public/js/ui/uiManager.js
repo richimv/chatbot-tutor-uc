@@ -2,6 +2,8 @@ class UIManager {
     constructor() {
         this.modalId = 'auth-prompt-modal';
         this.injectModalHTML();
+        // ✅ NUEVO: Inyectar Modal de Video
+        this.injectVideoModalHTML();
         // ✅ NUEVO: Registro seguro de URLs para ofuscación
         this.materialRegistry = new Map();
     }
@@ -16,9 +18,13 @@ class UIManager {
     }
 
     /**
-     * Intenta abrir un material protegido validando límites de uso en el backend.
+     * Intenta acceder a un recurso protegido (Libro, Video, Artículo).
+     * Valida límites de uso en el backend.
+     * @param {string} id - ID del recurso.
+     * @param {string} type - Tipo ('video', 'book', 'article').
+     * @param {string} videoContainerId - (Opcional) ID del contenedor DOM para inyectar video.
      */
-    openMaterial(id) {
+    async unlockResource(id, type = 'book', videoContainerId = null) {
         this.checkAuthAndExecute(async () => {
             const url = this.materialRegistry.get(String(id));
             if (!url) {
@@ -41,16 +47,26 @@ class UIManager {
                 const data = await response.json();
 
                 if (response.ok && data.allowed) {
-                    // ✅ Éxito: Abrir el material
-                    // ✅ TRACKING: Registrar la vista del recurso
+                    // ✅ Éxito: Acceso concedido
+
+                    // ✅ TRACKING
                     if (window.AnalyticsApiService) {
                         try {
-                            window.AnalyticsApiService.recordView('book', id);
+                            window.AnalyticsApiService.recordView(type, id);
                         } catch (e) { console.warn('Tracking error', e); }
                     }
-                    window.open(url, '_blank');
+
+                    // 👉 ACCIÓN SEGÚN TIPO
+                    if (type === 'video') {
+                        // ✅ SOLUCIÓN: Usar Modal Dedicado
+                        this.openVideoModal(url, data.title || 'Video');
+                    } else {
+                        // Artículos y Libros se abren en nueva pestaña
+                        window.open(url, '_blank');
+                    }
+
                 } else if (response.status === 403) {
-                    // ⛔ Límite alcanzado: Mostrar Paywall
+                    // ⛔ Límite alcanzado
                     this.showPaywallModal();
                 } else {
                     console.error('Error verificando acceso:', data);
@@ -61,6 +77,98 @@ class UIManager {
             }
         });
     }
+
+    /**
+     * Alias para compatibilidad con código existente de libros.
+     */
+    openMaterial(id) {
+        this.unlockResource(id, 'book');
+    }
+
+    /**
+     * Inicia el Modal de Video.
+     */
+    openVideoModal(url, title) {
+        let videoId = '';
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname.includes('youtube.com')) {
+                videoId = urlObj.searchParams.get('v');
+            } else if (urlObj.hostname.includes('youtu.be')) {
+                videoId = urlObj.pathname.slice(1);
+            }
+        } catch (e) { console.warn('Invalid Video URL'); }
+
+        if (!videoId) {
+            window.open(url, '_blank');
+            return;
+        }
+
+        const modal = document.getElementById('video-player-modal');
+        const container = document.getElementById('video-modal-content-area');
+        const titleEl = document.getElementById('video-modal-title-text');
+
+        if (modal && container) {
+            container.innerHTML = `
+                <div class="video-container-responsive">
+                    <iframe 
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+                        title="${title}" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            `;
+            if (titleEl) titleEl.innerText = title;
+            modal.style.display = 'flex';
+
+            // ✅ OPTIMIZACIÓN MÓVIL: Solicitar Fullscreen Automático
+            // Esto ayuda a que los celulares giren o ocupen toda la pantalla.
+            if (window.innerWidth < 768) {
+                const videoContainer = container.querySelector('.video-container-responsive');
+                if (videoContainer) {
+                    try {
+                        if (videoContainer.requestFullscreen) videoContainer.requestFullscreen();
+                        else if (videoContainer.webkitRequestFullscreen) videoContainer.webkitRequestFullscreen(); // Safari
+                        else if (videoContainer.msRequestFullscreen) videoContainer.msRequestFullscreen(); // IE/Edge
+                    } catch (e) { console.warn('Fullscreen triggered automatically blocked by browser policy'); }
+                }
+            }
+        }
+    }
+
+    closeVideoModal() {
+        const modal = document.getElementById('video-player-modal');
+        const container = document.getElementById('video-modal-content-area');
+        if (modal) {
+            modal.style.display = 'none';
+            // Limpiar iframe para detener el audio
+            if (container) container.innerHTML = '';
+        }
+    }
+
+    /**
+     * Inyecta el HTML del modal de video si no existe.
+     */
+    injectVideoModalHTML() {
+        if (document.getElementById('video-player-modal')) return;
+
+        const modalHTML = `
+            <div id="video-player-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" style="overflow: visible;">
+                        <div id="video-modal-content-area"></div>
+                        <h3 id="video-modal-title-text" class="video-modal-title"></h3>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
 
     /**
      * ✅ Valida límites freemium para acciones secundarias (Citar, Guardar, Favorito).
