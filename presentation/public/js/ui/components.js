@@ -159,8 +159,8 @@ function createBrowseCardHTML(item, type) {
 
         const actionButtons = `
             <div class="card-actions">
-                <button class="action-btn save-btn" onclick="handleCardAction(event, '${item.id}', 'course', 'save')" title="Guardar"><i class="far fa-bookmark"></i></button>
-                <button class="action-btn fav-btn" onclick="handleCardAction(event, '${item.id}', 'course', 'favorite')" title="Favorito"><i class="far fa-heart"></i></button>
+                <button class="action-btn save-btn js-library-btn" data-id="${item.id}" data-type="course" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+                <button class="action-btn fav-btn js-library-btn" data-id="${item.id}" data-type="course" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
             </div>
         `;
 
@@ -505,8 +505,8 @@ function create3DBookCardHTML(book) {
 
     const actionButtons = `
         <div class="card-actions"> <!-- Inline styles moved to CSS -->
-            <button class="action-btn save-btn" onclick="handleCardAction(event, '${book.id}', 'book', 'save')" title="Guardar"><i class="far fa-bookmark"></i></button>
-            <button class="action-btn fav-btn" onclick="handleCardAction(event, '${book.id}', 'book', 'favorite')" title="Favorito"><i class="far fa-heart"></i></button>
+            <button class="action-btn save-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+            <button class="action-btn fav-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
             <button class="action-btn cite-btn" onclick="if(window.uiManager.validateFreemiumAction(event)) window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Generar Referencia Bibliográfica"><i class="fas fa-quote-right"></i></button>
         </div>
     `;

@@ -176,10 +176,7 @@ function renderCourse(course, container) {
     }
 
 
-    // Sincronizar estado de botones (Guardado/Favorito)
-    if (window.libraryManager) {
-        window.libraryManager.updateButtons();
-    }
+    // Sincronizar estado de botones (Manejado automáticamente por LibraryUI)
 }
 
 function setupSearch() {

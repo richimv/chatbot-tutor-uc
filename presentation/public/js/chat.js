@@ -580,8 +580,8 @@ Puedo ayudarte con:
         const navRegex = /\*?\s*\[(career|course|topic):(\d+)\]\s*([^\n<]+)/g;
 
         return text
-            // ✅ MEJORA: Convertir URLs en enlaces clickeables.
-            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (match, linkText, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
+            // ✅ MEJORA: Convertir URLs en enlaces clickeables (Soporta absolutas y relativas).
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
             // ✅ NUEVO: Convertir enlaces de navegación internos en botones.
             .replace(navRegex, (match, type, id, text) => {
                 const numericId = parseInt(id, 10);

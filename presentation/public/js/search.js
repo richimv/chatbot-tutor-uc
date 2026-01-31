@@ -219,32 +219,31 @@ class SearchComponent {
             }
         }
 
-        switch (viewName) {
-            case 'career':
-                this.renderCoursesForCareer(...args);
-                break;
-            case 'course':
-                this.renderUnifiedCourseView(...args);
-                break;
-            case 'all-books': // ✅ NUEVO
-                this.renderAllBooks(...args);
-                break;
-            case 'all-courses': // ✅ NUEVO
-                this.renderAllCourses(...args);
-                break;
-            case 'topic':
-                this.renderTopicView(...args);
-                break;
-            case 'search':
-                this.renderSearchResults(...args);
-                break;
-            case 'home':
-                this.renderInitialView();
-                break;
-            default:
-                console.warn('Vista desconocida:', viewName);
-                this.renderInitialView();
+        // 2. Renderizar contenido según la vista
+        if (viewName === 'home') {
+            this.renderInitialView();
+        } else if (viewName === 'career') {
+            const careerId = args[0];
+            const career = this.allData.careers.find(c => c.id == careerId);
+            if (career) this.renderCoursesForCareer(careerId);
+            else { console.error("Career not found:", careerId); this.renderInitialView(); }
+        } else if (viewName === 'course') {
+            this.renderUnifiedCourseView(...args);
+        } else if (viewName === 'topic') {
+            this.renderTopicView(...args);
+        } else if (viewName === 'search') {
+            // args[0] es 'data'
+            this.renderSearchResults(args[0]);
+        } else if (viewName === 'all-books') {
+            this.renderAllBooks();
+        } else if (viewName === 'all-courses') {
+            this.renderAllCourses();
+        } else {
+            console.warn('Vista desconocida:', viewName);
+            this.renderInitialView();
         }
+
+        // Sincronizar estado: Manejado por LibraryUI de forma reactiva
     }
 
     handleContentClick(e) {
@@ -512,6 +511,11 @@ class SearchComponent {
                 </div>
             </div>
         `;
+
+        // ✅ SYNC: Actualizar estado visual de botones (Guardado/Favorito)
+        if (window.libraryManager) {
+            setTimeout(() => window.libraryManager.updateButtons(), 100);
+        }
     }
 
     // setupFilterListeners() ELIMINADO: Ya no hay sidebar de filtros.
@@ -575,7 +579,6 @@ class SearchComponent {
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
                 <!-- ✅ CLEANUP: Botón volver eliminado -->
-
                 
                 <div class="course-main-header">
                     <div class="course-header-icon" style="background: linear-gradient(to bottom right, #10b981, #059669);">
@@ -594,6 +597,9 @@ class SearchComponent {
                 </div>
             </div>
         `;
+
+        // ✅ SYNC: Actualizar estado visual de botones
+        if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 100);
     }
 
     // ✅ NUEVO: Renderizar Catálogo de Cursos POR ÁREAS

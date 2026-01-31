@@ -59,6 +59,11 @@ const systemInstruction = {
     * Para Carreras: "* [career:ID] Nombre de la Carrera"
     * Para Cursos: "* [course:ID] Nombre del Curso"
     
+    E) LÍMITE DE RECURSOS (OPTIMIZACIÓN):
+    *   Si el contexto te da muchos libros/recursos, **LISTA MÁXIMO 5**.
+    *   Si hay más, añade una línea final: "Y [X] recursos más disponibles en la biblioteca."
+    *   Usa el enlace de "Ver todos" si el contexto te lo provee (ej. [Ver todos los resultados](index.html?...)).
+
     EJEMPLO:
     "Aquí tienes las carreras disponibles:
     * [career:1] Ingeniería de Sistemas
@@ -228,13 +233,18 @@ class MLService {
                 if (topic) {
                     const topicBooks = allBooks.filter(b => (topic.bookIds || []).includes(b.id));
 
+                    // ✅ OPTIMIZACIÓN: Límite de 5 recursos + "Ver más"
+                    const limitedBooks = topicBooks.slice(0, 5);
+                    const remaining = topicBooks.length - limitedBooks.length;
+
                     contextInjection += `\n[BIBLIOTECA: RECURSOS DEL TEMA "${topic.name}"]\n` +
                         `Descripción: ${topic.description || "No disponible"}\n` +
-                        `Libros relacionados:\n` +
-                        topicBooks.map(b =>
-                            // ✅ CORRECCIÓN 2: Metadatos completos aquí también
-                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
+                        `Libros relacionados (${limitedBooks.length} de ${topicBooks.length} mostrados):\n` +
+                        limitedBooks.map(b =>
+                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
+                        (remaining > 0 ? `\n... y ${remaining} recursos más disponibles en la biblioteca.` : '') +
+                        `\n[Enlace para ver todos: index.html?q=${encodeURIComponent(topic.name)}]` + // Instrucción para el LLM
                         `\n[FIN RECURSOS TEMA]\n`;
                 }
             }
@@ -248,13 +258,18 @@ class MLService {
                 if (course) {
                     const courseBooks = allBooks.filter(b => (course.materials || []).some(m => m.id === b.id) || (course.bookIds || []).includes(b.id));
 
+                    // ✅ OPTIMIZACIÓN: Límite de 5 recursos + "Ver más"
+                    const limitedBooks = courseBooks.slice(0, 5);
+                    const remaining = courseBooks.length - limitedBooks.length;
+
                     contextInjection += `\n[BIBLIOTECA: CURSO "${course.name}"]\n` +
                         `Descripción: ${course.description || "No disponible"}\n` +
-                        `Bibliografía:\n` +
-                        courseBooks.map(b =>
-                            // ✅ CORRECCIÓN 3: Metadatos completos para el curso
-                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | Edición: ${b.edition || 'N/A'} | URL: ${b.url}`
+                        `Bibliografía (${limitedBooks.length} de ${courseBooks.length} mostrados):\n` +
+                        limitedBooks.map(b =>
+                            `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
+                        (remaining > 0 ? `\n... y ${remaining} libros más.` : '') +
+                        `\n[Enlace para ver todos: index.html?q=${encodeURIComponent(course.name)}]` +
                         `\n[FIN INFO CURSO]\n`;
                 }
             }
