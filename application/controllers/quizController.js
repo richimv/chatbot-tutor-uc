@@ -52,24 +52,14 @@ class QuizController {
                 });
             }
 
-            // 2. Ajuste Dinámico de Dificultad por Ronda
-            let aiDifficulty = 'Básico';
-            if (round >= 3 && round <= 4) aiDifficulty = 'Profesional';
-            if (round >= 5) aiDifficulty = 'Experto';
+            // 2. MODO ESTRICTO: Respetar la dificultad seleccionada por el usuario
+            // Ya no forzamos "Básico" en rondas bajas si el usuario eligió "Experto".
+            let aiDifficulty = difficulty || 'Básico';
 
-            // Si el usuario eligió una dificultad inicial hard, respetarla o escalar desde ahí? 
-            // El requerimiento dice: Ronda 1-2 Básico, 3-4 Medio, 5 Hard. 
-            // Ignoramos el selector inicial para la generación de la IA o lo usamos como base?
-            // Seguiremos la regla estricta del prompt:
-            // "Ronda 1-2: easy, 3-4: medium, 5: hard"
-
-            // Mapeo para Gemini (QuizService espera Básico/Profesional/Experto)
-            // Si el servicio acepta strings directos, los enviamos.
-
-            console.log(`🎮 Generando Ronda ${round} (${aiDifficulty}) de ${topic} para ${user.name}`);
+            console.log(`🎮 Generando Ronda ${round} [Nivel ${aiDifficulty}] de ${topic} para ${user.name}`);
 
             // Llamar al servicio de IA
-            const questions = await QuizService.generateRound(topic, aiDifficulty);
+            const questions = await QuizService.generateRound(topic, aiDifficulty, round);
 
             res.json({
                 success: true,

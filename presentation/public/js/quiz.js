@@ -506,7 +506,7 @@ class QuizGame {
 
         // Defensive DOM updates
         const badge = document.querySelector('.badged-question');
-        if (badge) badge.innerHTML = `Nivel ${this.currentRound} | Pregunta ${this.currentQuestionIndex + 1} de 10`;
+        if (badge) badge.innerHTML = `Nivel ${this.currentRound} | Pregunta ${this.currentQuestionIndex + 1} de ${this.questions.length}`;
 
         const qText = document.getElementById('question-text');
         if (qText) qText.textContent = question.question;

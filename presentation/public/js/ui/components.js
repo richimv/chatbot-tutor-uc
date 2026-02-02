@@ -549,31 +549,42 @@ function createVideoCardHTML(video) {
         else if (urlObj.hostname.includes('youtu.be')) videoId = urlObj.pathname.slice(1);
     } catch (e) { console.warn('URL de video inválida:', video.url); }
 
-    if (!videoId) return createResourceCardHTML(video, 'fa-play-circle');
-
     // Registrar URL para seguridad
     window.uiManager.registerMaterial(video.id, video.url);
 
     const safeId = video.id || `vid_${Math.random().toString(36).substr(2, 9)}`;
-    const containerId = `video-container-${safeId}`;
-    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
-    // Estado de bloqueo visual (si invitado o sin suscripción activa)
+    // ✅ Lógica de Miniatura Inteligente
+    let thumbnailUrl;
+    if (videoId) {
+        thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    } else {
+        // Si no es YouTube, usar imagen personalizada o placeholder bonito
+        thumbnailUrl = video.image_url
+            || video.imageUrl
+            || 'https://placehold.co/600x400/1e1e1e/ffffff?text=Video+Multimedia';
+    }
+
+    // Estado de bloqueo visual
     const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
 
-    // ✅ UI: Thumbnail con Overlay
+    // ✅ UI: Thumbnail con Overlay (Unificado para todos los videos)
     return `
         <div class="video-card">
             <div class="video-frame-container" style="position: relative; cursor: pointer;" 
                  onclick="window.uiManager.unlockResource('${video.id}', 'video')">
                 
-                <img src="${thumbnailUrl}" alt="${video.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="${thumbnailUrl}" alt="${video.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://placehold.co/600x400/1e1e1e/ffffff?text=Video'">
                 
                 <!-- Overlay Oscuro -->
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1)); display: flex; align-items: center; justify-content: center;">
+                    
+                    <!-- Badge de Tipo (si no es YT) -->
+                    ${!videoId ? `<div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">WEB</div>` : ''}
+
                     <!-- Botón Play o Candado -->
-                    <div style="width: 50px; height: 50px; background: rgba(255,0,0,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
-                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i>
+                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); transition: all 0.3s ease;">
+                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}" style="margin-left: ${isLocked ? '0' : '4px'};"></i>
                     </div>
                 </div>
             </div>
