@@ -169,35 +169,56 @@ class CitationManager {
 
             let apaText, vancouverText, isoText;
 
-            // Formateadores Seguros
+            // Formateadores Seguros con Fallbacks Académicos
             const safe = (str) => str || '';
+            // Si el valor es falsy, usar el fallback (ej. [s.l.]).
+            const val = (v, fallback) => v ? v : fallback;
+
+            // Funciones específicas para evitar acumulación de puntuación
+            // Ej: Si no hay editorial, no poner " ,".
+            const appendIf = (val, prefix = '', suffix = '') => val ? `${prefix}${val}${suffix}` : '';
 
             // ✅ USAR NUEVA FUNCIÓN DE FORMATEO
-            // Nota: 'this' puede perderse en la función global. Usamos la instancia global 'window.citationManager' o guardamos contexto.
-            // Dado que estamos definiendo la función inside exposeGlobalFunctions que es parte de la clase...
-            // La función 'openCitationModal' es una arrow function, así que 'this' debería ser la instancia de Class.
             const fmt = (s, style) => this.formatAuthors(s, style);
 
+            // Datos normalizados con Fallbacks
+            const fYear = val(year, '[s.f.]');
+            const fCity = val(city, '[s.l.]');
+            const fPub = val(publisher, '[s.n.]');
+
             if (type === 'book') {
-                // APA 7
+                // APA 7: Autor. (Año). Título (Edición). Editorial.
                 const authorAPA = fmt(rawAuthor, 'APA');
-                apaText = `${authorAPA} (${year || 's.f.'}). <i>${safe(title)}</i>${edition ? ` (${edition})` : ''}.${publisher ? ` ${publisher}.` : ''}`;
+                const editionStr = edition ? ` (${edition})` : '';
+                apaText = `${authorAPA} (${fYear}). <i>${safe(title)}</i>${editionStr}. ${fPub}.`;
 
-                // Vancouver
+                // Vancouver: Autor. Título. Edición. Ciudad: Editorial; Año.
                 const authorVan = fmt(rawAuthor, 'Vancouver');
-                vancouverText = `${authorVan}. ${safe(title)}.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher};` : ''}${year ? ` ${year}.` : ''}`;
+                const edVan = edition ? ` ${edition}.` : '';
+                vancouverText = `${authorVan}. ${safe(title)}.${edVan} ${fCity}: ${fPub}; ${fYear}.`;
 
-                // ISO 690
+                // ISO 690: AUTOR. Título. Edición. Ciudad: Editorial, Año. ISBN.
+                // REGLA: Si la ciudad es desconocida [s.l.], y editorial también [s.n.], se muestran.
                 const authorISO = fmt(rawAuthor, 'ISO');
-                isoText = `${authorISO}. <i>${safe(title)}</i>.${edition ? ` ${edition}.` : ''}${city ? ` ${city}:` : ''}${publisher ? ` ${publisher},` : ''}${year ? ` ${year}.` : ''}${isbn ? ` ISBN ${isbn}.` : ''}`;
+                const edISO = edition ? ` ${edition}.` : '';
+                const isbnISO = isbn ? ` ISBN ${isbn}.` : '';
+
+                // Construcción ISO estricta
+                isoText = `${authorISO}. <i>${safe(title)}</i>.${edISO} ${fCity}: ${fPub}, ${fYear}.${isbnISO}`;
+
             } else {
-                // Generar para otros recursos (usamos APA formatter para autor igual)
+                // Recursos Digitales / Videos
                 const authorAPA = fmt(rawAuthor, 'APA');
                 const authorISO = fmt(rawAuthor, 'ISO');
 
-                apaText = `${authorAPA} (${year || 's.f.'}). ${safe(title)} [${type === 'video' ? 'Video' : 'Recurso en línea'}]. Recuperado de ${url || '#'}`;
-                vancouverText = `${fmt(rawAuthor, 'Vancouver')}. ${safe(title)} [Internet].${year ? ` ${year}` : ''} [citado el ${accessDate}]. Disponible en: ${url || '#'}`;
-                isoText = `${authorISO}. <i>${safe(title)}</i> [en línea].${year ? ` ${year}.` : ''} Disponible en: ${url || '#'}`;
+                // APA: Autor. (Año). Título [Tipo]. Recuperado de URL
+                apaText = `${authorAPA} (${fYear}). ${safe(title)} [${type === 'video' ? 'Video' : 'Recurso en línea'}]. Recuperado de ${url || '#'}`;
+
+                // Vancouver: Autor. Título [Internet]. Año [citado fecha]. Disponible en: URL
+                vancouverText = `${fmt(rawAuthor, 'Vancouver')}. ${safe(title)} [Internet]. ${fYear} [citado el ${accessDate}]. Disponible en: ${url || '#'}`;
+
+                // ISO 690: AUTOR. Título [en línea]. Año. Disponible en: URL
+                isoText = `${authorISO}. <i>${safe(title)}</i> [en línea]. ${fYear}. Disponible en: ${url || '#'}`;
             }
 
             document.getElementById('citation-text-apa').innerHTML = apaText;

@@ -557,7 +557,10 @@ class AdminManager {
                     // ✅ NUEVO: Selector de Carreras
                     this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, currentItem?.careerIds || [], 'career') +
                     // this.createUnitManager(...) Eliminado
-                    this.createCheckboxList('Recursos de Referencia', 'generic-books', this.allBooks, currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
+
+                    // ✅ OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
+                    // Se crea una copia [...Array] para no mutar el original desordenadamente.
+                    this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
 
                 // ✅ NUEVO: Previsualización de imagen para Curso
                 let courseImagePreview = '';
@@ -878,11 +881,9 @@ class AdminManager {
         // ✅ SOLUCIÓN: Asegurarse de que los IDs seleccionados sean números para la comparación.
         const numericSelectedIds = (selectedIds || []).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
 
-        const sortedOptions = [...options].sort((a, b) => {
-            const nameA = type === 'book' ? a.title : a.name;
-            const nameB = type === 'book' ? b.title : b.name;
-            return nameA.localeCompare(nameB);
-        });
+        // ✅ LÓGICA CORREGIDA: Respetar el orden pasado por el invocador.
+        // Anteriormente se forzaba un orden alfabético aquí, sobrescribiendo el orden por fecha/ID.
+        const sortedOptions = options; // Usar el array tal cual viene (ya ordenado)
         const itemsHTML = sortedOptions.map(opt => {
             const checked = numericSelectedIds.includes(opt.id) ? 'checked' : '';
             const displayLabel = type === 'book' ? `${opt.title} (by ${opt.author})` : opt.name;

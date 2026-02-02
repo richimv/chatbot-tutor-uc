@@ -50,7 +50,12 @@ class CourseRepository {
                             'author', r.author,
                             'image_url', r.image_url,
                             'type', r.resource_type,
-                            'url', r.url
+                            'url', r.url,
+                            'publication_year', r.publication_year,
+                            'publisher', r.publisher,
+                            'edition', r.edition,
+                            'city', r.city,
+                            'isbn', r.isbn
                         )
                     ), '[]')
                     FROM course_books cb

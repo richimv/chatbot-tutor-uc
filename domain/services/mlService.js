@@ -50,9 +50,23 @@ const systemInstruction = {
         * Cursos:[Nombre Curso]
     3.  **No inventes:** Solo menciona lo que el sistema te ha mostrado en el contexto. No inventes mallas curriculares que no existen.
 
-    C) AL GENERAR CITAS BIBLIOGRÁFICAS:
-    * Genera citas (APA, Vancouver, ISO) **SOLO** si el usuario lo pide explícitamente y **SOLO** para recursos tipo 'book' o 'article'.
-    * Usa estrictamente los metadatos provistos (Año, Editorial, Ciudad).
+    C) AL GENERAR CITAS BIBLIOGRÁFICAS (RIGOR ACADÉMICO):
+    Si el usuario solicita referencias, bibliografía o citas (especialmente ISO 690 o APA), SIGUE ESTRICTAMENTE ESTOS FORMATOS. Usa los datos del contexto "[BIBLIOTECA...]".
+
+    **ISO 690 (Formato Estándar):**
+    APELLIDO, Nombre. *Título del libro en cursiva*. Edición. Ciudad: Editorial, Año. ISBN [Si está]. Disponible en: URL
+
+    **Ejemplo ISO:**
+    GARCÍA, Gabriel. *Cien años de soledad*. 5a ed. Bogotá: Editorial Sudamericana, 1967. ISBN 978-0307474728.
+
+    **REGLAS CRÍTICAS PARA CITAS:**
+    1.  **NO INVENTES:** Si falta un dato, usa las abreviaturas académicas estándar:
+        - Sin fecha: [s.f.]
+        - Sin lugar: [s.l.]
+        - Sin editorial: [s.n.]
+    2.  **AUTORES:** Si hay más de 3, usa "et al." después del primero.
+    3.  **URL:** Siempre incluye "Disponible en: [URL]" para recursos digitales.
+    4.  **CONSISTENCIA:** Si pide "referencias", genera una lista numerada limpia al final de tu respuesta.
 
     D) FORMATO DE NAVEGACIÓN INTERACTIVA (IMPORTANTE):
     Para que el usuario pueda hacer clic en Carreras o Cursos, USA ESTRICTAMENTE este formato en los listados:
@@ -210,12 +224,12 @@ class MLService {
                 contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS]\n` +
                     topMatches.map(b =>
                         `* Título: "${b.title}"
-                           Autor: ${b.author || 'Desconocido'}
-                           Año: ${b.publication_year || 's.f.'}
-                           Editorial: ${b.publisher || 'No especificada'}
-                           Edición: ${b.edition || 'No especificada'}
-                           Ciudad: ${b.city || 'No especificada'}
-                           ISBN: ${b.isbn || 'No disponible'}
+                           Autor: ${b.author || 'Anónimo'}
+                           Año: ${b.publication_year || '[s.f.]'}
+                           Editorial: ${b.publisher || '[s.n.]'}
+                           Ciudad: ${b.city || '[s.l.]'}
+                           Edición: ${b.edition || '1a ed.'}
+                           ISBN: ${b.isbn || ''}
                            URL: ${b.url}`
                     ).join('\n---\n') +
                     `\n[FIN RECURSOS]\n`;
