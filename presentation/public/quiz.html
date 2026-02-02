@@ -173,6 +173,31 @@
             </div>
         </div>
 
+        <!-- 3.1. MODAL SALIDA (Custom Confirm) -->
+        <div id="exit-confirm-modal" class="glass-modal hidden">
+            <div class="modal-content" style="max-width: 450px;">
+                <div class="feedback-header">
+                    <i class="fas fa-exclamation-triangle"
+                        style="color: #facc15; font-size: 3.5rem; margin-bottom: 1rem;"></i>
+                    <h2 style="color: white; margin-bottom: 10px;">¿Abandonar la Arena?</h2>
+                </div>
+                <div class="feedback-body">
+                    <p style="color: #cbd5e1; font-size: 1.1rem; margin-bottom: 2rem;">
+                        Perderás tu progreso actual y la racha de puntos. ¿Estás seguro?
+                    </p>
+                </div>
+                <div class="actions" style="margin-top: 0; gap: 1rem;">
+                    <button id="btn-cancel-exit" class="btn-secondary" style="min-height: 50px;">
+                        Cancelar
+                    </button>
+                    <button id="btn-confirm-exit" class="btn-glow"
+                        style="background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); min-height: 50px;">
+                        <i class="fas fa-door-open"></i> Síp, Salir
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- VISTA 4: RESULTS -->
         <section id="view-results" class="quiz-view">
             <div class="results-card">

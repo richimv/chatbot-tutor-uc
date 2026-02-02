@@ -182,8 +182,37 @@ class QuizGame {
 
         if (quickExit) {
             quickExit.onclick = () => {
-                if (confirm('⚠️ ¿Salir de la Arena? Se perderá el progreso actual.')) {
-                    window.location.href = '/';
+                // ✅ REEMPLAZO: Usar Modal Custom en lugar de confirm() nativo
+                const exitModal = document.getElementById('exit-confirm-modal');
+                const btnConfirm = document.getElementById('btn-confirm-exit');
+                const btnCancel = document.getElementById('btn-cancel-exit');
+
+                if (exitModal) {
+                    exitModal.classList.remove('hidden');
+
+                    // Logic for buttons
+                    const closeExitModal = () => {
+                        exitModal.classList.add('hidden');
+                        // Clean listeners to avoid duplicates if opened multiple times
+                        btnConfirm.onclick = null;
+                        btnCancel.onclick = null;
+                    };
+
+                    if (btnCancel) btnCancel.onclick = closeExitModal;
+
+                    if (btnConfirm) btnConfirm.onclick = () => {
+                        window.location.href = '/';
+                    };
+
+                    // Close on click outside
+                    exitModal.onclick = (e) => {
+                        if (e.target === exitModal) closeExitModal();
+                    };
+                } else {
+                    // Fallback just in case
+                    if (confirm('⚠️ ¿Salir de la Arena? Se perderá el progreso actual.')) {
+                        window.location.href = '/';
+                    }
                 }
             };
         }
