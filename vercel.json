@@ -1,0 +1,71 @@
+{
+    "version": 2,
+    "public": true,
+    "cleanUrls": true,
+    "rewrites": [
+        {
+            "source": "/",
+            "destination": "/presentation/public/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/presentation/public/login.html"
+        },
+        {
+            "source": "/register",
+            "destination": "/presentation/public/register.html"
+        },
+        {
+            "source": "/pricing",
+            "destination": "/presentation/public/pricing.html"
+        },
+        {
+            "source": "/course",
+            "destination": "/presentation/public/course.html"
+        },
+        {
+            "source": "/career",
+            "destination": "/presentation/public/career.html"
+        },
+        {
+            "source": "/privacy",
+            "destination": "/presentation/public/privacy.html"
+        },
+        {
+            "source": "/terms",
+            "destination": "/presentation/public/terms.html"
+        },
+        {
+            "source": "/update-password",
+            "destination": "/presentation/public/update-password.html"
+        },
+        {
+            "source": "/change-password",
+            "destination": "/presentation/public/change-password.html"
+        },
+        {
+            "source": "/verification-status",
+            "destination": "/presentation/public/verification-status.html"
+        },
+        {
+            "source": "/dashboard",
+            "destination": "/presentation/public/dashboard.html"
+        },
+        {
+            "source": "/chat",
+            "destination": "/presentation/public/chat.html"
+        },
+        {
+            "source": "/admin",
+            "destination": "/presentation/public/admin.html"
+        },
+        {
+            "source": "/quiz",
+            "destination": "/presentation/public/quiz.html"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/presentation/public/$1"
+        }
+    ]
+}
