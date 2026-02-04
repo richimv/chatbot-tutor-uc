@@ -218,7 +218,7 @@ class LibraryUI {
         // Acción al hacer clic en el item del drawer
         let clickAttr = '';
         if (item._uiType === 'course') {
-            clickAttr = `onclick="window.location.href='course.html?id=${item.id}'"`;
+            clickAttr = `onclick="window.location.href='course?id=${item.id}'"`;
         } else {
             // Libro -> Abrir URL externa
             clickAttr = `onclick="window.open('${item.url || '#'}', '_blank')"`;

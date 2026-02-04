@@ -481,7 +481,7 @@
 
             // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
             if (!token) {
-                window.location.href = 'login.html?redirect=pricing.html';
+                window.location.href = 'login?redirect=pricing';
                 return;
             }
 

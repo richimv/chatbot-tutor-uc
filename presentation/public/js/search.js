@@ -424,15 +424,28 @@ class SearchComponent {
 
         let contentHTML = '';
 
-        // 1. SECCIÓN: LIBROS
+        // 1. SECCIÓN: LIBROS CON INFINITE SCROLL
         if (foundBooks.length > 0) {
-            const booksHTML = foundBooks.map(book => create3DBookCardHTML(book)).join('');
+            // Configuración del Infinite Scroll
+            const ITEMS_PER_PAGE = 12;
+            this.currentBookList = foundBooks; // Guardamos ref para lazy loading
+            this.loadedBooksCount = 0;
+
+            const initialBatch = this.currentBookList.slice(0, ITEMS_PER_PAGE);
+            this.loadedBooksCount = initialBatch.length;
+
+            const booksHTML = initialBatch.map(book => create3DBookCardHTML(book)).join('');
+
             contentHTML += `
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Libros Encontrados (${foundBooks.length})</h3>
                 </div>
-                <div class="books-grid"> 
+                <div id="books-grid-container" class="books-grid"> 
                     ${booksHTML}
+                </div>
+                <!-- Sentinel for Infinite Scroll -->
+                <div id="books-sentinel" style="height: 20px; width: 100%; margin-top: 20px; display: flex; justify-content: center;">
+                    ${foundBooks.length > ITEMS_PER_PAGE ? '<i class="fas fa-circle-notch fa-spin" style="color: var(--accent); opacity: 0;"></i>' : ''}
                 </div>
             `;
         }
@@ -525,6 +538,85 @@ class SearchComponent {
         if (window.libraryManager) {
             setTimeout(() => window.libraryManager.updateButtons(), 100);
         }
+
+        // ✅ INICIAR INFINITE SCROLL SI ES NECESARIO
+        if (foundBooks.length > 0 && this.currentBookList.length > this.loadedBooksCount) {
+            this.setupInfiniteScroll();
+        }
+    }
+
+    setupInfiniteScroll(sentinelId, loadCallback) {
+        // Defaults for search results provided if no args
+        const sId = sentinelId || 'books-sentinel';
+        const sentinel = document.getElementById(sId);
+        if (!sentinel) return;
+
+        // Desconectar observador previo si existe para este sentinel (limpieza)
+        if (this.currentObserver) {
+            this.currentObserver.disconnect();
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                const loader = sentinel.querySelector('i');
+                if (loader) loader.style.opacity = '1';
+
+                setTimeout(() => {
+                    if (loadCallback) {
+                        loadCallback(sentinel, observer);
+                    } else {
+                        // Default behavior for Search Results
+                        this.loadMoreBooks(sentinel);
+                    }
+                }, 500);
+            }
+        }, { rootMargin: '100px' });
+
+        observer.observe(sentinel);
+
+        // Store reference based on context
+        if (sId === 'books-sentinel') this.booksObserver = observer;
+        else this.currentObserver = observer;
+    }
+
+    loadMoreBooks(sentinel) {
+        const ITEMS_PER_LOAD = 12;
+        const total = this.currentBookList.length;
+
+        // Si ya cargamos todo, detener.
+        if (this.loadedBooksCount >= total) return;
+
+        const nextBatch = this.currentBookList.slice(this.loadedBooksCount, this.loadedBooksCount + ITEMS_PER_LOAD);
+        this.loadedBooksCount += nextBatch.length;
+
+        const newBooksHTML = nextBatch.map(book => create3DBookCardHTML(book)).join('');
+        const grid = document.getElementById('books-grid-container');
+
+        if (grid) {
+            // Animación Fade In manual simple
+            // Crear elemento temporal para parsear HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newBooksHTML;
+
+            Array.from(tempDiv.children).forEach((node, index) => {
+                node.style.opacity = '0';
+                node.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.05}s`;
+                grid.appendChild(node);
+            });
+
+            // Re-sincronizar botones de librería para los nuevos elementos
+            if (window.libraryManager) window.libraryManager.updateButtons();
+        }
+
+        // Si ya no hay más, ocultar sentinel
+        if (this.loadedBooksCount >= total) {
+            sentinel.style.display = 'none';
+            if (this.booksObserver) this.booksObserver.disconnect();
+        } else {
+            // Ocultar spin
+            const loader = sentinel.querySelector('i');
+            if (loader) loader.style.opacity = '0';
+        }
     }
 
     // setupFilterListeners() ELIMINADO: Ya no hay sidebar de filtros.
@@ -533,7 +625,7 @@ class SearchComponent {
     // ✅ FIN: SECCIÓN AÑADIDA
     // =================================================================
 
-    // ✅ NUEVO: Renderizar Catálogo de Libros POR ÁREAS
+    // ✅ NUEVO: Renderizar Catálogo de Libros POR ÁREAS (Lazy Loaded)
     renderAllBooks() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -546,10 +638,8 @@ class SearchComponent {
 
         allBooks.forEach(book => {
             const areas = (book.areas && book.areas.length > 0) ? book.areas : [noAreaKey];
-
             areas.forEach(area => {
                 if (!booksByArea[area]) booksByArea[area] = [];
-                // Evitar duplicados por ID en la misma área (paranoya check)
                 if (!booksByArea[area].find(b => b.id === book.id)) {
                     booksByArea[area].push(book);
                 }
@@ -557,20 +647,75 @@ class SearchComponent {
         });
 
         // 2. Ordenar Áreas
-        const sortedAreas = Object.keys(booksByArea).sort((a, b) => {
-            if (a === noAreaKey) return 1; // General al final
+        this.sortedBookAreas = Object.keys(booksByArea).sort((a, b) => {
+            if (a === noAreaKey) return 1;
             if (b === noAreaKey) return -1;
             return a.localeCompare(b);
         });
 
-        // 3. Generar HTML por secciones
-        let areasHTML = '';
-        sortedAreas.forEach(area => {
-            const books = booksByArea[area];
-            const booksGrid = books.map(book => create3DBookCardHTML(book)).join('');
+        this.booksByAreaContext = booksByArea;
+        this.loadedAreasCount = 0; // State for lazy loading areas
 
-            areasHTML += `
-                <div class="area-group-section" style="margin-bottom: 3rem;">
+        // 3. Renderizar Estructura Base
+        this.browseContainer.innerHTML = /*html*/`
+            <div class="detail-view-container">
+                <div class="course-main-header">
+                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #10b981, #059669);">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="course-header-title">
+                        <h2 class="detail-view-title">Biblioteca por Áreas</h2>
+                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${allBooks.length} Recursos Disponibles</span>
+                    </div>
+                </div>
+
+                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
+                    <div id="all-books-content" class="course-main-content">
+                        <!-- Areas will be injected here -->
+                    </div>
+                     <!-- Sentinel -->
+                    <div id="all-books-sentinel" style="height: 20px; width: 100%; margin-top: 20px; display: flex; justify-content: center;">
+                         <i class="fas fa-circle-notch fa-spin" style="color: var(--accent); opacity: 0;"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 4. Cargar Primer Lote
+        this.loadMoreBookAreas();
+
+        // 5. Setup Infinite Scroll
+        if (this.sortedBookAreas.length > this.loadedAreasCount) {
+            this.setupInfiniteScroll('all-books-sentinel', (s, o) => this.loadMoreBookAreas(s, o));
+        } else {
+            const s = document.getElementById('all-books-sentinel');
+            if (s) s.style.display = 'none';
+        }
+
+        // ✅ SYNC
+        if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 100);
+    }
+
+    loadMoreBookAreas(sentinel, observer) {
+        const ARENAS_PER_LOAD = 3; // Cargar de 3 en 3 áreas
+        const container = document.getElementById('all-books-content');
+        if (!container) return; // Si cambiamos de vista
+
+        const total = this.sortedBookAreas.length;
+        if (this.loadedAreasCount >= total) {
+            if (sentinel) sentinel.style.display = 'none';
+            return;
+        }
+
+        const nextAreas = this.sortedBookAreas.slice(this.loadedAreasCount, this.loadedAreasCount + ARENAS_PER_LOAD);
+        this.loadedAreasCount += nextAreas.length;
+
+        let newHtml = '';
+        nextAreas.forEach(area => {
+            const books = this.booksByAreaContext[area];
+            const booksGrid = books.map(book => create3DBookCardHTML(book)).join('');
+            newHtml += `
+                <div class="area-group-section" style="margin-bottom: 3rem; opacity: 0; animation: fadeInUp 0.5s ease forwards;">
                      <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
                          <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
                             <i class="fas fa-layer-group" style="color: var(--accent); font-size: 1rem;"></i>
@@ -585,33 +730,24 @@ class SearchComponent {
             `;
         });
 
-        this.browseContainer.innerHTML = /*html*/`
-            <div class="detail-view-container">
-                <!-- ✅ CLEANUP: Botón volver eliminado -->
-                
-                <div class="course-main-header">
-                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #10b981, #059669);">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <div class="course-header-title">
-                        <h2 class="detail-view-title">Biblioteca por Áreas</h2>
-                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${allBooks.length} Recursos Disponibles</span>
-                    </div>
-                </div>
+        container.insertAdjacentHTML('beforeend', newHtml);
 
-                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
-                    <div class="course-main-content">
-                        ${areasHTML.length > 0 ? areasHTML : '<p class="empty-state">No hay libros disponibles.</p>'}
-                    </div>
-                </div>
-            </div>
-        `;
+        // Re-sincronizar botones
+        if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 50);
 
-        // ✅ SYNC: Actualizar estado visual de botones
-        if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 100);
+        if (sentinel) {
+            const loader = sentinel.querySelector('i');
+            if (loader) loader.style.opacity = '0';
+        }
+
+        // Check if finished
+        if (this.loadedAreasCount >= total && sentinel) {
+            sentinel.style.display = 'none';
+            if (observer) observer.disconnect();
+        }
     }
 
-    // ✅ NUEVO: Renderizar Catálogo de Cursos POR ÁREAS
+    // ✅ NUEVO: Renderizar Catálogo de Cursos POR ÁREAS (Lazy Loaded)
     renderAllCourses() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -651,40 +787,19 @@ class SearchComponent {
         });
 
         // 2. Ordenar Áreas
-        const sortedAreas = Object.keys(coursesByArea).sort((a, b) => {
+        this.sortedCourseAreas = Object.keys(coursesByArea).sort((a, b) => {
             if (a === noAreaKey) return 1;
             if (b === noAreaKey) return -1;
             return a.localeCompare(b);
         });
 
-        // 3. Renderizar
-        let areasHTML = '';
-        sortedAreas.forEach(area => {
-            const courses = coursesByArea[area];
-            const coursesGrid = courses.map(course => createBrowseCardHTML(course, 'course')).join('');
+        this.coursesByAreaContext = coursesByArea;
+        this.loadedCourseAreasCount = 0;
 
-            areasHTML += `
-                 <div class="area-group-section" style="margin-bottom: 3rem;">
-                    <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
-                         <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
-                            <i class="fas fa-university" style="color: var(--accent); font-size: 1rem;"></i>
-                            ${area}
-                         </h3>
-                         <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
-                    </button>
-                    <div class="browse-grid"> 
-                        ${coursesGrid}
-                    </div>
-                </div>
-            `;
-        });
-
+        // 3. Renderizar Estructura Base
         this.browseContainer.innerHTML = /*html*/`
-             <div class="detail-view-container">
-                <!-- ✅ CLEANUP: Botón volver eliminado -->
-
-                
-                <div class="course-main-header">
+            <div class="detail-view-container">
+                 <div class="course-main-header">
                     <div class="course-header-icon" style="background: linear-gradient(to bottom right, #3b82f6, #2563eb);">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
@@ -694,13 +809,76 @@ class SearchComponent {
                     </div>
                 </div>
 
-                <div class="course-detail-grid" style="grid-template-columns: 1fr;">
-                    <div class="course-main-content">
-                         ${areasHTML.length > 0 ? areasHTML : '<p class="empty-state">No hay cursos disponibles.</p>'}
+                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
+                    <div id="all-courses-content" class="course-main-content">
+                        <!-- Areas will be injected here -->
+                    </div>
+                    <!-- Sentinel -->
+                    <div id="all-courses-sentinel" style="height: 20px; width: 100%; margin-top: 20px; display: flex; justify-content: center;">
+                         <i class="fas fa-circle-notch fa-spin" style="color: var(--accent); opacity: 0;"></i>
                     </div>
                 </div>
             </div>
         `;
+
+        // 4. Cargar Primer Lote
+        this.loadMoreCourseAreas();
+
+        // 5. Setup Infinite Scroll
+        if (this.sortedCourseAreas.length > this.loadedCourseAreasCount) {
+            this.setupInfiniteScroll('all-courses-sentinel', (s, o) => this.loadMoreCourseAreas(s, o));
+        } else {
+            const s = document.getElementById('all-courses-sentinel');
+            if (s) s.style.display = 'none';
+        }
+    }
+
+    loadMoreCourseAreas(sentinel, observer) {
+        const ARENAS_PER_LOAD = 3;
+        const container = document.getElementById('all-courses-content');
+        if (!container) return;
+
+        const total = this.sortedCourseAreas.length;
+        if (this.loadedCourseAreasCount >= total) {
+            if (sentinel) sentinel.style.display = 'none';
+            return;
+        }
+
+        const nextAreas = this.sortedCourseAreas.slice(this.loadedCourseAreasCount, this.loadedCourseAreasCount + ARENAS_PER_LOAD);
+        this.loadedCourseAreasCount += nextAreas.length;
+
+        let newHtml = '';
+        nextAreas.forEach(area => {
+            const courses = this.coursesByAreaContext[area];
+            const coursesGrid = courses.map(course => createBrowseCardHTML(course, 'course')).join('');
+
+            newHtml += `
+                 <div class="area-group-section" style="margin-bottom: 3rem; opacity: 0; animation: fadeInUp 0.5s ease forwards;">
+                    <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
+                         <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <i class="fas fa-university" style="color: var(--accent); font-size: 1rem;"></i>
+                            ${area}
+                         </h3>
+                         <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
+                    </button>
+                    <div class="browse-grid" style="margin-top: 0.5rem;"> 
+                         ${coursesGrid}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.insertAdjacentHTML('beforeend', newHtml);
+
+        if (sentinel) {
+            const loader = sentinel.querySelector('i');
+            if (loader) loader.style.opacity = '0';
+        }
+
+        if (this.loadedCourseAreasCount >= total && sentinel) {
+            sentinel.style.display = 'none';
+            if (observer) observer.disconnect();
+        }
     }
 
     async renderInitialView() {
@@ -1098,8 +1276,6 @@ class SearchComponent {
         `;
     }
 
-    // ✅ NUEVO: Funciones para controlar el visor de PDF
-    // ✅ NUEVO: Funciones para controlar el visor de PDF (ELIMINADO)
 }
 
 // Instanciar el componente cuando el DOM esté listo para evitar accesos

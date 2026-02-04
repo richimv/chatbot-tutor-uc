@@ -184,7 +184,7 @@ class BookRepository {
 
                 r.isbn ILIKE $1
             ORDER BY relevance_score DESC, r.title
-            LIMIT 20
+            LIMIT 60
         `;
 
         try {

@@ -50,7 +50,7 @@ exports.createOrder = async (req, res) => {
 
                 // Rutas de retorno al Frontend
                 back_urls: {
-                    success: `${frontendUrl}/dashboard?payment=success`,
+                    success: `${frontendUrl}/?payment=success`, // ✅ CORREGIDO: Redirige al Inicio (Hub), no al Admin
                     failure: `${frontendUrl}/pricing?payment=failure`,
                     pending: `${frontendUrl}/pricing?payment=pending`
                 },
