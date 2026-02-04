@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Verificación - Hub Academia</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        .verification-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 2rem;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .success-icon {
+            color: #10b981;
+        }
+
+        .error-icon {
+            color: #ef4444;
+        }
+
+        .status-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .status-message {
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .btn-home {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+            color: #0f172a;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="verification-container">
+        <div id="status-icon" class="status-icon">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h1 id="status-title" class="status-title">Verificando...</h1>
+        <p id="status-message" class="status-message">Por favor espera un momento.</p>
+
+        <a href="/" class="btn-home">Ir al Inicio</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const success = params.get('success') === 'true';
+            const message = params.get('message');
+
+            const iconEl = document.getElementById('status-icon');
+            const titleEl = document.getElementById('status-title');
+            const msgEl = document.getElementById('status-message');
+
+            if (success) {
+                iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
+                iconEl.className = 'status-icon success-icon';
+                titleEl.textContent = '¡Correo Verificado!';
+                msgEl.textContent = 'Tu cuenta ha sido activada exitosamente. Ahora puedes acceder a todos los recursos de Hub Academia.';
+
+                // Redirigir al login después de unos segundos
+                setTimeout(() => {
+                    window.location.href = '/login?verified=true';
+                }, 3000);
+            } else {
+                iconEl.innerHTML = '<i class="fas fa-times-circle"></i>';
+                iconEl.className = 'status-icon error-icon';
+                titleEl.textContent = 'Error de Verificación';
+                msgEl.textContent = message ? decodeURIComponent(message) : 'El enlace de verificación es inválido o ha expirado. Por favor solicita uno nuevo.';
+            }
+        });
+    </script>
+</body>
+
+</html>

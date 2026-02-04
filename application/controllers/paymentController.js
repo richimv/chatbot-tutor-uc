@@ -50,9 +50,9 @@ exports.createOrder = async (req, res) => {
 
                 // Rutas de retorno al Frontend
                 back_urls: {
-                    success: `${frontendUrl}/dashboard.html?payment=success`,
-                    failure: `${frontendUrl}/pricing.html?payment=failure`,
-                    pending: `${frontendUrl}/pricing.html?payment=pending`
+                    success: `${frontendUrl}/dashboard?payment=success`,
+                    failure: `${frontendUrl}/pricing?payment=failure`,
+                    pending: `${frontendUrl}/pricing?payment=pending`
                 },
                 auto_return: 'approved',
 

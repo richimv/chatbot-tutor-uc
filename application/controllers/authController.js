@@ -133,11 +133,11 @@ class AuthController {
         try {
             await this.authService.verifyEmail(token);
             // Redirigir al usuario a una página de éxito con un mensaje.
-            res.redirect('/verification-status.html?success=true');
+            res.redirect('/verification-status?success=true');
         } catch (error) {
             // Redirigir a la misma página pero con un mensaje de error.
             const errorMessage = encodeURIComponent(error.message);
-            res.redirect(`/verification-status.html?success=false&message=${errorMessage}`);
+            res.redirect(`/verification-status?success=false&message=${errorMessage}`);
         }
     }
 

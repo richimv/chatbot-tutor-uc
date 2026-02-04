@@ -217,7 +217,7 @@ class UIManager {
                             Ya usaste tus 3 pruebas gratuitas.
                             <br>Para continuar, suscríbete por <strong>S/ 9.90</strong>.
                         </div>
-                        <button class="btn-primary" style="width:100%; margin-top:15px; background: linear-gradient(45deg, #ffd700, #ffa500); color: black; font-weight:bold;" onclick="window.location.href='/pricing.html'">
+                        <button class="btn-primary" style="width:100%; margin-top:15px; background: linear-gradient(45deg, #ffd700, #ffa500); color: black; font-weight:bold;" onclick="window.location.href='/pricing'">
                             <i class="fas fa-rocket"></i> Suscríbete ahora
                         </button>
                     </div>
@@ -297,8 +297,8 @@ class UIManager {
                         </div>
                     </div>
                     <div class="modal-footer" style="justify-content: center;">
-                        <button class="btn-secondary" onclick="window.location.href='login.html'">Iniciar Sesión</button>
-                        <button class="btn-primary" onclick="window.location.href='register.html'">Registrarse Gratis</button>
+                        <button class="btn-secondary" onclick="window.location.href='login'">Iniciar Sesión</button>
+                        <button class="btn-primary" onclick="window.location.href='register'">Registrarse Gratis</button>
                     </div>
                 </div>
             </div>

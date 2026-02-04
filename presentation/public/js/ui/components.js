@@ -116,7 +116,7 @@ function createBrowseCardHTML(item, type) {
         // Opción 1: Diseño Full Image (Si tiene imagen)
         if (item.image_url) {
             return `
-                <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" onclick="window.location.href='career.html?id=${item.id}'" style="cursor: pointer;">
+                <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
                     <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     <div class="browse-card-overlay">
@@ -140,7 +140,7 @@ function createBrowseCardHTML(item, type) {
         `;
 
         return `
-            <div class="browse-card career-card" data-type="career" data-id="${item.id}" onclick="window.location.href='career.html?id=${item.id}'" style="cursor: pointer;">
+            <div class="browse-card career-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
                 ${iconOrImage}
                 <div class="browse-card-content">
                     <h3 class="browse-card-title">${item.name}</h3>
@@ -167,7 +167,7 @@ function createBrowseCardHTML(item, type) {
         // Si hay imagen, usamos el diseño "Full Cover"
         if (item.image_url) {
             return `
-                <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" onclick="window.location.href='course.html?id=${item.id}'" style="cursor: pointer;">
+                <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
                     <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     ${actionButtons}
@@ -194,7 +194,7 @@ function createBrowseCardHTML(item, type) {
         `;
 
         return `
-            <div class="browse-card course-card" data-type="course" data-id="${item.id}" onclick="window.location.href='course.html?id=${item.id}'" style="cursor: pointer;">
+            <div class="browse-card course-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
                 ${actionButtons}
                 ${iconOrImage}
                 <div class="browse-card-content">
@@ -261,7 +261,7 @@ function createSearchResultCardHTML(course) {
     const codeHTML = course.code ? `<span class="course-card-code">${course.code}</span>` : '';
 
     return `
-        <div class="browse-card course-card" onclick="window.location.href='course.html?id=${course.id}'" style="cursor: pointer;">
+        <div class="browse-card course-card" style="cursor: pointer;" data-type="course" data-id="${course.id}">
             <div class="card-bookmark-ribbon"><i class="fas fa-bookmark"></i></div>
             <div class="browse-card-icon">
                 <i class="fas ${iconClass}"></i>
@@ -688,7 +688,7 @@ function createGamePromoSectionHTML() {
                         Convierte el estudio en un juego. 🏆<br>
                         Desbloquea logros, repasa conceptos clave y visualiza tu progreso académico.
                     </p>
-                    <button class="btn-gamified" onclick="window.uiManager.checkAuthAndExecute(() => window.location.href='quiz.html')">
+                    <button class="btn-gamified" onclick="window.uiManager.checkAuthAndExecute(() => window.location.href='quiz')">
                         <i class="fas fa-gamepad"></i> Jugar Ahora
                     </button>
                 </div>

@@ -22,13 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const id = params.get('id');
 
             if (id) {
-                if (path.includes('career.html')) {
+                if (path.includes('career')) {
                     window.AnalyticsApiService.recordView('career', id);
                     console.log('📊 Vista registrada: Carrera', id);
-                } else if (path.includes('course.html')) {
+                } else if (path.includes('course')) {
                     window.AnalyticsApiService.recordView('course', id);
                     console.log('📊 Vista registrada: Curso', id);
-                } else if (path.includes('topic.html')) {
+                } else if (path.includes('topic')) {
                     window.AnalyticsApiService.recordView('topic', id);
                     console.log('📊 Vista registrada: Tema', id);
                 }
@@ -126,14 +126,14 @@ if (btnQuiz) {
         if (window.uiManager) {
             window.uiManager.checkAuthAndExecute(() => {
                 console.log('🎮 Iniciando Hub Quiz Arena...');
-                window.location.href = '/quiz.html';
+                window.location.href = '/quiz';
             });
         } else {
             // Fallback if UIManager not loaded
             if (!window.sessionManager || !window.sessionManager.isLoggedIn()) {
-                window.location.href = '/login.html';
+                window.location.href = '/login';
             } else {
-                window.location.href = '/quiz.html';
+                window.location.href = '/quiz';
             }
         }
     });
@@ -165,9 +165,9 @@ function updateHeaderUI(user) {
                                 🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))}
                             </div>` : ''}
                     </div>
-                    ${user.role === 'admin' ? '<a href="/admin.html" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
+                    ${user.role === 'admin' ? '<a href="/admin" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
                     <!-- ✅ NUEVO: Enlace a Cambiar Contraseña -->
-                    <a href="/change-password.html" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+                    <a href="/change-password" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-key"></i> Cambiar Contraseña</a>
                     <button id="logout-btn-action" style="background: none; border: none; color: #ef4444; cursor: pointer; width: 100%; text-align: left; padding: 5px 0;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
                 </div>
             </div>
@@ -194,8 +194,8 @@ function updateHeaderUI(user) {
     } else {
         // --- MODO: INVITADO ---
         container.innerHTML = `
-            <a href="/login.html" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Ingresar</span></a>
-            <a href="/register.html" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Registrarse</span></a>
+            <a href="/login" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Ingresar</span></a>
+            <a href="/register" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Registrarse</span></a>
         `;
     }
 }
@@ -221,7 +221,7 @@ window.handleLogout = async () => {
     sessionStorage.clear();
 
     // 3. Redirigir al inicio
-    window.location.href = '/index.html';
+    window.location.href = '/';
 };
 
 // Helpers Globales

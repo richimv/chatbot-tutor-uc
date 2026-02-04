@@ -1215,7 +1215,7 @@ class AdminManager {
             if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
                 await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
                 // Opcional: Redirigir al login después de que el usuario cierre el modal (si showAlert tuviera callback, o con un pequeño delay)
-                // setTimeout(() => window.location.href = '/login.html', 2000);
+                // setTimeout(() => window.location.href = '/login', 2000);
             } else {
                 await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
             }

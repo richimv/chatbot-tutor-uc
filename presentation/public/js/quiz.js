@@ -130,7 +130,7 @@ class QuizGame {
                         <i class="fas fa-home"></i> Volver al Inicio
                     </button>
                     ${isAdmin ? `
-                    <button class="dropdown-item" onclick="window.location.href='/admin.html'" style="width: 100%; text-align: left; padding: 8px 10px; background: none; border: none; color: #e2e8f0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <button class="dropdown-item" onclick="window.location.href='/admin'" style="width: 100%; text-align: left; padding: 8px 10px; background: none; border: none; color: #e2e8f0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                         <i class="fas fa-shield-alt"></i> Panel Admin
                     </button>` : ''}
                     <button id="quiz-logout-btn" style="width: 100%; text-align: left; padding: 8px 10px; background: none; border: none; color: #f43f5e; cursor: pointer; display: flex; align-items: center; gap: 8px; border-top: 1px solid #1e293b; margin-top: 5px;">
@@ -174,7 +174,7 @@ class QuizGame {
                     if (window.handleLogout) window.handleLogout();
                     else {
                         localStorage.clear();
-                        window.location.href = '/login.html';
+                        window.location.href = '/login';
                     }
                 }
             };
@@ -232,7 +232,7 @@ class QuizGame {
                             <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 20px;">
                                 Solo los usuarios Premium pueden acceder a la dificultad máxima.
                             </p>
-                            <button onclick="window.location.href='pricing.html'" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
+                            <button onclick="window.location.href='pricing'" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
                                 <i class="fas fa-crown"></i> Desbloquear Ahora
                             </button>
                         </div>
@@ -467,7 +467,7 @@ class QuizGame {
                             <button onclick="window.location.href='/'" class="btn-secondary" style="padding: 10px 20px; border-radius: 8px;">
                                 Volver al Inicio
                             </button>
-                            <button onclick="window.location.href='pricing.html'" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
+                            <button onclick="window.location.href='pricing'" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #000; font-weight: bold; border: none;">
                                 <i class="fas fa-crown"></i> Ser Premium
                             </button>
                         </div>

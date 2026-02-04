@@ -90,7 +90,7 @@ function renderCareer(career, container) {
     container.querySelectorAll('.browse-card[data-type="course"]').forEach(card => {
         card.addEventListener('click', () => {
             const courseId = card.dataset.id;
-            window.location.href = `course.html?id=${courseId}`;
+            window.location.href = `course?id=${courseId}`;
         });
     });
 }

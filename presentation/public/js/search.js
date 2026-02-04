@@ -284,6 +284,12 @@ class SearchComponent {
         // ✅ LÓGICA DE NAVEGACIÓN PROGRESIVA:
         // - Topics: Navegación SPA interna (navigateTo).
         // - Carreras/Cursos: Navegación estándar MPA (window.location).
+        // ✅ NUEVO: Evitar conflictos con botones de librería (LibraryUI)
+        if (e.target.closest('.js-library-btn')) {
+            return; // Dejar que libraryUI.js maneje esto
+        }
+
+        // ✅ LÓGICA DE NAVEGACIÓN CENTRALIZADA (Reemplaza onclicks inline eliminados)
         const browseCard = e.target.closest('[data-type]');
         if (browseCard) {
             const type = browseCard.dataset.type;
@@ -291,14 +297,17 @@ class SearchComponent {
 
             if (type === 'topic') {
                 e.preventDefault();
-                e.stopPropagation();
                 this.navigateTo('topic', id);
                 return;
+            } else if (type === 'career') {
+                // Navegación MPA estándar para carreras
+                window.location.href = `career?id=${id}`;
+                return;
+            } else if (type === 'course') {
+                // Navegación MPA estándar para cursos
+                window.location.href = `course?id=${id}`;
+                return;
             }
-
-            // Para otros tipos (career, course), dejamos que el onclick del HTML
-            // (definido en components.js) maneje la redirección a .html
-            return;
         }
 
         // ✅ SOLUCIÓN: Manejar clics en las tarjetas de recomendación.

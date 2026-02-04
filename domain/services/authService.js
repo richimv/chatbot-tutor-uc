@@ -226,9 +226,9 @@ class AuthService {
             return { message: 'Si el correo está registrado, recibirás un enlace de recuperación.' };
         }
 
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.hubacademia.com';
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://www.hubacademia.com/update-password.html'
-            // redirectTo: 'http://localhost:3000/update-password.html' // Para desarrollo local
+            redirectTo: `${frontendUrl}/update-password`
         });
 
         if (error) {

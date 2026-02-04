@@ -7,7 +7,7 @@ class DashboardManager {
 
         // Verificar autenticación antes de iniciar
         if (!this.token) {
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -60,7 +60,7 @@ class DashboardManager {
         });
 
         if (!res.ok) {
-            if (res.status === 401) window.location.href = '/login.html';
+            if (res.status === 401) window.location.href = '/login';
             throw new Error(`API Error ${res.status}`);
         }
         return await res.json();

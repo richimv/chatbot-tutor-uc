@@ -590,10 +590,10 @@ Puedo ayudarte con:
 
                 if (type === 'career') {
                     // ✅ FIX: Redirigir a la página real de carrera (MPA) para asegurar el diseño correcto.
-                    functionCall = `window.location.href = 'career.html?id=${numericId}'`;
+                    functionCall = `window.location.href = 'career?id=${numericId}'`;
                 } else if (type === 'course') {
                     // ✅ FIX: Redirigir a la página real de curso (MPA).
-                    functionCall = `window.location.href = 'course.html?id=${numericId}'`;
+                    functionCall = `window.location.href = 'course?id=${numericId}'`;
                 } else if (type === 'topic') {
                     // ✅ FIX: Como no hay página de tema, redirigimos a la búsqueda con el nombre del tema (o placeholder).
                     // Pero si el ID es válido, intentamos ir a búsqueda filtrada por tema si existiera, o search.
@@ -601,7 +601,7 @@ Puedo ayudarte con:
                     // Para simplificar, asumiremos que si hay ID, el usuario quiere ver "algo".
                     // Dado que el usuario dijo que "ya no tenemos paginas para temas", lo mejor es no navegar a una 404.
                     // Redirigiremos al HOME con una búsqueda pre-llenada o simplemente search.html
-                    functionCall = `window.location.href = 'index.html?q=tema:${numericId}'`;
+                    functionCall = `window.location.href = '/?q=tema:${numericId}'`;
                 }
 
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;

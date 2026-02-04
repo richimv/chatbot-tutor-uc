@@ -122,32 +122,27 @@ class Server {
         // ======================
         // 🌐 RUTAS FRONTEND
         // ======================
-        // ✅ MEJORA DE ESTRUCTURA: Servir archivos HTML desde la carpeta 'views'.
+        // ✅ MEJORA: Rutas con "Clean URLs" (sin .html)
+        const pages = [
+            'login', 'register', 'admin', 'chat', 'dashboard',
+            'pricing', 'privacy', 'terms', 'quiz', 'course', 'career',
+            'change-password', 'update-password', 'verification-status'
+        ];
+
+        pages.forEach(page => {
+            // Ruta Limpia (ej. /pricing)
+            this.app.get(`/${page}`, (req, res) => {
+                res.sendFile(path.join(__dirname, `../../presentation/public/${page}.html`));
+            });
+            // Soporte Legacy (ej. /pricing.html) - Opcional: Redirigir a limpia
+            this.app.get(`/${page}.html`, (req, res) => {
+                res.redirect(301, `/${page}`);
+            });
+        });
+
+        // ✅ Ruta Raíz
         this.app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '../../presentation/public/index.html'));
-        });
-
-        this.app.get('/login.html', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../presentation/public/login.html'));
-        });
-
-        this.app.get('/register.html', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../presentation/public/register.html'));
-        });
-
-        this.app.get('/admin.html', (req, res) => {
-            // Aquí podrías añadir un middleware de 'auth' para proteger la ruta de admin.
-            res.sendFile(path.join(__dirname, '../../presentation/public/admin.html'));
-        });
-
-        // Ruta para servir el componente de chat
-        this.app.get('/chat.html', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../presentation/public/chat.html'));
-        });
-
-        // ✅ SOLUCIÓN: Añadir la ruta para servir la nueva página del dashboard.
-        this.app.get('/dashboard.html', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../presentation/public/dashboard.html'));
         });
 
         // Manejar rutas no encontradas (DEBE IR AL FINAL)

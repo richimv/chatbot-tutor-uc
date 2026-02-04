@@ -70,7 +70,7 @@
                 <button type="submit" class="btn-primary" id="login-button">Acceder</button>
 
                 <div class="auth-switch-link">
-                    ¿No tienes una cuenta? <a href="/register.html">Regístrate aquí</a>
+                    ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
                 </div>
                 <!-- ✅ NUEVO: Enlace para volver al inicio -->
                 <div class="auth-switch-link" style="margin-top: 1rem;">
@@ -99,9 +99,9 @@
                 <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="course.html" class="footer-link">Cursos</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
                     <li><a href="/" class="footer-link">Biblioteca</a></li>
-                    <li><a href="pricing.html" class="footer-link">Precios</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
 
@@ -109,8 +109,8 @@
             <div class="footer-links-col">
                 <h4 class="footer-heading">Legal y Ayuda</h4>
                 <ul class="footer-links-list">
-                    <li><a href="privacy.html" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="terms.html" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
                     <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
                 </ul>
             </div>
@@ -224,14 +224,14 @@
                         const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
 
                         // Iniciar OAuth
-                        const redirectUrl = window.location.hostname === 'localhost'
-                            ? 'http://localhost:3000/index.html'
-                            : 'https://hubacademia.com/index.html'; // URL explícita de producción
+                        const redirectTo = window.location.hostname === 'localhost'
+                            ? 'http://localhost:3000/'
+                            : 'https://hubacademia.com/'; // URL explícita de producción
 
                         const { data, error } = await sb.auth.signInWithOAuth({
                             provider: 'google',
                             options: {
-                                redirectTo: redirectUrl
+                                redirectTo: redirectTo
                             }
                         });
 

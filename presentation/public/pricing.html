@@ -342,9 +342,9 @@
                 <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="course.html" class="footer-link">Cursos</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
                     <li><a href="/" class="footer-link">Biblioteca</a></li>
-                    <li><a href="pricing.html" class="footer-link">Precios</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
 
@@ -352,8 +352,8 @@
             <div class="footer-links-col">
                 <h4 class="footer-heading">Legal y Ayuda</h4>
                 <ul class="footer-links-list">
-                    <li><a href="privacy.html" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="terms.html" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
                     <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
                 </ul>
             </div>
@@ -446,7 +446,7 @@
             alert('¡Pago exitoso! 🎉\nTu cuenta Premium ha sido activada. Disfruta de acceso ilimitado.');
 
             // Redirigir al dashboard para que vea todo desbloqueado
-            setTimeout(() => window.location.href = 'index.html', 1000); // Updated to index.html (Dashboard view)
+            setTimeout(() => window.location.href = '/', 1000); // Updated to index.html (Dashboard view) -> Clean URL /
 
         } else if (paymentStatus === 'failure') {
             alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
@@ -461,7 +461,17 @@
                 window.sessionManager.logout();
             } else {
                 localStorage.removeItem('authToken');
-                window.location.href = 'login.html';
+                // Check if there's a referrer or specific redirect logic needed
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirectedFromApp = urlParams.get('fromApp') === 'true'; // Example flag
+
+                if (redirectedFromApp) {
+                    // Si el usuario viene de la app (ej: intento fallido de acceder a contenido), lo mandamos al login con redirect
+                    window.location.href = 'login?redirect=pricing';
+                } else {
+                    // Flujo normal: Login -> Pricing
+                    window.location.href = 'login';
+                }
             }
         }
 
