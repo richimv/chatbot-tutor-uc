@@ -16,6 +16,10 @@ class Server {
         this.app.get('/google9e7db62b59fd1348.html', (req, res) => {
             res.sendFile(path.join(__dirname, '../../presentation/public/google9e7db62b59fd1348.html'));
         });
+        // ✅ También ruta sin extensión (por si Vercel hace redirect)
+        this.app.get('/google9e7db62b59fd1348', (req, res) => {
+            res.sendFile(path.join(__dirname, '../../presentation/public/google9e7db62b59fd1348.html'));
+        });
 
         this.setupGlobalErrorHandlers();
         await this.testDBConnection();
