@@ -145,6 +145,11 @@ class Server {
             res.sendFile(path.join(__dirname, '../../presentation/public/index.html'));
         });
 
+        // ✅ Ruta Explicita para Verificación de Google (Failsafe)
+        this.app.get('/google9e7db62b59fd1348.html', (req, res) => {
+            res.sendFile(path.join(__dirname, '../../presentation/public/google9e7db62b59fd1348.html'));
+        });
+
         // Manejar rutas no encontradas (DEBE IR AL FINAL)
         this.app.get('*', (req, res) => {
             res.status(404).json({ error: 'Ruta no encontrada' });
