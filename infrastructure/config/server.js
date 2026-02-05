@@ -11,6 +11,12 @@ class Server {
     }
 
     async setup() {
+        // ✅ PRIORITY ZERO: Verificación de Google (Antes de TODO)
+        // Esto asegura que ninguna redirección o middleware bloquee este archivo.
+        this.app.get('/google9e7db62b59fd1348.html', (req, res) => {
+            res.sendFile(path.join(__dirname, '../../presentation/public/google9e7db62b59fd1348.html'));
+        });
+
         this.setupGlobalErrorHandlers();
         await this.testDBConnection();
         this.configureMiddleware();
@@ -143,11 +149,6 @@ class Server {
         // ✅ Ruta Raíz
         this.app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '../../presentation/public/index.html'));
-        });
-
-        // ✅ Ruta Explicita para Verificación de Google (Failsafe)
-        this.app.get('/google9e7db62b59fd1348.html', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../presentation/public/google9e7db62b59fd1348.html'));
         });
 
         // Manejar rutas no encontradas (DEBE IR AL FINAL)
