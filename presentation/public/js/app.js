@@ -110,7 +110,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ✅ KEEP-ALIVE: Ping al servidor cada 5 minutos para evitar que Render se duerma
     setInterval(() => {
-        fetch('/health')
+        const healthUrl = (window.AppConfig && window.AppConfig.API_URL)
+            ? `${window.AppConfig.API_URL}/health`
+            : '/health';
+
+        fetch(healthUrl)
             .then(res => {
                 if (!res.ok) console.warn('⚠️ Keep-alive ping failed');
             })

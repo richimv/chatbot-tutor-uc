@@ -4,6 +4,10 @@
     "cleanUrls": true,
     "rewrites": [
         {
+            "source": "/google9e7db62b59fd1348.html",
+            "destination": "/presentation/public/google9e7db62b59fd1348.html"
+        },
+        {
             "source": "/",
             "destination": "/presentation/public/index.html"
         },
