@@ -19,6 +19,7 @@ class CoursesController {
         this.getStudents = this.getStudents.bind(this);
         this.getTopics = this.getTopics.bind(this);
         this.getBooks = this.getBooks.bind(this);
+        this.getMedicalBooks = this.getMedicalBooks.bind(this); // ✅ NUEVO
         this.getCourseDescription = this.getCourseDescription.bind(this);
         // this.getTopicDescription = this.getTopicDescription.bind(this); // ❌ REMOVED: Feature deprecated
         this.createEntity = this.createEntity.bind(this);
@@ -164,6 +165,27 @@ class CoursesController {
         } catch (error) {
             console.error('❌ Error al obtener los libros:', error);
             res.status(500).json({ message: 'Error al obtener los libros' });
+        }
+    }
+
+    async getMedicalBooks(req, res) {
+        try {
+            // Usamos repo directo via adminService (consistente con otros métodos 'hacky' pero efectivos del controlador)
+            const bookRepo = this.adminService._getRepository('book');
+
+            // ✅ CORRECCIÓN PROFESIONAL: 
+            // En lugar de adivinar carreras individuales (Enfermería, Medicina, etc.),
+            // filtramos directamente por el ÁREA DE ESTUDIO "Ciencias de la Salud".
+            // Esto incluye automáticamente Obstetricia, Nutrición, etc.
+            const areaKeywords = ['Ciencias de la Salud'];
+
+            // ✅ Aumento de límite para mostrar todo el catálogo actual (36+) y futuro cercano.
+            // Idealmente esto debería ser paginado en el futuro.
+            const books = await bookRepo.findByArea(areaKeywords, 100);
+            res.json(books);
+        } catch (error) {
+            console.error('❌ Error al obtener libros de medicina:', error);
+            res.status(500).json({ message: 'Error al obtener libros de medicina' });
         }
     }
 

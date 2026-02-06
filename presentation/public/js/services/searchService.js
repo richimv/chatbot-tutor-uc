@@ -1,4 +1,5 @@
-const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
+// ✅ API_URL se obtiene directamente de AppConfig para evitar conflictos globales
+console.log('✅ [SearchService] Loading...');
 
 class SearchService {
     static async loadAllData() {
@@ -14,6 +15,7 @@ class SearchService {
     }
 
     static async _fetchData(endpoint) {
+        const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
         const response = await fetch(`${API_URL}${endpoint}`);
         if (!response.ok) throw new Error(`Error fetching ${endpoint}`);
         return response.json();
@@ -24,6 +26,7 @@ class SearchService {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
+        const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
         const response = await fetch(`${API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: headers
@@ -33,3 +36,6 @@ class SearchService {
         return response.json();
     }
 }
+
+// ✅ EXPOSICIÓN GLOBAL
+window.SearchService = SearchService;

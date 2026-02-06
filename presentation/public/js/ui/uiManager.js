@@ -458,7 +458,7 @@ class UIManager {
                             transition: transform 0.2s;
                             cursor: pointer;
                         " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                            ✨ Registrarse Gratis
+                            Registrarse Gratis
                         </button>
                          <button class="btn-secondary" onclick="window.location.href='login'" style="
                             width: 100%; 

@@ -55,6 +55,7 @@ router.get('/courses', coursesController.getCourses);
 
 router.get('/topics', coursesController.getTopics);
 router.get('/books', coursesController.getBooks);
+router.get('/books/medical', coursesController.getMedicalBooks); // ✅ NUEVO: Libros de Medicina
 
 // ✅ RUTAS DE CONTENIDO DESTACADO (Analytics)
 router.get('/analytics/featured-books', analyticsController.getFeaturedBooks);

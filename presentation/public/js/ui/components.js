@@ -44,12 +44,68 @@ window.stopCarouselScroll = function () {
     }
 };
 
+/**
+ * Inicializa el carrusel (comprueba si necesita botones de scroll).
+ * @param {string} id - ID del contenedor del carrusel.
+ */
+window.initializeCarousel = function (containerId) {
+    // 1. Obtener el contenedor principal (Wrapper)
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // 2. Encontrar el "Track" real (donde están los items y ocurre el scroll)
+    // Puede ser por ID especifico o buscando la clase .carousel-track-container
+    let track = document.getElementById(`${containerId}-track`);
+    if (!track) {
+        track = container.querySelector('.carousel-track-container');
+    }
+
+    if (!track) {
+        console.warn(`[initializeCarousel] Track not found for container: ${containerId}`);
+        return;
+    }
+
+    // 3. Encontrar botones DENTRO del contenedor
+    const prevBtn = container.querySelector('.carousel-btn.prev');
+    const nextBtn = container.querySelector('.carousel-btn.next');
+
+    if (!prevBtn || !nextBtn) return;
+
+    const checkScroll = () => {
+        // Margen de error de 2px para evitar falsos positivos
+        const hasOverflow = track.scrollWidth > track.clientWidth + 2;
+
+        if (hasOverflow) {
+            // "Recuperar" funcionalidad: Mostrar botones (flex)
+            // CSS se encargará de la opacidad (Clean UI: opacity 0 -> hover -> opacity 1)
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+        } else {
+            // Ocultar si no hay contenido suficiente
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        }
+    };
+
+    // 4. Inicialización Robusta
+    // Check inicial
+    checkScroll();
+
+    // Observer para cambios de tamaño (Responsive + Carga de Imágenes)
+    const observer = new ResizeObserver(() => checkScroll());
+    observer.observe(track);
+
+    // Fallbacks para imágenes que cargan tarde
+    setTimeout(checkScroll, 500);
+    setTimeout(checkScroll, 2000);
+};
+
 // ... (Resto del archivo) ...
 
 // EN createCarouselHTML (Más abajo en el archivo, se actualiza la llamada):
 function createCarouselHTML(id, contentHTML) {
     return `
-        <div class="carousel-container">
+        <div class="carousel-container" id="${id}">
             <button class="carousel-btn prev" 
                 onmouseenter="startCarouselScroll('${id}', -1, 1)" 
                 onmousedown="startCarouselScroll('${id}', -1, 4)" 

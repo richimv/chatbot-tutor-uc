@@ -49,6 +49,15 @@
     padding-bottom: 0.5rem;
 }
 
+/* ✅ NUEVO: Grid específico para libros (más pequeños, portrait) */
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    padding-bottom: 0.5rem;
+}
+
 /* Card Base */
 .browse-card {
     background: var(--card-bg);
@@ -394,6 +403,7 @@
 }
 
 /* Botones de navegación del carrusel */
+/* Botones de navegación del carrusel */
 .carousel-btn {
     position: absolute;
     top: 50%;
@@ -410,12 +420,9 @@
     justify-content: center;
     cursor: pointer;
     z-index: 100;
-    /* ✅ UPDATE: Much higher to stay above cards and actions */
-    transition: all 0.3s ease;
+    /* ✅ UPDATE: Invisible por defecto (Clean UI) */
     opacity: 0;
-    /* ✅ UPDATE: Invisible por defecto */
     pointer-events: none;
-    /* Evita clicks accidentales cuando está invisible */
 }
 
 /* ✅ UPDATE: Visible solo al hacer hover en el contenedor */

@@ -18,6 +18,10 @@ class SearchComponent {
 
         // Almacenes de datos
         this.allData = { careers: [], courses: [], topics: [], books: [] };
+        // ✅ DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
+        this.featuredBooks = [];
+        this.featuredCourses = [];
+        this.medicalBooks = [];
 
         // Estado de la vista para la navegación de retorno
         this.viewStack = []; // Pila para gestionar el historial de navegación
@@ -84,18 +88,52 @@ class SearchComponent {
     }
 
     async loadFeaturedContent() {
+        // ✅ FALLBACK ROBUSTO: Definir servicio local si falta el global
+        let serviceToUse = window.SearchService;
+
+        if (!serviceToUse) {
+            console.error('❌ CRITICAL: SearchService global missing. Using FailSafe local service.');
+
+            // Definición Local de Emergencia
+            class FailSafeSearchService {
+                static async _fetchData(endpoint) {
+                    const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
+                    try {
+                        const response = await fetch(`${API_URL}${endpoint}`);
+                        if (!response.ok) return []; // Retornar array vacío en error
+                        return await response.json();
+                    } catch (e) {
+                        console.error(`FailSafe fetch error for ${endpoint}:`, e);
+                        return [];
+                    }
+                }
+            }
+            serviceToUse = FailSafeSearchService;
+        }
+
         try {
-            // ✅ CARGA PARALELA DE CONTENIDO DESTACADO
-            const [featuredBooks, featuredCourses] = await Promise.all([
-                AnalyticsApiService.getFeaturedBooks(10),
-                AnalyticsApiService.getFeaturedCourses(10)
+            // Cargar Libros Destacados, Cursos y Libros de Medicina en paralelo
+            const [books, courses, medical] = await Promise.all([
+                serviceToUse._fetchData('/api/analytics/featured-books'),
+                serviceToUse._fetchData('/api/analytics/featured-courses'),
+                serviceToUse._fetchData('/api/books/medical')
             ]);
-            this.featuredBooks = featuredBooks || [];
-            this.featuredCourses = featuredCourses || [];
+
+            this.featuredBooks = books || [];
+            this.featuredCourses = courses || [];
+            this.medicalBooks = medical || [];
+
+            console.log('🔥 Contenido destacado cargado (con servicio disponible):', {
+                books: this.featuredBooks.length,
+                courses: this.featuredCourses.length,
+                medical: this.medicalBooks.length
+            });
         } catch (error) {
-            console.warn("⚠️ Error cargando contenido destacado:", error);
+            console.error('❌ Error cargando contenido destacado:', error);
+            // Fallbacks vacíos para no romper la UI
             this.featuredBooks = [];
             this.featuredCourses = [];
+            this.medicalBooks = [];
         }
     }
 
@@ -238,6 +276,8 @@ class SearchComponent {
             this.renderAllBooks();
         } else if (viewName === 'all-courses') {
             this.renderAllCourses();
+        } else if (viewName === 'medical-books') { // ✅ NUEVO: Soporte para vista de medicina
+            this.renderMedicalBooksView();
         } else {
             console.warn('Vista desconocida:', viewName);
             this.renderInitialView();
@@ -952,6 +992,31 @@ class SearchComponent {
         }
 
         // ==========================================
+        // 2. SECCIÓN: LIBROS DE MEDICINA (Nuevo)
+        // ==========================================
+        let medicalBooksSection = '';
+        if (this.medicalBooks.length > 0) {
+            const medicalBooksHTML = this.medicalBooks.map(book => `
+                <div class="carousel-item book-item">
+                    ${create3DBookCardHTML(book)}
+                </div>
+            `).join('');
+
+            medicalBooksSection = `
+                <section class="featured-section">
+                    <div class="section-header">
+                        <h2 class="browse-title" style="margin-bottom: 0;">Libros de Medicina</h2>
+                        <button class="btn-text view-all-btn" data-view="medical-books" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
+                            Ver todos los libros <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </button>
+                    </div>
+                    ${createCarouselHTML('medical-books-carousel', medicalBooksHTML)}
+                </section>
+                <div class="section-spacer" style="height: 3rem;"></div>
+            `;
+        }
+
+        // ==========================================
         // 2. SECCIÓN: TEASER DEL TUTOR IA
         // ==========================================
         const aiTeaserSection = `
@@ -967,7 +1032,7 @@ class SearchComponent {
                 <div class="ai-teaser-content" style="flex: 1; z-index: 1;">
                     <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">Tu Asistente Académico Inteligente</h3>
                     <p style="margin: 0 0 1.5rem 0; color: var(--text-muted); line-height: 1.6; max-width: 600px;">Obtén respuestas instantáneas sobre tus cursos, resúmenes de temas complejos y recomendaciones personalizadas de estudio.</p>
-                     <button class="btn-primary" onclick="window.openChat()" style="padding: 12px 24px; font-size: 1rem;">
+                    <button class="btn-primary" onclick="window.openChat()" style="padding: 12px 24px; font-size: 1rem;">
                         <i class="fas fa-comments"></i> Pregúntale al Tutor
                     </button>
                 </div>
@@ -1014,6 +1079,7 @@ class SearchComponent {
 
         this.browseContainer.innerHTML = /*html*/`
             ${featuredBooksSection}
+            ${medicalBooksSection}
             ${featuredCoursesSection}
             
             <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
@@ -1026,8 +1092,62 @@ class SearchComponent {
             <div class="section-spacer" style="height: 1rem;"></div>
             ${aiTeaserSection}
         `;
+
+        // Inicializar carruseles
+        setTimeout(() => {
+            initializeCarousel('featured-books-carousel');
+            initializeCarousel('featured-courses-carousel');
+            if (this.medicalBooks && this.medicalBooks.length > 0) {
+                initializeCarousel('medical-books-carousel');
+            }
+            // Initialize areas carousels
+            sortedAreas.forEach((area, index) => {
+                initializeCarousel(`area-carousel-${index}`);
+            });
+        }, 100);
+
+        // ✅ EVENT LISTENER PARA BOTONES "VER TODOS"
+        this.browseContainer.querySelectorAll('.view-all-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const viewType = e.currentTarget.dataset.view;
+                if (viewType === 'all-books') this.renderAllBooks();
+                else if (viewType === 'all-courses') this.renderAllCourses();
+                else if (viewType === 'medical-books') this.renderMedicalBooksView(); // ✅ NUEVO HANDLER
+            });
+        });
+
+        // Inicializar acordeones de áreas (Search.js)
+        this.browseContainer.querySelectorAll('.section-header').forEach(header => {
+            // Logic handled by inline onclick
+        });
     }
 
+    // ✅ NUEVA VISTA: TODOS LOS LIBROS DE MEDICINA
+    renderMedicalBooksView() {
+        this.resultsContainer.classList.add('hidden');
+        this.browseContainer.classList.remove('hidden');
+        this.browseContainer.innerHTML = /*html*/`
+            <div class="detail-view-container">
+                <div class="course-main-header">
+                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #ef4444, #b91c1c);">
+                        <i class="fas fa-book-medical"></i>
+                    </div>
+                    <div class="course-header-title">
+                        <h2 class="detail-view-title">Libros de Medicina</h2>
+                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${this.medicalBooks.length} Recursos Disponibles</span>
+                    </div>
+                </div>
+
+                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
+                     <div class="books-grid">
+                        ${this.medicalBooks.map(book => create3DBookCardHTML(book)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        // Scroll top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     renderCoursesForCareer(careerId) {
         // ✅ NUEVO: Registrar la vista de la página de carrera.
         AnalyticsApiService.recordView('career', careerId);
@@ -1047,16 +1167,16 @@ class SearchComponent {
         if (coursesInCareer.length > 0) {
             coursesHTML = coursesInCareer.map(course => createBrowseCardHTML(course, 'course')).join('');
         } else {
-            coursesHTML = `<p class="empty-state">No hay cursos disponibles para esta carrera todavía.</p>`;
+            coursesHTML = `< p class="empty-state" > No hay cursos disponibles para esta carrera todavía.</p > `;
         }
 
         const descriptionHTML = career.description
-            ? `<p class="career-description">${career.description}</p>`
+            ? `< p class="career-description" > ${career.description}</p > `
             : '<p class="course-description"><span class="no-material">No hay una descripción disponible para esta carrera.</span></p>';
 
         this.browseContainer.innerHTML = /*html*/`
-            <div class="detail-view-container">
-                <!-- ✅ CLEANUP: Botón volver eliminado -->
+    < div class="detail-view-container" >
+                < !-- ✅ CLEANUP: Botón volver eliminado-- >
 
                 
                 <div class="course-main-header">
@@ -1108,8 +1228,8 @@ class SearchComponent {
                         </div>
                     </aside>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
 
     async renderUnifiedCourseView(courseId) {
@@ -1118,7 +1238,7 @@ class SearchComponent {
 
         const course = this.allData.courses.find(c => c.id === courseId);
         if (!course) {
-            this.browseContainer.innerHTML = `<p class="error-state">No se encontró el curso solicitado.</p>`;
+            this.browseContainer.innerHTML = `< p class="error-state" > No se encontró el curso solicitado.</p > `;
             return;
         }
 
@@ -1129,7 +1249,7 @@ class SearchComponent {
         const sectionsHTML = '';
 
         const courseDescriptionHTML = course.description
-            ? `<p class="course-description">${course.description.replace(/\n/g, '<br>')}</p>`
+            ? `< p class="course-description" > ${course.description.replace(/\n/g, '<br>')}</p > `
             : '<p class="course-description"><span class="no-material">No hay una descripción disponible para este curso.</span></p>';
 
         // ✅ MEJORA: Obtener icono para el header
@@ -1142,8 +1262,8 @@ class SearchComponent {
         const topics = course.topics || [];
 
         this.browseContainer.innerHTML = /*html*/`
-            <div class="detail-view-container">
-                <!-- ✅ CLEANUP: Botón volver eliminado -->
+    < div class="detail-view-container" >
+                < !-- ✅ CLEANUP: Botón volver eliminado-- >
 
                 
                 <div class="course-main-header">
@@ -1193,8 +1313,8 @@ class SearchComponent {
 
                     </aside>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
 
     async renderTopicView(topicId) {
@@ -1203,7 +1323,7 @@ class SearchComponent {
 
         const topic = this.allData.topics.find(t => t.id === topicId);
         if (!topic) {
-            this.browseContainer.innerHTML = `<p class="error-state">No se encontró el tema solicitado.</p>`;
+            this.browseContainer.innerHTML = `< p class="error-state" > No se encontró el tema solicitado.</p > `;
             return;
         }
 
@@ -1217,14 +1337,14 @@ class SearchComponent {
 
         // ✅ MEJORA: Usar el mismo layout que la vista de curso para consistencia.
         const topicDescriptionHTML = topic.description
-            ? `<p class="course-description">${topic.description.replace(/\n/g, '<br>')}</p>`
+            ? `< p class="course-description" > ${topic.description.replace(/\n/g, '<br>')}</p > `
             : '<p class="course-description"><span class="no-material">No hay una descripción disponible para este tema.</span></p>';
 
         const topicIconClass = getIconForItem(topic.name, 'topic'); // Asumiendo que getIconForItem puede manejar 'topic'
 
         this.browseContainer.innerHTML = /*html*/`
-            <div class="detail-view-container">
-                <!-- ✅ CLEANUP: Botón volver eliminado -->
+    < div class="detail-view-container" >
+                < !-- ✅ CLEANUP: Botón volver eliminado-- >
 
                 
                 <div class="course-main-header">
@@ -1272,8 +1392,8 @@ class SearchComponent {
                         </div>
                     </aside>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
 
 }

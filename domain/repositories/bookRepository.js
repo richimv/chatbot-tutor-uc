@@ -31,6 +31,28 @@ class BookRepository {
         return rows;
     }
 
+    async findByArea(areaKeywords = [], limit = 10) {
+        if (!areaKeywords || areaKeywords.length === 0) return [];
+
+        // Construir cláusula ILIKE dinámica para múltiples keywords
+        // ✅ FIX CRÍTICO: 'car.area' es un tipo USER-DEFINED (Enum), requiere cast explícito a texto para ILIKE.
+        const conditions = areaKeywords.map((_, index) => `car.area::text ILIKE $${index + 1} OR car.name ILIKE $${index + 1}`).join(' OR ');
+
+        const query = `
+            SELECT DISTINCT r.* 
+            FROM resources r
+            JOIN course_books cb ON r.id = cb.resource_id
+            JOIN course_careers cc ON cb.course_id = cc.course_id
+            JOIN careers car ON cc.career_id = car.id
+            WHERE r.resource_type = 'book' AND (${conditions})
+            LIMIT $${areaKeywords.length + 1}
+        `;
+
+        const params = [...areaKeywords.map(k => `%${k}%`), limit];
+        const { rows } = await db.query(query, params);
+        return rows;
+    }
+
     async findById(id) {
         const { rows } = await db.query('SELECT * FROM resources WHERE id = $1', [id]);
         return rows[0];
