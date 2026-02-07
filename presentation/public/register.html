@@ -379,8 +379,7 @@
                     }
 
                     try {
-                        const { createClient } = supabase;
-                        const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+                        const sb = window.supabaseClient;
 
                         // ✅ Redirigir directamente al dashboard/index porque Google valida el email
                         const redirectUrl = window.location.hostname === 'localhost'

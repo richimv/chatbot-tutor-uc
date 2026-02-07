@@ -263,3 +263,41 @@ Esta funcionalidad es irreversible y desencadena una limpieza en cascada:
 3.  **Borrado Admin:** Se utiliza la `SUPABASE_SERVICE_ROLE_KEY` para eliminar el usuario del proveedor de identidad.
 4.  **Limpieza DB:** Gracias a `ON DELETE CASCADE` en PostgreSQL, se eliminan automáticamente todos los registros dependientes (chats, favoritos, historial).
 
+---
+
+## 12. 🗑️ Guía de Funcionalidad: Eliminación de Cuenta
+
+Esta sección detalla el flujo de eliminación de cuenta ("Danger Zone"), diseñado para ser seguro, irreversible y adaptativo según el método de autenticación del usuario.
+
+### 12.1. Visión General
+La funcionalidad permite a cualquier usuario registrado eliminar permanentemente su cuenta y todos los datos asociados (historial de chats, progreso, suscripción) de la plataforma.
+*   **Ubicación:** Perfil de Usuario (`/profile`) -> Tarjeta "Zona de Peligro".
+*   **Consecuencia:** Eliminación física de datos en PostgreSQL y baja en Supabase Auth (`Hard Delete`).
+
+### 12.2. Flujo A: Usuarios con Correo y Contraseña
+Para usuarios que se registraron manualmente usando email/password.
+1.  **Solicitud:** El usuario hace clic en "Eliminar Cuenta".
+2.  **Verificación:** Aparece un modal solicitando la **contraseña actual**.
+3.  **Validación Backend:**
+    *   Se envía la contraseña al endpoint `/api/auth/delete-account`.
+    *   El backend verifica la contraseña re-autenticando con Supabase (`signInWithPassword`).
+    *   Si es correcta, procede con la eliminación.
+4.  **Limpieza:** Se fuerza el cierre de sesión (`signOut`) y limpieza de almacenamiento local.
+
+### 12.3. Flujo B: Usuarios OAuth (Google)
+Para usuarios que inician sesión con Google, quienes **no tienen** una contraseña establecida en la plataforma.
+1.  **Detección:** El frontend detecta automáticamente si el usuario es de tipo OAuth (Provider: `google`).
+2.  **Verificación Adaptativa:**
+    *   En lugar de pedir contraseña (que no tienen), el modal solicita una **Confirmación Textual**.
+    *   **Instrucción:** "Escribe 'ELIMINAR' para confirmar".
+3.  **Validación Backend:**
+    *   El servicio `authService.js` verifica en Supabase (vía Admin API) que el usuario efectivamente provenga de Google.
+    *   Si el proveedor es correcto, se omite el chequeo de contraseña ("bypass") y se autoriza la eliminación.
+4.  **Seguridad:** Este flujo impide que un usuario de email intente borrar su cuenta sin contraseña fingiendo ser de Google, ya que la validación del proveedor es del lado del servidor (Source of Truth).
+
+### 12.4. Prevención de "Cuentas Zombie"
+Se implementó un mecanismo de cierre de sesión atómico (`Async Logout`) para evitar que una cuenta recién borrada se regenere automáticamente:
+*   Al confirmar el borrado, el sistema **espera** (`await`) a que la sesión en la nube se destruya completamente.
+*   Posteriormente, elimina agresivamente el `authToken` local.
+*   Finalmente, redirige a la página de inicio como usuario anónimo.
+

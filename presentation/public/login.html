@@ -222,9 +222,8 @@
                     }
 
                     try {
-                        // Inicializar Cliente Supabase
-                        const { createClient } = supabase;
-                        const sb = createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+                        // Usar Cliente Singleton (evita advertencias)
+                        const sb = window.supabaseClient;
 
                         // Iniciar OAuth
                         const redirectTo = window.location.hostname === 'localhost'
