@@ -57,6 +57,8 @@
 
 /* Apply only to the Quiz Page Body */
 body.quiz-body {
+    padding-top: 0 !important;
+    /* ⚡ Override header.css padding to prevent gap */
     background-color: var(--bg-dark);
     font-family: var(--font-main);
     color: var(--text-primary);
@@ -79,8 +81,9 @@ body.quiz-body .main-header {
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--glass-border);
     position: sticky;
-    top: 0;
+    top: var(--trial-bar-height, 0);
     z-index: 1000;
+    transition: top 0.3s ease;
 }
 
 body.quiz-body .brand-section .quiz-logo {

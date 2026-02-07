@@ -2,6 +2,33 @@ const supabase = require('../config/supabaseClient');
 const UserRepository = require('../../domain/repositories/userRepository');
 const userRepository = new UserRepository();
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 500;
+
+async function getUserWithRetry(token, retries = MAX_RETRIES) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser(token);
+            if (error) throw error; // Re-throw to cache if it's a supabase error (401, etc) - though 401 shouldn't be retried usually, but network errors will be caught below. 
+            // Wait, supabase-js returns error object, doesn't throw for 401. 
+            // We should only retry on NETWORK errors (detected via catch block) or 5xx.
+            // But getUser failing with 401 is permanent. 
+            return { user, error: null };
+        } catch (err) {
+            const isNetworkError = err.cause && (err.cause.code === 'ECONNRESET' || err.cause.code === 'ETIMEDOUT' || err.message.includes('fetch failed'));
+
+            if (isNetworkError && attempt < retries) {
+                console.warn(`⚠️ Supabase Auth Network Error (Attempt ${attempt}/${retries}): ${err.message}. Retrying in ${RETRY_DELAY_MS}ms...`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+                continue;
+            }
+            // If it's the last attempt or not a network error, return/throw
+            if (attempt === retries) throw err;
+            throw err;
+        }
+    }
+}
+
 async function auth(req, res, next) {
     const authHeader = req.header('Authorization');
 
@@ -15,11 +42,17 @@ async function auth(req, res, next) {
     }
 
     try {
-        // 1. Verificar token con Supabase
-        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
+        // 1. Verificar token con Supabase (con Retry Pattern para evitar ECONNRESET)
+        let sbUser;
+        try {
+            const result = await getUserWithRetry(token);
+            sbUser = result.user;
+        } catch (netError) {
+            console.error('❌ Supabase Auth Connectivity Error:', netError.message);
+            return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
+        }
 
-        if (error || !sbUser) {
-            // console.warn('⚠️ Token Supabase inválido:', error?.message);
+        if (!sbUser) {
             return res.status(401).json({ error: 'Sesión inválida o expirada.' });
         }
 

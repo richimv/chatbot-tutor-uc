@@ -64,6 +64,10 @@
             "destination": "/presentation/public/admin.html"
         },
         {
+            "source": "/profile",
+            "destination": "/presentation/public/profile.html"
+        },
+        {
             "source": "/quiz",
             "destination": "/presentation/public/quiz.html"
         },
