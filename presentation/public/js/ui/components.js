@@ -113,7 +113,7 @@ function createCarouselHTML(id, contentHTML) {
                 onmouseleave="stopCarouselScroll()">
                 &#10094;
             </button>
-            <div class="carousel-track" id="${id}">
+            <div class="carousel-track-container" id="${id}-track">
                 ${contentHTML}
             </div>
             <button class="carousel-btn next" 
@@ -759,6 +759,5 @@ function createGamePromoSectionHTML() {
                 <div class="game-promo-overlay"></div>
             </div>
         </section>
-        <div class="section-spacer" style="height: 2.5rem;"></div>
     `;
 }

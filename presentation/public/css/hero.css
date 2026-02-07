@@ -284,12 +284,12 @@
 /* Responsive Logic (Mobile Art Direction) */
 @media (max-width: 768px) {
     #hero-slider {
-        /* Strategy: Height controlled by Aspect Ratio for full image visibility */
+        /* Strategy: Shorter aspect ratio to allow peeking of content below */
         height: auto;
         min-height: auto;
         max-height: none;
-        aspect-ratio: 4/5;
-        /* Vertical Ratio for Mobile */
+        aspect-ratio: 1/1;
+        /* Was 4/5 (Tall). Now Square. */
     }
 
     .slide {
@@ -315,8 +315,8 @@
     .hero-content {
         max-width: 100%;
         margin-left: 0;
-        /* Large bottom padding to push text UP + clear search bar */
-        padding: 0 20px 140px 20px;
+        /* Reduced bottom padding slightly to match new height */
+        padding: 0 20px 120px 20px;
         text-align: center;
         align-items: center;
         justify-content: center;
@@ -354,8 +354,8 @@
         display: none;
     }
 
-    /* Dots raised to clear Search Bar overlap */
+    /* Dots adjusted for new height */
     .slider-dots {
-        bottom: 110px;
+        bottom: 90px;
     }
 }

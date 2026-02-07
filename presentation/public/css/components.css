@@ -58,6 +58,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    white-space: nowrap;
 }
 
 .back-button:hover {
@@ -301,14 +302,48 @@
 }
 
 /* ✅ MEJORA RESPONSIVE: Estilos para el banner en pantallas grandes */
-@media (min-width: 768px) {
+@media (max-width: 768px) {
+    .chat-promo-banner {
+        padding: 1.5rem !important;
+        /* Compact padding */
+        border-radius: 16px;
+    }
+
+    .chat-promo-banner-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .chat-promo-banner-title {
+        font-size: 1.35rem;
+        /* Smaller title */
+        margin-bottom: 0.5rem;
+    }
+
+    .chat-promo-banner-text {
+        font-size: 0.95rem;
+        /* Smaller text */
+        margin-bottom: 1.5rem;
+    }
+
+    .chat-promo-banner-cta {
+        padding: 0.8rem 2rem;
+        /* Compact button */
+        font-size: 1rem;
+        width: 100%;
+        /* Full width button on mobile */
+        justify-content: center;
+    }
+}
+
+/* Desktop Styles */
+@media (min-width: 769px) {
     .chat-promo-banner {
         flex-direction: row;
-        /* Cambia a layout horizontal */
         justify-content: space-between;
-        /* Distribuye el espacio */
         text-align: left;
-        /* Alinea el texto a la izquierda */
         padding: 2.5rem 3rem;
     }
 

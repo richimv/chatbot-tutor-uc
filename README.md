@@ -85,6 +85,20 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
    npm install
    ```
 
+3. **Configurar Servicio de ML (Python)**
+   ```bash
+   # Crear entorno virtual
+   python -m venv venv
+   
+   # Activar entorno (Windows)
+   .\venv\Scripts\activate
+   # Activar entorno (Mac/Linux)
+   # source venv/bin/activate
+   
+   # Instalar dependencias
+   pip install -r requirements.txt
+   ```
+
 3. **Configurar Variables de Entorno (.env)**
    ```env
    # Servidor
@@ -111,7 +125,12 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
 
 4. **Correr en Desarrollo**
    ```bash
+   # Terminal 1: Backend & Frontend
    npm run dev
+
+   # Terminal 2: Servicio de ML (Python)
+   # Asegúrate de tener el entorno activado
+   python -m ml_service.app
    ```
 
 ---

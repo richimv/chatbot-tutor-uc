@@ -30,10 +30,20 @@
     margin-bottom: 0.5rem;
 }
 
-.course-view {
+.course-view,
+.detail-view-container {
     padding: var(--spacing-xl) 0;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+/* ✅ OPTIMIZATION: Reduce padding on mobile to allow wider 2-col cards */
+@media (max-width: 768px) {
+
+    .course-view,
+    .detail-view-container {
+        padding: 1.5rem 0;
+    }
 }
 
 .overlap-container {
@@ -632,4 +642,41 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+}
+
+/* =========================================
+   🎓 Course Detail Layout (Sidebar & Main Content)
+   ========================================= */
+
+.course-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    /* Default Mobile: Stacked */
+    gap: 2rem;
+    position: relative;
+}
+
+.course-main-content {
+    min-width: 0;
+    /* Prevent grid blowout */
+}
+
+.course-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Desktop: Sidebar on Right */
+@media (min-width: 1024px) {
+    .course-detail-grid {
+        grid-template-columns: 1fr 340px;
+        /* Main Content | Sidebar */
+        align-items: start;
+    }
+
+    .course-sidebar {
+        position: sticky;
+        top: 2rem;
+    }
 }

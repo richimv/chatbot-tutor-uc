@@ -261,14 +261,24 @@ class SearchComponent {
         if (viewName === 'home') {
             this.renderInitialView();
         } else if (viewName === 'career') {
-            const careerId = args[0];
-            const career = this.allData.careers.find(c => c.id == careerId);
-            if (career) this.renderCoursesForCareer(careerId);
-            else { console.error("Career not found:", careerId); this.renderInitialView(); }
+            // Deprecated: SPA navigation for career
+            console.warn("Legacy SPA navigation for career detected. Redirecting...");
+            window.location.href = `/career?id=${args[0]}`;
         } else if (viewName === 'course') {
-            this.renderUnifiedCourseView(...args);
+            // Deprecated: SPA navigation for course
+            console.warn("Legacy SPA navigation for course detected. Redirecting...");
+            window.location.href = `/course?id=${args[0]}`;
         } else if (viewName === 'topic') {
-            this.renderTopicView(...args);
+            // Topic pages are deprecated. Redirect to search just in case.
+            // (This should be handled by click listeners, but as a fallback)
+            console.warn("Topic page is deprecated. Redirecting to search.");
+            const topic = this.allData.topics.find(t => t.id == args[0]);
+            if (topic) {
+                this.searchInput.value = topic.name;
+                this.performSearch();
+            } else {
+                this.renderInitialView();
+            }
         } else if (viewName === 'search') {
             // args[0] es 'data'
             this.renderSearchResults(args[0]);
@@ -304,26 +314,24 @@ class SearchComponent {
             return;
         }
 
+        // ✅ LÓGICA DE NAVEGACIÓN PROGRESIVA:
+        // - Topics: Navegación SPA interna (navigateTo).
+        // - Carreras/Cursos: Navegación estándar MPA (window.location).
+
         // ✅ NUEVO: Manejar clics en los stickers de carrera.
-        // Esta es la acción más específica y debe tener la máxima prioridad para evitar
-        // que el evento se propague al contenedor padre (la tarjeta del curso).
         const careerBadge = e.target.closest('.course-badge[data-career-id]');
         if (careerBadge) {
-            // Detenemos la propagación para que el clic en el sticker no active
-            // el clic en la tarjeta del curso que lo contiene.
             e.stopPropagation();
             e.preventDefault();
             const careerId = parseInt(careerBadge.dataset.careerId, 10);
             if (!isNaN(careerId)) {
-                // Navegamos a la vista que renderiza los cursos para esa carrera.
-                this.navigateTo('career', careerId);
+                // Navegación MPA estándar
+                window.location.href = `/career?id=${careerId}`;
             }
             return;
         }
 
-        // ✅ LÓGICA DE NAVEGACIÓN PROGRESIVA:
-        // - Topics: Navegación SPA interna (navigateTo).
-        // - Carreras/Cursos: Navegación estándar MPA (window.location).
+
         // ✅ NUEVO: Evitar conflictos con botones de librería (LibraryUI)
         if (e.target.closest('.js-library-btn')) {
             return; // Dejar que libraryUI.js maneje esto
@@ -337,21 +345,26 @@ class SearchComponent {
 
             if (type === 'topic') {
                 e.preventDefault();
-                this.navigateTo('topic', id);
+                // ✅ UPDATE: Topic clicks now trigger a search instead of opening a page.
+                const topic = this.allData.topics.find(t => t.id == id);
+                if (topic) {
+                    this.searchInput.value = topic.name;
+                    this.performSearch();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
                 return;
             } else if (type === 'career') {
                 // Navegación MPA estándar para carreras
-                window.location.href = `career?id=${id}`;
+                window.location.href = `/career?id=${id}`;
                 return;
             } else if (type === 'course') {
                 // Navegación MPA estándar para cursos
-                window.location.href = `course?id=${id}`;
+                window.location.href = `/course?id=${id}`;
                 return;
             }
         }
 
         // ✅ SOLUCIÓN: Manejar clics en las tarjetas de recomendación.
-        // Se mueve aquí para que no interfiera con la lógica de los stickers.
         const recommendationCard = e.target.closest('.recommendation-card[data-rec-id]');
         if (recommendationCard) {
             e.preventDefault();
@@ -359,8 +372,16 @@ class SearchComponent {
             const id = parseInt(recommendationCard.dataset.recId, 10);
 
             if (!isNaN(id)) {
-                if (type === 'course') this.navigateTo('course', id);
-                if (type === 'topic') this.navigateTo('topic', id);
+                if (type === 'course') window.location.href = `/course?id=${id}`;
+                if (type === 'topic') {
+                    // Trigger search
+                    const topic = this.allData.topics.find(t => t.id == id);
+                    if (topic) {
+                        this.searchInput.value = topic.name;
+                        this.performSearch();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
             }
             return;
         }
@@ -901,7 +922,7 @@ class SearchComponent {
                          </h3>
                          <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
                     </button>
-                    <div class="browse-grid" style="margin-top: 0.5rem;"> 
+                    <div class="courses-grid" style="margin-top: 0.5rem;"> 
                          ${coursesGrid}
                     </div>
                 </div>
@@ -960,7 +981,7 @@ class SearchComponent {
                     </div>
                     ${createCarouselHTML('featured-books-carousel', booksHTML)}
                 </section>
-                <div class="section-spacer" style="height: 1rem;"></div>
+                <div class="section-spacer"></div>
             `;
         }
 
@@ -987,7 +1008,7 @@ class SearchComponent {
                     </div>
                     ${createCarouselHTML('featured-courses-carousel', coursesHTML)}
                 </section>
-                <div class="section-spacer" style="height: 1rem;"></div>
+                <div class="section-spacer"></div>
             `;
         }
 
@@ -996,7 +1017,7 @@ class SearchComponent {
         // ==========================================
         let medicalBooksSection = '';
         if (this.medicalBooks.length > 0) {
-            const medicalBooksHTML = this.medicalBooks.map(book => `
+            const medicalBooksHTML = this.medicalBooks.slice(0, 10).map(book => `
                 <div class="carousel-item book-item">
                     ${create3DBookCardHTML(book)}
                 </div>
@@ -1012,7 +1033,7 @@ class SearchComponent {
                     </div>
                     ${createCarouselHTML('medical-books-carousel', medicalBooksHTML)}
                 </section>
-                <div class="section-spacer" style="height: 3rem;"></div>
+                <div class="section-spacer"></div>
             `;
         }
 
@@ -1074,6 +1095,7 @@ class SearchComponent {
                     <h3 class="area-title">${area}</h3>
                     ${createCarouselHTML(safeAreaId, careersHTML)}
                 </div>
+                <div class="section-spacer"></div>
             `;
         });
 
@@ -1083,13 +1105,14 @@ class SearchComponent {
             ${featuredCoursesSection}
             
             <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
+            <div class="section-spacer"></div>
             ${createGamePromoSectionHTML()}
+            <div class="section-spacer"></div>
 
             <div class="section-header">
                 <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
             </div>
             ${areasHTML}
-            <div class="section-spacer" style="height: 1rem;"></div>
             ${aiTeaserSection}
         `;
 
@@ -1148,254 +1171,6 @@ class SearchComponent {
         // Scroll top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    renderCoursesForCareer(careerId) {
-        // ✅ NUEVO: Registrar la vista de la página de carrera.
-        AnalyticsApiService.recordView('career', careerId);
-
-        const career = this.allData.careers.find(c => c.id === careerId);
-        if (!career) return;
-
-        this.resultsContainer.classList.add('hidden');
-        this.browseContainer.classList.remove('hidden');
-
-        // Filtrar cursos (temporalmente mostramos todos si no hay lógica específica, o podríamos filtrar por nombre)
-        // Para este refactor, mantendremos la lógica actual de "todos los cursos" (o lo que estaba antes)
-        // pero con un layout profesional.
-        const coursesInCareer = this.allData.courses;
-
-        let coursesHTML = '';
-        if (coursesInCareer.length > 0) {
-            coursesHTML = coursesInCareer.map(course => createBrowseCardHTML(course, 'course')).join('');
-        } else {
-            coursesHTML = `< p class="empty-state" > No hay cursos disponibles para esta carrera todavía.</p > `;
-        }
-
-        const descriptionHTML = career.description
-            ? `< p class="career-description" > ${career.description}</p > `
-            : '<p class="course-description"><span class="no-material">No hay una descripción disponible para esta carrera.</span></p>';
-
-        this.browseContainer.innerHTML = /*html*/`
-    < div class="detail-view-container" >
-                < !-- ✅ CLEANUP: Botón volver eliminado-- >
-
-                
-                <div class="course-main-header">
-                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, var(--bg-tertiary), var(--bg-secondary));">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="course-header-title">
-                        <h2 class="detail-view-title">${career.name}</h2>
-                        <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">Carrera Profesional</span>
-                    </div>
-                </div>
-
-                <div class="course-detail-grid">
-                    <!-- Columna Principal -->
-                    <div class="course-main-content">
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">Acerca de la Carrera</h3>
-                            ${descriptionHTML}
-                            ${career.curriculum_url ? `
-                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                                    <h4 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--text-main);">Plan de Estudios</h4>
-                                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Descarga la malla curricular oficial para ver el detalle de asignaturas.</p>
-                                    <a href="${career.curriculum_url}" target="_blank" class="btn-secondary">
-                                        <i class="fas fa-file-pdf"></i> Ver Malla Curricular
-                                    </a>
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <div class="detail-section" style="background: transparent; padding: 0; box-shadow: none; border: none;">
-                            <h3 class="detail-section-title" style="border-bottom: none; margin-bottom: 1rem;">Cursos Disponibles</h3>
-                            <div class="browse-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                                ${coursesHTML}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Barra Lateral -->
-                    <aside class="course-sidebar">
-                        ${createContextualChatButtonHTML('career', career.name)}
-                        
-                        <div class="sidebar-section">
-                            <h4 class="sidebar-title">Información Rápida</h4>
-                            <ul class="section-schedule" style="font-size: 0.9rem;">
-                                <li><i class="fas fa-university" style="width: 20px; text-align: center;"></i> Facultad de Ingeniería</li>
-                                <li><i class="fas fa-clock" style="width: 20px; text-align: center;"></i> 10 Semestres</li>
-                                <li><i class="fas fa-map-marker-alt" style="width: 20px; text-align: center;"></i> Campus San Joaquín</li>
-                            </ul>
-                        </div>
-                    </aside>
-                </div>
-            </div >
-    `;
-    }
-
-    async renderUnifiedCourseView(courseId) {
-        // ✅ NUEVO: Registrar la vista de la página de curso.
-        AnalyticsApiService.recordView('course', courseId);
-
-        const course = this.allData.courses.find(c => c.id === courseId);
-        if (!course) {
-            this.browseContainer.innerHTML = `< p class="error-state" > No se encontró el curso solicitado.</p > `;
-            return;
-        }
-
-        this.resultsContainer.classList.add('hidden');
-        this.browseContainer.classList.remove('hidden');
-
-        // Secciones eliminadas
-        const sectionsHTML = '';
-
-        const courseDescriptionHTML = course.description
-            ? `< p class="course-description" > ${course.description.replace(/\n/g, '<br>')}</p > `
-            : '<p class="course-description"><span class="no-material">No hay una descripción disponible para este curso.</span></p>';
-
-        // ✅ MEJORA: Obtener icono para el header
-        // ✅ MEJORA: Obtener icono para el header
-        const courseIconClass = getIconForItem(course.name, 'course');
-
-        // ✅ FIX: Definir 'books' y 'topics' extraídos del objeto curso.
-        // El repositorio devuelve 'materials' para los libros y 'topics' para los temas.
-        const books = course.materials || [];
-        const topics = course.topics || [];
-
-        this.browseContainer.innerHTML = /*html*/`
-    < div class="detail-view-container" >
-                < !-- ✅ CLEANUP: Botón volver eliminado-- >
-
-                
-                <div class="course-main-header">
-                    <div class="course-header-icon">
-                        <i class="fas ${courseIconClass}"></i>
-                    </div>
-                    <div class="course-header-title">
-                        <h2 class="detail-view-title">${course.name} ${course.code ? `(${course.code})` : ''}</h2>
-
-                    </div>
-                </div>
-
-                <div class="course-detail-grid">
-                    <!-- Columna Principal -->
-                    <div class="course-main-content">
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">Descripción del Curso</h3>
-                            ${courseDescriptionHTML}
-                        </div>
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">Bibliografía Recomendada</h3>
-                            <div class="material-list">
-                                ${books.length > 0 ? books.map(b => `
-                                    <!-- ✅ SOLUCIÓN: Eliminar target="_blank" para permitir que JS controle el clic. -->
-                                    <a href="${b.url}" class="material-card">
-                                        <div class="material-card-icon"><i class="far fa-file-pdf"></i></div>
-                                        <div class="material-card-info">
-                                            <span class="material-title">${b.title}</span>
-                                            <span class="material-author">por ${b.author}</span>
-                                        </div>
-                                        <div class="material-card-arrow"><i class="fas fa-arrow-right"></i></div>
-                                    </a>
-                                `).join('') : '<p class="empty-state-small">No hay bibliografía recomendada.</p>'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Barra Lateral -->
-                    <aside class="course-sidebar">
-                        ${createContextualChatButtonHTML('course', course.name)}
-                        <div class="sidebar-section">
-                            <h4 class="sidebar-title">Temas del Curso</h4>
-                            <div class="topic-list">
-                                ${topics.length > 0 ? topics.map(t => `<button class="topic-tag" data-type="topic" data-id="${t.id}">${t.name}</button>`).join('') : '<p class="empty-state-small">No hay temas asociados.</p>'}
-                            </div>
-                        </div>
-
-                    </aside>
-                </div>
-            </div >
-    `;
-    }
-
-    async renderTopicView(topicId) {
-        // ✅ NUEVO: Registrar la vista de la página de tema.
-        AnalyticsApiService.recordView('topic', topicId);
-
-        const topic = this.allData.topics.find(t => t.id === topicId);
-        if (!topic) {
-            this.browseContainer.innerHTML = `< p class="error-state" > No se encontró el tema solicitado.</p > `;
-            return;
-        }
-
-        this.resultsContainer.classList.add('hidden');
-        this.browseContainer.classList.remove('hidden');
-
-        const booksForTopic = (topic.bookIds || []).map(id => this.allData.books.find(b => b.id === id)).filter(Boolean);
-
-        // ✅ MEJORA: Encontrar cursos que incluyan este tema.
-        const relatedCourses = this.allData.courses.filter(course => course.topicIds && course.topicIds.includes(topicId));
-
-        // ✅ MEJORA: Usar el mismo layout que la vista de curso para consistencia.
-        const topicDescriptionHTML = topic.description
-            ? `< p class="course-description" > ${topic.description.replace(/\n/g, '<br>')}</p > `
-            : '<p class="course-description"><span class="no-material">No hay una descripción disponible para este tema.</span></p>';
-
-        const topicIconClass = getIconForItem(topic.name, 'topic'); // Asumiendo que getIconForItem puede manejar 'topic'
-
-        this.browseContainer.innerHTML = /*html*/`
-    < div class="detail-view-container" >
-                < !-- ✅ CLEANUP: Botón volver eliminado-- >
-
-                
-                <div class="course-main-header">
-                    <div class="course-header-icon">
-                        <i class="fas ${topicIconClass}"></i>
-                    </div>
-                    <div class="course-header-title">
-                        <h2 class="detail-view-title">${topic.name}</h2>
-                    </div>
-                </div>
-
-                <div class="course-detail-grid">
-                    <!-- Columna Principal -->
-                    <div class="course-main-content">
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">Descripción del Tema</h3>
-                            ${topicDescriptionHTML}
-                        </div>
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">Bibliografía Recomendada</h3>
-                            <div class="material-list">
-                                ${booksForTopic.length > 0 ? booksForTopic.map(b => `
-                                    <!-- ✅ SOLUCIÓN: Eliminar target="_blank" para permitir que JS controle el clic. -->
-                                    <a href="${b.url}" class="material-card">
-                                        <div class="material-card-icon"><i class="far fa-file-pdf"></i></div>
-                                        <div class="material-card-info">
-                                            <span class="material-title">${b.title}</span>
-                                            <span class="material-author">por ${b.author}</span>
-                                        </div>
-                                        <div class="material-card-arrow"><i class="fas fa-arrow-right"></i></div>
-                                    </a>
-                                `).join('') : '<p class="empty-state-small">No hay bibliografía recomendada para este tema.</p>'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Barra Lateral -->
-                    <aside class="course-sidebar">
-                        ${createContextualChatButtonHTML('topic', topic.name)}
-                        <div class="sidebar-section">
-                            <h4 class="sidebar-title">Cursos Relacionados</h4>
-                            <div class="topic-list">
-                                ${relatedCourses.length > 0 ? relatedCourses.map(c => `<button class="topic-tag" data-type="course" data-id="${c.id}">${c.name}</button>`).join('') : '<p class="empty-state-small">No hay cursos que cubran este tema.</p>'}
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </div >
-    `;
-    }
-
 }
 
 // Instanciar el componente cuando el DOM esté listo para evitar accesos

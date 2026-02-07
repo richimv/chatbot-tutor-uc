@@ -34,7 +34,7 @@ async function loadCareerData(id) {
         if (headerBackBtn) {
             headerBackBtn.classList.add('visible');
             headerBackBtn.href = '/'; // Volver al inicio (Áreas)
-            headerBackBtn.querySelector('span').textContent = 'Volver a Áreas';
+            headerBackBtn.querySelector('span').textContent = 'Volver';
         }
 
         renderCareer(career, container);
@@ -79,7 +79,7 @@ function renderCareer(career, container) {
                     <!-- Optional: Filter or view toggle could go here -->
                 </div>
                 
-                <div class="browse-grid">
+                <div class="courses-grid">
                     ${coursesHTML}
                 </div>
             </div>

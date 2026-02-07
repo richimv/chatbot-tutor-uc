@@ -45,6 +45,7 @@ class BookRepository {
             JOIN course_careers cc ON cb.course_id = cc.course_id
             JOIN careers car ON cc.career_id = car.id
             WHERE r.resource_type = 'book' AND (${conditions})
+            ORDER BY r.id DESC
             LIMIT $${areaKeywords.length + 1}
         `;
 

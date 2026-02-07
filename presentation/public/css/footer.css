@@ -3,7 +3,8 @@
     background-color: var(--bg-secondary);
     /* #1e293b */
     border-top: 1px solid var(--border-color);
-    padding: 4rem 0 2rem;
+    padding: 5rem 0 2rem;
+    /* Increased top padding for better separation */
     margin-top: auto;
     /* Push to bottom if flex column body */
     color: var(--text-secondary);
@@ -156,28 +157,72 @@
 }
 
 /* Responsive */
+/* Responsive Mobile Footer - Grid Layout Refactor */
 @media (max-width: 768px) {
-    .footer-container {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
-        text-align: center;
+    .main-footer {
+        padding: 2rem 0 1.5rem;
+        /* Reduced padding */
     }
 
+    .footer-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* 2 Columns */
+        gap: 1.5rem 1rem;
+        text-align: left;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* 1. Header: Brand (Full Width) */
     .footer-brand {
+        grid-column: 1 / -1;
         align-items: center;
+        /* Center logo */
+        text-align: center;
+        margin-bottom: 0.5rem;
     }
 
     .footer-slogan {
-        max-width: 100%;
+        display: none;
+        /* Hide slogan to save space */
     }
 
+    /* 2. Body: Links (Side by Side) */
     .footer-links-col {
-        align-items: center;
+        align-items: flex-start;
     }
 
+    /* Hide redundant headings in mobile */
+    .footer-heading {
+        display: none;
+    }
+
+    .footer-links-list {
+        gap: 0.8rem;
+    }
+
+    .footer-link {
+        font-size: 0.9rem;
+    }
+
+    /* 3. Footer Bottom: Copyright & Socials */
     .footer-bottom {
-        flex-direction: column;
-        gap: 1.5rem;
+        flex-direction: column-reverse;
+        /* Copyright last */
+        gap: 1.25rem;
+        padding-top: 1.5rem;
+        margin-top: 0;
+        border: none;
         text-align: center;
+    }
+
+    .footer-socials {
+        justify-content: center;
+    }
+
+    .copyright {
+        font-size: 0.75rem;
+        opacity: 0.6;
     }
 }
