@@ -42,7 +42,8 @@
 
     .course-view,
     .detail-view-container {
-        padding: 1.5rem 0;
+        padding: 0.25rem 0 !important;
+        /* 🔥 Drastic reduction to pull title up */
     }
 }
 
@@ -667,16 +668,39 @@
     gap: 1.5rem;
 }
 
-/* Desktop: Sidebar on Right */
-@media (min-width: 1024px) {
-    .course-detail-grid {
-        grid-template-columns: 1fr 340px;
-        /* Main Content | Sidebar */
-        align-items: start;
+.course-sidebar {
+    position: sticky;
+    top: 2rem;
+}
+}
+
+/* 🔥 Mobile Spacing Overrides (Consolidated) */
+@media (max-width: 768px) {
+
+    .books-grid,
+    .video-grid,
+    .resources-grid {
+        gap: 0.25rem !important;
+        row-gap: 0.25rem !important;
     }
 
-    .course-sidebar {
-        position: sticky;
-        top: 2rem;
+    .hero-banner {
+        padding-top: 1rem;
+        padding-bottom: 0;
+    }
+
+    .course-main-header {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .course-header-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+
+    .detail-view-title {
+        font-size: 1.3rem;
     }
 }

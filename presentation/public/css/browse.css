@@ -606,9 +606,9 @@
 /* Responsive Logic */
 @media (max-width: 768px) {
     .game-promo-banner {
-        min-height: 450px;
+        min-height: 480px;
         flex-direction: column;
-        justify-content: flex-end;
+        justify-content: center;
     }
 
     .game-promo-overlay {
@@ -620,7 +620,7 @@
 
     .game-promo-content {
         padding: 2rem 1.5rem;
-        align-items: flex-end;
+        align-items: center;
     }
 
     .game-promo-text {
@@ -644,6 +644,37 @@
 
 @media (max-width: 768px) {
     .section-spacer {
-        height: 1rem;
+        height: 0.1rem;
+    }
+
+    /* 🔥 Ultra-Compact Grid for Mobile */
+    .books-grid,
+    .courses-grid,
+    .careers-grid,
+    .browse-grid {
+        gap: 0.25rem !important;
+        /* ~4px, suficiente para separar pero muy compacto */
+        row-gap: 0.25rem !important;
+    }
+
+    /* 🔥 Reduce Carousel Vertical Padding */
+    .carousel-container {
+        padding-bottom: 0;
+    }
+
+    /* 🔥 Reduce Section Header Spacing */
+    .section-header h2.browse-title {
+        margin-bottom: 0.1rem;
+        padding-bottom: 0;
+        font-size: 1.1rem;
+    }
+
+    .area-section {
+        margin-bottom: 0.1rem;
+    }
+
+    .browse-title {
+        font-size: 1.1rem;
+        margin-bottom: 0;
     }
 }

@@ -1,7 +1,10 @@
 /* --- Estructura Principal y Header --- */
 .main-header {
-    position: sticky;
+    position: fixed;
+    /* ✅ FIXED: Anchored strictly */
     top: 0;
+    left: 0;
+    width: 100%;
     z-index: 1000;
     background: var(--bg-secondary);
     /* Slate 800 */
@@ -13,6 +16,11 @@
     backdrop-filter: blur(8px);
     background: rgba(30, 41, 59, 0.9);
     /* Translucent slate */
+}
+
+/* ✅ SPACER: Compensate for fixed header */
+body {
+    padding-top: 62px;
 }
 
 .admin-header {
@@ -284,8 +292,15 @@
 }
 
 @media (max-width: 768px) {
+
+    /* ✅ SPACER: Mobile compensation */
+    body {
+        padding-top: 42px;
+    }
+
     .main-header {
-        padding: 0.5rem 0.8rem;
+        padding: 0.5rem 1.25rem;
+        /* ✅ Wider padding for alignment */
         gap: 0.5rem;
     }
 
@@ -326,7 +341,8 @@
     }
 
     .header-nav {
-        gap: 0.25rem;
+        gap: 0.35rem;
+        /* ✅ Tighter, more cohesive look */
     }
 
     .user-menu-dropdown {

@@ -316,7 +316,7 @@
         max-width: 100%;
         margin-left: 0;
         /* Reduced bottom padding slightly to match new height */
-        padding: 0 20px 120px 20px;
+        padding: 0 20px 60px 20px;
         text-align: center;
         align-items: center;
         justify-content: center;
@@ -356,6 +356,7 @@
 
     /* Dots adjusted for new height */
     .slider-dots {
-        bottom: 90px;
+        bottom: 95px;
+        /* ✅ MOVED UP further to fully clear Search Bar */
     }
 }
