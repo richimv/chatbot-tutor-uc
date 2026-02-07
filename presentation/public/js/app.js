@@ -170,7 +170,7 @@ function updateHeaderUI(user) {
                             </div>` : ''}
                     </div>
                     ${user.role === 'admin' ? '<a href="/admin" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
-                    <!-- ✅ NUEVO: Enlace a Cambiar Contraseña -->
+                    <a href="/profile.html" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-user-cog"></i> Mi Perfil</a>
                     <a href="/change-password" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-key"></i> Cambiar Contraseña</a>
                     <button id="logout-btn-action" style="background: none; border: none; color: #ef4444; cursor: pointer; width: 100%; text-align: left; padding: 5px 0;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
                 </div>

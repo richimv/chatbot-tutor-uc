@@ -117,8 +117,7 @@
                             <option value="@gmail.com">@gmail.com</option>
                             <option value="@outlook.com">@outlook.com</option>
                             <option value="@hotmail.com">@hotmail.com</option>
-                            <option value="@yahoo.com">@yahoo.com</option>
-                            <option value="@icloud.com">@icloud.com</option>
+                            <option value="@hubacademia.com">@hubacademia.com</option>
                         </select>
                     </div>
                 </div>
@@ -338,9 +337,10 @@
 
                     // 3. Manejo de Respuesta 201 (Created)
                     if (response.status === 201) {
+                        const successMessage = response.data.message || 'Hemos enviado un enlace de confirmación a tu correo. Verifícalo para entrar.';
                         await Swal.fire({
-                            title: '¡Casi listo!',
-                            text: 'Hemos enviado un enlace de confirmación a tu correo. Verifícalo para entrar.',
+                            title: '¡Registro Exitoso!',
+                            text: successMessage,
                             icon: 'success',
                             background: '#1e293b',
                             color: '#f8fafc',

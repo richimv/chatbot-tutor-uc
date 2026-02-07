@@ -39,6 +39,7 @@ router.post('/auth/forgot-password', authLimiter, authController.forgotPassword)
 router.post('/auth/sync', authLimiter, authController.syncUser); // ✅ NUEVO: Sync de Google
 router.get('/auth/verify-email', authController.verifyEmail);
 router.post('/auth/users/:id/reset-password', auth, adminOnly, authController.adminResetPassword);
+router.delete('/auth/delete-account', auth, authController.deleteAccount); // ✅ NUEVO: Eliminar cuenta
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
 router.post('/chat', auth, usageMiddleware, chatController.processMessage); // ✅ Middleware aplicado

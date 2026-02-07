@@ -397,6 +397,17 @@ Puedo ayudarte con:
                 ok: response.ok
             });
 
+            let data;
+
+            // ✅ MEJORA: Leer el cuerpo UNA sola vez para evitar "Body stream already read"
+            // Intentamos parsear JSON, si falla usamos texto, pero guardamos el resultado.
+            const responseClone = response.clone(); // Clonamos por seguridad si necesitamos leer texto plano después
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = null; // No es JSON
+            }
+
             if (!response.ok) {
                 // Si el error es de autenticación, forzar logout
                 if (response.status === 401) {
@@ -407,27 +418,26 @@ Puedo ayudarte con:
 
                 // ✅ NUEVO: Manejo de Soft Block (Límite alcanzado)
                 if (response.status === 403) {
-                    const errorData = await response.json().catch(() => ({}));
-                    if (errorData.paywall) {
+                    // Verificamos si es un error de Paywall (Limit Reached)
+                    if (data && data.paywall) {
                         this.hideTypingIndicator();
                         window.uiManager.showPaywallModal();
                         this.addMessage('🔒 Límite de prueba alcanzado. Actualiza tu plan para continuar.', 'bot');
-                        return; // El finally desbloqueará el input, pero el usuario no podrá enviar con éxito.
+                        return;
                     }
                 }
 
                 let errorDetails = `Error HTTP: ${response.status} ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    errorDetails += ` - ${JSON.stringify(errorData)}`;
-                } catch (e) {
-                    const textError = await response.text();
+                if (data && data.error) {
+                    errorDetails += ` - ${data.error}`;
+                } else {
+                    // Si no pudimos leer JSON, leemos texto del clon
+                    const textError = await responseClone.text();
                     errorDetails += ` - ${textError}`;
                 }
                 throw new Error(errorDetails);
             }
 
-            const data = await response.json();
             this.hideTypingIndicator();
 
             console.log('✅ Respuesta recibida del servidor:', data);
@@ -437,6 +447,21 @@ Puedo ayudarte con:
             this.activeConversationId = data.conversationId;
 
             this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
+
+            // ✅ CRÍTICO: Actualizar sesión para reflejar el consumo de vidas (usageCount)
+            // Envolvemos en try/catch independiente para que un fallo aquí NO muestre error de chat
+            if (window.sessionManager) {
+                try {
+                    // Forzamos actualización silenciosa del usuario
+                    await window.sessionManager.refreshUser();
+
+                    // Si existe un componente de header que muestre las vidas, intentar actualizarlo
+                    const headerEvent = new CustomEvent('session-updated', { detail: window.sessionManager.getUser() });
+                    window.dispatchEvent(headerEvent);
+                } catch (sessionError) {
+                    console.warn('⚠️ No se pudo refrescar la sesión post-chat (No crítico):', sessionError);
+                }
+            }
 
             if (data.sugerencias && data.sugerencias.length > 0) {
                 this.showFollowUpSuggestions(data.sugerencias);

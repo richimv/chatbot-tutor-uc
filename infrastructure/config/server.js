@@ -126,7 +126,7 @@ class Server {
         const pages = [
             'login', 'register', 'admin', 'chat', 'dashboard',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career',
-            'change-password', 'update-password', 'verification-status'
+            'change-password', 'update-password', 'verification-status', 'profile'
         ];
 
         pages.forEach(page => {

@@ -160,7 +160,24 @@ chatbot-tutor-uc/
 
 ---
 
-## 7. 🔮 Próximos Pasos (Roadmap)
+## 7. 🌐 Infraestructura de Dominios y Correo
+
+### 7.1. Dominios (Namecheap)
+*   **Principal:** `hubacademia.com` (Adquirido y configurado).
+*   **Subdominios:** Apuntan a los servicios desplegados en Vercel/Render.
+
+### 7.2. Servicio de Email (Resend)
+*   **Proveedor:** Se utiliza **Resend** como API transaccional para el envío de correos.
+*   **Flujos:**
+    1.  **Verificación de Cuenta:** Para usuarios generales (`@gmail.com`, `@hotmail.com`, etc.).
+    2.  **Recuperación de Contraseña:** Envío de enlaces seguros con tokens temporales.
+*   **Estrategia "Dominio Ficticio" (@hubacademia.com):**
+    *   Para facilitar el *onboarding* inmediato en entornos institucionales o de prueba, se implementó una lógica de **Auto-Verificación**.
+    *   Cualquier registro bajo el dominio `@hubacademia.com` omite el envío de correo por Resend y activa la cuenta instantáneamente mediante la Admin API de Supabase. Esto permite el acceso directo a funcionalidades sin fricción.
+
+---
+
+## 8. 🔮 Próximos Pasos (Roadmap)
 
 *   [ ] **Modo Voz:** Implementación de STT/TTS para interactuar hablando con el tutor.
 *   [ ] **App Móvil Nativa:** Wrapper en React Native o Flutter.
@@ -169,4 +186,79 @@ chatbot-tutor-uc/
 ---
 
 **Autor:** Equipo de Desarrollo Hub Academia  
-**Estado:** Producción (MVP Avanzado)
+**Estado:** Producción (MVP Avanzado) - Despliegue en Render/Vercel Activo.
+
+---
+
+## 9. 🛡️ Seguridad y Protección de Datos
+
+La seguridad ha sido una prioridad desde el diseño inicial ("Security by Design"). A continuación, se detallan las medidas implementadas para proteger la integridad del sistema y los datos de los usuarios.
+
+### 8.1. Autenticación y Gestión de Identidad
+*   **Sistema Híbrido Robusto:** Utilizamos **Supabase Auth** como proveedor principal de identidad (IdP), delegando la gestión segura de sesiones y _tokens_ (JWT).
+*   **Validación de Contraseñas (OWASP):** 
+    *   **Complejidad:** Se exige longitud mínima, mayúsculas, minúsculas y números.
+    *   **HIBP Check:** Integración con la API de _"Have I Been Pwned"_ para impedir el uso de contraseñas previamente filtradas en brechas de seguridad conocidas.
+*   **Encriptación Redundante:** Aunque Supabase gestiona las credenciales, mantenemos un hash local (bcrypt salt rounds=10) para redundancia y validación de doble factor en operaciones críticas (como eliminación de cuenta).
+*   **Roles y Permisos:** Sistema de control de acceso basado en roles (RBAC) con tipos: `student`, `teacher`, `admin`.
+
+### 8.2. Protección de Base de Datos
+*   **Prevención de SQL Injection:** Uso estricto de **Consultas Parametrizadas** en todas las interacciones con PostgreSQL (driver `pg`). Nunca se concatenan cadenas directamente en las consultas SQL.
+*   **Integridad Referencial:** Uso de claves foráneas con `ON DELETE CASCADE` para asegurar que al eliminar un usuario, se eliminen recursivamente todos sds datos asociados (historial, favoritos, notas) sin dejar registros huérfanos.
+*   **Aislamiento:** La base de datos opera bajo una VPC virtual (en producción) con acceso restringido solo al backend mediante variables de entorno seguras.
+
+### 8.3. Seguridad en el Frontend
+*   **Sanitización:** Limpieza de inputs en formularios para prevenir XSS (Cross-Site Scripting).
+*   **Manejo de Errores:** Los mensajes de error expuestos al usuario son genéricos ("Credenciales inválidas") para no revelar si un correo existe o no (Enumeration Attacks), mientras que los logs internos mantienen detalle completo para debugging.
+
+### 8.4. Hardening y Auditoría
+*   **Protección de Consola:** En entornos de producción, se deshabilitan automáticamente los logs de consola (`console.log`, `debug`, `info`) para prevenir la fuga de información técnica o de arquitectura a través de las herramientas de desarrollador del navegador.
+*   **Auditoría de Inyección SQL:** Se verificó exhaustivamente el uso de consultas parametrizadas en todos los repositorios críticos (`userRepository`, `authService`), confirmando la inmunidad contra ataques de inyección SQL estándar.
+*   **Validación de Identidad:** La eliminación de cuentas y operaciones sensibles están protegidas contra *ID Spoofing* al confiar únicamente en el `sub` (Subject ID) del token JWT verificado, ignorando cualquier manipulacion del cuerpo de la petición.
+
+---
+
+## 10. 👤 Ciclo de Vida del Usuario y Suscripciones
+
+El sistema maneja diferentes estados de usuario para ofrecer una experiencia escalonada y monetizable.
+
+### 9.1. Visitante (No Registrado)
+*   **Acceso:** Limitado exclusivamente a la _Landing Page_, información institucional ("Sobre Nosotros") y vista previa de precios.
+*   **Restricciones:** Bloqueo total al Chatbot, Biblioteca y Quiz Arena.
+*   **Objetivo:** Conversión a registro mediante CTAs (Call to Actions) claros.
+
+### 9. Usuario Free (Registrado)
+*   **Registro Estándar vs. Corporativo:**
+    *   **Usuarios Generales (@gmail, etc.):** Requieren validación de correo electrónico obligatoria para activar la cuenta.
+    *   **Usuarios Hub Academia (@hubacademia.com):** Proceso de **Auto-Verificación** mediante Admin API. Sus cuentas se activan inmediatamente al registrarse, eliminando fricción.
+*   **Límites (Freemium):**
+    *   **Consultas al Tutor:** Limitadas a **3 interacciones diarias**. Controlado por `UsageService`.
+    *   **Biblioteca:** Acceso de lectura, pero restricción en descargas o funcionalidades avanzadas.
+*   **Interacción:** Al alcanzar el límite, se muestra un *Paywall Modal* invitando a suscribirse.
+
+### 9.2. Usuario Premium
+*   **Conversión:** Se logra mediante pago procesado por MercadoPago. El webhook actualiza el estado `subscription_status` a `active` en tiempo real.
+*   **Beneficios:**
+    *   **Consultas Ilimitadas:** El `UsageService` omite el conteo de tokens/interacciones.
+    *   **Soporte Prioritario:** (Roadmap)
+    *   **Acceso anticipado:** Nuevas características (como el futuro modo voz).
+*   **Gestión:** Panel de perfil para ver estado de suscripción y facturación.
+
+---
+
+## 11. ⚠️ Notas de Despliegue Críticas
+
+### 10.1. Variables de Entorno Adicionales
+Para el correcto funcionamiento de las funciones administrativas (como la eliminación definitiva de cuentas y la auto-verificación de usuarios corporativos), es **OBLIGATORIO** configurar la siguiente variable en el entorno de producción (Render, Vercel, etc.):
+
+*   `SUPABASE_SERVICE_ROLE_KEY`: Clave secreta con privilegios de super-admin (bypass RLS).
+    *   **Ubicación:** Supabase Dashboard -> Project Settings -> API -> `service_role` secret.
+    *   **Riesgo:** Nunca debe exponerse en el frontend ni en repositorios públicos.
+
+### 10.2. Eliminación de Cuenta (Danger Zone)
+Esta funcionalidad es irreversible y desencadena una limpieza en cascada:
+1.  **Doble Verificación:** El usuario debe reingresar su contraseña actual.
+2.  **Validación Auth:** Se verifica la identidad contra Supabase Auth.
+3.  **Borrado Admin:** Se utiliza la `SUPABASE_SERVICE_ROLE_KEY` para eliminar el usuario del proveedor de identidad.
+4.  **Limpieza DB:** Gracias a `ON DELETE CASCADE` en PostgreSQL, se eliminan automáticamente todos los registros dependientes (chats, favoritos, historial).
+

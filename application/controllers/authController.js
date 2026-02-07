@@ -11,6 +11,7 @@ class AuthController {
         this.verifyEmail = this.verifyEmail.bind(this); // ✅ NUEVO
         this.forgotPassword = this.forgotPassword.bind(this); // ✅ NUEVO
         this.syncUser = this.syncUser.bind(this); // ✅ NUEVO: Bind del método sync
+        this.deleteAccount = this.deleteAccount.bind(this); // ✅ NUEVO: Bind deleteAccount
     }
 
     async login(req, res) {
@@ -155,6 +156,27 @@ class AuthController {
         } catch (error) {
             console.error('Error en syncUser:', error);
             res.status(500).json({ error: 'Error al sincronizar usuario.' });
+        }
+    }
+    // ✅ NUEVO: Eliminar cuenta de usuario
+    async deleteAccount(req, res) {
+        const userId = req.user.id;
+        const { password } = req.body;
+        console.log('📌 Debug Delete:', { userId, body: req.body }); // DEBUG LOG
+
+        if (!password) {
+            return res.status(400).json({ error: 'La contraseña es requerida para confirmar la eliminación.' });
+        }
+
+        try {
+            await this.authService.deleteAccount(userId, password);
+            res.json({ message: 'Cuenta eliminada con éxito.' });
+        } catch (error) {
+            console.error('Error en deleteAccount:', error);
+            if (error.message.includes('Contraseña incorrecta')) {
+                return res.status(401).json({ error: 'La contraseña ingresada es incorrecta.' });
+            }
+            res.status(500).json({ error: 'Error al eliminar la cuenta.' });
         }
     }
 }

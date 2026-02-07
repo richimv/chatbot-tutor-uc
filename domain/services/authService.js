@@ -106,39 +106,71 @@ class AuthService {
         }
 
         // 2. Crear usuario en Supabase (Auth)
-        // Esto envía automáticamente el correo de confirmación según config de Supabase.
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { full_name: name } // Meta-data pública
+        let userId = null;
+        let isAutoVerified = false;
+
+        // ✅ LOGICA ESPECIAL: Auto-verificar dominios @hubacademia.com
+        if (email.endsWith('@hubacademia.com')) {
+            console.log(`🏢 Registro corporativo detectado: ${email}. Usando Admin API para auto-verificación.`);
+            const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+            const { data, error } = await supabaseAdmin.auth.admin.createUser({
+                email: email,
+                password: password,
+                email_confirm: true, // ✅ ESTO ACTIVA LA CUENTA AL INSTANTE
+                user_metadata: { full_name: name, email_verified: true }
+            });
+
+            if (error) {
+                console.error('Error Supabase Admin CreateUser:', error);
+                throw new Error(error.message);
             }
-        });
+            userId = data.user.id;
+            isAutoVerified = true;
 
-        if (error) {
-            console.error('Error Supabase SignUp:', error);
-            throw new Error(error.message); // ej: "User already registered"
-        }
+        } else {
+            // Flujo Estandar (Gmail, Outlook, etc)
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { full_name: name } // Meta-data pública
+                }
+            });
 
-        if (!data.user || !data.user.id) {
-            throw new Error('Error inesperado: No se pudo obtener el ID de usuario de Supabase.');
+            if (error) {
+                console.error('Error Supabase SignUp:', error);
+                throw new Error(error.message);
+            }
+
+            if (!data.user || !data.user.id) {
+                throw new Error('Error inesperado: No se pudo obtener el ID de usuario de Supabase.');
+            }
+            userId = data.user.id;
         }
 
         // 3. Crear usuario en Base de Datos Local (Public)
-        // Usamos el MISMO ID que generó Supabase para mantener integridad.
         try {
-            await this.userRepository.create(email, password, name, 'student', data.user.id);
+            await this.userRepository.create(email, password, name, 'student', userId);
         } catch (dbError) {
             console.error('Error creando usuario local (Rollback pendiente):', dbError);
-            // Opcional: Podríamos intentar borrar el usuario de Supabase aquí si falla la DB local
-            // para evitar usuarios "zombis" en Auth sin registro en Public.
-            // await supabase.auth.admin.deleteUser(data.user.id); 
+            // Opcional: Borrar de Supabase si falla la DB local
+            if (isAutoVerified) {
+                const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+                await supabaseAdmin.auth.admin.deleteUser(userId);
+            }
             throw new Error('Error al crear el perfil de usuario. Por favor contacte a soporte.');
         }
 
-        return {
-            message: 'Registro exitoso. Se ha enviado un correo de confirmación.'
-        };
+        if (isAutoVerified) {
+            return {
+                message: 'Registro exitoso. Tu cuenta corporativa ha sido activada automáticamente. Puedes iniciar sesión.'
+            };
+        } else {
+            return {
+                message: 'Registro exitoso. Se ha enviado un correo de confirmación.'
+            };
+        }
     }
 
     // ✅ NUEVO: Lógica para cambiar la contraseña (Supabase).
@@ -277,6 +309,45 @@ class AuthService {
         }
 
         return user;
+    }
+    // ✅ NUEVO: Eliminar cuenta permanente
+    async deleteAccount(userId, password) {
+        // 1. Validar que el usuario existe localmente
+        const user = await this.userRepository.findById(userId);
+        if (!user) throw new Error('Usuario no encontrado.');
+
+        // 2. Verificar contraseña con Supabase (Doble factor de seguridad)
+        const { error } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: password
+        });
+
+        if (error) {
+            console.warn(`Intento fallido de eliminación de cuenta para ${user.email}:`, error.message);
+            throw new Error('Contraseña incorrecta. No se pudo verificar la identidad.');
+        }
+
+        // 3. Eliminar de Supabase (Admin API)
+        // 3. Eliminar de Supabase (Admin API)
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceRoleKey) {
+            console.error('❌ FATAL: SUPABASE_SERVICE_ROLE_KEY no está definido en variables de entorno.');
+            throw new Error('Error de configuración del servidor (Missing Key).');
+        }
+
+        const supabaseAdmin = createClient(process.env.SUPABASE_URL, serviceRoleKey);
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+        if (deleteError) {
+            console.error('Error eliminando usuario de Supabase:', deleteError);
+            throw new Error('Error al eliminar la cuenta en el proveedor de identidad.');
+        }
+
+        // 4. Eliminar de Base de Datos Local
+        // Gracias al ON DELETE CASCADE, esto borrará chats, favoritos, etc.
+        await this.userRepository.delete(userId);
+
+        return { success: true };
     }
 }
 

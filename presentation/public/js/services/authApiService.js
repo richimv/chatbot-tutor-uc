@@ -156,4 +156,34 @@ class AuthApiService {
             throw new Error(errorData.error || 'Error durante la verificación.');
         }
     }
+
+    /**
+     * Eliminar cuenta de usuario
+     * @param {string} password - Contraseña actual para confirmación
+     */
+    static async deleteAccount(password) {
+        const token = localStorage.getItem('authToken');
+        if (!token) throw new Error('No hay sesión activa.');
+
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/delete-account`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ password })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            // Manejar error de contraseña específicamente
+            if (response.status === 401) {
+                throw new Error('Contraseña incorrecta.');
+            }
+            throw new Error(data.error || `Error del servidor (${response.status})`);
+        }
+        return data;
+    }
 }

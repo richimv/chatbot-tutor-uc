@@ -176,23 +176,29 @@ ALTER TABLE ONLY public.course_books
 ALTER TABLE ONLY public.course_books
     ADD CONSTRAINT course_books_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.chat_messages
-    ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id);
+    ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE;
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.conversations
-    ADD CONSTRAINT conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.search_history
-    ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.page_views
-    ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT fk_feedback_message FOREIGN KEY (message_id) REFERENCES public.chat_messages(id);
+    ADD CONSTRAINT fk_feedback_message FOREIGN KEY (message_id) REFERENCES public.chat_messages(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY public.course_careers
     ADD CONSTRAINT course_careers_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
@@ -206,15 +212,30 @@ ALTER TABLE ONLY public.topic_resources
 ALTER TABLE ONLY public.topic_resources
     ADD CONSTRAINT topic_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.user_course_library
-    ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY public.user_course_library
     ADD CONSTRAINT user_course_library_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
 
+-- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.user_book_library
-    ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY public.user_book_library
     ADD CONSTRAINT user_book_library_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.resources(id);
 
+-- Table: quiz_scores (Added manually as it was missing from original dump)
+CREATE TABLE IF NOT EXISTS public.quiz_scores (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    topic TEXT NOT NULL,
+    difficulty CHARACTER VARYING(50) NOT NULL,
+    score INTEGER NOT NULL,
+    correct_answers_count INTEGER DEFAULT 0,
+    total_questions_played INTEGER DEFAULT 10,
+    rounds_completed INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT quiz_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);

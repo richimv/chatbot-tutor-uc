@@ -23,6 +23,21 @@
         SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheWp0dXBwcGNiaHpqaXpoYW1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMDEyMDAsImV4cCI6MjA3Nzg3NzIwMH0.BXZOjsUfCbi2_bBw9wglTMBX7WkwcGxlZjfaNwteDD8'
     };
 
+    // 🛡️ SECURITY: Deshabilitar logs en Producción
+    if (!isLocal) {
+        // Guardamos reference al error original por si acaso
+        const consoleError = console.error;
+        const consoleWarn = console.warn;
+
+        // Silenciamos logs verbose
+        console.log = function () { };
+        console.info = function () { };
+        console.debug = function () { };
+
+        // Opcional: Podríamos silenciar warn también si es muy ruidoso
+        // console.warn = function() {};
+    }
+
     console.log('✅ Configuración Cargada Exitosamente.');
     console.log('📍 API:', window.AppConfig.API_URL);
     // console.log('📍 Supabase URL:', window.AppConfig.SUPABASE_URL);
