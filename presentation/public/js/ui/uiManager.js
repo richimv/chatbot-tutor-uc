@@ -497,8 +497,12 @@ class UIManager {
                     justify-content: center;
                     align-items: center;
                     font-size: 0.9rem;
-                    position: sticky; /* O fixed si queremos que flote sobre todo */
+                    position: fixed; /* ✅ FIXED: Always on top */
                     top: 0; 
+                    left: 0;
+                    width: 100%;
+                    height: 46px; /* Explicit height matching CSS var */
+                    box-sizing: border-box;
                     z-index: 9999; /* Z-Index Alto */
                     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
                 }
@@ -604,6 +608,7 @@ class UIManager {
 
         if (!user || user.subscriptionStatus === 'active' || user.role === 'admin') {
             if (bar) bar.style.display = 'none';
+            document.body.classList.remove('has-trial-mode'); // ✅ Remove class
             return;
         }
 
@@ -612,6 +617,7 @@ class UIManager {
             bar.classList.add('visible');
             // Asegurarnos que no se oculte por display:none directo
             bar.style.display = 'flex';
+            document.body.classList.add('has-trial-mode'); // ✅ Add class
         }
 
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);

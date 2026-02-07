@@ -2,13 +2,20 @@
 
 .search-section.sticky {
     position: sticky;
-    top: 57px;
+    top: calc(var(--header-height-desktop) + var(--trial-bar-height));
+    /* ✅ MATCH HEADER + BAR */
     margin: 0;
     width: 100%;
     z-index: 900;
     background: var(--surface);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     padding: 0.5rem 1rem;
+    display: flex;
+    /* ✅ NEW: Flexbox */
+    justify-content: center;
+    /* ✅ NEW: Center input horizontally */
+    align-items: center;
+    /* ✅ NEW: Center input vertically */
 }
 
 /* ✅ UI POLISH: Spacing matched to career.css strictness */
@@ -672,7 +679,6 @@
     position: sticky;
     top: 2rem;
 }
-}
 
 /* 🔥 Mobile Spacing Overrides (Consolidated) */
 @media (max-width: 768px) {
@@ -691,16 +697,33 @@
 
     .course-main-header {
         margin-bottom: 0.25rem;
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.25rem;
+        /* Reduced from 0.5rem */
+        border-bottom: none;
+        /* Optional: Remove border to make it feel closer if needed, but keeping for separation */
     }
 
     .course-header-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 1.25rem;
+        width: 40px;
+        /* Slightly smaller */
+        height: 40px;
+        font-size: 1.1rem;
     }
 
     .detail-view-title {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+        margin-bottom: 0;
+    }
+
+    .course-badge {
+        margin-top: 0.25rem !important;
+        font-size: 0.75rem;
+    }
+}
+
+/* ✅ MOBILE FIX: Force correct sticky top position */
+@media (max-width: 768px) {
+    .search-section.sticky {
+        top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
     }
 }

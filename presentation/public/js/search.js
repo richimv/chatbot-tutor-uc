@@ -755,6 +755,9 @@ class SearchComponent {
 
         // ✅ SYNC
         if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 100);
+
+        // Scroll top via Helper
+        this._scrollToTop();
     }
 
     loadMoreBookAreas(sentinel, observer) {
@@ -892,6 +895,9 @@ class SearchComponent {
             const s = document.getElementById('all-courses-sentinel');
             if (s) s.style.display = 'none';
         }
+
+        // Scroll top via Helper
+        this._scrollToTop();
     }
 
     loadMoreCourseAreas(sentinel, observer) {
@@ -1168,8 +1174,30 @@ class SearchComponent {
                 </div>
             </div>
         `;
-        // Scroll top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Scroll top robusto
+        this._scrollToTop();
+    }
+
+    /**
+     * ✅ HELPER: Scroll to Top Robusto
+     * Fuerza el scroll al inicio en todos los contenedores posibles
+     * para asegurar compatibilidad Desktop/Mobile.
+     */
+    _scrollToTop() {
+        // 1. Standard Window Scroll
+        window.scrollTo({ top: 0, behavior: 'instant' }); // 'instant' evita conflictos de animación
+
+        // 2. Document Body & Element
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // 3. Contenedores internos (por si acaso hay overflow)
+        const mainContainer = document.querySelector('.main-container');
+        if (mainContainer) mainContainer.scrollTop = 0;
+
+        const contentContainer = document.getElementById('content-container');
+        if (contentContainer) contentContainer.scrollTop = 0;
     }
 }
 

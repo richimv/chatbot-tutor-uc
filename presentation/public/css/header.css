@@ -1,26 +1,50 @@
+/* --- Variables Globales de UI --- */
+:root {
+    --header-height-desktop: 70px;
+    --header-height-mobile: 50px;
+    --header-z-index: 1000;
+
+    /* ✅ NEW: Trial Bar Variables */
+    --trial-bar-height: 0px;
+    /* Default: 0 when hidden */
+}
+
+/* ✅ Reactive State: When Trial Bar is present */
+body.has-trial-mode {
+    --trial-bar-height: 46px;
+    /* Altura calculada de la barra */
+}
+
 /* --- Estructura Principal y Header --- */
 .main-header {
     position: fixed;
     /* ✅ FIXED: Anchored strictly */
-    top: 0;
+    top: var(--trial-bar-height);
+    /* ✅ PUSH DOWN if trial bar exists */
     left: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: var(--header-z-index);
+    height: var(--header-height-desktop);
+    /* ✅ Explicit Height */
     background: var(--bg-secondary);
     /* Slate 800 */
     border-bottom: 1px solid var(--border-color);
-    padding: 0.75rem 1.5rem;
+    padding: 0 1.5rem;
+    /* Removed vertical padding, handled by flex align */
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: top 0.3s ease;
+    /* ✅ Smooth transition */
     backdrop-filter: blur(8px);
-    background: rgba(30, 41, 59, 0.9);
-    /* Translucent slate */
+    background: rgba(30, 41, 59, 0.95);
+    /* Increased opacity */
 }
 
 /* ✅ SPACER: Compensate for fixed header */
 body {
-    padding-top: 62px;
+    padding-top: calc(var(--header-height-desktop) + var(--trial-bar-height));
+    transition: padding-top 0.3s ease;
 }
 
 .admin-header {
@@ -295,11 +319,12 @@ body {
 
     /* ✅ SPACER: Mobile compensation */
     body {
-        padding-top: 42px;
+        padding-top: calc(var(--header-height-mobile) + var(--trial-bar-height));
     }
 
     .main-header {
-        padding: 0.5rem 1.25rem;
+        height: var(--header-height-mobile);
+        padding: 0 1.25rem;
         /* ✅ Wider padding for alignment */
         gap: 0.5rem;
     }
