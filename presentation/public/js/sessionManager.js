@@ -60,6 +60,23 @@ class SessionManager {
         this.notifyStateChange();
     }
 
+    // ✅ NUEVO: Método para refrescar sesión sin recargar (para actualizar vidas/tokens)
+    async refreshUser() {
+        if (!this.currentUser) return;
+        try {
+            console.log('🔄 Refrescando sesión de usuario en segundo plano...');
+            const updatedUser = await AuthApiService.getMe();
+            if (updatedUser) {
+                this.currentUser = updatedUser;
+                this.notifyStateChange();
+                console.log('✅ Sesión refrescada. Vidas actualizadas:', updatedUser.usageCount);
+            }
+        } catch (error) {
+            console.warn('⚠️ Falló el refresco silencioso de sesión:', error);
+            // No hacemos logout, solo ignoramos el error de red momentáneo
+        }
+    }
+
     login(token, user) {
         localStorage.setItem('authToken', token);
         this.currentUser = user;

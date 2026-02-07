@@ -76,7 +76,7 @@ const systemInstruction = {
     E) LÍMITE DE RECURSOS (OPTIMIZACIÓN):
     *   Si el contexto te da muchos libros/recursos, **LISTA MÁXIMO 5**.
     *   Si hay más, añade una línea final: "Y [X] recursos más disponibles en la biblioteca."
-    *   Usa el enlace de "Ver todos" si el contexto te lo provee (ej. [Ver todos los resultados](index.html?...)).
+    *   Usa el enlace de "Ver todos" si el contexto te lo provee (ej. [Ver todos los resultados](/?q=...)).
 
     EJEMPLO:
     "Aquí tienes las carreras disponibles:
@@ -258,7 +258,7 @@ class MLService {
                             `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
                         (remaining > 0 ? `\n... y ${remaining} recursos más disponibles en la biblioteca.` : '') +
-                        `\n[Enlace para ver todos: index.html?q=${encodeURIComponent(topic.name)}]` + // Instrucción para el LLM
+                        `\n[Enlace para ver todos: /?q=${encodeURIComponent(topic.name)}]` + // Instrucción para el LLM
                         `\n[FIN RECURSOS TEMA]\n`;
                 }
             }
@@ -283,7 +283,7 @@ class MLService {
                             `* Título: "${b.title}" | Autor: ${b.author} | Año: ${b.publication_year} | Editorial: ${b.publisher || 'N/A'} | URL: ${b.url}`
                         ).join('\n') +
                         (remaining > 0 ? `\n... y ${remaining} libros más.` : '') +
-                        `\n[Enlace para ver todos: index.html?q=${encodeURIComponent(course.name)}]` +
+                        `\n[Enlace para ver todos: /?q=${encodeURIComponent(course.name)}]` +
                         `\n[FIN INFO CURSO]\n`;
                 }
             }
