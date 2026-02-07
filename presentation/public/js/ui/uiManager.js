@@ -402,7 +402,7 @@ class UIManager {
                                 border: 1px solid rgba(59, 130, 246, 0.2);
                                 box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
                             ">
-                                <i class="fas fa-user-astronaut" style="font-size: 1.5rem; color: #60a5fa;"></i>
+                                <img src="/assets/logo.png" alt="Hub Academia Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 4px; border-radius: 50%;">
                             </div>
                         </div>
 

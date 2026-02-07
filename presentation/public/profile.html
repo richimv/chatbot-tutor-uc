@@ -587,8 +587,8 @@
                 await AuthApiService.deleteAccount(payloadPassword);
 
                 // Logout logic logic
-                window.sessionManager.logout();
-                window.location.href = '/?deleted=true';
+                await window.sessionManager.logout();
+                // window.location.href = '/?deleted=true'; // Redundant if logout redirects
             } catch (error) {
                 console.error(error);
                 deleteError.textContent = error.message || 'Error al eliminar cuenta';

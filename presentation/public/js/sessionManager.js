@@ -83,14 +83,26 @@ class SessionManager {
         this.notifyStateChange();
     }
 
-    logout() {
-        localStorage.removeItem('authToken');
-        // También cerramos sesión en Supabase para limpiar todo
-        if (window.supabaseClient) {
-            window.supabaseClient.auth.signOut();
+    async logout() {
+        try {
+            // 1. Limpiar estado local de Supabase (y revocar si es posible)
+            if (window.supabaseClient) {
+                await window.supabaseClient.auth.signOut();
+            }
+        } catch (e) {
+            console.warn('⚠️ Supabase Logout Warning:', e);
         }
+
+        // 2. Limpieza Agresiva de LocalStorage
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('sb-rayjtupppcbhzjizhamn-auth-token'); // Limpiar token específico de Supabase si se conoce
+        // Opcional: Limpiar todo si es seguro para la app
+        // localStorage.clear(); 
+
         this.currentUser = null;
         this.notifyStateChange();
+
+        // 3. Redirigir solo cuando estemos limpios
         window.location.href = '/';
     }
 
