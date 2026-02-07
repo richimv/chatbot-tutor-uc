@@ -316,26 +316,45 @@ class AuthService {
         const user = await this.userRepository.findById(userId);
         if (!user) throw new Error('Usuario no encontrado.');
 
-        // 2. Verificar contraseña con Supabase (Doble factor de seguridad)
-        const { error } = await supabase.auth.signInWithPassword({
-            email: user.email,
-            password: password
-        });
-
-        if (error) {
-            console.warn(`Intento fallido de eliminación de cuenta para ${user.email}:`, error.message);
-            throw new Error('Contraseña incorrecta. No se pudo verificar la identidad.');
-        }
-
-        // 3. Eliminar de Supabase (Admin API)
-        // 3. Eliminar de Supabase (Admin API)
+        // 2. Obtener metadatos del usuario desde Supabase (Check Provider)
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (!serviceRoleKey) {
             console.error('❌ FATAL: SUPABASE_SERVICE_ROLE_KEY no está definido en variables de entorno.');
             throw new Error('Error de configuración del servidor (Missing Key).');
         }
-
         const supabaseAdmin = createClient(process.env.SUPABASE_URL, serviceRoleKey);
+
+        const { data: { user: sbUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+
+        if (getUserError || !sbUser) {
+            console.error('Error fetching Supabase User:', getUserError);
+            throw new Error('Error al verificar identidad en proveedor.');
+        }
+
+        // Detectar si es usuario OAuth (Google)
+        const isOAuth = sbUser.app_metadata.provider !== 'email' ||
+            (sbUser.identities && sbUser.identities.some(id => id.provider === 'google'));
+
+        console.log(`🗑️ Eliminando cuenta ${user.email}. Provider: ${sbUser.app_metadata.provider}. OAuth: ${isOAuth}`);
+
+        // 3. Verificar contraseña SOLO si NO es OAuth (Email/Password)
+        if (!isOAuth) {
+            if (!password) throw new Error('La contraseña es requerida para usuarios de correo/contraseña.');
+
+            const { error } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: password
+            });
+
+            if (error) {
+                console.warn(`Intento fallido de eliminación de cuenta para ${user.email}:`, error.message);
+                throw new Error('Contraseña incorrecta. No se pudo verificar la identidad.');
+            }
+        } else {
+            console.log('🚀 Saltando verificación de contraseña para usuario OAuth (Google).');
+        }
+
+        // 4. Eliminar de Supabase (Admin API)
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
         if (deleteError) {
@@ -343,7 +362,7 @@ class AuthService {
             throw new Error('Error al eliminar la cuenta en el proveedor de identidad.');
         }
 
-        // 4. Eliminar de Base de Datos Local
+        // 5. Eliminar de Base de Datos Local
         // Gracias al ON DELETE CASCADE, esto borrará chats, favoritos, etc.
         await this.userRepository.delete(userId);
 

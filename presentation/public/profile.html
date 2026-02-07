@@ -463,6 +463,8 @@
 
     <!-- Reuse Header Logic (Basic injection for now) -->
     <script>
+        let isGoogleUser = false; // Estado global para el tipo de usuario
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Check Auth
             await window.sessionManager.initialize();
@@ -471,6 +473,22 @@
             if (!user) {
                 window.location.href = '/login';
                 return;
+            }
+
+            // ✅ DETECTAR PROVEEDOR (Google vs Email)
+            if (window.supabaseClient) {
+                const { data } = await window.supabaseClient.auth.getSession();
+                if (data && data.session && data.session.user) {
+                    const provider = data.session.user.app_metadata.provider;
+                    // Supabase a veces retorna 'email' o 'google', o lo pone en identities
+                    const identities = data.session.user.identities || [];
+                    const isOAuth = provider !== 'email' || identities.some(id => id.provider === 'google');
+
+                    if (isOAuth) {
+                        isGoogleUser = true;
+                        console.log('👤 Usuario identificado como: OAuth/Google');
+                    }
+                }
             }
 
             // Fill Data
@@ -487,8 +505,6 @@
             }
 
             // Inject Header (Simplified)
-            // In a real scenario, we'd fetch header.html or use a shared component.
-            // For now, we reuse the navigation logic by adding back button
             const headerPlaceholder = document.getElementById('header-placeholder');
             headerPlaceholder.innerHTML = `
                 <header class="main-header">
@@ -508,13 +524,25 @@
         // Modal Logic
         const modal = document.getElementById('delete-modal');
         const deleteInput = document.getElementById('delete-password');
+        const deleteLabel = document.querySelector('label[for="delete-password"]'); // Label dinámico
         const deleteError = document.getElementById('delete-error');
-        const confirmBtn = document.getElementById('confirm-confirm-btn');
 
         function openDeleteModal() {
             modal.style.display = 'flex';
             deleteInput.value = '';
             deleteError.style.display = 'none';
+
+            // ✅ UX ADAPTATIVA
+            if (isGoogleUser) {
+                deleteLabel.textContent = 'Escribe "ELIMINAR" para confirmar:';
+                deleteInput.placeholder = 'ELIMINAR';
+                deleteInput.type = 'text'; // Cambiar a texto visible
+            } else {
+                deleteLabel.textContent = 'Ingresa tu contraseña para confirmar:';
+                deleteInput.placeholder = 'Tu contraseña';
+                deleteInput.type = 'password';
+            }
+
             deleteInput.focus();
         }
 
@@ -529,11 +557,21 @@
 
         // Delete Action
         document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-            const password = deleteInput.value;
-            if (!password) {
-                deleteError.textContent = 'Por favor ingresa tu contraseña';
-                deleteError.style.display = 'block';
-                return;
+            const inputValue = deleteInput.value;
+
+            // Validaciones según tipo de usuario
+            if (isGoogleUser) {
+                if (inputValue !== 'ELIMINAR') {
+                    deleteError.textContent = 'Debes escribir "ELIMINAR" textualmente.';
+                    deleteError.style.display = 'block';
+                    return;
+                }
+            } else {
+                if (!inputValue) {
+                    deleteError.textContent = 'Por favor ingresa tu contraseña';
+                    deleteError.style.display = 'block';
+                    return;
+                }
             }
 
             const btn = document.getElementById('confirm-delete-btn');
@@ -542,12 +580,17 @@
             btn.disabled = true;
 
             try {
-                await AuthApiService.deleteAccount(password);
-                // Logout logic handled inside service or here
+                // Si es Google, la password enviada es vacía (o irrelevante)
+                // Usamos el input como contraseña si es email, o vacío si es Google
+                const payloadPassword = isGoogleUser ? '' : inputValue;
+
+                await AuthApiService.deleteAccount(payloadPassword);
+
+                // Logout logic logic
                 window.sessionManager.logout();
-                // Redirect happens in logout usually, but explicit here:
                 window.location.href = '/?deleted=true';
             } catch (error) {
+                console.error(error);
                 deleteError.textContent = error.message || 'Error al eliminar cuenta';
                 deleteError.style.display = 'block';
                 btn.textContent = originalText;

@@ -164,9 +164,10 @@ class AuthController {
         const { password } = req.body;
         console.log('📌 Debug Delete:', { userId, body: req.body }); // DEBUG LOG
 
-        if (!password) {
-            return res.status(400).json({ error: 'La contraseña es requerida para confirmar la eliminación.' });
-        }
+        // if (!password) {
+        //     return res.status(400).json({ error: 'La contraseña es requerida para confirmar la eliminación.' });
+        // }
+        // Dejamos que el servicio decida si la contraseña es obligatoria (según provider)
 
         try {
             await this.authService.deleteAccount(userId, password);
