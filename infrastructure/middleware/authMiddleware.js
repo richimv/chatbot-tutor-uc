@@ -47,8 +47,15 @@ async function auth(req, res, next) {
         try {
             const result = await getUserWithRetry(token);
             sbUser = result.user;
-        } catch (netError) {
-            console.error('❌ Supabase Auth Connectivity Error:', netError.message);
+        } catch (err) {
+            // ✅ CORRECCIÓN: Distinguir entre error de red y error de token inválido
+            const msg = err.message || '';
+            if (msg.includes('invalid JWT') || msg.includes('expired') || msg.includes('invalid claim')) {
+                console.warn('⚠️ Token inválido o expirado:', msg);
+                return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
+            }
+
+            console.error('❌ Supabase Auth Connectivity Error:', msg);
             return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
         }
 

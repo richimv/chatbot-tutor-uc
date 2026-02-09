@@ -117,6 +117,16 @@ Puedo ayudarte con:
 *   💡 Explicación de conceptos teóricos
 ¿En qué puedo ayudarte hoy?`;
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
+
+            // ✅ RESTAURADO: Sugerencias iniciales
+            const defaultSuggestions = [
+                "¿Qué cursos hay?",
+                "Recomienda libros de Anatomía",
+                "¿Cómo funciona la plataforma?",
+                "Ayuda con mi Tesis",
+                "Quiero hacer un Quiz"
+            ];
+            this.showFollowUpSuggestions(defaultSuggestions);
         }
     }
     setupEventListeners() {

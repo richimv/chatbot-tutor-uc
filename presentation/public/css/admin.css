@@ -9,6 +9,11 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
+/* ✅ FIX: Override global body padding because Admin Header is NOT fixed */
+body {
+    padding-top: var(--trial-bar-height) !important;
+}
+
 .career-card {
     background: var(--surface-alt);
     border-radius: 12px;

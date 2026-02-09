@@ -386,7 +386,7 @@ class UIManager {
                             margin: 0;
                             display: flex; align-items: center; gap: 8px;
                         ">
-                            🚀 Únete a Hub Academia
+                            Únete a Hub Academia
                         </h2>
                         <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()" style="color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
                     </div>
@@ -692,7 +692,7 @@ class UIManager {
                             margin: 0;
                             display: flex; align-items: center; gap: 10px;
                         ">
-                            ¡Bienvenido a Hub Academia! 🚀
+                            ¡Bienvenido a Hub Academia!
                         </h2>
                         <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
                     </div>
