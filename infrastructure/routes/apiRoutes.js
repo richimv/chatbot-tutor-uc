@@ -135,8 +135,44 @@ router.get('/internal/ml-data', coursesController.getDataForML);
 
 // --- Rutas de Quiz (Gamificación) ---
 router.post('/quiz/start', auth, quizController.startQuiz);
-router.post('/quiz/submit', auth, quizController.submitScore);
+router.post('/quiz/next-batch', auth, quizController.getNextBatch); // ✅ NUEVO
+router.post('/quiz/submit', auth, quizController.submitScore); // Updated logic
 router.get('/quiz/stats', auth, quizController.getStats);
+router.get('/quiz/evolution', auth, quizController.getEvolution); // ✅ NEW endpoint
 router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
+
+// --- DECKS & FLASHCARDS ---
+const DeckController = require('../../application/controllers/deckController');
+// The original `quizController` from the main import is used for quiz routes.
+// This `QuizController` import is specifically for legacy/review routes.
+// const QuizController = require('../../application/controllers/quizController'); // Legacy for review
+
+router.get('/decks', auth, DeckController.listDecks);
+router.get('/decks/:deckId', auth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
+router.post('/decks', auth, DeckController.createDeck);
+router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
+router.get('/decks/:deckId/cards', auth, DeckController.listCards); // ✅ NUEVO
+router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
+router.post('/decks/:deckId/generate', auth, DeckController.generateCards); // ✅✨ NUEVO: IA Gen
+router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
+router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
+router.put('/cards/:cardId', auth, DeckController.updateCard); // ✅ NUEVO
+router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
+
+// Legacy/Direct Review Routes (Mantenidos por compatibilidad, pero redirigidos a lógica de mazos si es necesario)
+router.get('/training/flashcards/due', auth, quizController.getDueFlashcards); // Global due
+router.post('/training/flashcards/review', auth, quizController.reviewFlashcard);
+
+// --- Rutas de Quiz Battle (Arena / Arcade) ---
+const quizGameController = require('../../application/controllers/quizGameController');
+router.post('/arena/start', auth, quizGameController.startGame);
+router.post('/arena/questions', auth, quizGameController.getQuestions); // ✅ NUEVO: Fetch Background
+router.post('/arena/submit', auth, quizGameController.submitScore);
+router.get('/arena/ranking', auth, quizGameController.getRanking);
+router.get('/arena/stats', auth, quizGameController.getUserStats);
+
+// --- Rutas de Analytics Personalizados (Heatmap, etc) ---
+const customAnalyticsRoutes = require('./analyticsRoutes');
+router.use('/analytics', customAnalyticsRoutes);
 
 module.exports = router;

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Simulador | Hub Academia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Estilos Dashboard Clean (Replica Mockup) */
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .context-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .context-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        /* Stats Grid - Replica style */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+        }
+
+        .stat-sub {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        /* Detailed Grid */
+        .detailed-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .detailed-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .detail-card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .action-card {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .action-card:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #60a5fa;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header-glass">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="simulators.html" class="btn-back" title="Volver a Simuladores">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div class="header-divider"></div>
+                <img src="assets/logo.png" alt="Logo" height="32">
+                <span class="header-title-text" style="font-weight: 600; color: #fff; font-size: 1.1rem;">Hub
+                    Academia</span>
+            </div>
+            <div id="user-session-controls"></div>
+        </header>
+
+        <!-- Loading -->
+        <div id="loading" style="text-align: center; padding: 4rem;">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #3b82f6;"></i>
+        </div>
+
+        <!-- Content -->
+        <div id="dashboard-content" style="display: none;">
+
+            <div class="dashboard-header">
+                <div class="context-title">
+                    <div class="context-icon" id="ctx-icon"><i class="fas fa-stethoscope"></i></div>
+                    <span id="ctx-title">Medicina Humana</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; color: #94a3b8;">Nivel Actual</div>
+                    <strong style="color: #fff;">Residente Jr.</strong>
+                </div>
+            </div>
+
+            <!-- 1. Training Modes (Action Center) - MOVED TO TOP -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 1rem 0;">
+                <h3 style="color: #cbd5e1; margin: 0;">Modos de Entrenamiento</h3>
+                <button id="btn-start-config">
+                    <i class="fas fa-sliders-h"></i> Configurar Examen
+                </button>
+            </div>
+
+            <!-- Resumen de Filtros Activos (Aparece tras configurar) -->
+            <div id="active-config-summary"
+                style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #34d399; align-items: center; gap: 0.5rem;">
+                <!-- Filled via JS -->
+            </div>
+
+            <div class="modes-grid">
+
+                <!-- Card 1: Arcade / Quick -->
+                <a href="#" id="btn-mode-arcade" class="mode-card">
+                    <span class="mode-badge">Recomendado</span>
+                    <div class="mode-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div>
+                        <div class="mode-title">Simulacro Rápido</div>
+                        <div class="mode-desc">Sesión ágil de 10 preguntas. Ideal para tiempos muertos.</div>
+                    </div>
+                </a>
+
+                <!-- Card 2: Study Mode -->
+                <a href="#" id="btn-mode-study" class="mode-card">
+                    <div class="mode-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <div>
+                        <div class="mode-title">Modo Estudio</div>
+                        <div class="mode-desc">Sesión profunda de 20 preguntas con feedback detallado.</div>
+                    </div>
+                </a>
+
+                <!-- Card 3: Real Mock -->
+                <a href="#" id="btn-mode-real" class="mode-card">
+                    <div class="mode-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div>
+                        <div class="mode-title">Simulacro Real</div>
+                        <div class="mode-desc">Examen de 100 preguntas con límite de tiempo. (Requiere stock en banco).
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Card 4: Flashcards -->
+                <a href="#" id="btn-flashcards" class="mode-card">
+                    <div class="mode-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <div class="mode-title">Flashcards</div>
+                        <div class="mode-desc">Repasa tus preguntas falladas.</div>
+                    </div>
+                </a>
+
+            </div>
+
+            <!-- 2. KPIs Section -->
+            <h3 style="margin: 2rem 0 1rem 0; color: #cbd5e1;">Resumen de Progreso</h3>
+            <div class="stats-overview">
+                <!-- Score -->
+                <div class="stat-box">
+                    <div class="stat-label">Puntuación Promedio</div>
+                    <div class="stat-value" id="stat-score">--</div>
+                    <div class="stat-sub">Basado en tus últimos simulacros</div>
+                </div>
+                <!-- Accuracy -->
+                <div class="stat-box">
+                    <div class="stat-label">Precisión Global</div>
+                    <div class="stat-value" id="stat-accuracy">--%</div>
+                    <div class="stat-sub" id="stat-counts-text">-- correctas / -- incorrectas</div>
+                </div>
+                <!-- Mastery -->
+                <div class="stat-box">
+                    <div class="stat-label">Tarjetas Dominadas</div>
+                    <div class="stat-value" id="stat-mastery">--</div>
+                    <div class="stat-sub">Memoria a Largo Plazo</div>
+                </div>
+            </div>
+
+            <!-- 3. Analytics Section (Chart + Insights) -->
+            <h3 style="margin: 2rem 0 1rem 0; color: #cbd5e1;">Diagnóstico de Rendimiento</h3>
+            <div class="detailed-row">
+                <!-- Evolution Chart -->
+                <div class="detail-card">
+                    <h4 style="margin: 0 0 1rem 0; color: #fff;">Tendencia Histórica</h4>
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Radar Chart (Áreas) -->
+                <div class="detail-card">
+                    <h4 style="margin: 0 0 1rem 0; color: #fff;">Dominio por Áreas</h4>
+                    <div style="height: 250px; width: 100%; position: relative;">
+                        <!-- Fallback State -->
+                        <div id="radar-empty-state"
+                            style="display: flex; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center;">
+                            Completa simulacros variados para ver tu rendimiento por área.
+                        </div>
+                        <canvas id="radarChart" style="display: none;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Card (Manual Trigger) -->
+            <div class="detailed-row" style="margin-top: 1.5rem;">
+                <div class="detail-card"
+                    style="position: relative; overflow: hidden; justify-content: flex-start; flex: 1;">
+
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                        <div
+                            style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 10px; color: #a78bfa;">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #fff;">Análisis de Patrones de Error</h4>
+                            <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Motor de Inteligencia Artificial
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- State 1: Ready to Analyze -->
+                    <div id="ai-initial-state"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; padding: 1rem;">
+                        <p style="color: #94a3b8; font-size: 0.9rem;">
+                            Utiliza nuestra IA para identificar tus fortalezas y debilidades basándote en tu historial
+                            reciente.
+                        </p>
+                        <button id="btn-analyze-ai" class="btn-primary"
+                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; padding: 0.8rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
+                            <i class="fas fa-magic"></i> Generar Análisis
+                        </button>
+                    </div>
+
+                    <!-- State 2: Loading -->
+                    <div id="ai-loading-state"
+                        style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                        <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a78bfa; margin-bottom: 1rem;"></i>
+                        <p style="color: #cbd5e1;">Analizando tus respuestas...</p>
+                    </div>
+
+                    <!-- State 3: Results -->
+                    <div id="ai-results-state"
+                        style="display: none; color: #cbd5e1; font-size: 0.95rem; overflow-y: auto;">
+                        <div style="margin-bottom: 1rem;">
+                            <strong style="color: #22c55e; display: block; margin-bottom: 0.25rem;"><i
+                                    class="fas fa-check-circle"></i> Puntos Fuertes</strong>
+                            <p id="ai-strengths"
+                                style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
+                        </div>
+                        <div>
+                            <strong style="color: #f59e0b; display: block; margin-bottom: 0.25rem;"><i
+                                    class="fas fa-exclamation-triangle"></i> Áreas de Mejora</strong>
+                            <p id="ai-weaknesses"
+                                style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
+                        </div>
+                        <button id="btn-analyze-again"
+                            style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid #475569; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; width: 100%; transition: all 0.2s;">
+                            Actualizar Diagnóstico
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 4. Learning Path -->
+            <h3 style="margin: 2rem 0 1rem 0; color: #cbd5e1;">Seguir Aprendiendo</h3>
+            <div class="learning-grid">
+                <div class="action-card" style="cursor: default; opacity: 0.7;">
+                    <div class="action-icon" style="color: #a78bfa;"><i class="fas fa-book-open"></i></div>
+                    <div>
+                        <div style="font-weight: 600; color: #fff;">Guía de Estudio (IA)</div>
+                        <div style="font-size: 0.85rem; color: #94a3b8;">Generar resumen de temas fallados</div>
+                    </div>
+                </div>
+                <div class="action-card" style="cursor: default; opacity: 0.7;">
+                    <div class="action-icon" style="color: #fbbf24;"><i class="fas fa-video"></i></div>
+                    <div>
+                        <div style="font-weight: 600; color: #fff;">Recursos Recomendados</div>
+                        <div style="font-size: 0.85rem; color: #94a3b8;">Videos y lecturas curadas</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Exam Builder Modal -->
+    <div id="config-modal-overlay" class="modal-overlay">
+        <div class="config-modal">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-sliders-h" style="color: #60a5fa;"></i> Configurar Simulacro
+                </h3>
+                <button id="btn-close-config"
+                    style="background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Examen Objetivo (Target) -->
+            <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Examen Objetivo</h4>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <label class="exam-target-option">
+                    <input type="radio" name="examTarget" value="ENAM" checked>
+                    <div class="target-card">ENAM</div>
+                </label>
+                <label class="exam-target-option">
+                    <input type="radio" name="examTarget" value="SERUMS">
+                    <div class="target-card">SERUMS</div>
+                </label>
+                <label class="exam-target-option">
+                    <input type="radio" name="examTarget" value="ENARM">
+                    <div class="target-card">ENARM</div>
+                </label>
+            </div>
+
+            <!-- Nivel de Dificultad -->
+            <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Dificultad</h4>
+            <select id="config-difficulty"
+                style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 1.5rem; outline: none;">
+                <option value="Básico">Básico (Directas / Teórico)</option>
+                <option value="Intermedio">Intermedio (Casos Clínicos Clínicos)</option>
+                <option value="Avanzado">Avanzado (Complejas / Terapéutica)</option>
+            </select>
+
+            <!-- Áreas Clínicas -->
+            <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Áreas de Estudio</h4>
+            <div id="config-areas-grid"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 2rem;">
+                <!-- Rendered dynamically via JS based on Target -->
+            </div>
+
+            <button id="btn-save-config"
+                style="width: 100%; padding: 1rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                Aplicar Configuración
+            </button>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para el Modal de Configuración */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .config-modal {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .exam-target-option input[type="radio"] {
+            display: none;
+        }
+
+        .target-card {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .exam-target-option input[type="radio"]:checked+.target-card {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            color: #60a5fa;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .exam-target-option:hover .target-card {
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+
+        .area-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .area-checkbox-label:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .area-checkbox-label input[type="checkbox"] {
+            accent-color: #3b82f6;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        #config-difficulty option {
+            background: #1e293b;
+            color: white;
+        }
+
+        #btn-start-config {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        #btn-start-config:hover {
+            background: rgba(59, 130, 246, 0.25);
+            transform: translateY(-1px);
+        }
+
+        #btn-save-config:hover {
+            background: #2563eb;
+        }
+    </style>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js"></script>
+    <script src="js/app.js"></script>
+
+    <script src="js/simulator-dash.js"></script>
+</body>
+
+</html>

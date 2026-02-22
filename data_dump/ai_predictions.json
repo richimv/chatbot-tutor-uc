@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-01-26T01:15:45.360808",
+  "generated_at": "2026-02-18T08:34:10.270379",
   "course_prediction": {
     "predictedCourse": "Anatom\u00eda Humana",
-    "confidence": 0.86,
-    "reason": "Tendencia basada en 107 b\u00fasquedas directas.",
-    "searchCount": 107
+    "confidence": 0.91,
+    "reason": "Tendencia basada en 126 b\u00fasquedas directas.",
+    "searchCount": 126
   },
   "book_prediction": {
-    "predictedBook": "Preguntas de Anatom\u00eda",
+    "predictedBook": "Manual CTO de Medicina y Cirug\u00eda",
     "confidence": 1.0,
-    "reason": "Popularidad en 58 b\u00fasquedas.",
-    "searchCount": 58
+    "reason": "Popularidad en 190 b\u00fasquedas.",
+    "searchCount": 190
   }
 }

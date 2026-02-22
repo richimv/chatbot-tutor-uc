@@ -671,6 +671,22 @@
         row-gap: 0.5rem !important;
     }
 
+    /* 🔥 Ultra-Compact Content */
+    .browse-card-content {
+        padding: 0.5rem !important;
+        gap: 0.2rem !important;
+    }
+
+    .browse-card-title {
+        font-size: 0.9rem !important;
+        line-height: 1.25 !important;
+    }
+
+    .course-card-description {
+        display: none !important;
+        /* Hide description to save space on mobile */
+    }
+
     /* 🔥 Compact Carousel Vertical Padding */
     .carousel-container {
         padding-bottom: 0;
@@ -699,6 +715,8 @@
 
     /* Reduce space around the "Ver todos" button if present in header */
     .section-header {
+        margin-top: 0.75rem !important;
+        /* Force tight top margin, overriding inline styles */
         margin-bottom: 0;
         /* Remove gap completely */
         align-items: flex-end;

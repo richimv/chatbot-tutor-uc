@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Quiz Arena - Entrenamiento</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Styles -->
+    <!-- Removed non-existent style.css to fix 404 -->
+    <!-- Inline CSS for specific restoration to ensure override -->
+    <style>
+        :root {
+            --bg-deep: #050b14;
+            --card-bg: #0f172a;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --text-main: #f8fafc;
+            --gradient-btn: linear-gradient(90deg, #4f46e5 0%, #8b5cf6 100%);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image:
+                radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%),
+                radial-gradient(circle at 10% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .arena-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .arena-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .arena-logo i {
+            color: var(--accent-blue);
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+
+        .btn-exit {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-exit:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* MAIN LAYOUT (LOBBY) */
+        .lobby-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sub-title {
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* CONFIG CARD */
+        .config-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .input-label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .custom-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            font-family: inherit;
+        }
+
+        /* DIFFICULTY GRID */
+        .difficulty-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .diff-card {
+            background: #1e293b;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .diff-card i {
+            display: block;
+            font-size: 2rem;
+            margin-bottom: 0.8rem;
+            color: #cbd5e1;
+        }
+
+        .diff-card span {
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .diff-card.selected {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+        }
+
+        .diff-card.selected i,
+        .diff-card.selected span {
+            color: var(--accent-blue);
+        }
+
+        .btn-start {
+            width: 100%;
+            background: var(--gradient-btn);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+        }
+
+        /* LEADERBOARD CARD */
+        .leaderboard-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: fit-content;
+        }
+
+        .lb-title {
+            color: #fbbf24;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lb-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .lb-table th {
+            text-align: left;
+            color: #64748b;
+            font-size: 0.8rem;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .lb-table td {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .lb-rank {
+            width: 30px;
+            color: #94a3b8;
+        }
+
+        .lb-score {
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+
+        /* USER STATS BOTTOM */
+        .bottom-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid #1e293b;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fbbf24;
+        }
+
+        /* --- VIEWS UTILS --- */
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- GAMEPLAY VIEW --- */
+        .game-view {
+            max-width: 900px;
+            margin: 4rem auto;
+            padding: 2rem;
+        }
+
+        /* HUD */
+        .hud-bar {
+            background: #0f172a;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lives {
+            color: #ef4444;
+            font-size: 1.5rem;
+            display: flex;
+            gap: 5px;
+        }
+
+        .progress-track {
+            flex-grow: 1;
+            margin: 0 2rem;
+            height: 10px;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+        }
+
+        .powerups {
+            display: flex;
+            gap: 10px;
+            margin-right: 20px;
+        }
+
+        .p-btn {
+            background: #1e293b;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .p-btn:hover {
+            background: #334155;
+        }
+
+        .p-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-live {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #3b82f6;
+        }
+
+        /* QUESTION */
+        .q-card {
+            text-align: center;
+        }
+
+        .q-meta {
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .q-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 3rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .opt-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 1.5rem;
+            border-radius: 16px;
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .opt-btn:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* FEEDBACK MODAL (Restoration) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .feedback-card {
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 500px;
+            border: 1px solid #334155;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .fb-icon {
+            font-size: 4rem;
+            color: #22c55e;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .fb-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .fb-text {
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <!-- Header -->
+    <header class="arena-header">
+        <a href="/" class="arena-logo">
+            <i class="fas fa-gamepad"></i> QUIZ BATTLE
+        </a>
+        <div class="user-controls">
+            <span class="user-name" id="userNameDisplay">Cargando...</span>
+            <a href="/" class="btn-exit"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+
+    <!-- LOADING STATE -->
+    <div id="loading" class="modal-overlay hidden">
+        <div style="text-align: center;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: #8b5cf6;"></i>
+            <p style="margin-top: 1rem; color: white;">Preparando Arena...</p>
+        </div>
+    </div>
+
+    <!-- VIEW: LOBBY -->
+    <div id="lobby" class="lobby-container">
+
+        <h1 class="main-title">HUB QUIZ ARENA</h1>
+        <p class="sub-title">Demuestra tu dominio académico</p>
+
+        <div class="content-grid">
+
+            <!-- LEFT: CONFIG -->
+            <div class="config-card">
+                <label class="input-label">Tema del Desafío</label>
+                <input type="text" id="topicInput" class="custom-input" placeholder="Ej. Historia, Cine, Ciencia..."
+                    value="">
+
+                <label class="input-label">Nivel de Dificultad</label>
+                <div class="difficulty-grid">
+                    <div class="diff-card selected" onclick="Arena.selectDiff(this, 'Básico')">
+                        <i class="fas fa-seedling"></i>
+                        <span>Básico</span>
+                    </div>
+                    <div class="diff-card" onclick="Arena.selectDiff(this, 'Profesional')">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Profesional</span>
+                    </div>
+                    <div class="diff-card" onclick="Arena.selectDiff(this, 'Experto')">
+                        <i class="fas fa-dragon"></i>
+                        <span>Experto</span>
+                    </div>
+                </div>
+
+                <button class="btn-start" onclick="Arena.startMatch()">
+                    INICIAR DESAFÍO <i class="fas fa-rocket"></i>
+                </button>
+
+                <!-- USER STATS -->
+                <div class="bottom-stats">
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">MEJOR PUNTUACIÓN</div>
+                            <div id="userBestScore" style="font-size: 1.2rem; font-weight: 700;">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fas fa-gamepad"></i></div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">PARTIDAS JUGADAS</div>
+                            <div id="userTotalGames" style="font-size: 1.2rem; font-weight: 700;">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: LEADERBOARD -->
+            <div class="leaderboard-card">
+                <div class="lb-title"><i class="fas fa-trophy"></i> Top 10 Global</div>
+                <table class="lb-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>ESTUDIANTE</th>
+                            <th>SCORE</th>
+                            <th>NIVEL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lb-body">
+                        <!-- Example Mock Data -->
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding:1rem; color:#64748b;">Cargando ranking...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- VIEW: GAMEPLAY -->
+    <div id="gameplay" class="game-view hidden">
+
+        <div class="hud-bar">
+            <div class="lives" id="livesBox">
+                <i class="fas fa-heart"></i>
+                <i class="fas fa-heart"></i>
+                <i class="fas fa-heart"></i>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="timerBar"></div>
+            </div>
+
+            <div class="powerups">
+                <button class="p-btn" title="50/50" onclick="Arena.useWildcard('5050', this)"><i
+                        class="fas fa-percentage"></i><span class="p-badge">1</span></button>
+                <button class="p-btn" title="Skip" onclick="Arena.useWildcard('skip', this)"><i
+                        class="fas fa-forward"></i><span class="p-badge">1</span></button>
+            </div>
+
+            <div class="score-live" id="gameScore">0 pts</div>
+        </div>
+
+        <div class="q-card">
+            <span class="q-meta" id="q-meta">NIVEL 1 | PREGUNTA 1</span>
+            <h2 class="q-text" id="q-text">Cargando pregunta...</h2>
+
+            <div class="options-grid" id="opt-grid">
+                <!-- Buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: MODAL FEEDBACK -->
+    <div id="modalFeedback" class="modal-overlay hidden">
+        <div class="feedback-card">
+            <i class="fas fa-check-circle fb-icon" id="fb-icon"></i>
+            <h2 class="fb-title" id="fb-title">¡Excelente!</h2>
+            <p class="fb-text" id="fb-msg">...</p>
+            <button class="btn-start" onclick="Arena.nextQ()"
+                style="margin: 0 auto; width: auto; padding: 0.8rem 2rem;">
+                Siguiente Pregunta <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script src="js/sessionManager.js"></script>
+    <script src="js/arena.js"></script>
+
+</body>
+
+</html>

@@ -72,6 +72,30 @@
             "destination": "/presentation/public/quiz.html"
         },
         {
+            "source": "/arena",
+            "destination": "/presentation/public/arena.html"
+        },
+        {
+            "source": "/deck-editor",
+            "destination": "/presentation/public/deck-editor.html"
+        },
+        {
+            "source": "/flashcards",
+            "destination": "/presentation/public/flashcards.html"
+        },
+        {
+            "source": "/repaso",
+            "destination": "/presentation/public/repaso.html"
+        },
+        {
+            "source": "/simulator-dashboard",
+            "destination": "/presentation/public/simulator-dashboard.html"
+        },
+        {
+            "source": "/simulators",
+            "destination": "/presentation/public/simulators.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/presentation/public/$1"
         }

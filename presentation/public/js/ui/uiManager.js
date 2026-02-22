@@ -247,7 +247,7 @@ class UIManager {
         if (document.getElementById('video-player-modal')) return;
 
         const modalHTML = `
-            <div id="video-player-modal" class="modal">
+            <div id="video-player-modal" class="modal" style="display: none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()">&times;</button>
@@ -415,7 +415,7 @@ class UIManager {
                             <ul style="list-style: none; padding: 0; margin: 0; color: #cbd5e1; font-size: 0.85rem;">
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Leer y descargar libros completos</span>
+                                    <span>Leer y explorar recursos completos</span>
                                 </li>
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
@@ -723,7 +723,7 @@ class UIManager {
                                     <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
                                     <div>
                                         <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Pases Premium de Regalo</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea libros, videos o el Tutor IA.</div>
+                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea recursos, videos y el Tutor IA.</div>
                                     </div>
                                 </li>
                                 <li style="margin-bottom: 0; display: flex; align-items: start; gap: 10px;">

@@ -352,7 +352,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
     const coursesHTML = (recommendations.relatedCourses || []).map(item => {
         const isBook = item.type === 'book';
         const icon = isBook ? 'fa-book-open' : 'fa-graduation-cap';
-        const typeLabel = isBook ? 'LIBRO RECOMENDADO' : 'CURSO RELACIONADO';
+        const typeLabel = isBook ? 'RECURSO RECOMENDADO' : 'CURSO RELACIONADO';
         const dataType = isBook ? 'book' : 'course';
 
         return `
@@ -443,7 +443,7 @@ function createEducationalIntentCardHTML(query) {
                     <h3 class="intent-title">Pregunta Profunda Detectada</h3>
                     <p class="intent-description">
                         "<strong>${query}</strong>" parece un tema complejo. 
-                        <br>En lugar de buscar en libros, ¿quieres que te lo explique paso a paso?
+                        <br>En lugar de buscar en múltiples recursos, ¿quieres que te lo explique paso a paso?
                     </p>
                 </div>
             </div>
@@ -497,7 +497,7 @@ function createTopicViewHTML(topic, description, books = [], showChatButton = fa
             </div>
             <div class="topic-materials">
                 <h4>Recursos Disponibles</h4>
-                <div class="material-group"><h5>📚 Libros y Materiales</h5><div class="material-list">${booksHTML}</div></div>
+                <div class="material-group"><h5>📚 Recursos y Materiales</h5><div class="material-list">${booksHTML}</div></div>
                 ${showChatButton ? createContextualChatButtonHTML('topic', topic.name) : ''}
             </div>
         </div>
@@ -563,7 +563,7 @@ function create3DBookCardHTML(book) {
         <div class="card-actions"> <!-- Inline styles moved to CSS -->
             <button class="action-btn save-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
             <button class="action-btn fav-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
-            <button class="action-btn cite-btn" onclick="if(window.uiManager.validateFreemiumAction(event)) window.uiManager.checkAuthAndExecute(() => window.openCitationModal(event, ${safeBook}))" title="Generar Referencia Bibliográfica"><i class="fas fa-quote-right"></i></button>
+            
         </div>
     `;
 
@@ -647,6 +647,76 @@ function createVideoCardHTML(video) {
             <div class="video-info">
                 <h4 class="video-title" title="${video.title}">${video.title}</h4>
                 ${video.author ? `<span class="video-author">${video.author}</span>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Crea una tarjeta horizontal premium para documentos institucionales (Normas, Guías, Papers).
+ */
+function createDocumentCardHTML(doc) {
+    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
+
+    // Registrar URl
+    if (doc.url && doc.url !== '#') {
+        window.uiManager.registerMaterial(doc.id, doc.url);
+    }
+
+    // Determinar Icono y Etiqueta Visual según el tipo
+    let iconClass = 'fa-file-alt';
+    let typeLabel = 'Documento';
+    let typeColor = 'var(--accent)';
+
+    switch (doc.type || doc.resource_type) {
+        case 'norma':
+            iconClass = 'fa-balance-scale';
+            typeLabel = 'Norma Técnica';
+            typeColor = '#f59e0b'; // Amber
+            break;
+        case 'guia':
+            iconClass = 'fa-file-medical';
+            typeLabel = 'Guía Clínica';
+            typeColor = '#10b981'; // Emerald
+            break;
+        case 'paper':
+            iconClass = 'fa-microscope';
+            typeLabel = 'Artículo Científico';
+            typeColor = '#3b82f6'; // Blue
+            break;
+        case 'book':
+            iconClass = 'fa-book';
+            typeLabel = 'Libro/Manual';
+            typeColor = '#8b5cf6'; // Violet
+            break;
+        case 'other':
+        default:
+            iconClass = 'fa-folder-open';
+            typeLabel = 'Material de Apoyo';
+            typeColor = '#64748b'; // Slate
+            break;
+    }
+
+    return `
+        <div class="document-card-premium" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${doc.id}', '${doc.type || 'document'}')" title="${doc.title}">
+            <div class="document-icon-wrapper" style="background-color: ${typeColor}15; color: ${typeColor};">
+                <i class="fas ${iconClass}"></i>
+            </div>
+            
+            <div class="document-info">
+                <div class="document-meta">
+                    <span class="document-type-badge" style="color: ${typeColor}; border-color: ${typeColor}40;">${typeLabel}</span>
+                    ${doc.size ? `<span class="document-size"><i class="fas fa-hdd"></i> ${doc.size}</span>` : ''}
+                </div>
+                <h4 class="document-title">${doc.title || 'Documento sin título'}</h4>
+                ${doc.author ? `<p class="document-author"><i class="fas fa-user-edit"></i> ${doc.author}</p>` : ''}
+            </div>
+
+            <div class="document-actions">
+                ${isLocked
+            ? `<button class="btn-icon-lock" title="Requiere Premium"><i class="fas fa-lock"></i></button>`
+            : `<button class="btn-secondary btn-small"><i class="fas fa-external-link-alt"></i> Abrir</button>`
+        }
             </div>
         </div>
     `;
@@ -759,5 +829,39 @@ function createGamePromoSectionHTML() {
                 <div class="game-promo-overlay"></div>
             </div>
         </section>
+    `;
+}
+
+// =========================================
+// 💀 SKELETON LOADERS
+// =========================================
+
+/**
+ * Crea una tarjeta tipo Skeleton para mostrar mientras cargan los datos.
+ * @param {string} type 'Premium' para horizontal o 'Grid' para vertical.
+ */
+function createSkeletonCardHTML(type = 'Grid') {
+    if (type === 'Premium') {
+        return `
+            <div class="document-card-premium" style="pointer-events: none; opacity: 0.8;">
+                <div class="document-icon-wrapper skeleton-box" style="border-radius: 10px; border: none;"></div>
+                <div class="document-info" style="gap: 10px;">
+                    <div class="skeleton-box skeleton-text short" style="height: 12px; margin: 0;"></div>
+                    <div class="skeleton-box skeleton-text title" style="margin: 0; width: 90%;"></div>
+                    <div class="skeleton-box skeleton-text" style="width: 50%; height: 10px; margin: 0;"></div>
+                </div>
+                <div class="skeleton-box" style="width: 60px; height: 32px; border-radius: 6px;"></div>
+            </div>
+        `;
+    }
+
+    // Default: Book/Course Grid Card
+    return `
+        <div class="skeleton-card" style="pointer-events: none; animation: fadeIn 0.3s ease-in-out;">
+            <div class="skeleton-box skeleton-image"></div>
+            <div class="skeleton-box skeleton-text title" style="margin-top: 8px;"></div>
+            <div class="skeleton-box skeleton-text"></div>
+            <div class="skeleton-box skeleton-text short"></div>
+        </div>
     `;
 }

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/course.css">
     <link rel="stylesheet" href="css/quiz.css"> <!-- ✅ NUEVO: Estilos Quiz -->
     <link rel="stylesheet" href="css/hero.css"> <!-- ✅ NUEVO: Estilos Slider -->
+    <link rel="stylesheet" href="css/modules.css"> <!-- ✅ NUEVO: Estilos Hub Modulos -->
     <!-- Legacy CSS files removed -->
     <!--Añadir Font Awesome para que se vean los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -72,7 +73,7 @@
                             disponible 24/7.
                         </p>
                         <ul class="hero-features">
-                            <li><i class="fas fa-book-open"></i> Biblioteca Digital</li>
+                            <li><i class="fas fa-book-open"></i> Recursos Digitales</li>
                             <li><i class="fas fa-robot"></i> Tutor IA Personal</li>
                             <li><i class="fas fa-check-circle"></i> Recursos Académicos</li>
                         </ul>
@@ -100,9 +101,9 @@
                         </p>
                         <div class="hero-actions" style="margin-top: 2rem;">
                             <!-- Utiliza el script existente btn-quiz-arena para auth -->
-                            <button id="btn-quiz-arena" class="btn-gamified">
+                            <a href="/arena.html" id="btn-quiz-arena" class="btn-gamified">
                                 <i class="fas fa-gamepad"></i> Jugar Ahora
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -138,6 +139,65 @@
     </div>
 
     <div class="main-container">
+
+        <!-- ✅ NUEVO: Centro de Entrenamiento (Hub Principal) -->
+        <section id="training-modules">
+            <div class="modules-header">
+                <h2 class="modules-title">Centro de Entrenamiento</h2>
+                <p class="modules-subtitle">Domina tu carrera con herramientas de IA avanzada</p>
+            </div>
+
+            <div class="modules-grid">
+
+                <!-- Card 1: Simuladores -->
+                <a href="/simulators.html" class="module-card card-sim">
+                    <span class="module-badge badge-popular">Más Usado</span>
+                    <div class="module-icon icon-med">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="module-info">
+                        <h3>Centro de Simulación</h3>
+                        <p>Plataforma integral de entrenamiento: Exámenes médicos, escenarios clínicos y simuladores
+                            especializados.</p>
+                    </div>
+                    <div class="module-action action-med">
+                        Entrar al Simulador <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Card 2: Flashcards (Repaso) -->
+                <a href="/repaso.html" class="module-card card-repaso">
+                    <div class="module-icon icon-flash">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="module-info">
+                        <h3>Repaso Inteligente</h3>
+                        <p>Crea tus propias Flashcards y repasa las que el sistema genera automáticamente de tus
+                            errores. Optimiza tu retención con Repetición Espaciada (SM-2).</p>
+                    </div>
+                    <div class="module-action action-flash">
+                        Comenzar Repaso <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Card 3: Quiz Battle (Arena) -->
+                <a href="/arena.html" class="module-card card-arena">
+                    <span class="module-badge badge-new">Nuevo</span>
+                    <div class="module-icon icon-battle">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <div class="module-info">
+                        <h3>Quiz Battle Arena</h3>
+                        <p>Desafía a otros estudiantes en tiempo real. Responde rápido, gana puntos y sube en el ranking
+                            global.</p>
+                    </div>
+                    <div class="module-action action-battle">
+                        Jugar Ahora <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+
+            </div>
+        </section>
 
         <div id="content-container">
             <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
@@ -196,7 +256,7 @@
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
                     <li><a href="course" class="footer-link">Cursos</a></li>
-                    <li><a href="/" class="footer-link">Biblioteca</a></li>
+                    <li><a href="/" class="footer-link">Recursos</a></li>
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
@@ -238,10 +298,11 @@
     <script src="js/sessionManager.js"></script> <!-- Gestor de sesión -->
     <script src="js/ui/uiManager.js"></script> <!-- ✅ NUEVO: Gestor de UI y Bloqueo Soft -->
     <script src="js/services/searchService.js"></script> <!-- ✅ NUEVO: Servicio de búsqueda -->
-    <script src="js/search.js"></script> <!-- Lógica de búsqueda -->
+
+    <script type="module" src="js/search.js"></script> <!-- Lógica de búsqueda -->
     <script src="js/chat.js"></script> <!-- Lógica del chat -->
     <script src="js/ui/confirmationModal.js"></script> <!-- ✅ NUEVO: Modal de confirmación -->
-    <script src="js/ui/citationManager.js"></script> <!-- ✅ NUEVO: Gestor de Citación -->
+    <!-- Gestor de Citación ELIMINADO -->
 
     <script src="js/services/libraryService.js"></script> <!-- ✅ NUEVO: Servicio de Estado -->
     <script src="js/ui/libraryUI.js"></script> <!-- ✅ NUEVO: UI Binder -->

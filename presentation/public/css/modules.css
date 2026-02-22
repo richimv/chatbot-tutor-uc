@@ -1,0 +1,256 @@
+/* MODULES HUB (Training Center) */
+
+#training-modules {
+    padding: 3.5rem 1rem 4rem 1rem;
+    /* ✅ Balanced: Space for floating search bar */
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.modules-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.modules-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modules-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Grid Layout */
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 0 1rem;
+}
+
+/* Glassmorphism Card */
+.module-card {
+    background: rgba(30, 41, 59, 0.4);
+    /* Semi-transparent Slate 800 */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-decoration: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.module-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(96, 165, 250, 0.5);
+    /* Blue border on hover */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure background image persists on hover with a darker overlay */
+.module-card:hover.card-sim {
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)),
+        url('../assets/custom-sim-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+
+.module-card:hover.card-repaso {
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)),
+        url('../assets/custom-repaso-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.module-card:hover.card-arena {
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.8)),
+        url('../assets/custom-arena-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+/* 🚫 FORCE REMOVE TEXT UNDERLINE */
+a.module-card,
+a.module-card:hover,
+a.module-card:focus,
+a.module-card * {
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+
+.module-info h3,
+.module-info p,
+.module-action {
+    text-decoration: none !important;
+}
+
+/* ✅ NEW: Background Images for Cards (Custom Local Assets) */
+.card-sim {
+    /* Custom Sim Dashboard */
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.9)),
+        url('../assets/custom-sim-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.card-repaso {
+    /* Custom Flashcards & Notes */
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)),
+        url('../assets/custom-repaso-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.card-arena {
+    /* Custom Gaming Arena */
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.9)),
+        url('../assets/custom-arena-bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+/* Enhancing text readability on images */
+.card-sim .module-info h3,
+.card-repaso .module-info h3,
+.card-arena .module-info h3 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Icon Styling */
+.module-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.module-card:hover .module-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Specific Colors per Module */
+.icon-med {
+    background: rgba(59, 130, 246, 0.15);
+    /* Blue bg */
+    color: #60a5fa;
+    /* Blue text */
+}
+
+.icon-flash {
+    background: rgba(234, 179, 8, 0.15);
+    /* Amber/Yellow bg */
+    color: #facc15;
+    /* Yellow text */
+}
+
+.icon-battle {
+    background: rgba(168, 85, 247, 0.15);
+    /* Purple bg */
+    color: #c084fc;
+    /* Purple text */
+}
+
+/* Text Content */
+.module-info h3 {
+    color: var(--text-main);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.module-info p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+/* Action Button (Fake button visual) */
+.module-action {
+    margin-top: auto;
+    /* Push to bottom */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    transition: gap 0.2s ease;
+}
+
+.action-med {
+    color: #60a5fa;
+}
+
+.action-flash {
+    color: #facc15;
+}
+
+.action-battle {
+    color: #c084fc;
+}
+
+.module-card:hover .module-action {
+    gap: 0.8rem;
+}
+
+/* Badge */
+.module-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-new {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-popular {
+    background: rgba(244, 63, 94, 0.2);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #training-modules {
+        padding: 2rem 1rem;
+    }
+
+    .modules-title {
+        font-size: 2rem;
+    }
+
+    .modules-grid {
+        grid-template-columns: 1fr;
+        /* Single column on mobile */
+    }
+}

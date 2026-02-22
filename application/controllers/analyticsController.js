@@ -22,6 +22,7 @@ class AnalyticsController {
         this.getFeaturedBooks = this.getFeaturedBooks.bind(this); // NUEVO
         this.getFeaturedCourses = this.getFeaturedCourses.bind(this); // NUEVO
         this.getAIAnalytics = this.getAIAnalytics.bind(this); // ✅ NUEVO: Bindeo para método de IA
+        this.getHeatmap = this.getHeatmap.bind(this); // ✅ NUEVO: Heatmap
     }
 
     async getAnalytics(req, res) {
@@ -181,6 +182,17 @@ class AnalyticsController {
             res.json(data);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener datos de analítica.' });
+        }
+    }
+
+    async getHeatmap(req, res) {
+        try {
+            const userId = req.user.id;
+            const heatmap = await this.analyticsService.getHeatmapData(userId);
+            res.json({ success: true, heatmap });
+        } catch (error) {
+            console.error('❌ Error in getHeatmap:', error);
+            res.status(500).json({ error: 'Error fetching heatmap' });
         }
     }
 }

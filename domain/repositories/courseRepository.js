@@ -51,11 +51,7 @@ class CourseRepository {
                             'image_url', r.image_url,
                             'type', r.resource_type,
                             'url', r.url,
-                            'publication_year', r.publication_year,
-                            'publisher', r.publisher,
-                            'edition', r.edition,
-                            'city', r.city,
-                            'isbn', r.isbn
+                            'url', r.url
                         )
                     ), '[]')
                     FROM course_books cb

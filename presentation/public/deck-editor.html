@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Mazos - Hub Academia</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .editor-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .icon-grid {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .icon-option {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-size: 1.25rem;
+        }
+
+        .icon-option.selected {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-submit:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="/repaso.html" style="color:white; text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 id="page-title">Nuevo Mazo</h1>
+                    <p id="page-subtitle" style="color: #94a3b8; font-size: 0.9rem; margin:0;">Crea tu propia colección
+                        de flashcards</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="editor-container">
+            <form id="deck-form">
+
+                <div class="form-group">
+                    <label class="form-label">Nombre del Mazo</label>
+                    <input type="text" id="deck-name" class="form-input"
+                        placeholder="Ej: Inglés Básico, Fórmulas Físicas..." required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Icono</label>
+                    <div class="icon-grid" id="icon-selector">
+                        <div class="icon-option selected" data-icon="📚">📚</div>
+                        <div class="icon-option" data-icon="🧠">🧠</div>
+                        <div class="icon-option" data-icon="🗣️">🗣️</div>
+                        <div class="icon-option" data-icon="💻">💻</div>
+                        <div class="icon-option" data-icon="⚡">⚡</div>
+                        <div class="icon-option" data-icon="🧪">🧪</div>
+                        <div class="icon-option" data-icon="🎵">🎵</div>
+                        <div class="icon-option" data-icon="🌎">🌎</div>
+                    </div>
+                    <input type="hidden" id="deck-icon" value="📚">
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i> Crear Mazo
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get Parent ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const parentId = urlParams.get('parentId');
+
+            if (parentId) {
+                document.getElementById('page-title').textContent = 'Nuevo Sub-Mazo';
+                document.getElementById('page-subtitle').textContent = 'Organiza tu contenido dentro de la carpeta actual';
+            }
+
+            // Icon Selection
+            const icons = document.querySelectorAll('.icon-option');
+            const inputIcon = document.getElementById('deck-icon'); // Value input
+
+            icons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    document.querySelector('.icon-option.selected')?.classList.remove('selected');
+                    icon.classList.add('selected');
+                    inputIcon.value = icon.dataset.icon;
+                });
+            });
+
+            // Form Submit
+            document.getElementById('deck-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('deck-name').value;
+                const icon = document.getElementById('deck-icon').value;
+                const token = localStorage.getItem('authToken');
+
+                try {
+                    const res = await fetch('/api/decks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name, icon, parentId }) // Send parentId (null or uuid)
+                    });
+
+                    if (res.ok) {
+                        // Redirect back to parent folder if exists
+                        // We need to pass state back or just use history?
+                        // Simple: Go to repaso.html?parentId=... but repaso.js needs to handle query param on load? 
+                        // Current repaso.js doesn't read URL params on init, it starts at Root.
+                        // Let's just go to root for now, or update RepasoManager to read URL.
+                        window.location.href = '/repaso.html';
+                    } else {
+                        alert('Error al crear mazo');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error de conexión');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

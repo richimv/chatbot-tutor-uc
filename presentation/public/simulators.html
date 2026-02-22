@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simuladores | Hub Academia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Estilos específicos para el Hub de Simuladores */
+        .dashboard-container {
+            padding-top: 2rem !important;
+        }
+
+        /* Distinct Header Style */
+        .header-glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-back {
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        .btn-back:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .header-clean {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .header-clean h1 {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .simulators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .simulators-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 260px;
+        }
+
+        .sim-card:hover {
+            transform: translateY(-8px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+
+        /* Background Images */
+        .sim-card.card-med {
+            /* Blue Medical Abstract */
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.9)),
+                url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .sim-card.card-img {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.9)),
+                url('https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .sim-card.card-eng {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.9)),
+                url('https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Hover States */
+        /* Slightly lighter gradient on hover */
+        .sim-card:hover.card-med {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)),
+                url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .sim-card:hover.card-img {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)),
+                url('https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .sim-card:hover.card-eng {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)),
+                url('https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+
+        .sim-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sim-card:hover .sim-icon {
+            transform: scale(1.1);
+        }
+
+        .sim-title {
+            color: #f8fafc;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .sim-desc {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        .sim-badge {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Color Variations */
+        .color-med {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            backdrop-filter: blur(4px);
+        }
+
+        .color-img {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+            backdrop-filter: blur(4px);
+        }
+
+        .color-eng {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- New Distinct Header -->
+        <header class="header-glass">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="index.html" class="btn-back" title="Volver al Inicio">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin-right: 0.5rem;"></div>
+                <img src="assets/logo.png" alt="Logo" height="32">
+                <span class="header-title-text" style="font-weight: 600; color: #fff; font-size: 1.1rem;">Hub
+                    Academia</span>
+            </div>
+            <div id="user-session-controls"></div>
+        </header>
+
+        <div class="header-clean">
+            <h1
+                style="font-size: 2.2rem; margin-bottom: 0.5rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                Centro de Simuladores
+            </h1>
+            <p style="color: #94a3b8; font-size: 1rem;">Selecciona tu área de entrenamiento especializado</p>
+        </div>
+
+        <div class="simulators-grid">
+
+            <!-- Medicina Humana -->
+            <a href="simulator-dashboard.html?context=MEDICINA" class="sim-card card-med">
+                <div class="sim-icon color-med">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div>
+                    <h3 class="sim-title">Medicina Humana</h3>
+                    <p class="sim-desc">
+                        Entrenamiento clínico completo. ENAM, Casos Clínicos y Anatomía avanzada.
+                    </p>
+                </div>
+                <div
+                    style="display: flex; align-items: center; gap: 0.5rem; color: #60a5fa; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
+                    Ingresar <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Diagnóstico por Imagen (Demo) -->
+            <a href="#" class="sim-card card-img" style="opacity: 0.85; cursor: not-allowed;">
+                <span class="sim-badge">Próximamente</span>
+                <div class="sim-icon color-img">
+                    <i class="fas fa-x-ray"></i>
+                </div>
+                <div>
+                    <h3 class="sim-title">Diagnóstico por Imagen</h3>
+                    <p class="sim-desc">
+                        Interpretación de Radiografías, Tomografías y Resonancias.
+                    </p>
+                </div>
+            </a>
+
+            <!-- Inglés Médico (Demo) -->
+            <a href="#" class="sim-card card-eng" style="opacity: 0.85; cursor: not-allowed;">
+                <span class="sim-badge">Próximamente</span>
+                <div class="sim-icon color-eng">
+                    <i class="fas fa-language"></i>
+                </div>
+                <div>
+                    <h3 class="sim-title">Inglés Técnico</h3>
+                    <p class="sim-desc">
+                        Terminología médica bilingüe y comprensión lectora de papers.
+                    </p>
+                </div>
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Check Auth
+        if (!localStorage.getItem('authToken')) window.location.href = '/login.html';
+    </script>
+</body>
+
+</html>

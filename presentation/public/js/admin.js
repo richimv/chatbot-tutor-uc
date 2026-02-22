@@ -626,11 +626,13 @@ class AdminManager {
                     `;
                 }
 
-                // Definir tipos de recurso
+                // Definir tipos de recurso acordes al nuevo enfoque EdTech
                 const resourceTypes = [
-                    { id: 'book', name: 'Libro' },
-                    { id: 'article', name: 'Artículo' },
+                    { id: 'norma', name: 'Norma Técnica/Legal' },
+                    { id: 'guia', name: 'Guía de Práctica Clínica' },
+                    { id: 'paper', name: 'Artículo/Paper' },
                     { id: 'video', name: 'Video' },
+                    { id: 'book', name: 'Libro (Histórico)' },
                     { id: 'other', name: 'Otro' }
                 ];
 
@@ -654,34 +656,9 @@ class AdminManager {
                         </div>
                     </div>
                     
-                    <!-- Metadata Fields Container -->
-                    <div id="metadata-fields" style="display: contents;">
-                        ${this.createFormGroup('number', 'generic-year', 'Año (Publicación)', currentItem?.publication_year || '')}
-                        
-                        <!-- ✅ UX MEJORA: Campos de Metadatos con Placeholders -->
-                        <div class="form-group">
-                            <label for="generic-edition">Edición</label>
-                            <input type="text" id="generic-edition" name="generic-edition" value="${currentItem?.edition || ''}" placeholder="Ej: 3ª ed.">
-                        </div>
-                         <div class="form-group">
-                            <label for="generic-city">Ciudad</label>
-                            <input type="text" id="generic-city" name="generic-city" value="${currentItem?.city || ''}" placeholder="Ej: Madrid">
-                        </div>
-                         <div class="form-group">
-                            <label for="generic-publisher">Editorial</label>
-                            <input type="text" id="generic-publisher" name="generic-publisher" value="${currentItem?.publisher || ''}" placeholder="Ej: Elsevier España">
-                        </div>
-
-                        <div style="grid-column: 1 / -1;">
-                             ${this.createFormGroup('text', 'generic-isbn', 'ISBN (Opcional)', currentItem?.isbn || '')}
-                        </div>
-                    </div>
-
                     <div style="grid-column: 1 / -1;">
                         ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true)}
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        ${this.createFormGroup('text', 'generic-size', 'Tamaño/Duración', currentItem?.size || '')}
+                        <small style="display:block; color:var(--text-muted); margin-top:2px;">Enlaces YouTube se mostraran como miniatura en plataforma. Otros enlaces se abren en web.</small>
                     </div>
                 </div>
                 ` + imagePreview +
@@ -700,21 +677,9 @@ class AdminManager {
                         };
                     }
 
-                    // Resource Type Toggle Logic
+                    // Resource Type Toggle Logic (simplified since metadata fields are removed)
                     const typeSelect = document.getElementById('generic-type');
-                    const metadataContainer = document.getElementById('metadata-fields');
 
-                    const toggleMetadata = () => {
-                        const type = typeSelect.value;
-                        if (type === 'book') {
-                            metadataContainer.style.display = 'contents';
-                        } else {
-                            metadataContainer.style.display = 'none';
-                        }
-                    };
-
-                    typeSelect.addEventListener('change', toggleMetadata);
-                    toggleMetadata(); // Submit initial state
                 }, 0);
                 break;
         }
@@ -1143,14 +1108,8 @@ class AdminManager {
                     formData.append('title', document.getElementById('generic-title').value);
                     formData.append('author', document.getElementById('generic-author').value);
                     formData.append('url', document.getElementById('generic-url').value);
-                    formData.append('size', document.getElementById('generic-size').value);
-                    // ✅ Type & Citation Fields
+                    // ✅ Type Field
                     formData.append('resource_type', document.getElementById('generic-type').value);
-                    formData.append('publication_year', document.getElementById('generic-year').value || ''); // Send empty string for null
-                    formData.append('publisher', document.getElementById('generic-publisher').value || '');
-                    formData.append('edition', document.getElementById('generic-edition').value || '');
-                    formData.append('city', document.getElementById('generic-city').value || '');
-                    formData.append('isbn', document.getElementById('generic-isbn').value || '');
 
                     // ✅ NUEVO: Manejo de eliminación de imagen
                     const deleteImageFlag = document.getElementById('generic-delete-image')?.value;

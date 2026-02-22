@@ -12,8 +12,7 @@ class BookRepository {
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, 
-                r.isbn, r.publication_year, r.publisher, r.edition, r.city,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
@@ -60,27 +59,25 @@ class BookRepository {
     }
 
     async create(bookData) {
-        const { title, author, url, size, image_url, publication_year, publisher, edition, city, isbn, resource_type } = bookData;
+        const { title, author, url, image_url, resource_type } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
         const { rows } = await db.query(
-            'INSERT INTO resources (resource_id, title, author, url, size, image_url, publication_year, publisher, edition, city, isbn, resource_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
-            [resourceId, title, author, url, size || null, image_url || null, publication_year || null, publisher || null, edition || null, city || null, isbn || null, resource_type || 'book']
+            'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [resourceId, title, author, url, image_url || null, resource_type || 'book']
         );
         return rows[0];
     }
 
     async update(id, bookData) {
         // ✅ MEJORA ROBUSTA: Construcción dinámica de la query.
-        const { title, author, url, size, image_url, publication_year, publisher, edition, city, isbn, resource_type } = bookData;
+        const { title, author, url, image_url, resource_type } = bookData;
 
         const fields = [
-            'title = $1', 'author = $2', 'url = $3', 'size = $4',
-            'publication_year = $5', 'publisher = $6', 'edition = $7', 'city = $8', 'isbn = $9', 'resource_type = $10'
+            'title = $1', 'author = $2', 'url = $3', 'resource_type = $4'
         ];
         const params = [
-            title, author, url, size || null,
-            publication_year || null, publisher || null, edition || null, city || null, isbn || null, resource_type || 'book'
+            title, author, url, resource_type || 'book'
         ];
 
         if (image_url !== undefined) {
@@ -130,8 +127,10 @@ class BookRepository {
         // Detección de intención de tipo (Type Intent)
         const typeMap = {
             'libro': 'book', 'libros': 'book', 'book': 'book', 'books': 'book',
-            'articulo': 'article', 'articulos': 'article', 'article': 'article', 'paper': 'article',
-            'video': 'video', 'videos': 'video'
+            'articulo': 'article', 'articulos': 'article', 'article': 'article', 'paper': 'paper',
+            'video': 'video', 'videos': 'video',
+            'norma': 'norma', 'normativas': 'norma', 'ley': 'norma', 'leyes': 'norma',
+            'guia': 'guia', 'guias': 'guia', 'clinica': 'guia'
         };
 
         // Verificamos si la query completa es una palabra clave de tipo (ej: "libros")
@@ -149,8 +148,7 @@ class BookRepository {
                 r.author, 
                 r.image_url, 
                 r.url, 
-                r.resource_type, 
-                r.isbn,
+                r.resource_type,
                 (
                     CASE 
                         -- Prioridad 0: Match Exacto de TIPO (Usuario busca "Libros") -> 50 pts base
@@ -203,9 +201,7 @@ class BookRepository {
                 -- ✅ NUEVO Match: Contexto Carrera (STRICT MODE)
                 -- Solo si coincide MUCHO con el nombre de la carrera (evitar "Humana" -> "Medicina Humana" -> traer todo)
                 (unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
-                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.75) OR
-
-                r.isbn ILIKE $1
+                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.75)
             ORDER BY relevance_score DESC, r.title
             LIMIT 60
         `;

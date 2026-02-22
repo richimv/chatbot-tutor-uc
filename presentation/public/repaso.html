@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Repaso - Hub Academia</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Specific Styles for Deck Grid */
+        /* Distinct Header Style */
+        .header-glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-back {
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-back:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .decks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .deck-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .deck-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .deck-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .deck-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+
+        .deck-meta {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .deck-progress {
+            margin-top: auto;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Badge for System/User Decks */
+        .deck-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-system {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge-user {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        /* Add Deck Button */
+        .add-deck-card {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            min-height: 200px;
+        }
+
+        .add-deck-card:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .add-content {
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: #94a3b8;
+        }
+
+        .crumb-link {
+            cursor: pointer;
+            color: #60a5fa;
+            transition: color 0.2s;
+        }
+
+        .crumb-link:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        .crumb-active {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .crumb-separator {
+            font-size: 0.8rem;
+            color: #475569;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header with Nav -->
+        <header class="header-glass">
+            <div class="header-nav" style="display: flex; align-items: center; gap: 1rem; flex-grow: 1;">
+                <a href="index.html" class="btn-back" title="Volver al Inicio">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin-right: 0.5rem;"></div>
+                <img src="/assets/logo.png" alt="Logo" height="32">
+                <div class="header-title-text">
+                    <h1 style="font-size: 1.25rem; margin: 0; line-height: 1.2;">Centro de Repaso</h1>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin:0;">Gestiona tus mazos de memoria</p>
+                </div>
+            </div>
+
+            <div id="user-session-controls">
+                <!-- Injected via NavLoader -->
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div id="loading" class="loading">
+            <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+        </div>
+
+        <!-- NEW: Explorer Layout -->
+        <div id="main-content" style="display: none; padding-bottom: 4rem;">
+
+            <div class="explorer-container">
+
+                <!-- SIDEBAR: Tree View -->
+                <aside class="explorer-sidebar">
+                    <div
+                        style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h3
+                            style="font-size: 0.9rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; font-weight: 700;">
+                            Explorador</h3>
+                        <button onclick="DeckExplorer.openCreateModal()" title="Nuevo Mazo"
+                            style="background: transparent; border: none; color: #3b82f6; cursor: pointer;">
+                            <i class="fas fa-folder-plus"></i>
+                        </button>
+                    </div>
+
+                    <div id="deck-tree">
+                        <!-- JS Injected Tree -->
+                    </div>
+                </aside>
+
+                <!-- MAIN AREA: Dynamic Content -->
+                <main id="deck-content-area">
+                    <!-- Default View: Dashboard / Simulators -->
+                    <div id="dashboard-view">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- Folder View: Subdecks + Flashcards -->
+                    <div id="folder-view" style="display: none;">
+                        <!-- Header -->
+                        <div class="deck-header" id="folder-header">
+                            <!-- Injected -->
+                        </div>
+
+                        <!-- Sub-decks Grid -->
+                        <div id="subdecks-container" class="decks-grid" style="margin-bottom: 3rem;"></div>
+
+                        <!-- Cards List -->
+                        <div id="cards-container"></div>
+                    </div>
+                </main>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODALS (Consolidated) -->
+
+    <!-- Create Deck Modal -->
+    <div class="modal-overlay" id="create-deck-modal">
+        <div class="modal-content">
+            <h2 id="modal-deck-title">Crear Nuevo Mazo</h2>
+            <form id="create-deck-form">
+                <div class="form-group">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-input" id="new-deck-name" required placeholder="Ej: Histología">
+                </div>
+                <!-- Hidden IDs -->
+                <input type="hidden" id="new-deck-id">
+                <input type="hidden" id="new-deck-parent">
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn-action btn-secondary-action"
+                        onclick="DeckExplorer.closeCreateModal()">Cancelar</button>
+                    <button type="submit" class="btn-action" style="background: #3b82f6; color: white;">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Card -->
+    <div class="modal-overlay" id="card-modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 2rem;">Añadir Tarjeta</h2>
+            <form id="card-form">
+                <input type="hidden" id="card-deck-id">
+                <input type="hidden" id="card-id">
+                <div class="form-group">
+                    <label class="form-label">Frente (Pregunta)</label>
+                    <textarea class="form-input" id="card-front" required
+                        placeholder="Ej: ¿Qué es el mitocondria?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dorso (Respuesta)</label>
+                    <textarea class="form-input" id="card-back" required
+                        placeholder="Ej: La central energética de la célula."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn-action btn-secondary-action"
+                        onclick="window.repasoManager.closeCardModal()">Cancelar</button>
+                    <button type="submit" class="btn-action btn-study"
+                        style="background: #3b82f6; color: white;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal AI Generation -->
+    <div class="modal-overlay" id="ai-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1rem;"><i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA</h2>
+            <p style="color: #94a3b8; margin-bottom: 1.5rem;">Escribe un tema o concepto, y la IA creará 5 flashcards
+                automáticamente.</p>
+
+            <div class="form-group">
+                <label class="form-label">Tema o Concepto</label>
+                <input type="text" class="form-input" id="ai-topic"
+                    placeholder="Ej: Histología del Riñón, Revolución Francesa...">
+            </div>
+
+            <div id="ai-loading" style="display: none; text-align: center; margin: 2rem 0;">
+                <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a855f7;"></i>
+                <p style="margin-top: 1rem; color: #d8b4fe;">Consultando a Gemini...</p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn-action btn-secondary-action"
+                    onclick="window.repasoManager.closeAiModal()">Cancelar</button>
+                <button type="button" class="btn-action" onclick="window.repasoManager.generateAiCards()"
+                    style="background: #a855f7; color: white;">
+                    ✨ Generar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Stats -->
+    <div class="modal-overlay" id="stats-modal">
+        <div class="modal-content" style="text-align: center;">
+            <h2 style="margin-bottom: 2rem;">Estadísticas del Mazo</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: white;" id="modal-total">0</div>
+                    <div style="color: #94a3b8; font-size: 0.9rem;">Total Tarjetas</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #34d399;" id="modal-mastered">0</div>
+                    <div style="color: #94a3b8; font-size: 0.9rem;">Dominadas</div>
+                </div>
+            </div>
+
+            <!-- Heatmap Container -->
+            <div id="activity-heatmap" class="heatmap-container"
+                style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 2rem; overflow: hidden; min-height: 150px;">
+                <!-- JS will render here -->
+            </div>
+
+            <button class="btn-action btn-secondary-action" style="width: 100%; justify-content: center;"
+                onclick="window.repasoManager.closeStatsModal()">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js"></script>
+    <script src="js/app.js"></script>
+
+    <script src="js/heatmap.js"></script> <!-- Optional for Stats -->
+    <script src="js/deck-explorer.js"></script> <!-- NEW -->
+    <script src="js/repaso.js"></script>
+</body>
+
+</html>

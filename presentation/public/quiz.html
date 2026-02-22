@@ -4,241 +4,366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Quiz Arena | Chatbot Tutor UC</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Simulacro Médico - Hub Academia</title>
+    <!-- CSS Moderno (Glassmorphism) -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilos Específicos para el Quiz */
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    <!-- Fuentes y Estilos -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        .quiz-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
 
-    <!-- Estilos Core -->
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/quiz.css"> <!-- Estilos específicos del juego -->
+        /* Loading State */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: opacity 0.3s ease;
+        }
 
-    <!-- Dependencias JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .medical-pulse {
+            width: 60px;
+            height: 60px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.9);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                transform: scale(0.9);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* Pregunta */
+        .question-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timer-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        /* Opciones */
+        .options-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-radius: 12px;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            font-size: 1rem;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.selected {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+        }
+
+        .option-btn.correct {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22c55e !important;
+        }
+
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* Feedback Area */
+        .feedback-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            display: none;
+            animation: slideUp 0.3s ease;
+        }
+
+        .feedback-box.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Results Modal */
+        .results-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .results-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .results-card {
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .results-overlay.active .results-card {
+            transform: scale(1);
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#3b82f6 0%, #1e293b 0%);
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            background: #1e293b;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .score-value {
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 640px) {
+            .quiz-container {
+                padding: 1.25rem;
+                width: 95%;
+            }
+
+            .question-header {
+                flex-direction: column-reverse;
+                /* Timer top */
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .timer-badge {
+                align-self: flex-end;
+            }
+        }
+    </style>
 </head>
 
-<body class="quiz-body">
+<body>
 
-    <!-- 1. HEADER HIGH-END -->
-    <header class="main-header">
-        <div class="brand-section">
-            <a href="/" class="quiz-logo">
-                <img src="assets/logo.png" alt="Hub logo" class="logo-img">
-                <span class="logo-text">HUB <span class="text-neon">ACADEMIA</span></span>
-            </a>
+    <!-- Pantalla de Carga -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="medical-pulse"></div>
+        <h2 style="margin-top: 1.5rem; font-weight: 600;">Analizando Biblioteca Médica...</h2>
+        <p style="color: #94a3b8; font-size: 0.9rem;">Consultando fuentes y generando caso clínico...</p>
+    </div>
+
+    <!-- NEW: Back Button -->
+    <a href="javascript:history.back()" class="btn-back-pulse" title="Salir del Quiz">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <style>
+        .btn-back-pulse {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            z-index: 40;
+        }
+
+        .btn-back-pulse:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .btn-back-pulse {
+                top: 1rem;
+                left: 1rem;
+            }
+        }
+    </style>
+
+    <!-- Contenedor del Quiz -->
+    <div class="quiz-container">
+        <div class="question-header">
+            <div>
+                <span
+                    style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Pregunta
+                    <span id="currentQ">1</span>/10</span>
+                <div
+                    style="height: 6px; width: 100px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
+                    <div id="progressBar"
+                        style="height: 100%; width: 10%; background: #3b82f6; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <div class="timer-badge">
+                <i class="fas fa-clock"></i>
+                <span id="timer">45s</span>
+            </div>
         </div>
 
-        <div class="user-info" id="header-user-section">
-            <!-- JS Inject: Avatar + Salir -->
+        <div class="question-text" id="questionText">
+            Cargando pregunta...
         </div>
-    </header>
 
-    <!-- ... (MAIN content is unchanged until HUD) ... -->
+        <div class="options-grid" id="optionsGrid">
+            <!-- Botones generados por JS -->
+        </div>
 
-    <!-- CONTENEDOR PRINCIPAL DEL JUEGO -->
-    <main id="quiz-app">
+        <div id="feedbackBox" class="feedback-box">
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-info-circle"></i> Explicación Médica
+            </h4>
+            <p id="explanationText" style="font-size: 0.95rem; line-height: 1.5; color: #cbd5e1;"></p>
+            <button id="nextBtn"
+                style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: none; padding: 0.5rem 1.5rem; border-radius: 8px; color: white; cursor: pointer;">
+                Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
+            </button>
+        </div>
+    </div>
 
-        <!-- VISTA 1: LOBBY (Setup + Leaderboard) -->
-        <section id="view-lobby" class="quiz-view active">
-            <!-- ... (Lobby content remains same but verify logic) ... -->
-            <h1 class="glitch-text" data-text="HUB QUIZ ARENA">HUB QUIZ ARENA</h1>
-            <p class="subtitle">Demuestra tu dominio académico</p>
-            <div class="lobby-grid">
-                <div class="lobby-setup">
-                    <div class="input-group">
-                        <label>Tema del Desafío</label>
-                        <input type="text" id="topic-input" placeholder="Ej: Historia del Perú..." autocomplete="off">
-                    </div>
-                    <div class="difficulty-selector">
-                        <label>Nivel de Dificultad</label>
-                        <div class="cards-container">
-                            <div class="difficulty-card" data-level="Básico"><i
-                                    class="fas fa-seedling"></i><span>Básico</span></div>
-                            <div class="difficulty-card selected" data-level="Profesional"><i
-                                    class="fas fa-briefcase"></i><span>Profesional</span></div>
-                            <div class="difficulty-card" data-level="Experto"><i
-                                    class="fas fa-dragon"></i><span>Experto</span></div>
-                        </div>
-                    </div>
-                    <button id="btn-start-game" class="btn-neon">INICIAR DESAFÍO <i class="fas fa-rocket"></i></button>
-                    <!-- Stats Personales Gamificados -->
-                    <div class="personal-stats-card">
-                        <div class="p-stat-row">
-                            <div class="p-stat-icon"><i class="fas fa-trophy" style="color: #fbbf24;"></i></div>
-                            <div class="stat-content"><span class="stat-label">Mejor Puntuación</span><span
-                                    class="stat-value" id="lobby-high-score">0</span></div>
-                        </div>
-                        <div class="p-stat-row">
-                            <div class="p-stat-icon"><i class="fas fa-gamepad" style="color: #3b82f6;"></i></div>
-                            <div class="stat-content"><span class="stat-label">Partidas Jugadas</span><span
-                                    class="stat-value" id="lobby-games-played">0</span></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Columna Derecha: Leaderboard -->
-                <div class="lobby-leaderboard">
-                    <div class="leaderboard-header">
-                        <h3><i class="fas fa-trophy"></i> Top 10 Global</h3>
-                    </div>
-                    <div class="table-container">
-                        <table class="leaderboard-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Estudiante</th>
-                                    <th>Score</th>
-                                    <th>Tema</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-body">
-                                <tr>
-                                    <td colspan="4" class="loading-cell">Cargando ranking...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <!-- Modal de Resultados -->
+    <div id="resultsOverlay" class="results-overlay">
+        <div class="results-card">
+            <h2 style="margin-bottom: 1rem;">¡Simulacro Finalizado!</h2>
+            <div class="score-circle" id="scoreCircle" style="background: conic-gradient(#22c55e 0%, #1e293b 0%);">
+                <span class="score-value" id="finalScore">0/10</span>
             </div>
-        </section>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
 
-        <!-- VISTA 2: LOADING -->
-        <section id="view-loading" class="quiz-view">
-            <div class="loading-content">
-                <div class="brain-loader"><i class="fas fa-brain fa-pulse"></i></div>
-                <h2>Estamos construyendo tu arena...</h2>
-                <p id="loading-text">Analizando complejidad del tema...</p>
-            </div>
-        </section>
-
-        <!-- VISTA 3: GAME -->
-        <section id="view-game" class="quiz-view">
-            <!-- 2. HUD DE JUEGO (Timer Visual) -->
-            <div class="game-hud">
-                <div class="lives-container" id="lives-display">
-                    <!-- JS Injects Icons -->
-                </div>
-
-                <div class="timer-track">
-                    <div id="timer-bar" class="timer-fill"></div>
-                </div>
-
-                <!-- COMODINES -->
-                <div class="hud-right-group" style="display: flex; align-items: center; gap: 15px;">
-                    <div class="powerups-container">
-                        <button id="btn-powerup-5050" class="powerup-btn" title="50/50 (Elimina 2 incorrectas)">
-                            <i class="fas fa-percent"></i>
-                            <span class="powerup-badge">1</span>
-                        </button>
-                        <button id="btn-powerup-skip" class="powerup-btn" title="Saltar Pregunta">
-                            <i class="fas fa-forward"></i>
-                            <span class="powerup-badge">1</span>
-                        </button>
-                    </div>
-
-                    <div class="score-display" style="position: relative;">
-                        <!-- Combo Text Injected via JS here -->
-                        <span id="score-display">0</span> pts
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pregunta -->
-            <div class="question-container">
-                <span class="badged-question">Pregunta <span id="current-question-num">1</span>/10</span>
-                <h2 id="question-text">Cargando pregunta...</h2>
-            </div>
-
-            <!-- Opciones -->
-            <div class="options-grid" id="options-container">
-                <!-- JS Injects Buttons -->
-            </div>
-        </section>
-
-        <!-- 3. MODAL DE FEEDBACK (Glassmorphism Overlay) -->
-        <div id="feedback-overlay" class="glass-modal hidden">
-            <div class="modal-content">
-                <div class="feedback-header">
-                    <i id="feedback-icon" class="fas fa-check-circle"></i>
-                    <h2 id="feedback-title">¡Correcto!</h2>
-                </div>
-                <div id="feedback-text-container" class="feedback-body">
-                    <p id="feedback-text">Texto educativo...</p>
-                </div>
-                <button id="btn-next-question" class="btn-glow">
-                    Siguiente Nivel <i class="fas fa-arrow-right"></i>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button id="btn-exit-quiz"
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 12px; color: white; cursor: pointer;">
+                    Salir
+                </button>
+                <button onclick="location.reload()"
+                    style="background: #3b82f6; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; color: white; font-weight: 600; cursor: pointer;">
+                    Nuevo Examen
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- 3.1. MODAL SALIDA (Custom Confirm) -->
-        <div id="exit-confirm-modal" class="glass-modal hidden">
-            <div class="modal-content" style="max-width: 450px;">
-                <div class="feedback-header">
-                    <i class="fas fa-exclamation-triangle"
-                        style="color: #facc15; font-size: 3.5rem; margin-bottom: 1rem;"></i>
-                    <h2 style="color: white; margin-bottom: 10px;">¿Abandonar la Arena?</h2>
-                </div>
-                <div class="feedback-body">
-                    <p style="color: #cbd5e1; font-size: 1.1rem; margin-bottom: 2rem;">
-                        Perderás tu progreso actual y la racha de puntos. ¿Estás seguro?
-                    </p>
-                </div>
-                <div class="actions" style="margin-top: 0; gap: 1rem;">
-                    <button id="btn-cancel-exit" class="btn-secondary" style="min-height: 50px;">
-                        Cancelar
-                    </button>
-                    <button id="btn-confirm-exit" class="btn-glow"
-                        style="background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); min-height: 50px;">
-                        <i class="fas fa-door-open"></i> Síp, Salir
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- VISTA 4: RESULTS -->
-        <section id="view-results" class="quiz-view">
-            <div class="results-card">
-                <h2 id="results-title">DESAFÍO COMPLETADO</h2>
-
-                <div id="new-record-badge" class="hidden">
-                    <i class="fas fa-crown"></i> ¡NUEVO RÉCORD!
-                </div>
-
-                <div class="final-score">
-                    <span id="final-score-val">0</span>
-                    <small>Puntos</small>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="label">Aciertos</span>
-                        <span class="value" id="final-correct">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Rondas</span>
-                        <span class="value" id="final-rounds">10</span>
-                    </div>
-                </div>
-
-                <div class="actions">
-                    <button id="btn-retry" class="btn-secondary"><i class="fas fa-redo"></i> Jugar de nuevo</button>
-                    <a href="/" class="btn-neon"><i class="fas fa-home"></i> Volver al Hub</a>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Scripts Core -->
-    <script src="js/config.js"></script>
-    <script src="js/services/authApiService.js"></script> <!-- Required by SessionManager -->
-    <script src="js/sessionManager.js"></script> <!-- Auth Check -->
-    <script src="js/quiz.js?v=cyber1"></script> <!-- Lógica del Juego -->
-
+    <script type="module" src="js/quiz.js"></script>
 </body>
 
 </html>

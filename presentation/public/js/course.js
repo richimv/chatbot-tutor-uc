@@ -66,69 +66,66 @@ function renderCourse(course, container) {
     let contentHTML = '';
 
     if (course.materials && course.materials.length > 0) {
-        // Filter by type
-        const books = course.materials.filter(m => !m.type || m.type === 'book');
+        // 1. INSTITUTIONAL DOCUMENTS (Normas, Guías) - TOP PRIORITY
+        const officialDocs = course.materials.filter(m => m.type === 'norma' || m.type === 'guia');
+
+        // 2. SCIENTIFIC PAPERS
+        const papers = course.materials.filter(m => m.type === 'paper' || m.type === 'article');
+
+        // 3. VIDEOS (YouTube Embeds)
         const videos = course.materials.filter(m => m.type === 'video');
-        const articles = course.materials.filter(m => m.type === 'article');
-        const others = course.materials.filter(m => m.type === 'other');
 
-        // 1. VIDEOS SECTION (First as requested in some contexts, or high priority)
-        // Order requested: Books -> Articles -> Other -> Videos? 
-        // User asked: "Categorizar los recursos del curso en: Libros, Artículos, Videos (con vista especial de YouTube) y Otros."
-        // Usually Videos are high engagement, but let's stick to a logical flow. 
-        // Let's go: Videos (Visual) -> Books (Core) -> Articles/Others (Supplements).
+        // 4. HISTORICAL BIBLIOGRAPHY & OTHERS
+        const booksAndOthers = course.materials.filter(m => !m.type || m.type === 'book' || m.type === 'other');
 
-        // Orden Solicitado: Libros -> Videos -> Artículos -> Otros
-
-        // 1. VIDEOS (High priority requested second) - WAIT, user said: Libros -> Videos -> Artículos -> Otro Recursos
-
-        // A. BOOKS (Core)
-        if (books.length > 0) {
+        // A. DOCUMENTOS OFICIALES E INSTITUCIONALES
+        if (officialDocs.length > 0) {
             contentHTML += `
                 <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-book" style="color:var(--accent)"></i> Bibliografía</h2>
+                    <h2 class="section-title"><i class="fas fa-landmark" style="color:var(--accent)"></i> Normativas y Guías Clínicas</h2>
+                    <p class="section-subtitle">Documentos oficiales de referencia obligatoria.</p>
                 </div>
-                <div class="books-grid">
-                    ${books.map(book => create3DBookCardHTML(book)).join('')}
+                <div class="documents-grid-premium">
+                    ${officialDocs.map(doc => createDocumentCardHTML(doc)).join('')}
                 </div>
-                <div class="section-spacer" style="height: 2rem;"></div>
+                <div class="section-spacer" style="height: 2.5rem;"></div>
             `;
         }
 
-        // B. VIDEOS (YouTube Embeds)
+        // B. INVESTIGACIÓN Y PAPERS
+        if (papers.length > 0) {
+            contentHTML += `
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-microscope" style="color:var(--accent)"></i> Investigación y Literatura Científica</h2>
+                </div>
+                <div class="documents-grid-premium">
+                    ${papers.map(p => createDocumentCardHTML(p)).join('')}
+                </div>
+                <div class="section-spacer" style="height: 2.5rem;"></div>
+            `;
+        }
+
+        // C. VIDEOS (YouTube Embeds)
         if (videos.length > 0) {
             contentHTML += `
                 <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-play-circle" style="color:var(--accent)"></i> Videos Clave</h2>
+                    <h2 class="section-title"><i class="fas fa-play-circle" style="color:var(--accent)"></i> Videoteca Explicativa</h2>
                 </div>
                 <div class="video-grid">
                     ${videos.map(v => createVideoCardHTML(v)).join('')}
                 </div>
-                <div class="section-spacer" style="height: 2rem;"></div>
+                <div class="section-spacer" style="height: 2.5rem;"></div>
             `;
         }
 
-        // C. ARTICLES (Generic Cards)
-        if (articles.length > 0) {
+        // D. BIBLIOGRAFÍA HISTÓRICA Y OTROS (Core/Legacy)
+        if (booksAndOthers.length > 0) {
             contentHTML += `
                 <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-newspaper" style="color:var(--accent)"></i> Artículos</h2>
+                    <h2 class="section-title"><i class="fas fa-book-reader" style="color:var(--accent)"></i> Bibliografía y Material de Apoyo</h2>
                 </div>
-                <div class="resources-grid">
-                    ${articles.map(a => createResourceCardHTML(a)).join('')}
-                </div>
-                <div class="section-spacer" style="height: 2rem;"></div>
-            `;
-        }
-
-        // D. OTHERS (Generic Cards)
-        if (others.length > 0) {
-            contentHTML += `
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-archive" style="color:var(--accent)"></i> Otros Recursos</h2>
-                </div>
-                <div class="resources-grid">
-                    ${others.map(o => createResourceCardHTML(o)).join('')}
+                <div class="documents-grid-premium">
+                    ${booksAndOthers.map(b => createDocumentCardHTML(b)).join('')}
                 </div>
             `;
         }

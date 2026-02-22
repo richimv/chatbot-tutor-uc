@@ -793,6 +793,43 @@ class AnalyticsService {
             datasets: datasets
         };
     }
+    async getHeatmapData(userId) {
+        // Query 1: Quiz Attempts (aggregated by day)
+        const quizQuery = `
+            SELECT to_char(created_at, 'YYYY-MM-DD') as day, COUNT(*) as count
+            FROM quiz_history
+            WHERE user_id = $1
+            GROUP BY day
+        `;
+
+        // Query 2: Flashcard Reviews
+        const cardQuery = `
+            SELECT to_char(last_reviewed_at, 'YYYY-MM-DD') as day, COUNT(*) as count
+            FROM user_flashcards
+            WHERE user_id = $1 AND last_reviewed_at IS NOT NULL
+            GROUP BY day
+        `;
+
+        const [quizRes, cardRes] = await Promise.all([
+            db.query(quizQuery, [userId]),
+            db.query(cardQuery, [userId])
+        ]);
+
+        // Merge Map
+        const heatmap = {};
+
+        // Add Quizzes (Value: 2 points per quiz)
+        quizRes.rows.forEach(row => {
+            heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count) * 2;
+        });
+
+        // Add Cards (Value: 1 point per card)
+        cardRes.rows.forEach(row => {
+            heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count);
+        });
+
+        return heatmap;
+    }
 }
 
 module.exports = AnalyticsService;

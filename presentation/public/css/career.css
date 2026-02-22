@@ -14,7 +14,8 @@
 }
 
 .career-view {
-    padding: var(--spacing-xl) 0;
+    padding: 1.5rem 0 4rem 0;
+    /* Reduced top padding from xl to tighten space under search */
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -66,8 +67,8 @@
 .back-nav {
     /* ✅ UPDATE: Increased back button margin significantly */
     margin-bottom: 2rem;
-    /* ✅ NUEVO: Separación superior para despegarlo del buscador */
-    margin-top: 3rem;
+    margin-top: 1rem;
+    /* Reduced from 3rem */
 }
 
 .back-link {
@@ -94,8 +95,8 @@
    ========================================= */
 
 .hero-banner {
-    padding: 2rem 0 0.5rem 0;
-    /* Reduced bottom padding */
+    padding: 0.5rem 0 0.5rem 0;
+    /* Reduced top padding heavily */
     background-color: var(--bg-main);
 }
 

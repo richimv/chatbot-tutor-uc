@@ -5,7 +5,7 @@ const path = require('path');
 class Server {
     constructor() {
         console.log('🚀 Inicializando Server (Restauración de Servicio)...');
-
+        // Restart Trigger: Heatmap Fix
         this.app = express();
         this.port = process.env.PORT || 3000;
     }

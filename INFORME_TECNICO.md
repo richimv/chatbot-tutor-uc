@@ -48,8 +48,10 @@ graph TD
 3.  **Domain Layer (`/domain`)**:
     *   **Responsabilidad:** Lógica de negocio pura y entidades del sistema.
     *   **Componentes Clave:**
-        *   `services/`: Servicios de negocio (e.g., `geminiService.js` para lógica de IA, `userService.js`).
+        *   `services/`: Servicios de negocio (e.g., `mlService.js` como cliente directo de Vertex AI, `userService.js`).
         *   `repositories/`: Interfaces abstractas para acceso a datos.
+
+    **Nota:** Originalmente se concibió un microservicio en Python (`/ml_service`), pero en la versión actual (v2.0), la lógica de IA ha sido migrada exitosamente a **Node.js nativo** utilizando el SDK `@google-cloud/vertexai`, reduciendo latencia y complejidad operativa. La carpeta `/ml_service` se mantiene como *deprecated* para scripts de batch legacy.
 
 4.  **Infrastructure Layer (`/infrastructure`)**:
     *   **Responsabilidad:** Implementación técnica y comunicación con servicios externos.
@@ -69,8 +71,8 @@ La selección de tecnologías prioriza el rendimiento, la escalabilidad y la exp
 | **Backend** | Node.js + Express | Servidor API RESTful rápido y ligero. |
 | **Frontend** | Vanilla JS / CSS3 | Interfaz reactiva sin la sobrecarga de frameworks pesados. |
 | **Base de Datos** | PostgreSQL (Supabase) | Gestión relacional robusta de usuarios y contenidos. |
-| **Inteligencia Artificial** | Google Vertex AI (Gemini 2.5) | Motor de razonamiento y generación de respuestas (RAG). |
-| **Machine Learning** | Python (Scikit-Learn) | Microservicio de análisis de tendencias y recomendaciones (`/ml_service`). |
+| **Inteligencia Artificial** | Google Vertex AI (Gemini 2.5 Flash) | Motor de razonamiento y generación de respuestas con **Function Calling**. |
+| **Machine Learning** | Node.js (Jaccard Similarity) | Análisis de tendencias y clustering de términos de búsqueda (Migrado de Python). |
 | **Pagos** | Mercado Pago | Pasarela segura para suscripciones Premium. |
 | **Despliegue** | Render / Vercel | Hosting de alta disponibilidad. |
 
@@ -78,29 +80,108 @@ La selección de tecnologías prioriza el rendimiento, la escalabilidad y la exp
 
 ## 4. ✨ Módulos y Funcionalidades Clave
 
-### 4.1. Tutor Académico IA (RAG)
-El núcleo inteligente de la plataforma. Utiliza **Retrieval Augmented Generation (RAG)** para grounded truth.
-*   **Funcionamiento:** Cuando un usuario hace una pregunta, el sistema busca fragmentos relevantes en la base de datos de libros antes de enviarlos a Gemini.
-*   **Capacidad:** Resúmenes, explicaciones paso a paso, creación de cuestionarios y citas bibliográficas reales.
+### 4.1. Tutor Académico IA (Advanced RAG Absoluto)
+El núcleo inteligente de la plataforma ha evolucionado hacia una arquitectura robusta de Generación Aumentada por Recuperación (RAG) pura:
+*   **Extracción Híbrida de Documentos:** Mediante un motor de ingesta backend (Python), usamos bibliotecas avanzadas como **Poppler (pdftocairo v25.12.0)** para el rasterizado de altísima resolución de documentos médicos y **Tesseract OCR** para extraer todo el texto encerrado en diagramas o fotocopias escaneadas.
+*   **Fragmentación y Vectorización (Embeddings):** Los libros gigantes y Normas Técnicas son divididos en "chunks" algorítmicos. Cada pedazo es traducido a una matriz numérica usando la API comercial `text-embedding-004` u homólogas de OpenAI/Google.
+*   **Almacenamiento y Recuperación Vectorial de Baja Latencia:** Usamos **Supabase con pgvector**. La búsqueda semántica (Búsqueda Vectorial) no consume tokens de LLM. Almacenamos millones de vectores y cuando el alumno pregunta, una consulta RPC (matemática relacional) en la DB extrae los 5 fragmentos más útiles en 0.2 segundos.
+*   **Cero Alucinaciones:** El texto extraído de la BD se inyecta en el Prompt de Gemini 2.5 Flash con restricciones absolutas para basar su respuesta estrictamente en los libros oficiales extraídos.
+*   **Agentic Capabilities:** Sigue utilizando **Function Calling** para consultar la base de datos de la plataforma e identificar información del usuario/cursos en vivo.
+
+### 4.1.1. Estructura de Datos RAG y BD Vectors (`pgvector`)
+Para posibilitar la búsqueda de información médica de manera semántica y el inyectado preciso de contexto, la tabla `documents` almacena los PDFs previamente fragmentados ("chunked") bajo el siguiente esquema fundamental:
+*   **`content`**: Almacena el texto extraído y en crudo (raw text) de una porción del PDF (generalmente entre 500 y 1000 caracteres, ej: un párrafo largo del Harrison). Es **esta columna exacta** la que se inyecta en el Prompt oculto para que la IA lea y emita el diagnóstico clínico del paciente.
+*   **`embedding`**: Almacena una matriz matemática (Array tridimensional de floats, como `[0.033, 0.057, -0.062...]`). Esta matriz es la traducción numérica de los significados que contiene la columna `content`. **La IA nunca lee el embedding**; el embedding es utilizado velozmente por la base de datos PostgreSQL (`pgvector`) para cruzar matemáticamente la similitud con la pregunta tecleada por el usuario (la cual también se vuelve vector fugazmente).
+*   **`metadata`**: Objeto JSON que preserva el hilo conductor: almacena el nombre del PDF de origen, su categoría, la ruta original y el `chunk_index` (en qué número de orden cortamos este pedazo del libro), proveyendo trazabilidad bibliográfica para citas y referencias precisas.
 
 ### 4.2. Biblioteca Digital
 Sistema de gestión de contenidos (CMS) personalizado.
 *   **Organización:** Jerarquía de `Áreas -> Carreras -> Cursos -> Temas -> Libros`.
 *   **Búsqueda:** Motor de búsqueda en tiempo real con filtrado por categoría.
 
-### 4.3. Quiz Arena (Gamificación)
-Módulo competitivo para validar conocimientos.
-*   **Mecánica:** Cuestionarios cronometrados generados dinámicamente o predefinidos.
-*   **Power-ups:** "50/50", "Congelar Tiempo", "Salto".
-*   **Sistemas:** Puntuación, Vidas (Sistema de energía) y Ranking Global.
+### 4.3. Centro de Entrenamiento (Training Hub)
+Módulo integral para el refuerzo del aprendizaje mediante práctica activa, refactorizado en v2.0 para escalabilidad y UX.
 
-### 4.4. Analytics & Dashboard
-Microservicio Python para inteligencia de datos.
-*   **Funciones:** Análisis de engagement, temas más buscados, predicción de tendencias de estudio.
+#### A. Arquitectura del Simulador (Clean Architecture)
+El sistema utiliza un flujo unidireccional de datos con responsabilidades claras:
+*   **Frontend (`quiz.js`, `simulator-dash.js`):** Gestiona el estado local, temporizadores y renderizado reactivo.
+*   **Backend (`QuizController.js`):** Orquestador que valida reglas de negocio (Límites Freemium, Contextos).
+*   **Dominio (`TrainingService.js`):** Núcleo inteligente que decide la estrategia de generación de preguntas (Híbrida).
+*   **Infraestructura (`TrainingRepository.js`):** Abstracción de base de datos y optimización de consultas SQL.
+
+#### B. Componentes Principales
+
+1.  **Dashboard del Simulador (`simulator-dashboard.html`)**
+    *   **Diseño Modular:** "Command Center" con 3 zonas: KPIs (Tope), Analítica (Centro) y Acción (Fondo).
+    *   **Analítica Avanzada:**
+        *   **Gráfico de Evolución:** Visualización de tendencias (`Chart.js`) basada en los últimos 10 intentos, normalizando puntajes a escala 0-20.
+        *   **Diagnóstico IA:** Tarjeta con trigger manual que analiza patrones de error y sugiere áreas de refuerzo (Cards Mastered vs Weak Topics).
+    *   **Modos de Entrenamiento (Grid Dinámico):**
+        *   ⚡ **Simulacro Rápido:** 10 preguntas (Arcade).
+        *   📚 **Modo Estudio:** 20 preguntas (Feedback inmediato).
+        *   🧠 **Flashcards:** Acceso directo al sistema de Repaso Espaciado.
+
+2.  **Motor de Examen (`quiz.js`)**
+    *   **Estado Reactivo:** Gestión de preguntas, respuestas y progreso en el cliente.
+    *   **Batch Loading:** Carga preguntas en lotes en segundo plano (`fetchNextBatch`) para mantener rendimiento fluido.
+    *   **Constructor de Examen Custom (v2.0):** Modal avanzado (UI Glassmorphism) que permite al estudiante armar simulacros a la carta. Envía los parámetros `target` (ENAM, ENARM, SERUMS), `difficulty` y `areas` múltiples al backend.
+    *   **Rotación Dinámica de Opciones (v2.0):** Ajuste algorítmico paramétrico en UI. Los simulacros base operan con 4 opciones clínicas. Aquellos tipificados como **ENARM** fuerzan la generación y renderizado de 5 opciones para simular rigurosidad real.
+    *   **Rastreo de Datos Granular:** Capacidad de enviar metadata avanzada on-submit hacia el backend (ej. Array multidimensional y mapeo de sub-tópicos resueltos por cada pregunta exacta).
+
+#### C. Lógica de Generación Híbrida (TrainingService v2.0)
+Estrategia costo-eficiente para generar contenido infinito y altamente preciso usando Inteligencia Artificial Agéntica:
+1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target, Arrays de Áreas Médicas, Dificultad y Contexto.
+2.  **Smart Filtering:** Excluye preguntas vistas históricamente por el usuario (`user_question_history`) para garantizar novedad en cada intento.
+3.  **AI Fallback Dinámico (Gemini 2.5 Flash):** Si el banco local es insolvente en preguntas "frescas", se conecta a un motor LLM pasándole en el *Prompt* perfiles estrictos ("Residente Junior/Senior"). El LLM genera preguntas estilo USMLE adaptadas, inyectando respuestas falsas pero patológicamente plausibles (Diagnósticos Diferenciales) y una explicación exhaustiva.
+4.  **Auto-Learning Global:** Las nuevas preguntas incubadas por IA se persisten atómicamente en el Banco Global para futuros estudiantes (con indexación MD5 contra duplicidad).
+
+#### D. Analítica de Rendimiento Profunda y JSONB (v2.0)
+El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un modelo granular subatómico alimentado por base de datos híbrida (Relacional/NoSQL Documental en PostgreSQL):
+*   **Inyección JSONB:** Al emitir el examen (`submitQuizResult`), el backend recorre cada pregunta iterando Arrays, calculando cuántas preguntas se acertaron y fallaron *por Sub-Tema específico* dentro de un mismo simulacro multidisciplinario. El resultado compreso se guarda en la nueva columna `area_stats (JSONB)` de la tabla `quiz_history`.
+*   **Motor KPI:** El endpoint `getStats` dispara queries analíticas sobre la nube estructurada JSON (`jsonb_object_keys`, `SUM`), lo que entrega agregaciones estadísticas vitales sin sobrecargar la estructura de la base de datos PostgreSQL.
+*   **Dashboard Visual (Radar Chart UX):** El ecosistema Frontend intercepta dicho pipeline mediante la biblioteca `Chart.js`, renderizando un gráfico Poligonal tipo Radar (Spider) responsivo que señala visual y matemáticamente las Fortalezas (ej. Pediatría: 85%) y Fallas (ej. Cirugía: 20%) de un Doctor.
+
+#### D. Base de Datos (Schema)
+*   `question_bank`: Repositorio global de preguntas (compartido).
+*   `quiz_history`: Registro de intentos, puntajes y puntos débiles.
+*   `user_flashcards`: Tarjetas generadas automáticamente a partir de errores.
+*   `decks`: Contenedores lógicos para tarjetas (System Decks vs Custom Decks).
+
+#### E. Funcionalidades Clave
+*   **Flashcards Automáticas:** Al fallar una pregunta en Simulacro Médico, se crea una flashcard automáticamente en el mazo "Repaso Medicina".
+*   **Simulacro Rápido vs Estudio:** Configuración dinámica de límites (`limit=10` vs `limit=20`) desde el backend.
+*   **Navegación Contextual:** Flujo fluido entre Dashboard -> Quiz -> Resultados -> Dashboard, manteniendo el contexto (ej: Medicina).
+
+### 4.4. Analytics & Dashboard (Node.js Native)
+Sistema de inteligencia de datos completamente integrado en el backend principal.
+*   **Algoritmo de Clustering:** Se implementó el **Índice de Jaccard** (Similitud de conjuntos) para agrupar términos de búsqueda similares (ej: "ing sistemas" ≈ "ingeniería de sistemas") y generar series de tiempo precisas.
+*   **KPIs:** Métricas de adopción del chat, tasa de "búsquedas educativas" (vs navegacionales) y CTR de sugerencias de IA.
+
+### 4.5. Pivote Productivo a EdTech Médico
+Estratégicamente, la plataforma ha dado un giro desde fungir como una amplia "biblioteca genérica masiva" (riesgosa comercialmente por copyright) hacia un **Hub Formativo EdTech** de alto rigor académico. 
+*   **Foco en Material Público y Vital:** Reestructuración de la base de conocimiento para priorizar **GPC (Guías de Práctica Clínica), NTS (Normas Técnicas Sanitarias)** de MINSA/EsSalud, Regulaciones Legales y Bancos de preguntas oficiales (ENAM, Residentado, SERUMS), ofreciendo un ecosistema blindado a reclamos de terceros.
+*   **Gamificación Formativa:** Potenciación del esfuerzo mental mediante un entorno que obliga a interactuar y competir en lugar de consumir pasivamente la lectura.
 
 ---
 
-## 5. 📂 Estructura de Carpetas Detallada
+## 5. Roadmap & Mejoras Futuras
+
+### 5.1. Gráfico de Retención (Heatmap)
+Implementación de una visualización de actividad diaria estilo GitHub ("Contribution Graph").
+*   **Objetivo:** Gamificar la constancia del estudio.
+*   **Fuente de Datos:** Agregación de `quiz_history` (intentos de quiz) y `user_flashcards` (repasos realizados).
+
+### 5.2. Mazos Anidados (Nested Decks)
+Evolución del sistema de gestión de mazos para soportar jerarquías profundas (Estilo Anki: `Categoría::Curso::Tema`).
+*   **Propuesta Técnica:** Adopción de modelo híbrido (Parent ID en base de datos + UI de Árbol).
+*   **Funcionalidad:**
+    *   **Sub-mazos Infinitos:** Organización granular del conocimiento.
+    *   **Repaso Agregado:** Posibilidad de estudiar un nodo padre (ej: "Inglés") y recibir tarjetas de todos sus sub-mazos mezcladas.
+    *   **Gestión:** Interfaz de Explorador de Archivos para mover y reorganizar mazos.
+
+---
+
+## 6. 📂 Estructura de Carpetas Detallada
 
 ```path
 chatbot-tutor-uc/
@@ -147,15 +228,12 @@ chatbot-tutor-uc/
     npm install
     # Configurar .env con credenciales
     npm run dev
+    # El servidor verificará automáticamente extensiones de PostgreSQL (unaccent, fuzzystrmatch).
     ```
 
-3.  **Servicio ML (Python):**
-    ```bash
-    cd ml_service
-    python -m venv venv
-    source venv/bin/activate  # o .\venv\Scripts\activate en Windows
-    pip install -r requirements.txt
-    python app.py
+    # NOTA: Este servicio está marcado como DEPRECATED en la arquitectura actual.
+    # La lógica de ML reside ahora en `application/domain/services/mlService.js`.
+    # Solo necesario si se requiere ejecutar scripts de mantenimiento antiguos.
     ```
 
 ---
@@ -216,6 +294,7 @@ La seguridad ha sido una prioridad desde el diseño inicial ("Security by Design
 *   **Auditoría de Inyección SQL:** Se verificó exhaustivamente el uso de consultas parametrizadas en todos los repositorios críticos (`userRepository`, `authService`), confirmando la inmunidad contra ataques de inyección SQL estándar.
 *   **Validación de Identidad:** La eliminación de cuentas y operaciones sensibles están protegidas contra *ID Spoofing* al confiar únicamente en el `sub` (Subject ID) del token JWT verificado, ignorando cualquier manipulacion del cuerpo de la petición.
 *   **Resiliencia de Backend (Retry Pattern):** Se implementó un mecanismo de reintento automático en `authMiddleware.js` para manejar errores de red transitorios (`ECONNRESET`, `ETIMEDOUT`) contra Supabase. Esto asegura una alta disponibilidad incluso ante microcortes de conexión, reintentando la validación del token hasta 3 veces antes de fallar.
+*   **Extensiones de Base de Datos:** Se habilitaron `unaccent` (para búsquedas insensibles a tildes) y `fuzzystrmatch` (para algoritmo Levenshtein) en PostgreSQL para robustecer la búsqueda y evitar errores por typos.
 
 ---
 
@@ -235,7 +314,7 @@ El sistema maneja diferentes estados de usuario para ofrecer una experiencia esc
 *   **Límites (Freemium):**
     *   **Consultas al Tutor:** Limitadas a **3 interacciones diarias**. Controlado por `UsageService`.
     *   **Biblioteca:** Acceso de lectura, pero restricción en descargas o funcionalidades avanzadas.
-*   **Interacción:** Al alcanzar el límite, se muestra un *Paywall Modal* invitando a suscribirse.
+*   **Interacción:** Al alcanzar el límite, se muestra un *Paywall Modal* ("Soft Block") invitando a suscribirse. El control de este bloqueo se realiza tanto en frontend (`chat.js`) como en backend (Middleware).
 
 ### 9.2. Usuario Premium
 *   **Conversión:** Se logra mediante pago procesado por MercadoPago. El webhook actualiza el estado `subscription_status` a `active` en tiempo real.
@@ -301,3 +380,27 @@ Se implementó un mecanismo de cierre de sesión atómico (`Async Logout`) para 
 *   Posteriormente, elimina agresivamente el `authToken` local.
 *   Finalmente, redirige a la página de inicio como usuario anónimo.
 
+---
+
+## 13. 📉 Análisis de Rendimiento y Diagnóstico de Latencia
+
+Este apartado documenta las causas externas identificadas que afectan la percepción de carga ("Infinite Loading") y la visualización de activos en el entorno de producción (Split Deployment: Vercel + Render).
+
+### 13.1. Factor Crítico: "Cold Start" en Render (Backend)
+*   **Descripción:** El servicio gratuito de Render entra en suspensión tras 15 minutos de inactividad.
+*   **Impacto:** La primera "llamada" para despertar al servidor tarda entre **50 a 90 segundos**.
+*   ** Síntoma en Frontend:** El usuario ve la estructura estática (HTML/CSS servido por Vercel) inmediatamente, pero los datos dinámicos (lista de libros, cursos) dejan el spinner de carga activo indefinidamente ("Cargando...").
+*   **Causa del "Cuelgue":** Si el frontend lanza múltiples peticiones simultáneas (`Promise.all` con `/api/books`, `/api/courses`, `/api/careers`) *mientras* el servidor despierta, puede saturar la instancia mínima (0.5 CPU), provocando un *timeout* o reinicio del proceso antes de responder.
+
+### 13.2. Latencia de Red y Límites del Navegador
+*   **Límite de Conexiones:** Los navegadores (Chrome/Edge) limitan a **6 conexiones simultáneas** por dominio (HTTP/1.1).
+*   **Cuello de Botella:** Al recibir la lista de 50+ libros del backend, el navegador intenta descargar 50 imágenes de `hubacademia.vercel.app` al mismo tiempo. Esto crea una cola de espera (Waterfall), haciendo que las últimas imágenes tarden mucho en aparecer, simulando una "carga infinita".
+
+### 13.3. Inconsistencia de Rutas Estáticas (Vercel - GitHub)
+*   **Case Sensitivity:** Vercel (Linux) distingue mayúsculas/minúsculas, mientras que Windows (Desarrollo local) no.
+    *   *Ejemplo:* Si la BD dice `assets/Libro1.JPG` pero en GitHub el archivo es `assets/libro1.jpg`, en local funciona, pero en Vercel devolverá **404 Not Found**.
+*   **Sincronización:** Si se añaden registros a la Base de Datos (Backend) pero no se suben las imágenes correspondientes a la carpeta `public/assets` del repositorio GitHub, Vercel no tendrá qué servir.
+
+### 13.4. Agotamiento de Conexiones a Base de Datos
+*   **Pool Limit:** Supabase (Capa Gratuita) tiene un límite estricto de conexiones concurrentes.
+*   **Riesgo:** Si el backend abre una conexión nueva por cada petición de la API sin reutilizarlas (Singleton Pattern), el pool se llena rápidamente durante el "despertar" del servidor, haciendo que las siguientes consultas queden en espera indefinida (*hanging*), resultando en una página que nunca termina de cargar los datos.

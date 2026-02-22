@@ -17,11 +17,9 @@ class SearchComponent {
         this.resultsContainer = document.getElementById('results-container'); // Contenedor para resultados de búsqueda
 
         // Almacenes de datos
-        this.allData = { careers: [], courses: [], topics: [], books: [] };
+        this.allData = { careers: [], courses: [], topics: [] };
         // ✅ DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
-        this.featuredBooks = [];
         this.featuredCourses = [];
-        this.medicalBooks = [];
 
         // Estado de la vista para la navegación de retorno
         this.viewStack = []; // Pila para gestionar el historial de navegación
@@ -71,16 +69,14 @@ class SearchComponent {
 
     async loadAllData() {
         try {
-            const [careersRes, coursesRes, topicsRes, booksRes] = await Promise.all([
+            const [careersRes, coursesRes, topicsRes] = await Promise.all([
                 fetch(`${window.AppConfig.API_URL}/api/careers`),
                 fetch(`${window.AppConfig.API_URL}/api/courses`),
-                fetch(`${window.AppConfig.API_URL}/api/topics`),
-                fetch(`${window.AppConfig.API_URL}/api/books?type=book`) // ✅ AÑADIDO: Cargar los libros (Filtrado solo a libros reales)
+                fetch(`${window.AppConfig.API_URL}/api/topics`)
             ]);
             this.allData.careers = await careersRes.json();
             this.allData.courses = await coursesRes.json();
             this.allData.topics = await topicsRes.json();
-            this.allData.books = await booksRes.json(); // ✅ AÑADIDO: Guardar los libros
         } catch (error) {
             console.error("Error loading all data for browsing:", error);
             this.browseContainer.innerHTML = `<p class="error-state">No se pudo cargar la información para explorar.</p>`;
@@ -112,28 +108,37 @@ class SearchComponent {
         }
 
         try {
-            // Cargar Libros Destacados, Cursos y Libros de Medicina en paralelo
-            const [books, courses, medical] = await Promise.all([
-                serviceToUse._fetchData('/api/analytics/featured-books'),
-                serviceToUse._fetchData('/api/analytics/featured-courses'),
-                serviceToUse._fetchData('/api/books/medical')
+            // Cargar Cursos en paralelo
+            const [courses] = await Promise.all([
+                serviceToUse._fetchData('/api/analytics/featured-courses')
             ]);
 
-            this.featuredBooks = books || [];
             this.featuredCourses = courses || [];
-            this.medicalBooks = medical || [];
+
+            // ✅ SOLUCIÓN AL ERROR 400: El endpoint buscar requiere una query.
+            // Para obtener el catálogo y destacar documentos oficiales, usamos el endpoint directo general de recursos.
+            const latestDocsResponse = await fetch(`${window.AppConfig.API_URL}/api/books`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Añadir token por si el endpoint lo requiere
+                }
+            });
+            const latestDocsData = latestDocsResponse.ok ? await latestDocsResponse.json() : [];
+
+            // Filtrar y ordenar los más recientes de forma manual
+            const allResults = latestDocsData || [];
+            this.featuredResources = allResults
+                .filter(r => r.resource_type === 'norma' || r.resource_type === 'guia' || r.resource_type === 'paper')
+                .slice(0, 6);
 
             console.log('🔥 Contenido destacado cargado (con servicio disponible):', {
-                books: this.featuredBooks.length,
                 courses: this.featuredCourses.length,
-                medical: this.medicalBooks.length
+                resources: this.featuredResources.length
             });
         } catch (error) {
             console.error('❌ Error cargando contenido destacado:', error);
             // Fallbacks vacíos para no romper la UI
-            this.featuredBooks = [];
             this.featuredCourses = [];
-            this.medicalBooks = [];
+            this.featuredResources = [];
         }
     }
 
@@ -237,11 +242,13 @@ class SearchComponent {
         const headerBackBtn = document.getElementById('header-back-btn');
         const searchSection = document.querySelector('.search-section');
         const heroSlider = document.getElementById('hero-slider'); // ✅ NUEVO: Referencia directa al slider
+        const trainingModules = document.getElementById('training-modules'); // ✅ NUEVO: Controle Módulos
 
         if (viewName === 'home') {
             document.body.classList.remove('hero-hidden');
             if (searchSection) searchSection.classList.remove('sticky');
             if (heroSlider) heroSlider.style.display = 'block'; // ✅ Mostrar slider en Home
+            if (trainingModules) trainingModules.style.display = 'block';
 
             if (headerBackBtn) {
                 headerBackBtn.classList.add('hidden');
@@ -250,6 +257,7 @@ class SearchComponent {
         } else {
             document.body.classList.add('hero-hidden');
             if (heroSlider) heroSlider.style.display = 'none'; // ✅ Ocultar slider en otras vistas (Resultados, Cursos, etc.)
+            if (trainingModules) trainingModules.style.display = 'none';
 
             if (headerBackBtn) {
                 headerBackBtn.classList.remove('hidden');
@@ -436,7 +444,20 @@ class SearchComponent {
         // Mostramos el contenedor de resultados y ocultamos el de exploración.
         this.browseContainer.classList.add('hidden');
         this.resultsContainer.classList.remove('hidden');
-        this.resultsContainer.innerHTML = `<div class="loading-state">Buscando inteligentemente...</div>`;
+
+        const skeletonCards = Array(3).fill(createSkeletonCardHTML('Premium')).join('');
+        this.resultsContainer.innerHTML = `
+            <div class="detail-view-container">
+                <div class="section-header" style="margin-top: 1.5rem; border-bottom: none; opacity: 0.7;">
+                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">
+                        <i class="fas fa-search" style="color:var(--accent)"></i> Buscando inteligentemente...
+                    </h3>
+                </div>
+                <div class="documents-grid-premium" style="margin-top: 1rem;">
+                    ${skeletonCards}
+                </div>
+            </div>
+        `;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -477,13 +498,36 @@ class SearchComponent {
         // Gracias al fix en searchService.js, ahora 'type' refleja 'video', 'article', etc.
         const foundBooks = data.results.filter(item => item.type === 'book' || item.resource_type === 'book');
         const foundVideos = data.results.filter(item => item.type === 'video' || item.resource_type === 'video');
-        const foundArticles = data.results.filter(item => item.type === 'article' || item.resource_type === 'article' || item.type === 'other' || item.resource_type === 'other');
+
+        // ✅ NUEVO: Documentos formales
+        const formalTypes = ['norma', 'guia', 'paper'];
+        const foundDocs = data.results.filter(item => formalTypes.includes(item.type) || formalTypes.includes(item.resource_type));
+
+        // Artículos (lo que no sea libro, video, curso, o documento formal)
+        const foundArticles = data.results.filter(item =>
+            (item.type === 'article' || item.resource_type === 'article' || item.type === 'other' || item.resource_type === 'other') &&
+            !formalTypes.includes(item.type) && !formalTypes.includes(item.resource_type)
+        );
+
         // Cursos (type 'course' o undefined)
         const foundCourses = data.results.filter(item => item.type === 'course' || (!item.type && !item.resource_type));
 
-        // Orden Solicitado: Libros -> Videos -> Materiales -> Cursos
+        // Orden Solicitado: Documentos -> Libros -> Videos -> Materiales -> Cursos
 
         let contentHTML = '';
+
+        // 0. SECCIÓN: DOCUMENTOS FORMALES (Normas, Guías, Papers)
+        if (foundDocs.length > 0) {
+            const docsHTML = foundDocs.map(doc => createDocumentCardHTML(doc)).join('');
+            contentHTML += `
+                <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
+                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Documentos Encontrados (${foundDocs.length})</h3>
+                </div>
+                <div class="documents-grid-premium"> 
+                    ${docsHTML}
+                </div>
+            `;
+        }
 
         // 1. SECCIÓN: LIBROS CON INFINITE SCROLL
         if (foundBooks.length > 0) {
@@ -725,7 +769,7 @@ class SearchComponent {
                         <i class="fas fa-book"></i>
                     </div>
                     <div class="course-header-title">
-                        <h2 class="detail-view-title">Biblioteca por Áreas</h2>
+                        <h2 class="detail-view-title">Recursos por Áreas</h2>
                         <span class="course-badge" style="margin-top: 0.5rem; display: inline-block;">${allBooks.length} Recursos Disponibles</span>
                     </div>
                 </div>
@@ -959,36 +1003,26 @@ class SearchComponent {
         }
 
         // ✅ CARGAR DATOS DESTACADOS SI NO EXISTEN
-        if (!this.featuredBooks || !this.featuredCourses || this.featuredBooks.length === 0 && this.featuredCourses.length === 0) {
-            this.browseContainer.innerHTML = `<div class="loading-state">Cargando destacados...</div>`;
-            await this.loadFeaturedContent();
-        }
+        if (!this.featuredCourses || this.featuredCourses.length === 0) {
+            const skeletonCourses = Array(4).fill('<div class="carousel-item course-item">' + createSkeletonCardHTML('Grid') + '</div>').join('');
+            const skeletonDocs = Array(3).fill('<div class="carousel-item" style="min-width: 320px; padding: 0.5rem 0;">' + createSkeletonCardHTML('Premium') + '</div>').join('');
 
-        // ==========================================
-        // 1. SECCIÓN: LIBROS DESTACADOS (Analytics)
-        // ==========================================
-        let featuredBooksSection = '';
-        if (this.featuredBooks.length > 0) {
-            // ✅ UPDATE: Clase .book-item para tamaño correcto (Portrait)
-            const booksHTML = this.featuredBooks.map(book => `
-                <div class="carousel-item book-item">
-                    ${create3DBookCardHTML(book)}
-                </div>
-            `).join('');
-
-            featuredBooksSection = `
+            this.browseContainer.innerHTML = `
                 <section class="featured-section">
-                    <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0;">Libros Destacados</h2>
-                        <!-- ✅ NUEVO: Botón Ver Todos Libros -->
-                        <button class="btn-text view-all-btn" data-view="all-books" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
-                            Ver todos los libros <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
-                        </button>
+                     <div class="section-header">
+                        <h2 class="browse-title" style="margin-bottom: 0; opacity: 0.7;">Descubriendo Contenido...</h2>
                     </div>
-                    ${createCarouselHTML('featured-books-carousel', booksHTML)}
+                    ${createCarouselHTML('skeleton-courses', skeletonCourses)}
                 </section>
                 <div class="section-spacer"></div>
+                <section class="featured-docs-section">
+                     <div class="section-header">
+                        <h2 class="browse-title" style="margin-bottom: 0; opacity: 0.7;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Consultando repositorios...</h2>
+                    </div>
+                    ${createCarouselHTML('skeleton-docs', skeletonDocs)}
+                </section>
             `;
+            await this.loadFeaturedContent();
         }
 
         // ==========================================
@@ -1019,25 +1053,22 @@ class SearchComponent {
         }
 
         // ==========================================
-        // 2. SECCIÓN: LIBROS DE MEDICINA (Nuevo)
+        // 1.8. SECCIÓN: ÚLTIMOS DOCUMENTOS DESTACADOS
         // ==========================================
-        let medicalBooksSection = '';
-        if (this.medicalBooks.length > 0) {
-            const medicalBooksHTML = this.medicalBooks.slice(0, 10).map(book => `
-                <div class="carousel-item book-item">
-                    ${create3DBookCardHTML(book)}
+        let featuredResourcesSection = '';
+        if (this.featuredResources && this.featuredResources.length > 0) {
+            const docsHTML = this.featuredResources.map(doc => `
+                <div class="carousel-item" style="min-width: 320px; padding: 0.5rem 0;">
+                    ${createDocumentCardHTML(doc)}
                 </div>
             `).join('');
 
-            medicalBooksSection = `
-                <section class="featured-section">
-                    <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0;">Libros de Medicina</h2>
-                        <button class="btn-text view-all-btn" data-view="medical-books" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
-                            Ver todos los libros <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
-                        </button>
+            featuredResourcesSection = `
+                <section class="featured-docs-section">
+                     <div class="section-header">
+                        <h2 class="browse-title" style="margin-bottom: 0;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Últimos Materiales Oficiales</h2>
                     </div>
-                    ${createCarouselHTML('medical-books-carousel', medicalBooksHTML)}
+                    ${createCarouselHTML('featured-docs-carousel', docsHTML)}
                 </section>
                 <div class="section-spacer"></div>
             `;
@@ -1106,9 +1137,8 @@ class SearchComponent {
         });
 
         this.browseContainer.innerHTML = /*html*/`
-            ${featuredBooksSection}
-            ${medicalBooksSection}
             ${featuredCoursesSection}
+            ${featuredResourcesSection}
             
             <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
             <div class="section-spacer"></div>
@@ -1119,16 +1149,14 @@ class SearchComponent {
                 <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
             </div>
             ${areasHTML}
+            
+            <div style="margin-top: 5rem;"></div>
             ${aiTeaserSection}
         `;
 
         // Inicializar carruseles
         setTimeout(() => {
-            initializeCarousel('featured-books-carousel');
             initializeCarousel('featured-courses-carousel');
-            if (this.medicalBooks && this.medicalBooks.length > 0) {
-                initializeCarousel('medical-books-carousel');
-            }
             // Initialize areas carousels
             sortedAreas.forEach((area, index) => {
                 initializeCarousel(`area-carousel-${index}`);

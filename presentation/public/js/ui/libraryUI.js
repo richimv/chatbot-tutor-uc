@@ -212,7 +212,7 @@ class LibraryUI {
     }
 
     _createDrawerItemHTML(item) {
-        const typeLabel = item._uiType === 'course' ? 'Curso' : 'Libro';
+        const typeLabel = item._uiType === 'course' ? 'Curso' : 'Recurso';
         const img = item.image_url || 'https://via.placeholder.com/60';
 
         // Acción al hacer clic en el item del drawer
@@ -242,7 +242,7 @@ class LibraryUI {
         div.className = 'library-drawer';
         div.innerHTML = `
             <div class="library-header">
-                <span class="library-title">Mi Biblioteca</span>
+                <span class="library-title">Mis Recursos</span>
                 <button class="close-drawer-btn" onclick="window.libraryUI.toggleDrawer(false)"><i class="fas fa-times"></i></button>
             </div>
             <div class="library-tabs">

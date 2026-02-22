@@ -23,22 +23,22 @@ body.has-trial-mode {
     /* ✅ PUSH DOWN if trial bar exists */
     left: 0;
     width: 100%;
-    z-index: var(--header-z-index);
-    height: var(--header-height-desktop);
-    /* ✅ Explicit Height */
-    background: var(--bg-secondary);
-    /* Slate 800 */
-    border-bottom: 1px solid var(--border-color);
+    /* ✅ Layout Options */
     padding: 0 1.5rem;
-    /* Removed vertical padding, handled by flex align */
     display: flex;
     justify-content: space-between;
     align-items: center;
     transition: top 0.3s ease;
-    /* ✅ Smooth transition */
-    backdrop-filter: blur(8px);
-    background: rgba(30, 41, 59, 0.95);
-    /* Increased opacity */
+    z-index: var(--header-z-index);
+    height: var(--header-height-desktop);
+    /* ✅ Explicit Height */
+    /* ✅ PREMIUM GLASSMORPHISM */
+    background: rgba(15, 23, 42, 0.70);
+    /* Slate 900 semi-transparent */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    /* Frosted glass border */
 }
 
 /* ✅ SPACER: Compensate for fixed header */

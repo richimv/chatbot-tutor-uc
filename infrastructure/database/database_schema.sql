@@ -239,3 +239,114 @@ CREATE TABLE IF NOT EXISTS public.quiz_scores (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT quiz_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
+
+-- Habilitar RLS en quiz_scores existente
+ALTER TABLE public.quiz_scores ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public Read for Leaderboard" ON public.quiz_scores
+FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated Insert" ON public.quiz_scores
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- ==========================================
+-- 🛡️ SECURITY & NEW MODULES (Consolidated)
+-- ==========================================
+
+-- 1. DOCUMENTS (RAG System)
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS public.documents (
+    id BIGSERIAL PRIMARY KEY,
+    content TEXT,
+    metadata JSONB,
+    embedding VECTOR(768)
+);
+
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access (Shared Knowledge Base)
+CREATE POLICY "Public Read Documents" ON public.documents
+FOR SELECT USING (true);
+
+-- 2. DECKS & FLASHCARDS (Training Module)
+CREATE TABLE IF NOT EXISTS public.decks (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) DEFAULT 'USER', -- 'SYSTEM' or 'USER'
+    source_module VARCHAR(50) DEFAULT 'MANUAL', -- 'MEDICINA', 'IDIOMAS', etc.
+    icon VARCHAR(10) DEFAULT '📚',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.decks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own decks" ON public.decks
+FOR ALL USING (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS public.user_flashcards (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    deck_id UUID REFERENCES public.decks(id) ON DELETE CASCADE, -- ✅ Added deck_id
+    front_content TEXT NOT NULL,
+    back_content TEXT NOT NULL,
+    topic VARCHAR(100),
+    source_quiz_id UUID,
+    repetition_number INTEGER DEFAULT 0,
+    easiness_factor REAL DEFAULT 2.5,
+    interval_days INTEGER DEFAULT 0,
+    last_reviewed_at TIMESTAMP WITH TIME ZONE,
+    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.user_flashcards ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own flashcards" ON public.user_flashcards
+FOR ALL USING (auth.uid() = user_id);
+
+-- 3. QUIZ HISTORY (Analytics)
+CREATE TABLE IF NOT EXISTS public.quiz_history (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    topic VARCHAR(100) NOT NULL,
+    difficulty VARCHAR(20) DEFAULT 'ENAM',
+    score INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    weak_points TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.quiz_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own history" ON public.quiz_history
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own history" ON public.quiz_history
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- 4. ARENA SCORES (Arcade Mode)
+CREATE TABLE IF NOT EXISTS public.arena_scores (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL,
+    total_questions INTEGER DEFAULT 0,
+    correct_answers INTEGER DEFAULT 0,
+    max_combo INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.arena_scores ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public Read Leaderboard Arena" ON public.arena_scores
+FOR SELECT USING (true);
+
+CREATE POLICY "Users insert own arena score" ON public.arena_scores
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(user_id, next_review_at);
+CREATE INDEX IF NOT EXISTS idx_quiz_history_user_date ON public.quiz_history(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_arena_scores_score ON public.arena_scores (score DESC);
+
