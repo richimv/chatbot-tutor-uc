@@ -46,18 +46,17 @@ const SimulatorDash = (() => {
         const token = localStorage.getItem('authToken');
         if (token) {
             try {
-                // Fetch preferences from API instead of localStorage
                 const res = await fetch(`/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const prefData = await res.json();
-
-                if (prefData && prefData.data) {
-                    activeConfig = prefData.data;
-                    // Keep localStorage in sync for legacy code
-                    localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
+                if (res.ok) {
+                    const prefData = await res.json();
+                    if (prefData && prefData.data) {
+                        activeConfig = prefData.data;
+                        localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
+                    }
                 } else {
-                    // Fallback to localStorage if API has nothing
+                    // API not available — use localStorage fallback silently
                     const savedConfig = localStorage.getItem('simActiveConfig');
                     if (savedConfig) activeConfig = JSON.parse(savedConfig);
                 }
@@ -71,59 +70,75 @@ const SimulatorDash = (() => {
                     `;
                 }
             } catch (e) {
-                console.error("Error loading saved config from API", e);
+                console.warn("Config API not available, using localStorage fallback.");
+                const savedConfig = localStorage.getItem('simActiveConfig');
+                if (savedConfig) {
+                    try { activeConfig = JSON.parse(savedConfig); } catch (pe) { }
+                }
             }
         }
 
         // 3. Setup Links (Modes) with initial default
         updateModeLinks(ctxConfig);
 
-        // 3.5 FREEMIUM: Lock Premium-only modes for free users
+        // 3.5 FREEMIUM: Lock simulator modes for non-premium users
+        applyFreemiumLocks();
+
+        // Also listen for session changes (handles race condition with async session init)
         if (window.sessionManager) {
-            const user = window.sessionManager.getUser();
-            if (user) {
-                const status = user.subscriptionStatus || user.subscription_status;
-                const isPremium = status === 'active' || user.role === 'admin';
-
-                if (!isPremium) {
-                    // Lock "Modo Estudio" and "Simulacro Real"
-                    const lockedButtons = [
-                        document.getElementById('btn-mode-study'),
-                        document.getElementById('btn-mode-real')
-                    ];
-
-                    lockedButtons.forEach(btn => {
-                        if (!btn) return;
-                        btn.classList.add('locked');
-                        btn.removeAttribute('href');
-                        btn.style.cursor = 'pointer';
-
-                        // Add Premium badge
-                        const badge = document.createElement('span');
-                        badge.className = 'mode-badge premium-lock-badge';
-                        badge.innerHTML = '<i class="fas fa-lock"></i> Premium';
-                        btn.appendChild(badge);
-
-                        // Intercept click → paywall
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (window.uiManager && window.uiManager.showPaywallModal) {
-                                window.uiManager.showPaywallModal();
-                            } else {
-                                window.location.href = '/pricing';
-                            }
-                        });
-                    });
-                }
-            }
+            window.sessionManager.onStateChange(() => applyFreemiumLocks());
         }
 
         // Flashcard link will be dynamic based on System Deck ID
 
-        // 4. Fetch Stats
+        // 4. Fetch Stats (with graceful error handling for missing APIs)
         await loadStats();
         await loadEvolution();
+    }
+
+    /**
+     * FREEMIUM: Lock ALL simulator modes for non-premium users.
+     * Premium = subscriptionStatus 'active' OR role 'admin'.
+     */
+    function applyFreemiumLocks() {
+        if (!window.sessionManager) return;
+        const user = window.sessionManager.getUser();
+        if (!user) return; // Not logged in yet or visitor
+
+        const status = user.subscriptionStatus || user.subscription_status;
+        const isPremium = status === 'active' || user.role === 'admin';
+
+        // Only apply locks for non-premium logged-in users
+        if (isPremium) return;
+
+        // Lock ALL 3 simulator modes
+        const modeIds = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real'];
+
+        modeIds.forEach(id => {
+            const btn = document.getElementById(id);
+            if (!btn || btn.classList.contains('locked')) return; // Skip if already locked
+
+            btn.classList.add('locked');
+            btn.removeAttribute('href');
+            btn.style.cursor = 'pointer';
+
+            // Add Premium badge
+            const badge = document.createElement('span');
+            badge.className = 'mode-badge premium-lock-badge';
+            badge.innerHTML = '<i class="fas fa-lock"></i> Premium';
+            btn.appendChild(badge);
+
+            // Intercept click → paywall
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.uiManager && window.uiManager.showPaywallModal) {
+                    window.uiManager.showPaywallModal();
+                } else {
+                    window.location.href = '/pricing';
+                }
+            });
+        });
     }
 
     function updateModeLinks(ctxConfig) {
@@ -306,6 +321,7 @@ const SimulatorDash = (() => {
             const res = await fetch(`/api/quiz/evolution${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (!res.ok) return; // API not available, skip silently
             const data = await res.json();
 
             if (lineChartInst) lineChartInst.destroy();
@@ -381,6 +397,7 @@ const SimulatorDash = (() => {
             const res = await fetch(`/api/quiz/stats${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (!res.ok) return; // API not available, skip silently
             const data = await res.json();
             cachedStats = data.kpis; // Store for AI Analysis
 
