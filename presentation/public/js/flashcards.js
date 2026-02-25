@@ -43,7 +43,7 @@ const FlashcardManager = (() => {
 
         const token = localStorage.getItem('authToken');
         if (!token) {
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -66,14 +66,18 @@ const FlashcardManager = (() => {
         const progressBtn = document.getElementById('btn-progress');
         if (progressBtn) {
             if (deckId) {
-                // Contexto Mazo: Volver a los detalles del mazo
-                progressBtn.href = `/deck-details.html?id=${deckId}`;
+                progressBtn.href = `/repaso?deckId=${deckId}`;
                 progressBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Volver al Mazo';
             } else {
-                // Contexto Global: Ir al Dashboard General
-                progressBtn.href = '/simulators.html';
+                progressBtn.href = '/simulators';
                 progressBtn.innerHTML = '<i class="fas fa-home"></i> Ir al Hub';
             }
+        }
+
+        // Also update the 'Todo al día' modal button
+        const backDeckBtn = document.getElementById('btn-back-deck');
+        if (backDeckBtn && deckId) {
+            backDeckBtn.href = `/repaso?deckId=${deckId}`;
         }
 
         // 2. Build URL based on context (Deck vs Global)
@@ -127,24 +131,31 @@ const FlashcardManager = (() => {
     }
 
     /**
-     * Reduces font size until text fits.
-     * Max: 1.6rem (~25px), Min: 0.9rem (~14px)
+     * Dynamically reduces font size until text fits the container.
+     * Desktop max: 1.6rem, Mobile max: 1.0rem, Min: 0.65rem
+     * After sizing, adds .sized class to enable scrollbar for extreme overflow.
      */
     function adjustFontSize(element) {
-        let size = 1.6; // Start: 1.6rem
-        const minSize = 0.9;
+        // Reset: remove sized class so overflow is hidden for accurate measurement
+        element.classList.remove('sized');
+        element.style.overflow = 'hidden';
+
+        const isMobile = window.innerWidth <= 768;
+        let size = isMobile ? 1.0 : 1.6;
+        const minSize = 0.65;
+        const step = 0.05;
+
         element.style.fontSize = `${size}rem`;
 
-        // Check overflow (scrollHeight > clientHeight)
-        // We loop reducing size until it fits or hits min
-        while (
-            (element.scrollHeight > element.clientHeight ||
-                element.scrollWidth > element.clientWidth) &&
-            size > minSize
-        ) {
-            size -= 0.1;
+        // Reduce font until it fits or hits minimum
+        while (element.scrollHeight > element.clientHeight && size > minSize) {
+            size -= step;
             element.style.fontSize = `${size}rem`;
         }
+
+        // After sizing, enable scroll for any remaining overflow (extreme text)
+        element.style.overflow = '';
+        element.classList.add('sized');
     }
 
     function toggleFlip() {
@@ -161,24 +172,14 @@ const FlashcardManager = (() => {
     async function rate(quality) {
         if (!currentCard) return;
 
-        const token = localStorage.getItem('authToken'); // ✅ FIXED: Restore token definition
+        const token = localStorage.getItem('authToken');
         if (!token) return;
 
-        // 1. Optimistic Update
-        const processedCard = queue.shift(); // Remove from queue
+        // 1. Remove card from local queue
+        const processedCard = queue.shift();
         updatePendingCount();
 
-        // 2. Transition
-        if (queue.length > 0) {
-            // Smooth transition
-            renderCard(queue[0]);
-        } else {
-            // Queue empty? Check server again (maybe "Olvidé" cards are now ready)
-            console.log("Queue empty, checking server for due cards...");
-            await loadCards(token);
-        }
-
-        // 3. Background Sync
+        // 2. Submit review to server FIRST (required before checking for more due cards)
         try {
             await fetch(`${API_URL}/review`, {
                 method: 'POST',
@@ -196,6 +197,14 @@ const FlashcardManager = (() => {
             });
         } catch (e) {
             console.error("Sync Failed for card", processedCard.id, e);
+        }
+
+        // 3. Show next card or check server for more
+        if (queue.length > 0) {
+            renderCard(queue[0]);
+        } else {
+            // Queue empty — server now has the updated review, safe to check
+            await loadCards(token);
         }
     }
 

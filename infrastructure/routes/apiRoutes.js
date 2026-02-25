@@ -3,7 +3,7 @@ const router = express.Router();
 
 // --- Importar Controladores ---
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController } = require('../../application/controllers');
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
@@ -18,6 +18,11 @@ const { authLimiter } = require('../config/rateLimiters');
 router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboardStats);
 
 router.post('/admin/run-ai', auth, adminOnly, adminController.runAiAnalysis);
+router.post('/admin/questions/bulk', auth, adminOnly, adminController.bulkInjectQuestions); // ✅ NUEVO: Inyección Masiva
+router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions);
+router.post('/admin/question', auth, adminOnly, adminController.addSingleQuestion);
+router.put('/admin/question/:id', auth, adminOnly, adminController.updateSingleQuestion);
+router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSingleQuestion);
 
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
@@ -29,6 +34,10 @@ router.use('/library', libraryRoutes);
 
 // --- Rutas de Control de Acceso (Uso Gratuito) ---
 router.post('/usage/verify', auth, usageController.checkAccess); // ✅ NUEVO
+
+// --- Rutas de Preferencias de Usuario (Multi-Simulador) ---
+router.get('/users/preferences', auth, (req, res) => userPreferencesController.getPreferences(req, res));
+router.post('/users/preferences', auth, (req, res) => userPreferencesController.savePreferences(req, res));
 
 // --- Rutas de Autenticación (Prefijo /api/auth) ---
 router.post('/auth/login', authLimiter, authController.login);

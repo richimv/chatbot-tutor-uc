@@ -151,6 +151,8 @@ El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un mode
 *   **Flashcards Automáticas:** Al fallar una pregunta en Simulacro Médico, se crea una flashcard automáticamente en el mazo "Repaso Medicina".
 *   **Simulacro Rápido vs Estudio:** Configuración dinámica de límites (`limit=10` vs `limit=20`) desde el backend.
 *   **Navegación Contextual:** Flujo fluido entre Dashboard -> Quiz -> Resultados -> Dashboard, manteniendo el contexto (ej: Medicina).
+*   **Mazos Anidados (Nested Decks):** Sistema de gestión de mazos híbrida en árbol (Estilo Anki: `Categoría::Curso::Tema`) con soporte para sub-mazos infinitos.
+*   **Gráfico de Retención:** Visualización analítica de barras ("Activity Chart") en el modal de estadísticas para rastrear la constancia diaria de estudio del usuario sobre los últimos 14 días.
 
 ### 4.4. Analytics & Dashboard (Node.js Native)
 Sistema de inteligencia de datos completamente integrado en el backend principal.
@@ -166,18 +168,11 @@ Estratégicamente, la plataforma ha dado un giro desde fungir como una amplia "b
 
 ## 5. Roadmap & Mejoras Futuras
 
-### 5.1. Gráfico de Retención (Heatmap)
-Implementación de una visualización de actividad diaria estilo GitHub ("Contribution Graph").
-*   **Objetivo:** Gamificar la constancia del estudio.
-*   **Fuente de Datos:** Agregación de `quiz_history` (intentos de quiz) y `user_flashcards` (repasos realizados).
+### 5.1. Modo Voz (Speech-to-Text / TTS)
+Implementar interacción directa conversando con el tutor usando WebRTC o un wrapper para reconocimiento.
 
-### 5.2. Mazos Anidados (Nested Decks)
-Evolución del sistema de gestión de mazos para soportar jerarquías profundas (Estilo Anki: `Categoría::Curso::Tema`).
-*   **Propuesta Técnica:** Adopción de modelo híbrido (Parent ID en base de datos + UI de Árbol).
-*   **Funcionalidad:**
-    *   **Sub-mazos Infinitos:** Organización granular del conocimiento.
-    *   **Repaso Agregado:** Posibilidad de estudiar un nodo padre (ej: "Inglés") y recibir tarjetas de todos sus sub-mazos mezcladas.
-    *   **Gestión:** Interfaz de Explorador de Archivos para mover y reorganizar mazos.
+### 5.2. App Móvil Nativa
+Wrapper en React Native o Flutter para potenciar notificaciones push de repaso espaciado.
 
 ---
 
@@ -404,3 +399,176 @@ Este apartado documenta las causas externas identificadas que afectan la percepc
 ### 13.4. Agotamiento de Conexiones a Base de Datos
 *   **Pool Limit:** Supabase (Capa Gratuita) tiene un límite estricto de conexiones concurrentes.
 *   **Riesgo:** Si el backend abre una conexión nueva por cada petición de la API sin reutilizarlas (Singleton Pattern), el pool se llena rápidamente durante el "despertar" del servidor, haciendo que las siguientes consultas queden en espera indefinida (*hanging*), resultando en una página que nunca termina de cargar los datos.
+
+---
+
+## 14. ⚙️ Flujo Avanzado: Simulacros Personalizados (Examen, Dificultad y Áreas)
+
+El sistema de Simulador Médico permite a los usuarios crear exámenes altamente granulares, combinando el Examen Objetivo (Ej. ENAM, SERUMS), la Dificultad técnica, y múltiples Áreas de Estudio simultáneas. Este es el flujo completo de datos desde la UI hasta las analíticas:
+
+### 14.1. Configuración Frontend y Persistencia
+*   **Selección:** A través del Modal de Configuración en el Dashboard, el usuario elige:
+    *   `target`: ENAM, SERUMS, o ENARM.
+    *   `difficulty`: Básico (teórico), Intermedio (casos clínicos), o Avanzado (complejo).
+    *   `areas`: Un arreglo dinámico de especialidades (ej: `['Cardiología', 'Pediatría', 'Salud Pública']`).
+*   **Persistencia:** La configuración se almacena en `localStorage` (como `simActiveConfig`) para sobrevivir navegaciones o recargas de página, garantizando que el usuario no pierda sus filtros al iniciar un "Simulacro Rápido" o "Modo Estudio".
+*   **Envío:** Al iniciar el examen, estos parámetros se envían mediante un POST al endpoint `/api/quiz/start`.
+
+### 14.2. Procesamiento Backend e Híbrido Artificial (IA)
+El `quizController` recibe los parámetros y delega la tarea al `TrainingService`.
+1.  **Consulta a Base de Datos (Prioridad #1):** El sistema intenta primero extraer preguntas del `question_bank` que coincidan exactamente con el `target`, la `difficulty` y *cualquiera* de las `areas` solicitadas (`topic = ANY($1::text[])`).
+2.  **Fallback a Vertex AI (Prioridad #2):** Si el banco local no tiene suficientes preguntas inéditas (excluyendo las ya vistas por el usuario), entra en acción el motor LLM (Gemini 2.5 Flash).
+3.  **Prompt Condicional Dinámico:**
+    *   **Contexto RAG:** La IA utiliza Búsqueda Vectorial para inyectar guías clínicas reales basándose en el "Target" (ej: Normas del MINSA para SERUMS) y en la lista de áreas combinadas.
+    *   **Especificidad del Target (Exámenes Médicos):**
+        *   **ENAM (Examen Nacional de Medicina):** Avalúa el conocimiento clínico teórico general de un interno. Se prohíbe explícitamente a la IA incluir preguntas sobre flujogramas puramente administrativos o aspectos específicos de las Normas Técnicas de Salud (NTS). Enfoque en diagnóstico clásico y clínica.
+        *   **SERUMS (Servicio Rural):** Enfocado enteramente en el trabajo de primer nivel de atención (Puesto y Centro de Salud), requiriendo un enfoque 100% en las Normas Técnicas de Salud (NTS) vigentes del MINSA y programas de salud pública peruanos.
+        *   **ENARM (Residentado Médico):** Examen para futuros especialistas. Obliga a la IA a proveer casos clínicos complejos, manejo de excepciones, tratamientos de segunda línea y uso de "Gold Standards" diagnósticos.
+    *   **Dificultad Estricta:** El prompt varía drásticamente. Si el usuario elige "Básico", se prohíbe la redacción de viñetas o casos clínicos largos, forzando preguntas de opciones directas, conceptos y etiologías. Para "Intermedio/Avanzado", se fuerza el uso de casos clínicos progresivamente más complejos.
+    *   **Etiquetado Exacto:** Se le exige a la IA que retorne, como parte del JSON de cada pregunta generada, el sub-atributo `"topic"` indicando a cuál de las áreas seleccionadas corresponde la pregunta inventada.
+
+### 14.3. Persistencia de Resultados y Analíticas Sensibles al Contexto
+*   **Guardado en DB (El Fallo Fundamental de Multi-Área):** Históricamente, al enviar las respuestas (`/api/quiz/submit`), el backend forzaba ciegamente el nombre de la *primera* área seleccionada a las 10, 20 o 50 preguntas del lote (Ej. guardando todo como "Cardiología").
+    *   *Solución Implementada:* El repositorio fue modificado (`trainingRepository.js`) para extraer dinámicamente el `q.topic` generado individualmente por la IA, guardando de forma granular el origen de cada pregunta.
+*   **Etiquetado del Examen Padre:** Para no contaminar el historial del usuario (`quiz_history`) con el nombre de una sola especialidad cuando se abarcan varias, el frontend evalúa la longitud del arreglo de áreas seleccionadas (`state.areas.length`). Si es mayor a 1, la "carátula" del examen se grabará permanentemente en base de datos como **"Multi-Área"**.
+*   **Columna JSONB `area_stats`:** En la tabla `quiz_history`, se crea de manera dinámica un objeto JSON que agrupa aciertos y errores por especialidad. Por ejemplo:
+    ```json
+    {
+      "Cardiología": { "correct": 4, "total": 5 },
+      "Pediatría": { "correct": 2, "total": 5 }
+    }
+    ```
+*   **Desagregación Lateral en PostgreSQL:** Para leer este JSONB de cara al Dashboard, se utiliza la función `jsonb_each()` de manera lateral en el bloque `FROM` (`FROM quiz_history, jsonb_each(area_stats)`). Esto descompone la matriz JSON limpiamente, permitiendo sumar aciertos globales por materia mediante funciones agregadas `SUM()`. (Nota: utilizar `jsonb_object_keys()` directamente dentro de `SUM()` arroja un fatal error SQL al ser una *set-returning function*).
+*   **Visualización en UX (Radar Chart):** El endpoint `/api/quiz/stats` extrae las llaves de este JSONB, suma los valores y calcula la Precisión (Accuracy %). Estos datos se envían de vuelta al Frontend, alimentando el **Gráfico de Radar (Dominio por Áreas)**. Así, el estudiante diagnostica visualmente qué especialidad exacta dentro de su mix de estudio está fallando más y dónde sus fortalezas son sólidas.
+
+### 14.4. Análisis de Patrones de Error e Inteligencia Artificial
+Como capa final del dashboard, se cuenta con una herramienta de **Diagnóstico de Rendimiento por IA**:
+*   **Funcionamiento:** Tras completar varios simulacros, el sistema acumula los KPIs (incluyendo las áreas más fuertes y más débiles detectadas en el JSONB).
+*   **Motor de Insights:** Al hacer clic en "Generar Análisis", la plataforma procesa estas estadísticas cacheadas en `simulator-dash.js`.
+*   **Resultados Visibles:** Emite recomendaciones naturalizadas (UX Conversacional) resaltando:
+    *   *Puntos Fuertes:* Reconoce el área con mayor dominio (ej. `strongest_topic`) para mantener la motivación.
+    *   *Áreas de Mejora:* Identifica el cuello de botella técnico (ej. `weakest_topic`) y aconseja enfocar las siguientes rondas de estudio y configuración de simulacros en dicha especialidad médica para nivelar el Gráfico Radial.
+
+---
+
+## 15. 🏛️ Arquitectura del Ecosistema de Simulacros
+
+Para ofrecer versatilidad extrema al proceso de estudio, la plataforma divide el flujo del motor de preguntas en tres **Modos de Examen** distintos, cada uno con reglas de negocio asimétricas para la interfaz (UX) y el procesamiento en la Base de Datos.
+
+### 15.1. Tipos de Examen y Modos de Ejecución
+
+1.  **Simulacro Rápido (Fast Mode)**
+    *   **Propósito:** Repasos de micro-momentos (microlearning) en transporte público o salas de espera.
+    *   **Volumen:** Fijo a 10 preguntas.
+    *   **UX del Feedback:** Interfaz amigable. Tras presionar una alternativa, el sistema revela instantáneamente si es correcta (verde) o incorrecta (roja), y despliega una tarjeta de justificación médica inferior.
+    *   **Métricas:** Sus resultados nutren de forma ligera a las estadísticas agregadas sin desbalancear la retención profunda.
+
+2.  **Modo Estudio (Study Mode)**
+    *   **Propósito:** Anclaje de conocimiento a mediano plazo y estudio focalizado.
+    *   **Volumen:** Configurable (10, 20 o 50 preguntas).
+    *   **UX del Feedback:** Idéntico al Simulacro Rápido (revelación inmediata + justificación clínica). El estudiante toma su tiempo para leer las explicaciones largas generadas por la IA después de cada decisión.
+    *   **Cronómetro:** Relajado / Invisible, priorizando precisión sobre velocidad.
+
+3.  **Simulacro Real (Real Mock - Examen Oficial)**
+    *   **Propósito:** Simulador de presión extrema para certificar viabilidad de aprobación en ENAM/SERUMS/ENARM.
+    *   **Volumen:** Obligatoriamente anclado a 100 preguntas.
+    *   **Cronómetro:** Temporizador de Barra Superior rígido de 120 minutos (7200 segundos). Al llegar a `00:00`, intercepta al usuario arrebatándole el control y forzando la evaluación.
+
+### 15.2. El "Modo Ciego" (Blind Mode) y la UI de Revisión
+Como eje central de la experiencia del **Simulacro Real**, interviene el algoritmo de *Blind Mode*:
+*   **Aislamiento Psicológico:** Cuando el módulo `quiz.js` detecta `limit === 100`, apaga automáticamente *toda* la colorimetría de feedback y desactiva el renderizado de la "Justificación IA".
+*   **Flujo Estocástico:** El clic del estudiante (ej. opción C) solo genera un pulso azul pasivo de 600ms e inmediatamente lo expulsa hacia la siguiente pregunta. Esto impide al alumno saber si está aprobando o reprobando durante el transcurso del certamen de 120 minutos.
+*   **Corrección (Exam Review UI):** Dado que la información clínica estuvo oculta, al presionar "Salir" o agotar el cronómetro, la medalla final de resultado ofrece un botón **"Ver Corrección del Examen"**. Este botón destruye visualmente el juego e inyecta dinámicamente ("Infinite Scroll") un *feed* vertical reconstruyendo la totalidad del examen donde, por primera vez, el estudiante puede visualizar qué marco (en rojo si erró), la respuesta dorada real, y la justificación médica.
+
+### 15.3. El Motor de Forzado de Dificultad (Override System)
+Para evitar que un estudiante adultere las estadísticas rindiendo un "Simulacro Real" de 100 preguntas con un filtro artificial suavizado en su Dashboard (Ej: Configurar "ENARM" pero en dificultad "Básico"), el backend implementa un mecanismo de **Forzado Oficial**:
+*   En `trainingService.js`, cuando se procesa un flujo de `limit >= 100`, el sistema **sobrescribe ignominiosamente** el `difficulty` enviado por el navegador.
+*   Si el `target` solicitado es `ENARM`, se sobreescribe rígidamente a **Avanzado** (Alta complejidad, gold standards).
+*   Si el `target` es `ENAM` o `SERUMS`, se ancla irreversiblemente a **Intermedio** (Casos clínicos estándar, NTS).
+Esto certifica matemáticamente el rigor de la plataforma frente a sus usuarios.
+
+### 15.4. Impacto Dual en la Base de Datos (100 Preguntas Simultáneas)
+El volumen masivo del "Simulacro Real" opera a dos niveles asíncronos bajo la superficie (`analyticsController` & `trainingRepository`):
+1.  **Explosión en el Dashboard:** La calificación de las 100 variables segmentadas choca contra la BD, provocando un rediseño inmediato, drástico y preciso de las fortalezas y debilidades del estudiante, evidenciables de inmediato en el *Gráfico Radial* y en las *Tendencias Lineales*.
+2.  **Generación de Fallos (Flashcards):** Durante la corrección silenciosa, cada una de las preguntas que el estudiante falló en el Modo Ciego son depositadas automáticamente por la rutina `saveStudyCards()` en su `flashcards_deck` predeterminado (Centro de Repaso), obligándolo a lidiar a corto plazo con los vacíos conceptuales que mermaron su nota oficial.
+
+---
+
+## 16. 🧠 Deduplicación Avanzada de IA y Semantic Sub-Drift
+
+Para resolver el problema del LLM repitiendo conceptos clínicos a través de múltiples simulacros generados secuencialmente, se implementó una arquitectura de deduplicación de 3 capas en la inyección de contexto:
+
+### 16.1. Capa 1: Exclusión en Base de Datos
+El sistema intenta primero extraer preguntas no vistas en las últimas 24 horas del banco de datos. Solo llama al modelo GenAI (Gemini) si el banco local se queda sin preguntas suficientes para satisfacer el requisito del examen actual, reduciendo activamente el consumo de tokens y latencia.
+
+### 16.2. Capa 2: Contexto Negativo Aleatorio (Randomized RAG Constraint)
+Cada vez que el backend (`trainingService.js`) invoca a Gemini, `trainingRepository.js` extrae en paralelo un bloque ligero de 15 preguntas *aleatorias* del banco histórico pertenecientes a esa misma área (Ej. "Cardiología"). Estas se inyectan en el prompt maestro bajo una directiva restrictiva absoluta ("Regla de Oro de Deduplicación"), prohibiéndole a la IA evaluar o retornar los escenarios clínicos contenidos en este extracto, forzando matemáticamente la novedad.
+
+### 16.3. Capa 3: Rotación Dinámica de Enfoque (Semantic Sub-Drift)
+Se instauró un sistema de "Entropía Clínica". El array `clinicalFocuses` elige aleatoriamente un ángulo de evaluación (Ej. "Etiología y Fisiopatología", "Tratamiento de Primera Línea", "Diagnóstico por Imágenes"). El prompt le ordena a Gemini que concentre un alto porcentaje de las preguntas requeridas específicamente bajo ese prisma diagnóstico, evitando que la IA cicle crónicamente alrededor de las mismas patologías típicas.
+
+---
+
+## 17. 📦 Escalabilidad de Dominio Múltiple y Panel de Inyección
+
+Para transformar el motor de "Simulador Médico" a un "Hub Académico Multi-Dominio" (Ej. Medicina, Inglés, etc.) de forma sostenible, se rediseñó la ingesta y persistencia de datos:
+
+### 17.1. Hydration Activa (Configuración JSONB) 
+Se erradicó la gestión de estado basada puramente en el `localStorage` del navegador. Se implementó la tabla `user_simulator_preferences` utilizando el tipo de dato **JSONB** nativo de PostgreSQL. Al cargar el Dashboard, el Frontend consume la API REST `GET /api/users/preferences?domain=medicine` y restaura exactamente el *Target*, *Dificultad* y selección multi-área transversal a todos los dispositivos móviles y navegadores del usuario (Cross-Device Sync).
+
+### 17.2. Inyección Masiva (Bulk Admin Panel)
+En el portal `/admin`, se implementó una interfaz gráfica JSON habilitando a los administradores a volcar miles de preguntas pre-elaboradas hacia el `question_bank` en segundos. Esto se respalda con un controlador asíncrono robusto (`/api/admin/questions/bulk`) ejecutado sobre una única transacción SQL (`BEGIN/COMMIT`) capaz de soportar operaciones atómicas de ingestión masiva mitigando el consumo en la API de Google Vertex AI.
+
+### 17.3. Motor de Imágenes Estáticas Desacoplado (CDN jsDelivr)
+Para reducir agresivamente el consumo de Ancho de Banda (Transferencia) de la capa gratuita del servidor Backend (Supabase/Vercel) al cargar casos clínicos radiológicos o multimedia, se integró soporte nativo para `image_url` en los esquemas de visualización del Quiz (`quiz.html`). Como directiva oficial, el Administrador aloja directamente los pesados *assets* de imagen en un branch de infraestructura de GitHub y propaga estas imágenes instantáneamente al frontend mediante la red de Edge Caching global de **jsDelivr**, resultando en un costo marginal de transferencia de $0 para la institución educativa.
+
+### 17.4. Gestión de Preguntas Individuales y UI de Administración (CRUD Full)
+Como evolución lógica a la inyección masiva, se desarrolló una suite completa de administración unitaria (`GET`, `POST`, `PUT`, `DELETE` en `/api/admin/questions`). En el portal Admin, la pestaña "Preguntas" ahora presenta un Grid dinámico robusto que renderiza metadatos médicos (`domain`, `target`). Se construyó un modal de edición avanzado que permite a los supervisores importar JSON o utilizar un formulario generativo para corregir sobre la marcha opciones o explicaciones de la IA sin depender exclusivamente de operaciones masivas (Bulk).
+
+---
+
+## 18. 🛡️ Integridad de Datos y Reparación de Caché Infinito (Anti-Repetición)
+
+Se detectó una falla crítica estructural en la persistencia del historial de usuario y la indexación criptográfica que permitía a la plataforma ciclar sobre las mismas preguntas repetidamente ignorando el periodo de enfriamiento de 24 horas. 
+
+### 18.1. Restauración de Restricciones y Caché "Time Capsule" (DDL PostgreSQL)
+*   **Problema Dual:** La transacción optimista `ON CONFLICT (user_id, question_id) DO NOTHING` presentaba dos fallas fatales. Primero, PostgreSQL **carecía** de una restricción `UNIQUE` en la tabla `user_question_history`, lanzando excepciones silenciosas. Segundo, incluso si la inserción funcionaba, la instrucción `DO NOTHING` congelaba mecánicamente el campo `seen_at` en el pasado. Esto creaba una "Cápsula de Tiempo" donde el algoritmo de exclusión (`seen_at > NOW() - INTERVAL '24 hours'`) percibía que el estudiante no había visto la pregunta recientemente, atrapándolo en un bucle infinito que repetía las mismas métricas una y otra vez.
+*   **Solución:** Se intervino en vivo el esquema añadiendo `ALTER TABLE user_question_history ADD CONSTRAINT unique_user_question UNIQUE (user_id, question_id);` y se recodificó el Driver en NodeJS reemplazando `DO NOTHING` por `DO UPDATE SET seen_at = CURRENT_TIMESTAMP, times_seen = user_question_history.times_seen + 1;`. Al restaurarse el índice y obligar al reloj a actualizarse, la API filtró existosamente todas las repeticiones rindiendo una tasa efímera del 100%.
+
+### 18.2. Mapeo Ortogonal de Variables (Domain vs Target)
+*   **Problema:** El backend enviaba invariablemente `domain="ENAM"`, bloqueando a la IA RAG la lectura del propio banco, permitiendo infinitas repeticiones temáticas.
+*   **Solución:** En `trainingService.js` se instauró un riguroso desacoplamiento léxico creando variables `dbDomain` ('medicine') y `dbTarget` ('ENAM'). Esta dicotomía unificó el RAG alimentador (15 preguntas límite excluyentes) a lo largo de todos los motores (Simulador Nativo y Quiz Arena).
+
+### 18.3. Analytics Unitarios y Hashes Criptográficos
+*   **Métricas Dinámicas (`times_used`):** Se interceptó lógicamente el *query* de recolección principal (`findQuestionsInBankBatch`). Ahora el motor PostgreSQL realiza una operación atómica sub-query actualizando `UPDATE question_bank SET times_used = times_used + 1` de manera transparente para cada bloque recuperado, sirviendo para futuras proyecciones de popularidad y desgaste de banco.
+*   **Huellas MD5 Manuales:** Las preguntas añadidas individualmente por administradores carecían de Hash, generando tuplas Null. El `adminController.js` ahora importa `crypto` (Node.js nativo) y forja de manera imperativa una huella Hexagonal `MD5` (`Topic + Pregunta + Opciones`) asegurando la estabilidad global del motor transaccional `ON CONFLICT`.
+
+---
+
+## 19. 🎨 Refinamientos Arquitectónicos y Lógicos en "Quiz Arena"
+Se implementaron una serie de mejoras estructurales para la variante "Arcade" del simulador (Quiz Arena) orientadas a la retención de usuarios, corrección de desincronizaciones de Estado (UI vs JS) y optimización del lienzo visual.
+
+### 19.1. Sincronización de Estado y Adaptabilidad (State Sync)
+*   **Desincronización de Dificultad:** Existía un falso positivo donde un usuario inciaba la Arena en Dificultad "Básica" pero el motor JS (`arena.js`) mantenía un estado interno `state.difficulty='Profesional'`, forzando llamados a Vertex AI altamente complejos. Se acopló y forzó la inicialización del objeto `state` para reflejar el DOM visible de las tarjetas seleccionadas.
+*   **Fluidez Háptica:** El reloj de cuenta regresiva (Progress Bar) exhibía un descenso entrecortado (100ms Javascript Ticks). Se inyectó una propiedad arquitectónica CSS `transition: width 0.1s linear` transfiriéndole la interpolación del relleno numérico directamente a la tarjeta de video (GPU Rendering) logrando 60 FPS líquidos en la barra.
+
+### 19.2. Bloqueo Elegante para Visitantes (Auth Guards)
+La arena intentaba cargar agresivamente *Leaderboards* y perfiles incluso si el visitante no tenía cuenta, disparando errores tipo "Cargando..." y colapsos de Consola.
+*   **Intercepción Condicional (`startMatch`):** Se re-ordenó la validación arquitectónica. La existencia de Token (Login) ahora se valida estrictamente **antes** que la selección del Tema. Si el usuario es un visitante, la interfaz aborta el juego y lanza reactivamente la tarjeta `uiManager.showAuthPromptModal()` invitándolo a unirse a Hub Academia sin expulsarlo de la ruta actual.
+*   **Ruteo Limpio de Controles:** El botón "Iniciar Sesión" del Header fue redirigido formalmente hacia `/login.html` en lugar de abrir la caja de "Registro Invitado", respetando la convención de UX global.
+
+---
+
+## 20. 🔑 Cierre de Brecha de Seguridad: Supabase Password Recovery Interceptor
+Se descubrió un "Punto Ciego" crítico en la arquitectura de autenticación cuando un correo registrado enviaba la petición de `"Olvidé mi contraseña"`.
+
+### 20.1. El Bucle Silencioso de Autologueo
+**El Problema:** Al hacer clic en el correo de recuperación, Supabase generaba un enlace con `type=recovery` y un Token Seguro inyectado en el Fragmento Decimal (`#access_token=...`). Sin embargo, los `onAuthStateChange` listeners (ubicados en `app.js`) detectaban ese Token, asumían credenciales correctas, arrojaban un evento **SIGNED_IN**, y logueaban automáticamente al usuario *sin mostrar jamás la pantalla para escribir una nueva contraseña*.
+
+### 20.2. First-Line Hash Interceptor
+**La Solución:** En lugar de parchar las interacciones profundas de `SessionManager`, se instaló un interceptor bloqueante en las primeras líneas del evento DOM `DOMContentLoaded` dentro de `app.js` y `login.html`.
+*   Apenas la aplicación arranca, verifica si el objeto `window.location.hash` contiene `type=recovery`.
+*   Si arroja `true`, se bloquea de inmediato cualquier rastro de inicialización, interrumpiendo el ciclo natural de Supabase, y el navegador ejecuta un redirect manual: `window.location.href = '/update-password.html' + window.location.hash`.
+*   Esto captura el Token ileso y lo translada a la vista donde se forza al usuario a redefinir y guardar criptográficamente su clave.
+
+**Efecto Secundario Positivo (Supabase Account Linking):** Esta arquitectura no solo beneficia a las cuentas estándar (User/Password), sino que también autoriza a usuarios originalmente registrados velozmente mediante el puente de Google OAuth a "setear" por primera vez una contraseña si lo desean, convirtiendo su perfil silenciosamente a una cuenta "Híbrida" (Dual Login).

@@ -125,14 +125,12 @@
 
         /* --- FLASHCARD SCENE --- */
         .scene {
-            width: 90%;
-            max-width: 600px;
-            height: 280px;
-            /* Compact height */
+            width: 95%;
+            max-width: 850px;
+            height: 320px;
             perspective: 1200px;
             margin-bottom: 2rem;
             position: relative;
-            /* Context for absolute positioning if needed */
         }
 
         .card {
@@ -191,18 +189,35 @@
 
         .content-text {
             font-size: 1.6rem;
-            /* Larger text for readability */
             line-height: 1.35;
             font-weight: 600;
             color: #f1f5f9;
-            /* Fix Layout: Center text and fill available space */
             flex-grow: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             width: 100%;
             overflow: hidden;
-            /* Prepare for JS Resizing */
+            word-break: break-word;
+        }
+
+        /* After JS adjustFontSize runs, this class enables scroll for extreme cases */
+        .content-text.sized {
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .content-text::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-text::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-text::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
         }
 
         .tap-hint {
@@ -220,11 +235,11 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             width: 100%;
-            max-width: 600px;
+            max-width: 850px;
             opacity: 0;
             pointer-events: none;
             transform: translateY(20px);
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .controls.visible {
@@ -316,7 +331,7 @@
             }
 
             .content-text {
-                font-size: 1.2rem;
+                font-size: 1rem;
             }
 
             .controls {
@@ -343,7 +358,7 @@
 
         <!-- HEADER / STATS -->
         <!-- HEADER / STATS -->
-        <a href="javascript:history.back()" class="btn-back" title="Volver"
+        <a id="btn-progress" href="/repaso" class="btn-back" title="Volver"
             style="position: absolute; top: 2rem; left: 2rem; width: auto; padding: 0.5rem 1rem; gap: 0.5rem; color: #94a3b8; text-decoration: none;">
             <i class="fas fa-arrow-left"></i> Volver a Mazos
         </a>
@@ -368,8 +383,8 @@
                     Has completado todos tus repasos pendientes por hoy.
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <a id="btn-progress" href="/simulators.html" class="btn-primary">
-                        <i class="fas fa-home"></i> Ir al Hub
+                    <a id="btn-back-deck" href="/repaso" class="btn-primary">
+                        <i class="fas fa-arrow-left"></i> Volver al Mazo
                     </a>
                     <button onclick="FlashcardManager.init()" class="btn-primary"
                         style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">

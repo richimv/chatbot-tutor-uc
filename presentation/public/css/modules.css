@@ -1,7 +1,7 @@
 /* MODULES HUB (Training Center) */
 
 #training-modules {
-    padding: 3.5rem 1rem 4rem 1rem;
+    padding: 1.5rem 1rem 4rem 1rem;
     /* ✅ Balanced: Space for floating search bar */
     max-width: 1200px;
     margin: 0 auto;
@@ -10,7 +10,7 @@
 
 .modules-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
 }
 
 .modules-title {
@@ -24,8 +24,10 @@
 }
 
 .modules-subtitle {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    margin-top: 0.2rem;
 }
 
 /* Grid Layout */

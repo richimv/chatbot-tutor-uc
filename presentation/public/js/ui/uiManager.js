@@ -407,7 +407,7 @@ class UIManager {
                         </div>
 
                         <div class="auth-prompt-main-text" style="font-size: 0.95rem; color: #e2e8f0; margin-bottom: 20px; line-height: 1.5;">
-                            Regístrate gratis para acceder al potencial completo del <span style="color: #60a5fa; font-weight: 700;">Tutor IA</span> y la <span style="color: #fbbf24; font-weight: 700;">Biblioteca</span>.
+                            Regístrate gratis para acceder al potencial completo del <span style="color: #60a5fa; font-weight: 700;">Tutor IA</span> y el <span style="color: #fbbf24; font-weight: 700;">Centro de Entrenamiento</span>.
                         </div>
 
                         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; text-align: left;">
@@ -415,23 +415,23 @@ class UIManager {
                             <ul style="list-style: none; padding: 0; margin: 0; color: #cbd5e1; font-size: 0.85rem;">
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Leer y explorar recursos completos</span>
+                                    <span>Simulacros médicos ilimitados con IA</span>
                                 </li>
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Chatear con el Tutor IA ilimitadamente</span>
+                                    <span>Chatear con el Tutor IA 24/7</span>
                                 </li>
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Gestionar tus materiales académicos</span>
+                                    <span>Flashcards con repaso espaciado inteligente</span>
                                 </li>
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Generar Referencias Bibliográficas</span>
+                                    <span>Analítica de rendimiento y diagnóstico IA</span>
                                 </li>
                                 <li style="margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-gamepad" style="color: #f472b6;"></i> <!-- Game Icon -->
-                                    <span style="color: #f1f5f9; font-weight:600;">Refuerza tu aprendizaje con nuestro Quiz</span>
+                                    <i class="fas fa-gamepad" style="color: #f472b6;"></i>
+                                    <span style="color: #f1f5f9; font-weight:600;">Compite en Quiz Battle Arena</span>
                                 </li>
                             </ul>
                         </div>

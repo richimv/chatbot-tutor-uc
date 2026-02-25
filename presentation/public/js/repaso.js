@@ -9,9 +9,105 @@ class RepasoManager {
         this.currentDeck = null;
     }
 
+    /**
+     * Renders a deck icon correctly: emojis as text, FA classes as <i>, HTML as-is.
+     * @param {string|null} icon - The icon value from DB
+     * @param {string} fallbackFA - Fallback FontAwesome class (e.g. 'fas fa-folder')
+     * @returns {string} Safe HTML string
+     */
+    /**
+     * Renders a deck icon correctly: maps emojis → FontAwesome, includes vibrant color.
+     * @param {string|null} icon - The icon value from DB
+     * @param {string} fallbackFA - Fallback FontAwesome class
+     * @returns {string} Safe HTML string
+     */
+    static renderIcon(icon, fallbackFA = 'fas fa-folder') {
+        const { faClass } = RepasoManager._resolveIcon(icon, fallbackFA);
+        return `<i class="${faClass}"></i>`;
+    }
+
+    /**
+     * Returns both the FA class and a vibrant color for the icon.
+     */
+    static _resolveIcon(icon, fallbackFA = 'fas fa-folder') {
+        // Default fallback
+        if (!icon) return { faClass: fallbackFA, color: '#60a5fa' };
+        // Already HTML
+        if (icon.startsWith('<')) return { faClass: null, html: icon, color: '#60a5fa' };
+        // FontAwesome class string
+        if (icon.startsWith('fa')) return { faClass: icon, color: RepasoManager._iconColor(icon) };
+
+        // Map emojis → FA + color
+        const emojiMap = {
+            '📚': { fa: 'fas fa-layer-group', color: '#60a5fa' },
+            '📁': { fa: 'fas fa-folder', color: '#fbbf24' },
+            '🏠': { fa: 'fas fa-home', color: '#34d399' },
+            '🧠': { fa: 'fas fa-brain', color: '#f472b6' },
+            '🩺': { fa: 'fas fa-stethoscope', color: '#22d3ee' },
+            '🗣️': { fa: 'fas fa-comments', color: '#a78bfa' },
+            '🗣': { fa: 'fas fa-comments', color: '#a78bfa' },
+            '💡': { fa: 'fas fa-lightbulb', color: '#fbbf24' },
+            '⭐': { fa: 'fas fa-star', color: '#fbbf24' },
+            '🎓': { fa: 'fas fa-graduation-cap', color: '#818cf8' },
+            '📖': { fa: 'fas fa-book-open', color: '#2dd4bf' },
+            '📝': { fa: 'fas fa-pen-alt', color: '#fb923c' },
+            '🔬': { fa: 'fas fa-microscope', color: '#c084fc' },
+            '💊': { fa: 'fas fa-pills', color: '#f87171' },
+            '❤️': { fa: 'fas fa-heartbeat', color: '#f87171' },
+            '🫀': { fa: 'fas fa-heartbeat', color: '#f87171' },
+            '👶': { fa: 'fas fa-baby', color: '#fda4af' },
+            '🦴': { fa: 'fas fa-bone', color: '#d4d4d8' },
+            '👁️': { fa: 'fas fa-eye', color: '#67e8f9' },
+            '🧬': { fa: 'fas fa-dna', color: '#34d399' },
+        };
+        if (emojiMap[icon]) {
+            return { faClass: emojiMap[icon].fa, color: emojiMap[icon].color };
+        }
+        // Unknown emoji — render as-is
+        return { faClass: null, html: icon, color: '#94a3b8' };
+    }
+
+    /**
+     * Maps FA class → vibrant color for known icon types.
+     */
+    static _iconColor(faClass) {
+        const colorMap = {
+            'fas fa-layer-group': '#60a5fa',
+            'fas fa-folder': '#fbbf24',
+            'fas fa-folder-open': '#fbbf24',
+            'fas fa-home': '#34d399',
+            'fas fa-brain': '#f472b6',
+            'fas fa-stethoscope': '#22d3ee',
+            'fas fa-comments': '#a78bfa',
+            'fas fa-lightbulb': '#fbbf24',
+            'fas fa-star': '#fbbf24',
+            'fas fa-graduation-cap': '#818cf8',
+            'fas fa-book-open': '#2dd4bf',
+            'fas fa-pen-alt': '#fb923c',
+            'fas fa-microscope': '#c084fc',
+            'fas fa-pills': '#f87171',
+            'fas fa-heartbeat': '#f87171',
+            'fas fa-baby': '#fda4af',
+            'fas fa-bone': '#d4d4d8',
+            'fas fa-eye': '#67e8f9',
+            'fas fa-dna': '#34d399',
+        };
+        return colorMap[faClass] || '#60a5fa';
+    }
+
+    /**
+     * Renders icon with its vibrant color applied. Used for card icons and headers.
+     */
+    static renderColoredIcon(icon, fallbackFA = 'fas fa-folder') {
+        const resolved = RepasoManager._resolveIcon(icon, fallbackFA);
+        const color = resolved.color;
+        if (resolved.html) return `<span style="color:${color}">${resolved.html}</span>`;
+        return `<i class="${resolved.faClass}" style="color:${color}"></i>`;
+    }
+
     async init() {
         if (!this.token) {
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -98,8 +194,8 @@ class RepasoManager {
                 
                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
                     <!-- Icon -->
-                    <div class="deck-icon-large" style="width:60px; height:60px; font-size:2rem; background:rgba(59,130,246,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,0.2); color: #60a5fa; flex-shrink: 0;">
-                        ${deck.icon || '📚'}
+                    <div class="deck-icon-large" style="width:60px; height:60px; font-size:2rem; background:rgba(59,130,246,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,0.2); flex-shrink: 0;">
+                        ${RepasoManager.renderColoredIcon(deck.icon, 'fas fa-layer-group')}
                     </div>
 
                     <!-- Info Column -->
@@ -162,7 +258,7 @@ class RepasoManager {
     renderDeckCards(decks, container, parentId = null) {
         // Ensure smaller grid layout via inline style on container if not governed by CSS class
         container.style.display = 'grid';
-        container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))'; // Smaller cards
+        container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
         container.style.gap = '1rem';
         container.innerHTML = ''; // Clear previous content
 
@@ -170,7 +266,7 @@ class RepasoManager {
         const addCard = document.createElement('div');
         addCard.className = 'deck-card';
         addCard.style.padding = '1rem';
-        addCard.style.minHeight = '120px';
+        addCard.style.minHeight = '80px';
         addCard.style.border = '2px dashed rgba(255, 255, 255, 0.1)';
         addCard.style.background = 'transparent';
         addCard.style.display = 'flex';
@@ -202,68 +298,71 @@ class RepasoManager {
         decks.forEach(deck => {
             const card = document.createElement('div');
             card.className = 'deck-card';
-            // Override padding/size for "smaller" look
-            card.style.padding = '1.2rem';
-            card.style.minHeight = '160px';
+            card.style.padding = '1rem';
+            card.style.cursor = 'pointer';
 
             const isSystem = deck.type === 'SYSTEM';
-            // Real mastery from backend
             const mastery = deck.mastery_percentage || 0;
+            const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder-open');
+            const hasDue = parseInt(deck.due_cards) > 0;
+            const badgeClass = isSystem ? 'badge-system' : 'badge-user';
+            const badgeText = isSystem ? 'AUTOMÁTICO' : 'PERSONAL';
+
+            // Edit/Delete buttons HTML (only for user decks)
+            const editDeleteBtns = !isSystem ? `
+                <div style="display:flex; gap:0.3rem;">
+                    <button class="deck-action-btn" onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                        title="Editar">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                        title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>` : '';
 
             card.innerHTML = `
-                <!-- Top Actions: Badge + Edit/Delete -->
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem; align-items: flex-start;">
-                    <span class="deck-badge ${isSystem ? 'badge-system' : 'badge-user'}" style="font-size:0.7rem; padding:0.2rem 0.6rem;">
-                        ${isSystem ? 'AUTOMÁTICO' : 'PERSONAL'} 
-                    </span>
-                    
-                    ${!isSystem ? `
-                    <div style="display:flex; gap:0.5rem;">
-                        <button onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}')" 
-                            title="Editar Nombre"
-                            style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:0.85rem; transition:color 0.2s;">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button onclick="event.stopPropagation(); window.repasoManager.deleteDeck('${deck.id}')" 
-                            title="Eliminar Mazo"
-                            style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:0.85rem; transition:color 0.2s;">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                <!-- Desktop layout -->
+                <div class="deck-card-desktop">
+                    <div style="display:flex; justify-content:${!isSystem ? 'space-between' : 'flex-end'}; align-items:center; margin-bottom:0.5rem;">
+                        ${editDeleteBtns}
+                        <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem;">${badgeText}</span>
                     </div>
-                    ` : ''}
-                </div>
-
-                <div class="deck-icon" style="font-size:1.8rem; margin-bottom:0.8rem;">${deck.icon || '📁'}</div>
-                
-                <h3 class="deck-title" style="font-size:1rem; margin-bottom:0.25rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${this.escapeHtml(deck.name)}">${deck.name}</h3>
-                
-                <div class="deck-meta" style="margin-bottom:1rem; justify-content:space-between; width:100%; font-size:0.8rem;">
-                    <span>${deck.total_cards || 0} tarjetas</span>
-                    ${parseInt(deck.due_cards) > 0 ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pendientes</span>` : ''}
-                </div>
-
-                <!-- Mastery Progress -->
-                <div style="margin-top:auto; width:100%;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#cbd5e1; margin-bottom:4px;">
-                        <span>Dominio</span>
-                        <span>${mastery}%</span>
+                    <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
+                    <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${this.escapeHtml(deck.name)}">${deck.name}</h3>
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
+                        ${deck.total_cards || 0} tarjetas
+                        ${hasDue ? `<span style="color:#ef4444; font-weight:600; margin-left:0.5rem;">${deck.due_cards} pend.</span>` : ''}
                     </div>
-                    <div class="progress-bar-bg" style="height:4px; background:rgba(255,255,255,0.05);">
-                        <div class="progress-bar-fill" style="width: ${mastery}%; background:#3b82f6;"></div>
+                    <div style="margin-top:auto; width:100%;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#cbd5e1; margin-bottom:3px;">
+                            <span>Dominio</span><span>${mastery}%</span>
+                        </div>
+                        <div style="height:3px; background:rgba(255,255,255,0.05); border-radius:2px;">
+                            <div style="width:${mastery}%; height:100%; background:#3b82f6; border-radius:2px;"></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Details Button -->
-                <div style="margin-top:1rem; display:grid;">
-                    <button style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding:0.5rem; border-radius:8px; color:#94a3b8; cursor:pointer; font-size:0.8rem; font-weight:500;" onclick="event.stopPropagation(); window.repasoManager.loadFolder('${deck.id}')">
-                        Ver Detalles
-                    </button>
+                <!-- Mobile layout -->
+                <div class="deck-card-mobile">
+                    <div style="font-size:1.2rem; flex-shrink:0;">${iconHtml}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                        <div style="font-size:0.7rem; color:#94a3b8;">
+                            ${deck.total_cards || 0} tarj.
+                            ${hasDue ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pend.</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+                        ${editDeleteBtns}
+                        <span class="deck-badge ${badgeClass}" style="font-size:0.55rem; padding:0.1rem 0.4rem;">${isSystem ? 'AUTO' : 'PERS.'}</span>
+                    </div>
                 </div>
             `;
 
-            // Card Click -> Navigate
             card.onclick = (e) => {
-                if (e.target.closest('button')) return; // Ignore button clicks
+                if (e.target.closest('button')) return;
                 const node = document.querySelector(`.tree-node[data-id="${deck.id}"]`);
                 if (node) {
                     this.explorer.toggleNode(deck.id, node);
@@ -287,24 +386,44 @@ class RepasoManager {
 
         cards.forEach(c => {
             const row = document.createElement('div');
-            // Premium Row Style
             row.style.cssText = 'display:grid; grid-template-columns: 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s;';
             row.onmouseover = () => row.style.background = 'rgba(255,255,255,0.02)';
             row.onmouseout = () => row.style.background = 'transparent';
 
-            row.innerHTML = `
-                <div style="color:#cbd5e1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escapeHtml(c.front_content)}</div>
-                <div style="color:#94a3b8; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escapeHtml(c.back_content)}</div>
-                
-                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                    <button class="btn-icon-small" title="Editar" style="width:32px; height:32px; border-radius:8px; border:none; background:rgba(255,255,255,0.1); color:#94a3b8; cursor:pointer;" onclick="window.repasoManager.openEditCardModal('${c.id}', '${this.escapeHtml(c.front_content)}', '${this.escapeHtml(c.back_content)}')">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button class="btn-icon-small" title="Eliminar" style="width:32px; height:32px; border-radius:8px; border:none; background:rgba(255,255,255,0.1); color:#94a3b8; cursor:pointer;" onclick="window.repasoManager.deleteCard('${c.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
+            const frontDiv = document.createElement('div');
+            frontDiv.style.cssText = 'color:#cbd5e1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+            frontDiv.textContent = c.front_content;
+
+            const backDiv = document.createElement('div');
+            backDiv.style.cssText = 'color:#94a3b8; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+            backDiv.textContent = c.back_content;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
+
+            // Edit Button with hover effect
+            const editBtn = document.createElement('button');
+            editBtn.className = 'deck-action-btn';
+            editBtn.title = 'Editar';
+            editBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
+            editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+            editBtn.onclick = () => window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content);
+
+            // Delete Button with hover effect
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'deck-action-btn deck-action-btn--delete';
+            deleteBtn.title = 'Eliminar';
+            deleteBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteBtn.onclick = () => window.repasoManager.confirmDeleteCard(c.id, c.front_content);
+
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(deleteBtn);
+
+            row.appendChild(frontDiv);
+            row.appendChild(backDiv);
+            row.appendChild(actionsDiv);
+
             container.appendChild(row);
         });
     }
@@ -348,13 +467,46 @@ class RepasoManager {
     }
 
     startStudy(deckId) {
-        window.location.href = `flashcards.html?deckId=${deckId}&deckName=${encodeURIComponent(this.currentDeck.name)}`;
+        // FREEMIUM: Limitar sesiones de estudio a 3/día para usuarios free
+        if (window.sessionManager) {
+            const user = window.sessionManager.getUser();
+            if (user) {
+                const status = user.subscriptionStatus || user.subscription_status;
+                const isPremium = status === 'active' || user.role === 'admin';
+
+                if (!isPremium) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const storageKey = `repaso_uses_${today}`;
+                    const usesToday = parseInt(localStorage.getItem(storageKey) || '0');
+                    const DAILY_LIMIT = 3;
+
+                    if (usesToday >= DAILY_LIMIT) {
+                        console.warn(`⛔ Repaso: Límite diario alcanzado (${usesToday}/${DAILY_LIMIT})`);
+                        if (window.uiManager && window.uiManager.showPaywallModal) {
+                            window.uiManager.showPaywallModal();
+                        } else {
+                            window.location.href = '/pricing';
+                        }
+                        return;
+                    }
+
+                    // Incrementar uso
+                    localStorage.setItem(storageKey, String(usesToday + 1));
+                }
+            }
+        }
+
+        const deckName = this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || '';
+        window.location.href = `/flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
     }
 
     // --- API Helpers ---
 
     async fetchDeck(id) {
-        const res = await fetch(`/api/decks/${id}`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+        const res = await fetch(`/api/decks/${id}`, {
+            headers: { 'Authorization': `Bearer ${this.token}` },
+            cache: 'no-cache'
+        });
         const data = await res.json();
         return data.deck;
     }
@@ -362,13 +514,19 @@ class RepasoManager {
     async fetchDecks(parentId) {
         let url = `/api/decks`;
         if (parentId) url += `?parentId=${parentId}`;
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${this.token}` } });
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${this.token}` },
+            cache: 'no-cache'
+        });
         const data = await res.json();
         return data.decks || [];
     }
 
     async fetchCards(deckId) {
-        const res = await fetch(`/api/decks/${deckId}/cards`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+        const res = await fetch(`/api/decks/${deckId}/cards`, {
+            headers: { 'Authorization': `Bearer ${this.token}` },
+            cache: 'no-cache'
+        });
         const data = await res.json();
         return data.cards || [];
     }
@@ -400,10 +558,11 @@ class RepasoManager {
         } else {
             // CREATE MODE
             try {
+                const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
                 const res = await fetch('/api/decks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name, parentId })
+                    body: JSON.stringify({ name, icon, parentId })
                 });
 
                 if (res.ok) {
@@ -434,8 +593,21 @@ class RepasoManager {
         e.preventDefault();
         const deckId = document.getElementById('card-deck-id').value;
         const cardId = document.getElementById('card-id').value; // Check if editing
-        const front = document.getElementById('card-front').value;
-        const back = document.getElementById('card-back').value;
+        const front = document.getElementById('card-front').value.trim();
+        const back = document.getElementById('card-back').value.trim();
+
+        if (!front || !back) {
+            alert('Ambos campos son obligatorios.');
+            return;
+        }
+
+        // Disable button during save
+        const submitBtn = document.querySelector('#card-form button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
+        }
 
         try {
             let res;
@@ -459,10 +631,18 @@ class RepasoManager {
                 this.closeCardModal();
                 this.loadFolder(deckId); // Reload to update list
             } else {
-                alert('Error al guardar tarjeta');
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Save card error:', res.status, errorData);
+                alert(`Error al guardar tarjeta: ${errorData.error || res.statusText}`);
             }
         } catch (err) {
-            console.error(err);
+            console.error('Save card network error:', err);
+            alert('Error de red al guardar tarjeta. Verifica tu conexión.');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
         }
     }
 
@@ -505,21 +685,23 @@ class RepasoManager {
         }
     }
 
-    async deleteCard(cardId) {
-        if (!confirm('¿Eliminar tarjeta?')) return;
-        try {
-            // DELETE /api/cards/:id
-            const res = await fetch(`/api/cards/${cardId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${this.token}` } });
-            if (res.ok) {
-                this.loadFolder(this.currentDeck.id);
-            } else {
-                alert('No se pudo eliminar');
-            }
-        } catch (e) { console.error(e); }
+
+
+    confirmDeleteDeck(deckId, deckName) {
+        // Show custom delete modal
+        const modal = document.getElementById('delete-confirm-modal');
+        document.getElementById('delete-deck-name').textContent = deckName;
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            modal.classList.remove('active');
+            await this.deleteDeck(deckId);
+        };
+        document.getElementById('btn-cancel-delete').onclick = () => {
+            modal.classList.remove('active');
+        };
+        modal.classList.add('active');
     }
 
     async deleteDeck(deckId) {
-        if (!confirm('¿Estás seguro de eliminar este mazo y todo su contenido?')) return;
 
         try {
             // DELETE /api/decks/:id
@@ -540,6 +722,43 @@ class RepasoManager {
                 }
             } else {
                 alert('No se pudo eliminar el mazo');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // --- Card Deletion ---
+    confirmDeleteCard(cardId, frontContent) {
+        const modal = document.getElementById('delete-confirm-modal');
+        const preview = frontContent.length > 40 ? frontContent.substring(0, 40) + '…' : frontContent;
+        document.getElementById('delete-deck-name').textContent = preview;
+        document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Tarjeta';
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            modal.classList.remove('active');
+            await this.deleteCard(cardId);
+        };
+        document.getElementById('btn-cancel-delete').onclick = () => {
+            modal.classList.remove('active');
+            // Reset title for next use
+            document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Mazo';
+        };
+        modal.classList.add('active');
+    }
+
+    async deleteCard(cardId) {
+        try {
+            const res = await fetch(`/api/cards/${cardId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.ok) {
+                // Reload current folder to refresh card list
+                if (this.currentDeck) {
+                    this.loadFolder(this.currentDeck.id);
+                }
+            } else {
+                alert('No se pudo eliminar la tarjeta');
             }
         } catch (err) {
             console.error(err);

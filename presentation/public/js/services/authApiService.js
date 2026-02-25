@@ -8,6 +8,23 @@ class AuthApiService {
         // Fallback por si acaso config.js no cargó (evita romper todo)
         return 'https://tutor-ia-backend.onrender.com';
     }
+    // ✅ 1.5 Helper para Obtener Token Fresco (Sincronizado Supabase -> LocalStorage)
+    static async getValidToken() {
+        if (window.supabaseClient) {
+            try {
+                const { data } = await window.supabaseClient.auth.getSession();
+                if (data && data.session) {
+                    const freshToken = data.session.access_token;
+                    localStorage.setItem('authToken', freshToken);
+                    return freshToken;
+                }
+            } catch (e) {
+                console.warn("AuthApiService: Error refreshing ui token via Supabase", e);
+            }
+        }
+        // Fallback al clásico
+        return localStorage.getItem('authToken');
+    }
 
     static async login(email, password) {
         const API_URL = this.getApiUrl();
@@ -72,7 +89,7 @@ class AuthApiService {
 
     // ✅ MEJORA: Manejo silencioso de 401 para evitar ruido excesivo
     static async getMe() {
-        const token = localStorage.getItem('authToken');
+        const token = await this.getValidToken();
         if (!token) return null;
 
         const API_URL = this.getApiUrl();
@@ -162,7 +179,7 @@ class AuthApiService {
      * @param {string} password - Contraseña actual para confirmación
      */
     static async deleteAccount(password) {
-        const token = localStorage.getItem('authToken');
+        const token = await this.getValidToken();
         if (!token) throw new Error('No hay sesión activa.');
 
         const API_URL = this.getApiUrl();

@@ -77,6 +77,25 @@ class SessionManager {
         }
     }
 
+    // 🛡️ NUEVO: Método para validar activamente si el token caducó en el backend y forzar logout en la UI
+    async validateSession() {
+        if (!this.currentUser) return;
+        try {
+            // getMe() retorna destructivamente null si el servidor responde 401 (Expirado)
+            const isValid = await AuthApiService.getMe();
+            if (!isValid) {
+                console.warn('🕒 Sesión local detectada como EXPIRADA por el servidor. Forzando cierre de sesión...');
+                if (typeof window.handleLogout === 'function') {
+                    window.handleLogout();
+                } else {
+                    this.logout();
+                }
+            }
+        } catch (error) {
+            // Ignorar errores de red temporales, solo destruir si el backend explícitamente rechaza el token
+        }
+    }
+
     login(token, user) {
         localStorage.setItem('authToken', token);
         this.currentUser = user;

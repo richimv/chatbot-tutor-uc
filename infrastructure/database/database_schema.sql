@@ -350,3 +350,18 @@ CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(
 CREATE INDEX IF NOT EXISTS idx_quiz_history_user_date ON public.quiz_history(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_arena_scores_score ON public.arena_scores (score DESC);
 
+-- 5. MULTI-SIMULATOR PREFERENCES
+CREATE TABLE IF NOT EXISTS public.user_simulator_preferences (
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    domain VARCHAR(50) NOT NULL,
+    config_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_id, domain)
+);
+
+ALTER TABLE public.user_simulator_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own preferences" ON public.user_simulator_preferences
+    FOR ALL USING (auth.uid() = user_id);
+
+

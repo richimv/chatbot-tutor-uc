@@ -64,7 +64,7 @@ class TrainingRepository {
      * @param {number} limit - Cantidad requerida
      * @param {string} userId - ID del usuario para excluir vistas recientes
      */
-    async findQuestionsInBankBatch(domain, topics, difficulty, limit = 5, userId) {
+    async findQuestionsInBankBatch(domain, target, topics, difficulty, limit = 5, userId) {
         // 1. Obtener IDs que el usuario ya vio (últimas 24 horas - Olvido Saludable)
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
@@ -78,11 +78,12 @@ class TrainingRepository {
             FROM question_bank
             WHERE topic = ANY($1::text[]) 
             AND domain = $2 
-            AND difficulty = $3
+            AND ($3::text IS NULL OR target = $3)
+            AND difficulty = $4
         `;
 
-        const params = [topics, domain, difficulty];
-        let paramIdx = 4;
+        const params = [topics, domain, target, difficulty];
+        let paramIdx = 5;
 
         if (seenIds.length > 0) {
             query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
@@ -97,6 +98,16 @@ class TrainingRepository {
 
         console.log(`🔎 [Repo] Encontradas ${res.rows.length} preguntas Multi-Area disponibles (excluyendo vistas).`);
 
+        if (res.rows.length > 0) {
+            try {
+                const fetchedIds = res.rows.map(r => r.id);
+                const updateQuery = `UPDATE question_bank SET times_used = times_used + 1 WHERE id = ANY($1::uuid[])`;
+                await db.query(updateQuery, [fetchedIds]);
+            } catch (err) {
+                console.error("❌ Error actualizando times_used:", err.message);
+            }
+        }
+
         return res.rows.map(row => ({
             id: row.id,
             question: row.question_text,
@@ -107,17 +118,48 @@ class TrainingRepository {
     }
 
     /**
+     * Obtiene N preguntas aleatorias de la BD para inyectarlas como Contexto de Deduplicación a la IA.
+     * @param {string} domain 
+     * @param {string[]} topics 
+     * @param {number} limit Cuántas preguntas de contexto traer (ej: 15)
+     * @returns {Promise<string[]>} Array de strings con el texto de la pregunta original.
+     */
+    async getRandomQuestionsContext(domain, target, topics, limit = 15) {
+        try {
+            const query = `
+                SELECT question_text 
+                FROM question_bank 
+                WHERE domain = $1 
+                AND ($2::text IS NULL OR target = $2)
+                AND topic = ANY($3::text[])
+                ORDER BY RANDOM() 
+                LIMIT $4
+            `;
+            const res = await db.query(query, [domain, target, topics, limit]);
+
+            if (res.rows.length > 0) {
+                console.log(`🧠 [Deduplication] Extraídas ${res.rows.length} preguntas aleatorias del banco para contexto IA.`);
+                return res.rows.map(r => r.question_text);
+            }
+            return [];
+        } catch (error) {
+            console.error("Error obteniendo contexto de deduplicación:", error);
+            return [];
+        }
+    }
+
+    /**
      * Guarda un lote de nuevas preguntas en el question_bank.
      * @returns {Promise<string[]>} Array de IDs insertados
      */
-    async saveQuestionBankBatch(questions, topic, domain, difficulty) {
+    async saveQuestionBankBatch(questions, defaultTopic, domain, target, difficulty) {
         if (!questions || questions.length === 0) return [];
 
-        console.log(`💾 Guardando ${questions.length} preguntas en el Banco (${topic} - ${domain})...`);
+        console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} - ${domain} - ${target})...`);
 
         const query = `
-            INSERT INTO question_bank (topic, domain, difficulty, question_text, options, correct_option_index, explanation, question_hash)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, question_hash, times_used)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
             ON CONFLICT (question_hash) DO UPDATE SET times_used = question_bank.times_used + 1
             RETURNING id;
         `;
@@ -125,15 +167,18 @@ class TrainingRepository {
         const newIds = [];
 
         for (const q of questions) {
+            // Usar el topic exacto generado por la IA, o el defaultTopic si la IA falló en generarlo
+            const exactTopic = q.topic || defaultTopic;
             // Generar Hash ÚNICO basado en Topic + Pregunta + Opciones (para diferenciar mismas preguntas con mismas opciones)
             // Usamos un hash MD5 o SHA256 corto para indexación eficiente
-            const rawString = `${topic}-${q.question}-${JSON.stringify(q.options)}`;
+            const rawString = `${exactTopic}-${q.question}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             try {
                 const res = await db.query(query, [
-                    topic,
+                    exactTopic,
                     domain,
+                    target,
                     difficulty,
                     q.question,
                     JSON.stringify(q.options),
@@ -148,8 +193,68 @@ class TrainingRepository {
                 console.error("Error guardando pregunta individual:", e.message);
             }
         }
-
         return newIds;
+    }
+
+    /**
+     * Guarda un lote masivo de preguntas (Data Importer) con transacción.
+     * Soporta URLs de imágenes directas. Auto-cura la BD si faltan columnas.
+     */
+    async saveBulkQuestionBankAdmin(questionsArray) {
+        if (!questionsArray || questionsArray.length === 0) return { success: false, inserted: 0 };
+
+        const client = await db.pool().connect();
+        try {
+            // Auto-curar BD si es una instancia vieja
+            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS image_url TEXT');
+            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS target VARCHAR(255)');
+
+            await client.query('BEGIN');
+            let insertedCount = 0;
+            const crypto = require('crypto');
+
+            const query = `
+                INSERT INTO question_bank (domain, target, topic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (question_hash) DO UPDATE SET 
+                    target = EXCLUDED.target,
+                    image_url = EXCLUDED.image_url,
+                    explanation = EXCLUDED.explanation,
+                    options = EXCLUDED.options
+                RETURNING id;
+            `;
+
+            for (const q of questionsArray) {
+                const domain = q.domain || 'medicine';
+                const target = q.target || 'N/A';
+                const exactTopic = q.topic || q.areas || 'General';
+                const difficulty = q.difficulty || 'Básico';
+                const question_text = String(q.question);
+                const optionsStr = JSON.stringify(q.options || []);
+                const correct_option_index = q.correctAnswerIndex || 0;
+                const explanation = q.explanation || '';
+                const image_url = q.image_url || null;
+
+                // Hash único
+                const rawString = `${exactTopic}-${question_text}-${optionsStr}`;
+                const hash = crypto.createHash('md5').update(rawString).digest('hex');
+
+                await client.query(query, [
+                    domain, target, exactTopic, difficulty, question_text, optionsStr,
+                    correct_option_index, explanation, image_url, hash
+                ]);
+                insertedCount++;
+            }
+
+            await client.query('COMMIT');
+            return { success: true, inserted: insertedCount };
+        } catch (e) {
+            await client.query('ROLLBACK');
+            console.error('Error insertando bulk questions:', e);
+            throw e;
+        } finally {
+            client.release();
+        }
     }
 
     /**
@@ -175,7 +280,10 @@ class TrainingRepository {
         const query = `
             INSERT INTO user_question_history (user_id, question_id)
             VALUES ${placeholders.join(', ')}
-            ON CONFLICT (user_id, question_id) DO NOTHING;
+            ON CONFLICT (user_id, question_id) 
+            DO UPDATE SET 
+                seen_at = CURRENT_TIMESTAMP,
+                times_seen = user_question_history.times_seen + 1;
         `;
 
         try {
@@ -191,8 +299,8 @@ class TrainingRepository {
      */
     async saveQuizHistory(userId, quizData) {
         const query = `
-            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats, target)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id;
         `;
 
@@ -207,7 +315,8 @@ class TrainingRepository {
             quizData.score,
             quizData.totalQuestions,
             weakPoints,
-            quizData.areaStats || '{}' // ✅ NUEVO: JSONB precalculado
+            quizData.areaStats || '{}', // ✅ NUEVO: JSONB precalculado
+            quizData.target || 'ENAM'   // ✅ NUEVO: Guardar target explícito
         ];
 
         const res = await db.query(query, values);
@@ -294,10 +403,10 @@ class TrainingRepository {
         // Try to find existing SYSTEM deck for this module
         // Normalizing names: 'MEDICINA' -> 'Repaso Medicina'
         let deckName = `Repaso ${moduleName.charAt(0).toUpperCase() + moduleName.slice(1).toLowerCase()}`;
-        let icon = '🧠';
+        let icon = 'fas fa-brain';
 
-        if (moduleName === 'MEDICINA') icon = '🩺';
-        if (moduleName === 'IDIOMAS') icon = '🗣️';
+        if (moduleName === 'MEDICINA') icon = 'fas fa-stethoscope';
+        if (moduleName === 'IDIOMAS') icon = 'fas fa-comments';
 
         const findQuery = `
             SELECT id FROM decks 
@@ -320,21 +429,42 @@ class TrainingRepository {
         // 1. Determine Deck based on Module Context (Scalable)
         const deckId = await this.ensureSystemDeck(userId, moduleName);
 
+        // 2. Fetch existing flashcards in this deck to prevent duplication
+        const existingQuery = `
+            SELECT front_content FROM user_flashcards 
+            WHERE user_id = $1 AND deck_id = $2
+        `;
+        const existingRes = await db.query(existingQuery, [userId, deckId]);
+        const existingFronts = new Set(existingRes.rows.map(r => r.front_content.trim()));
+
         // Construir valores para insert masivo
         const values = [];
         const placeholders = [];
+        let insertCount = 0;
 
-        questions.forEach((q, index) => {
-            const front = q.question;
+        questions.forEach((q) => {
+            const front = q.question.trim();
+
+            // Si la flashcard ya existe en este mazo, la saltamos para evitar duplicados
+            if (existingFronts.has(front)) {
+                return;
+            }
+
             // Back: La respuesta correcta + explicación
             const correctOption = q.options[q.correctAnswerIndex];
             const back = `${correctOption}\n\n💡 ${q.explanation || ''}`;
 
             // ($1, $2, $3, $4, $5, $6) ...
-            const offset = index * 6;
+            const offset = insertCount * 6;
             placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
-            values.push(userId, front, back, topic, attemptId, deckId);
+            values.push(userId, front, back, q.topic || topic, attemptId, deckId);
+            insertCount++;
         });
+
+        if (insertCount === 0) {
+            console.log("No new flashcards to insert (all were duplicates).");
+            return;
+        }
 
         const query = `
             INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id)
@@ -342,6 +472,7 @@ class TrainingRepository {
         `;
 
         await db.query(query, values);
+        console.log(`✅ Saved ${insertCount} new UNIQUE flashcards.`);
     }
 
     /**
@@ -455,13 +586,18 @@ class TrainingRepository {
 
     // --- ANALYTICS & EVOLUTION ---
 
-    async getQuizEvolution(userId, context) {
+    async getQuizEvolution(userId, context, target) {
         // Context filter logic matching Controller
         let filter = '';
         const params = [userId];
 
         if (context === 'MEDICINA') {
-            filter = `AND difficulty = 'ENAM'`;
+            if (target) {
+                params.push(target);
+                filter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
+            } else {
+                filter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+            }
         } else if (context) {
             filter = `AND topic ILIKE $2`;
             params.push(`%${context}%`);

@@ -11,7 +11,7 @@ class QuizGameController {
      */
     async startGame(req, res) {
         try {
-            const { topic } = req.body;
+            const { topic, difficulty } = req.body;
             const user = req.user;
 
             if (!user || !user.id) {
@@ -21,26 +21,35 @@ class QuizGameController {
 
             console.log(`⚔️ Iniciando Quiz Battle: ${topic || 'Aleatorio'} para ${user.name} (ID: ${user.id})`);
 
-            // 0. VERIFICAR USO (Limitar Free Users para ahorrar tokens)
-            // No aplicamos bloqueo estricto al Simulador Serum (como pidió el usuario), pero sí al Arena General.
-            const usageCheck = await usageService.checkAndIncrementUsage(user.id);
-            if (!usageCheck.allowed) {
-                console.warn(`⛔ Límite alcanzado para usuario ${user.id} (${usageCheck.plan})`);
-                return res.status(403).json({
-                    error: 'Has alcanzado tu límite diario de juegos gratuitos. 😢 ¡Suscríbete para jugar sin límites!',
-                    limitReached: true
-                });
+            // 0. VERIFICAR LÍMITE DIARIO (3 partidas/día para usuarios Free)
+            const isPremium = user.subscriptionStatus === 'active' || user.role === 'admin';
+            if (!isPremium) {
+                const today = new Date().toISOString().split('T')[0];
+                const resultUsage = await db.query(
+                    'SELECT COUNT(*) as count FROM quiz_scores WHERE user_id = $1 AND created_at::date = $2',
+                    [user.id, today]
+                );
+                const gamesToday = parseInt(resultUsage.rows[0].count);
+                const DAILY_LIMIT = 3;
+
+                if (gamesToday >= DAILY_LIMIT) {
+                    console.warn(`⛔ Arena: Límite diario alcanzado para usuario ${user.id} (${gamesToday}/${DAILY_LIMIT})`);
+                    return res.status(403).json({
+                        error: 'Has alcanzado tu límite diario de 3 partidas gratuitas. ¡Suscríbete para jugar sin límites!',
+                        limitReached: true
+                    });
+                }
             }
 
             // 1. Generar Preguntas (Modo Rápido: General / Arcade)
             // Usamos generateGeneralQuiz para evitar contexto médico forzado
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', 'Intermedio', user.id);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', difficulty || 'Intermedio', user.id);
 
             res.json({
                 success: true,
                 gameId: Date.now().toString(), // Simple ID
                 lives: 3,
-                timePerQuestion: 15,
+                timePerQuestion: 20,
                 questions: questions.map(q => ({
                     id: Math.random().toString(36).substr(2, 9),
                     question: q.question,
@@ -62,7 +71,7 @@ class QuizGameController {
      */
     async getQuestions(req, res) {
         try {
-            const { topic } = req.body;
+            const { topic, difficulty } = req.body;
             const user = req.user;
 
             // ✅ Verificación de uso también para scroll infinito
@@ -75,7 +84,7 @@ class QuizGameController {
             }
 
             // Generar nuevo lote
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', 'Intermedio', user.id);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', difficulty || 'Intermedio', user.id);
 
             res.json({
                 success: true,

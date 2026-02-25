@@ -7,6 +7,7 @@ class AdminManager {
         this.allStudents = []; // ✅ NUEVO: Almacén para alumnos
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
+        this.allQuestions = []; // ✅ NUEVO: Almacén para preguntas
 
         // Estado de ordenamiento
         // ✅ NUEVO: Estado de ordenamiento por pestaña
@@ -15,7 +16,8 @@ class AdminManager {
             'tab-courses': 'date-desc',
             'tab-students': 'date-desc',
             'tab-topics': 'date-desc',
-            'tab-books': 'date-desc'
+            'tab-books': 'date-desc',
+            'tab-questions': 'date-desc'
         };
 
         // Elementos del DOM
@@ -308,6 +310,7 @@ class AdminManager {
         if (tabId === 'tab-students') this.displayStudents();
         if (tabId === 'tab-books') this.displayBooks();
         if (tabId === 'tab-careers') this.displayCareers();
+        if (tabId === 'tab-questions') this.displayQuestions();
     }
 
     // ✅ NUEVO: Método auxiliar para obtener las cabeceras de autenticación.
@@ -361,16 +364,17 @@ class AdminManager {
 
     async loadAllData() {
         try {
-            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes] = await Promise.all([
+            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
                 fetch(`${window.AppConfig.API_URL}/api/careers`, { headers: this._getAuthHeaders() }),
                 fetch(`${window.AppConfig.API_URL}/api/courses`, { headers: this._getAuthHeaders() }),
 
                 fetch(`${window.AppConfig.API_URL}/api/students`, { headers: this._getAuthHeaders() }),
                 fetch(`${window.AppConfig.API_URL}/api/topics`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/books`, { headers: this._getAuthHeaders() })
+                fetch(`${window.AppConfig.API_URL}/api/books`, { headers: this._getAuthHeaders() }),
+                fetch(`${window.AppConfig.API_URL}/api/admin/questions`, { headers: this._getAuthHeaders() })
             ]);
 
-            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes]) {
+            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
                 if (!res.ok) throw new Error(`Failed to fetch ${res.url}: ${res.statusText}`);
             }
 
@@ -380,6 +384,7 @@ class AdminManager {
             this.allStudents = await studentsRes.json(); // ✅ NUEVO
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
+            this.allQuestions = await questionsRes.json();
 
             // ✅ CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
             this.displayCareers();
@@ -387,6 +392,7 @@ class AdminManager {
             this.displayStudents(); // ✅ NUEVO
             this.displayTopics();
             this.displayBooks();
+            this.displayQuestions();
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
@@ -473,6 +479,34 @@ class AdminManager {
         container.innerHTML = content;
     }
 
+    // ✅ NUEVO: Interfaz de Preguntas
+    displayQuestions() {
+        const container = document.getElementById('tab-questions');
+        // ✅ APLICAR ORDENAMIENTO
+        const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
+        const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
+
+        // Custom header with Bulk Import button
+        const content = `
+            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                        <input type="text" class="admin-search-input" placeholder="Buscar preguntas..." data-target-tab="tab-questions" style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                    </div>
+                </div>
+                <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar JSON/CSV</span>
+                </button>
+                <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Pregunta</span>
+                </button>
+            </div>
+            ${itemsHTML || '<p class="empty-state">No hay preguntas registradas.</p>'}
+        `;
+        container.innerHTML = content;
+    }
+
     async openGenericModal(type, id = null) {
         this.genericForm.reset();
         this.genericForm.dataset.type = type;
@@ -533,6 +567,79 @@ class AdminManager {
                     }
                 }, 0);
                 break;
+            case 'question':
+                title.textContent = id ? 'Editar Pregunta' : 'Añadir Pregunta';
+                if (id) currentItem = this.allQuestions.find(q => String(q.id) === String(id));
+
+                let optA = currentItem?.options?.[0] || '';
+                let optB = currentItem?.options?.[1] || '';
+                let optC = currentItem?.options?.[2] || '';
+                let optD = currentItem?.options?.[3] || '';
+                let correctAns = currentItem?.correct_answer ?? 0;
+
+                const domains = [
+                    { id: 'medicine', name: 'Medicina' },
+                    { id: 'english', name: 'Inglés' },
+                    { id: 'general_trivia', name: 'Cultura General' }
+                ];
+                const diffs = [
+                    { id: 'Básico', name: 'Básico' },
+                    { id: 'Intermedio', name: 'Intermedio' },
+                    { id: 'Avanzado', name: 'Avanzado' }
+                ];
+
+                fieldsHTML = `
+                    ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', currentItem?.question_text || '', true)}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        ${this.createSelect('generic-domain', 'Dominio (*)', domains, currentItem?.domain || 'medicine', false)}
+                        ${this.createFormGroup('text', 'generic-target', 'Target (Ej: ENAM, Opcional)', currentItem?.target || '', false)}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        ${this.createFormGroup('text', 'generic-topic', 'Tema / Subtema (*)', currentItem?.topic || '', true)}
+                        ${this.createSelect('generic-difficulty', 'Dificultad (*)', diffs, currentItem?.difficulty || 'Intermedio', false)}
+                    </div>
+                    <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">Opciones y Respuesta</legend>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            ${this.createFormGroup('text', 'generic-opt0', 'Opción A (*)', optA, true)}
+                            ${this.createFormGroup('text', 'generic-opt1', 'Opción B (*)', optB, true)}
+                            ${this.createFormGroup('text', 'generic-opt2', 'Opción C (*)', optC, true)}
+                            ${this.createFormGroup('text', 'generic-opt3', 'Opción D (*)', optD, true)}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            ${this.createSelect('generic-correct-ans', 'Definir Respuesta Correcta (*)', [
+                    { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }
+                ], correctAns, false)}
+                        </div>
+                    </fieldset>
+                    ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', currentItem?.explanation || '', false)}
+                    ${this.createFormGroup('text', 'generic-image-url', 'URL de Imagen Externa Github (Opcional)', currentItem?.image_url || '', false)}
+                `;
+
+                setTimeout(() => {
+                    const txtQ = document.getElementById('generic-question-text');
+                    const txtE = document.getElementById('generic-explanation');
+                    if (txtQ) txtQ.rows = 3;
+                    if (txtE) txtE.rows = 2;
+                }, 0);
+                break;
+
+            case 'bulk-question':
+                title.textContent = 'Inyección Masiva de Preguntas (JSON)';
+                fieldsHTML = `
+                    <div class="admin-item-card" style="padding: 15px; text-align: left; background: var(--bg-surface); margin-bottom: 15px;">
+                        <p style="margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">
+                            <strong>Instrucciones:</strong> Pega un array JSON con las preguntas a inyectar en la base de datos.<br>
+                            Usa GitHub+jsDelivr para las <code>image_url</code>. Ejemplo: <code>https://cdn.jsdelivr.net/gh/User/Repo@main/a.webp</code>
+                        </p>
+                    </div>
+                    ${this.createFormGroup('textarea', 'generic-bulk-json', 'Carga Útil JSON (*)', '', true)}
+                `;
+                setTimeout(() => {
+                    const ta = document.getElementById('generic-bulk-json');
+                    if (ta) ta.rows = 15;
+                }, 0);
+                break;
             // ...
             case 'course':
                 title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
@@ -573,7 +680,7 @@ class AdminManager {
                                 <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
                             </div>
                         </div>
-                    `;
+                `;
                 }
 
                 fieldsHTML += courseImagePreview +
@@ -623,7 +730,7 @@ class AdminManager {
                                 <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
                             </div>
                         </div>
-                    `;
+                `;
                 }
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
@@ -650,18 +757,18 @@ class AdminManager {
                         <div class="form-group">
                             <label for="generic-author">Autor/Creador (*)</label>
                             <input type="text" id="generic-author" name="generic-author" value="${currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
-                            <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
-                                <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
-                            </small>
+                                <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
+                                    <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
+                                </small>
                         </div>
                     </div>
-                    
+
                     <div style="grid-column: 1 / -1;">
                         ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true)}
                         <small style="display:block; color:var(--text-muted); margin-top:2px;">Enlaces YouTube se mostraran como miniatura en plataforma. Otros enlaces se abren en web.</small>
                     </div>
                 </div>
-                ` + imagePreview +
+            ` + imagePreview +
                     `<input type="hidden" id="generic-delete-image" value="false">` +
                     this.createFormGroup('file', 'generic-image', 'Portada/Miniatura (Imagen)', '', false);
 
@@ -879,7 +986,7 @@ class AdminManager {
         const container = document.getElementById('schedule-container');
         const newRow = document.createElement('div');
         newRow.className = 'schedule-row';
-        newRow.innerHTML = `<input type="text" class="schedule-day" placeholder="Día" value="${day}" required><input type="time" class="schedule-start" value="${startTime}" required><input type="time" class="schedule-end" value="${endTime}" required><input type="text" class="schedule-room" placeholder="Salón" value="${room}"><input type="text" class="schedule-notes" placeholder="Notas/Carrera (Opcional)" value="${notes}"><button type="button" class="remove-schedule-row">×</button>`;
+        newRow.innerHTML = `<input type="text" class="schedule-day" placeholder="Día" value="${day}" required> <input type="time" class="schedule-start" value="${startTime}" required><input type="time" class="schedule-end" value="${endTime}" required><input type="text" class="schedule-room" placeholder="Salón" value="${room}"><input type="text" class="schedule-notes" placeholder="Notas/Carrera (Opcional)" value="${notes}"><button type="button" class="remove-schedule-row">×</button>`;
         container.appendChild(newRow);
     }
 
@@ -905,56 +1012,56 @@ class AdminManager {
         const topicOptions = allTopics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
 
         return `
-            <div class="form-group unit-manager-container">
-                <label>Contenido del Curso (Unidades y Temas)</label>
-                <div id="units-container">${unitsHTML}</div>
-                <button type="button" id="add-unit-btn" class="btn-secondary btn-small" style="margin-top: 10px;">+ Añadir Unidad</button>
-                
-                <!-- Template oculto para selector de temas CON BUSCADOR -->
-                <div id="topic-selector-template" style="display:none;">
-                    <div class="topic-selector-wrapper">
-                        <div class="searchable-dropdown-container" data-name="unit-topic-select">
-                            <div class="searchable-dropdown-toggle">
-                                <input type="text" class="live-search-input unit-topic-search" placeholder="Buscar tema..." autocomplete="off">
-                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                <div class="form-group unit-manager-container">
+                    <label>Contenido del Curso (Unidades y Temas)</label>
+                    <div id="units-container">${unitsHTML}</div>
+                    <button type="button" id="add-unit-btn" class="btn-secondary btn-small" style="margin-top: 10px;">+ Añadir Unidad</button>
+
+                    <!-- Template oculto para selector de temas CON BUSCADOR -->
+                    <div id="topic-selector-template" style="display:none;">
+                        <div class="topic-selector-wrapper">
+                            <div class="searchable-dropdown-container" data-name="unit-topic-select">
+                                <div class="searchable-dropdown-toggle">
+                                    <input type="text" class="live-search-input unit-topic-search" placeholder="Buscar tema..." autocomplete="off">
+                                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="collapsible-list">
+                                    <select class="topic-select" size="5">${topicOptions}</select>
+                                </div>
                             </div>
-                            <div class="collapsible-list">
-                                <select class="topic-select" size="5">${topicOptions}</select>
+                            <div class="topic-actions">
+                                <button type="button" class="btn-primary btn-small confirm-add-topic">Añadir</button>
+                                <button type="button" class="btn-secondary btn-small cancel-add-topic">Cancelar</button>
                             </div>
-                        </div>
-                        <div class="topic-actions">
-                            <button type="button" class="btn-primary btn-small confirm-add-topic">Añadir</button>
-                            <button type="button" class="btn-secondary btn-small cancel-add-topic">Cancelar</button>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+                `;
     }
 
     _createUnitHTML(unitName, topics) {
         const topicsHTML = topics.map(t => `
-            <div class="unit-topic-item" data-id="${t.id}">
-                <span class="topic-name">${t.name}</span>
-                <button type="button" class="remove-topic-btn" title="Quitar tema">×</button>
-                <input type="hidden" name="unit-topic-id" value="${t.id}">
-            </div>
-        `).join('');
+                <div class="unit-topic-item" data-id="${t.id}">
+                    <span class="topic-name">${t.name}</span>
+                    <button type="button" class="remove-topic-btn" title="Quitar tema">×</button>
+                    <input type="hidden" name="unit-topic-id" value="${t.id}">
+                </div>
+                `).join('');
 
         return `
-            <div class="unit-item card-3d">
-                <div class="unit-header">
-                    <input type="text" class="unit-name-input" placeholder="Nombre de la Unidad" value="${unitName}">
-                    <button type="button" class="remove-unit-btn" title="Eliminar Unidad"><i class="fas fa-trash"></i></button>
+                <div class="unit-item card-3d">
+                    <div class="unit-header">
+                        <input type="text" class="unit-name-input" placeholder="Nombre de la Unidad" value="${unitName}">
+                            <button type="button" class="remove-unit-btn" title="Eliminar Unidad"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="unit-topics-list">
+                        ${topicsHTML}
+                    </div>
+                    <div class="add-topic-container">
+                        <button type="button" class="btn-secondary btn-small add-topic-btn">+ Añadir Tema</button>
+                    </div>
                 </div>
-                <div class="unit-topics-list">
-                    ${topicsHTML}
-                </div>
-                <div class="add-topic-container">
-                    <button type="button" class="btn-secondary btn-small add-topic-btn">+ Añadir Tema</button>
-                </div>
-            </div>
-        `;
+                `;
     }
 
     updateMaterialsPreview() {
@@ -1014,8 +1121,12 @@ class AdminManager {
     async saveGenericForm() {
         const type = this.genericForm.dataset.type;
         const id = this.genericForm.dataset.id;
-        const url = id ? `${window.AppConfig.API_URL}/api/${type}s/${id}` : `${window.AppConfig.API_URL}/api/${type}s`;
+        let url = id ? `${window.AppConfig.API_URL}/api/${type}s/${id}` : `${window.AppConfig.API_URL}/api/${type}s`;
         const method = id ? 'PUT' : 'POST';
+
+        if (type === 'question') {
+            url = id ? `${window.AppConfig.API_URL}/api/admin/question/${id}` : `${window.AppConfig.API_URL}/api/admin/question`;
+        }
 
         let body = {};
 
@@ -1129,6 +1240,50 @@ class AdminManager {
                     }
                     body = formData; // Asignamos FormData en lugar de objeto JSON
                     break;
+                case 'question':
+                    body = {
+                        question_text: document.getElementById('generic-question-text').value,
+                        domain: document.getElementById('generic-domain').value,
+                        target: document.getElementById('generic-target').value,
+                        topic: document.getElementById('generic-topic').value,
+                        difficulty: document.getElementById('generic-difficulty').value,
+                        options: [
+                            document.getElementById('generic-opt0').value,
+                            document.getElementById('generic-opt1').value,
+                            document.getElementById('generic-opt2').value,
+                            document.getElementById('generic-opt3').value
+                        ],
+                        correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
+                        explanation: document.getElementById('generic-explanation').value,
+                        image_url: document.getElementById('generic-image-url').value
+                    };
+                    break;
+                case 'bulk-question':
+                    const jsonVal = document.getElementById('generic-bulk-json').value;
+                    let parsedData = [];
+                    try {
+                        parsedData = JSON.parse(jsonVal);
+                        if (!Array.isArray(parsedData)) throw new Error("Debe ser un array JSON");
+                    } catch (e) {
+                        throw new Error("Error de sintaxis JSON: " + e.message);
+                    }
+                    body = parsedData;
+
+                    // Enviar petición Custom para inyección masiva
+                    const _url = `${window.AppConfig.API_URL}/api/admin/questions/bulk`;
+                    const _response = await fetch(_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                        body: JSON.stringify(body)
+                    });
+                    const _responseData = await _response.json();
+                    if (!_response.ok) throw new Error(_responseData.error || 'Error al inyectar lote.');
+
+                    await window.confirmationModal.showAlert(`¡Éxito! ${_responseData.message}`, 'Inyección Completada');
+                    this.closeGenericModal();
+                    await this.loadAllData();
+                    return; // Retorno anticipado
+
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
             }
@@ -1185,7 +1340,11 @@ class AdminManager {
         if (!await window.confirmationModal.show(`¿Estás seguro de que quieres eliminar este elemento (${type})? Esta acción no se puede deshacer.`, 'Eliminar Elemento', 'Eliminar', 'Cancelar')) return;
 
         try {
-            const url = `${window.AppConfig.API_URL}/api/${type}s/${id}`;
+            let url = `${window.AppConfig.API_URL}/api/${type}s/${id}`;
+            if (type === 'question') {
+                url = `${window.AppConfig.API_URL}/api/admin/question/${id}`;
+            }
+
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
@@ -1270,10 +1429,10 @@ class AdminManager {
         const div = document.createElement('div');
         div.className = 'resource-field'; div.dataset.type = type;
         div.innerHTML = `
-            <input type="text" placeholder="Nombre del ${type}" value="${name}" class="resource-name">
-            <input type="text" placeholder="URL del recurso" value="${url}" class="resource-url">
-            <button type="button" class="remove-resource-btn">❌</button>
-        `;
+                <input type="text" placeholder="Nombre del ${type}" value="${name}" class="resource-name">
+                    <input type="text" placeholder="URL del recurso" value="${url}" class="resource-url">
+                        <button type="button" class="remove-resource-btn">❌</button>
+                        `;
         container.appendChild(div);
 
         // El botón de eliminar se maneja por delegación de eventos
@@ -1286,34 +1445,34 @@ class AdminManager {
         const showSort = tabId !== 'tab-sections';
 
         const sortSelectHTML = showSort ? `
-            <select class="tab-sort-select" data-tab="${tabId}" style="padding: 0 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; height: 40px; font-size: 0.9rem;">
-                <option value="date-desc" ${currentSort === 'date-desc' ? 'selected' : ''}>📅 Más Recientes</option>
-                <option value="date-asc" ${currentSort === 'date-asc' ? 'selected' : ''}>📅 Más Antiguos</option>
-                <option value="alpha-asc" ${currentSort === 'alpha-asc' ? 'selected' : ''}>🔤 A-Z</option>
-                <option value="alpha-desc" ${currentSort === 'alpha-desc' ? 'selected' : ''}>🔤 Z-A</option>
-            </select>
-        ` : '';
+                        <select class="tab-sort-select" data-tab="${tabId}" style="padding: 0 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; height: 40px; font-size: 0.9rem;">
+                            <option value="date-desc" ${currentSort === 'date-desc' ? 'selected' : ''}>📅 Más Recientes</option>
+                            <option value="date-asc" ${currentSort === 'date-asc' ? 'selected' : ''}>📅 Más Antiguos</option>
+                            <option value="alpha-asc" ${currentSort === 'alpha-asc' ? 'selected' : ''}>🔤 A-Z</option>
+                            <option value="alpha-desc" ${currentSort === 'alpha-desc' ? 'selected' : ''}>🔤 Z-A</option>
+                        </select>
+                        ` : '';
 
         return `
-            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
-                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                    <!-- ✅ UX MEJORA: Barra de búsqueda con ancho fijo y mejor padding para evitar solapamiento del icono -->
-                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
-                        <input type="text" 
-                               class="admin-search-input" 
-                               placeholder="Buscar..." 
-                               data-target-tab="${tabId}"
-                               style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
-                    </div>
-                    
-                    ${sortSelectHTML}
-                </div>
-                <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                    <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
-                </button>
-            </div>
-        `;
+                        <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+                            <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                                <!-- ✅ UX MEJORA: Barra de búsqueda con ancho fijo y mejor padding para evitar solapamiento del icono -->
+                                <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
+                                    <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                                    <input type="text"
+                                        class="admin-search-input"
+                                        placeholder="Buscar..."
+                                        data-target-tab="${tabId}"
+                                        style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                                </div>
+
+                                ${sortSelectHTML}
+                            </div>
+                            <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                                <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
+                            </button>
+                        </div>
+                        `;
     }
 
 }

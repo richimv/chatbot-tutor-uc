@@ -5,13 +5,13 @@
 const Arena = (() => {
     // STATE
     const state = {
-        difficulty: 'Profesional', // Default
+        difficulty: 'Básico', // Default aligns with UI selected card
         questions: [],
         currIdx: 0,
         score: 0,
         lives: 3,
         timer: null,
-        timeLeft: 15
+        timeLeft: 20
     };
 
     // DOM ELEMENTS
@@ -37,7 +37,8 @@ const Arena = (() => {
             icon: document.getElementById('fb-icon'),
             title: document.getElementById('fb-title'),
             msg: document.getElementById('fb-msg'),
-            card: document.querySelector('.feedback-card')
+            card: document.querySelector('.feedback-card'),
+            btn: document.getElementById('fb-btn-next')
         }
     };
 
@@ -50,17 +51,28 @@ const Arena = (() => {
     }
 
     async function startMatch() {
+        // ✅ Validar Autenticación PRIMERO
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            ui.screens.loading.classList.add('hidden');
+            if (window.uiManager) return window.uiManager.showAuthPromptModal();
+            return window.location.href = '/login';
+        }
+
         const topic = ui.lobby.topic.value.trim();
 
         // VALIDACIÓN STRICTA: El tema es obligatorio
         if (!topic) {
-            // alert('⚠️ Por favor ingresa un tema para tu desafío (Ej: "Historia", "Ciencia", "Cine").');
             // Usamos el modal de feedback para error simple
             ui.screens.modal.classList.remove('hidden');
             ui.modal.title.textContent = "⚠️ Falta el Tema";
             ui.modal.msg.textContent = "Por favor ingresa un tema para tu desafío (Ej: 'Historia', 'Ciencia', 'Cine').";
             ui.modal.icon.className = "fas fa-exclamation-triangle fb-icon";
             ui.modal.icon.style.color = "#eab308";
+
+            // ✅ Botón "Entendido" en vez de Siguiente Pregunta
+            ui.modal.btn.innerHTML = 'Entendido';
+            ui.modal.btn.onclick = () => ui.screens.modal.classList.add('hidden');
 
             ui.lobby.topic.focus();
             return;
@@ -69,9 +81,6 @@ const Arena = (() => {
         ui.screens.loading.classList.remove('hidden');
 
         try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return window.location.href = '/login.html';
-
             // API CALL
             const res = await fetch('/api/arena/start', {
                 method: 'POST',
@@ -91,8 +100,15 @@ const Arena = (() => {
                 ui.screens.loading.classList.add('hidden');
                 ui.screens.game.classList.remove('hidden');
                 renderQuestion();
+            } else if (data.limitReached) {
+                // ⛔ Límite diario alcanzado → Mostrar Paywall
+                ui.screens.loading.classList.add('hidden');
+                if (window.uiManager && window.uiManager.showPaywallModal) {
+                    window.uiManager.showPaywallModal();
+                } else {
+                    showCustomModal('Límite Alcanzado', data.error || 'Has alcanzado tu límite diario. Suscríbete para jugar sin límites.');
+                }
             } else {
-                // alert('Error: ' + data.error); 
                 showCustomModal('Error al Iniciar', data.error || 'No se pudo iniciar la partida.');
                 ui.screens.loading.classList.add('hidden');
             }
@@ -118,7 +134,7 @@ const Arena = (() => {
         const q = state.questions[state.currIdx];
 
         // Timer Reset
-        state.timeLeft = 15;
+        state.timeLeft = 20;
         startTimer();
 
         // UI
@@ -142,7 +158,7 @@ const Arena = (() => {
 
         state.timer = setInterval(() => {
             state.timeLeft -= 0.1;
-            const pct = (state.timeLeft / 15) * 100;
+            const pct = (state.timeLeft / 20) * 100;
             ui.game.bar.style.width = `${pct}%`;
 
             if (pct < 30) ui.game.bar.style.background = '#ef4444'; // Red alert
@@ -171,7 +187,10 @@ const Arena = (() => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ topic: ui.lobby.topic.value })
+                body: JSON.stringify({
+                    topic: ui.lobby.topic.value,
+                    difficulty: state.difficulty
+                })
             });
 
             if (!res.ok) {
@@ -389,6 +408,10 @@ const Arena = (() => {
 
         ui.modal.icon.className = success ? 'fas fa-check-circle fb-icon' : 'fas fa-times-circle fb-icon';
         ui.modal.icon.style.color = success ? '#22c55e' : '#ef4444';
+
+        // ✅ Restaurar Botón de Siguiente Pregunta
+        ui.modal.btn.innerHTML = 'Siguiente Pregunta <i class="fas fa-arrow-right"></i>';
+        ui.modal.btn.onclick = Arena.nextQ;
     }
     async function fetchLeaderboard() {
         const tbody = document.querySelector('.lb-table tbody');
@@ -396,6 +419,11 @@ const Arena = (() => {
 
         try {
             const token = localStorage.getItem('authToken');
+            if (!token) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:#94a3b8;"><i class="fas fa-lock" style="margin-bottom:0.5rem; display:block; font-size:1.5rem; color:#475569;"></i>Inicia sesión para ver el ranking global</td></tr>';
+                return;
+            }
+
             const res = await fetch('/api/arena/ranking', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -456,7 +484,14 @@ const Arena = (() => {
     async function fetchUser() {
         try {
             const token = localStorage.getItem('authToken');
-            if (!token) return; // Should redirect logic be here?
+            const nameDisplay = document.getElementById('userNameDisplay');
+
+            if (!token) {
+                if (nameDisplay) {
+                    nameDisplay.innerHTML = '<a href="/login.html" style="color:#fbbf24; text-decoration:none;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>';
+                }
+                return;
+            }
 
             const res = await fetch('/api/auth/me', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -482,6 +517,8 @@ const Arena = (() => {
     async function fetchUserStats() {
         try {
             const token = localStorage.getItem('authToken');
+            if (!token) return; // Do not fetch stats for guests
+
             const res = await fetch('/api/arena/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });

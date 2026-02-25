@@ -21,6 +21,8 @@ const SimulatorDash = (() => {
 
     let currentContext = 'MEDICINA'; // Default
     let activeConfig = null; // Stores user custom exam configuration
+    let lineChartInst = null;
+    let radarChartInst = null;
 
     // Exam Areas Data
     const examAreas = {
@@ -38,11 +40,84 @@ const SimulatorDash = (() => {
         document.getElementById('ctx-title').textContent = ctxConfig.title;
         document.getElementById('ctx-icon').innerHTML = ctxConfig.icon;
 
-        // 2. Setup Config Modal Logic
+        // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();
+
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                // Fetch preferences from API instead of localStorage
+                const res = await fetch(`/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const prefData = await res.json();
+
+                if (prefData && prefData.data) {
+                    activeConfig = prefData.data;
+                    // Keep localStorage in sync for legacy code
+                    localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
+                } else {
+                    // Fallback to localStorage if API has nothing
+                    const savedConfig = localStorage.getItem('simActiveConfig');
+                    if (savedConfig) activeConfig = JSON.parse(savedConfig);
+                }
+
+                const summaryBox = document.getElementById('active-config-summary');
+                if (summaryBox && activeConfig) {
+                    summaryBox.style.display = 'flex';
+                    summaryBox.innerHTML = `
+                        <i class="fas fa-filter"></i> 
+                        <span><strong>Filtro Recuperado:</strong> ${activeConfig.target} | ${activeConfig.difficulty} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error loading saved config from API", e);
+            }
+        }
 
         // 3. Setup Links (Modes) with initial default
         updateModeLinks(ctxConfig);
+
+        // 3.5 FREEMIUM: Lock Premium-only modes for free users
+        if (window.sessionManager) {
+            const user = window.sessionManager.getUser();
+            if (user) {
+                const status = user.subscriptionStatus || user.subscription_status;
+                const isPremium = status === 'active' || user.role === 'admin';
+
+                if (!isPremium) {
+                    // Lock "Modo Estudio" and "Simulacro Real"
+                    const lockedButtons = [
+                        document.getElementById('btn-mode-study'),
+                        document.getElementById('btn-mode-real')
+                    ];
+
+                    lockedButtons.forEach(btn => {
+                        if (!btn) return;
+                        btn.classList.add('locked');
+                        btn.removeAttribute('href');
+                        btn.style.cursor = 'pointer';
+
+                        // Add Premium badge
+                        const badge = document.createElement('span');
+                        badge.className = 'mode-badge premium-lock-badge';
+                        badge.innerHTML = '<i class="fas fa-lock"></i> Premium';
+                        btn.appendChild(badge);
+
+                        // Intercept click → paywall
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.uiManager && window.uiManager.showPaywallModal) {
+                                window.uiManager.showPaywallModal();
+                            } else {
+                                window.location.href = '/pricing';
+                            }
+                        });
+                    });
+                }
+            }
+        }
 
         // Flashcard link will be dynamic based on System Deck ID
 
@@ -63,21 +138,21 @@ const SimulatorDash = (() => {
         const btnArcade = document.getElementById('btn-mode-arcade');
         if (btnArcade) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnArcade.href = `quiz.html${baseParams}${separator}limit=10`;
+            btnArcade.href = `/quiz${baseParams}${separator}limit=10`;
         }
 
         // 2. Study Mode (20 questions)
         const btnStudy = document.getElementById('btn-mode-study');
         if (btnStudy) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnStudy.href = `quiz.html${baseParams}${separator}limit=20`;
+            btnStudy.href = `/quiz${baseParams}${separator}limit=20`;
         }
 
         // 3. Real Mock (100 questions - STRICTLY DB ONLY)
         const btnReal = document.getElementById('btn-mode-real');
         if (btnReal) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnReal.href = `quiz.html${baseParams}${separator}limit=100`;
+            btnReal.href = `/quiz${baseParams}${separator}limit=100`;
         }
     }
 
@@ -97,7 +172,13 @@ const SimulatorDash = (() => {
             areas.forEach(area => {
                 const label = document.createElement('label');
                 label.className = 'area-checkbox-label';
-                label.innerHTML = `<input type="checkbox" value="${area}" checked> ${area}`;
+
+                let isChecked = true;
+                if (activeConfig && activeConfig.target === target && activeConfig.areas) {
+                    isChecked = activeConfig.areas.includes(area);
+                }
+
+                label.innerHTML = `<input type="checkbox" value="${area}" ${isChecked ? 'checked' : ''}> ${area}`;
                 areasGrid.appendChild(label);
             });
         };
@@ -114,8 +195,24 @@ const SimulatorDash = (() => {
                 modal.style.opacity = '1';
 
                 // Trigger initial render safely
-                const checkedEl = document.querySelector('.exam-target-option input:checked');
-                const activeTarget = checkedEl ? checkedEl.value : 'ENAM';
+                let activeTarget = 'ENAM';
+                if (activeConfig) {
+                    activeTarget = activeConfig.target || 'ENAM';
+
+                    // Set Target Radio
+                    const targetRadio = document.querySelector(`.exam-target-option input[value="${activeTarget}"]`);
+                    if (targetRadio) targetRadio.checked = true;
+
+                    // Set Difficulty Select
+                    const diffSelect = document.getElementById('config-difficulty');
+                    if (diffSelect && activeConfig.difficulty) {
+                        diffSelect.value = activeConfig.difficulty;
+                    }
+                } else {
+                    const checkedEl = document.querySelector('.exam-target-option input:checked');
+                    if (checkedEl) activeTarget = checkedEl.value;
+                }
+
                 renderAreas(activeTarget);
             };
         }
@@ -139,7 +236,7 @@ const SimulatorDash = (() => {
 
         // Save Config
         if (btnSave) {
-            btnSave.onclick = () => {
+            btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
                 const difficulty = document.getElementById('config-difficulty').value;
                 const selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
@@ -149,7 +246,36 @@ const SimulatorDash = (() => {
                     return;
                 }
 
+                // Show basic loading state on button
+                const originalText = btnSave.innerHTML;
+                btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                btnSave.disabled = true;
+
                 activeConfig = { target, difficulty, areas: selectedAreas };
+                localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig)); // Persist locally
+
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    try {
+                        // Persist to Database for Cross-Device Sync
+                        await fetch('/api/users/preferences', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                domain: currentContext.toLowerCase(),
+                                config_json: activeConfig
+                            })
+                        });
+                    } catch (err) {
+                        console.error("Error saving preferences to backend", err);
+                    }
+                }
+
+                btnSave.innerHTML = originalText;
+                btnSave.disabled = false;
 
                 // Update UI Summary
                 summaryBox.style.display = 'flex';
@@ -161,6 +287,10 @@ const SimulatorDash = (() => {
                 // Update Links
                 updateModeLinks(contexts[currentContext] || contexts['MEDICINA']);
 
+                // Relanzar fetch a base de datos de inmediato con nuevo target
+                loadStats();
+                loadEvolution();
+
                 closeModal();
             };
         }
@@ -170,14 +300,19 @@ const SimulatorDash = (() => {
     async function loadEvolution() {
         const token = localStorage.getItem('authToken');
         try {
-            const res = await fetch(`/api/quiz/evolution?context=${currentContext}`, {
+            let qs = `?context=${currentContext}`;
+            if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+
+            const res = await fetch(`/api/quiz/evolution${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
 
+            if (lineChartInst) lineChartInst.destroy();
+
             if (data.success && data.chart.labels.length > 0) {
                 const ctx = document.getElementById('evolutionChart').getContext('2d');
-                new Chart(ctx, {
+                lineChartInst = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: data.chart.labels,
@@ -240,7 +375,10 @@ const SimulatorDash = (() => {
 
         try {
             // Fetch Optimized Summary
-            const res = await fetch(`/api/quiz/stats?context=${currentContext}`, {
+            let qs = `?context=${currentContext}`;
+            if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+
+            const res = await fetch(`/api/quiz/stats${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -256,19 +394,39 @@ const SimulatorDash = (() => {
             // Setup Flashcard Link
             if (kpis.system_deck_id) {
                 const btnFlash = document.getElementById('btn-flashcards');
-                if (btnFlash) btnFlash.href = `repaso.html?deckId=${kpis.system_deck_id}`;
+                if (btnFlash) btnFlash.href = `/repaso?deckId=${kpis.system_deck_id}`;
             }
 
             // --- Render Radar Chart (Áreas) ---
+            if (radarChartInst) radarChartInst.destroy();
+
             if (kpis.radar_data && kpis.radar_data.length > 0) {
                 document.getElementById('radar-empty-state').style.display = 'none';
                 const radarCanvas = document.getElementById('radarChart');
                 radarCanvas.style.display = 'block';
 
-                const radarLabels = kpis.radar_data.map(d => d.subject);
-                const radarDataPts = kpis.radar_data.map(d => d.accuracy);
+                // 🧹 Sanitizar y agrupar historial viejo corrupto
+                const cleanRadarMap = {};
+                kpis.radar_data.forEach(d => {
+                    let cleanSubject = d.subject || 'General';
+                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
 
-                new Chart(radarCanvas.getContext('2d'), {
+                    if (!cleanRadarMap[cleanSubject]) {
+                        cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
+                    }
+
+                    const safeTotal = parseInt(d.total || 0, 10);
+                    const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
+                    cleanRadarMap[cleanSubject].correct += rawCorrect;
+                    cleanRadarMap[cleanSubject].total += safeTotal;
+                });
+
+                const radarLabels = Object.keys(cleanRadarMap);
+                const radarDataPts = radarLabels.map(subject =>
+                    Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0
+                );
+
+                radarChartInst = new Chart(radarCanvas.getContext('2d'), {
                     type: 'radar',
                     data: {
                         labels: radarLabels,

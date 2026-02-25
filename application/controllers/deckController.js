@@ -45,7 +45,7 @@ class DeckController {
 
             if (!name) return res.status(400).json({ error: 'Name is required' });
 
-            const deck = await DeckService.createDeck(userId, name, icon || '📚', parentId || null);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null);
             res.json({ success: true, deck });
         } catch (error) {
             console.error(error);

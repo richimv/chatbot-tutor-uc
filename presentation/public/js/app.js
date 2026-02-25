@@ -14,6 +14,13 @@ console.log('🌍 Entorno:', isLocal ? 'Local' : 'Producción', '| API:', window
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 DOM completamente cargado. Inicializando componentes...');
 
+    // ✅ 0. INTERCEPTAR RECOVERY LINK (Recuperación de Contraseña)
+    if (window.location.hash && window.location.hash.includes('type=recovery')) {
+        console.log('🔑 Link de recuperación detectado. Redirigiendo a update-password...');
+        window.location.href = '/update-password' + window.location.hash;
+        return; // Detener inicialización normal para evitar logueo silencioso
+    }
+
     // ✅ TRACKING AUTOMÁTICO DE VISTAS (Career / Course)
     try {
         if (window.AnalyticsApiService) {
@@ -109,16 +116,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ✅ KEEP-ALIVE: Ping al servidor cada 5 minutos para evitar que Render se duerma
-    setInterval(() => {
+    setInterval(async () => {
         const healthUrl = (window.AppConfig && window.AppConfig.API_URL)
             ? `${window.AppConfig.API_URL}/health`
             : '/health';
 
-        fetch(healthUrl)
-            .then(res => {
-                if (!res.ok) console.warn('⚠️ Keep-alive ping failed');
-            })
-            .catch(err => console.warn('⚠️ Keep-alive error:', err));
+        try {
+            const res = await fetch(healthUrl);
+            if (!res.ok) console.warn('⚠️ Keep-alive ping failed');
+        } catch (err) {
+            console.warn('⚠️ Keep-alive error:', err);
+        }
+
+        // 🛡️ SESIÓN: Verificar silenciosamente si el token de autenticación sigue siendo válido en el backend
+        if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+            await window.sessionManager.validateSession();
+        }
     }, 5 * 60 * 1000); // 5 minutos
 });
 

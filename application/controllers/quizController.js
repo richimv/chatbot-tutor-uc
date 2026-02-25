@@ -68,7 +68,8 @@ class QuizController {
             // en lugar del genérico "Medicina General".
             const returnedTopic = result.topic || finalAreas[0];
 
-            console.log(`✅ Quiz Generado. Tema Real: ${returnedTopic} en Target: ${finalTarget}`);
+            const logTopic = finalAreas.length > 1 ? `Multi-Área (${finalAreas.length} áreas)` : returnedTopic;
+            console.log(`✅ Quiz Generado. Tema Real: ${logTopic} en Target: ${finalTarget}`);
 
             res.json({
                 success: true,
@@ -176,7 +177,7 @@ class QuizController {
     async getStats(req, res) {
         try {
             const userId = req.user.id;
-            const { context } = req.query; // 'MEDICINA', etc.
+            const { context, target } = req.query; // 'MEDICINA', etc.
 
             const db = require('../../infrastructure/database/db');
 
@@ -185,9 +186,14 @@ class QuizController {
             let topicFilter = '';
             const params = [userId];
             if (context === 'MEDICINA') {
-                // ✅ FIX: Usar 'difficulty' para filtrar Medicina (ENAM), 
-                // ya que los topics ahora son variados (Pediatría, Cardiología, etc.)
-                topicFilter = `AND difficulty = 'ENAM'`;
+                if (target) {
+                    params.push(target);
+                    // Match exams explicitly marked with this target OR legacy exams where difficulty held the valid target
+                    topicFilter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
+                } else {
+                    // Fallback para todo el ecosistema (todas las dificultades antiguas y modernas unificadas)
+                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+                }
             } else if (context) {
                 // Generic fallback
                 params.push(`%${context}%`);
@@ -236,14 +242,14 @@ class QuizController {
             // Leemos el JSONB 'area_stats' de cada examen y agregamos.
             const topicAnalysisQuery = `
                 SELECT 
-                    jsonb_object_keys(area_stats) as subtema,
-                    SUM((area_stats->jsonb_object_keys(area_stats)->>'correct')::int) as correct_answers,
-                    SUM((area_stats->jsonb_object_keys(area_stats)->>'total')::int) as total_answers
-                FROM quiz_history
-                WHERE user_id = $1 ${topicFilter}
-                GROUP BY subtema
-                HAVING SUM((area_stats->jsonb_object_keys(area_stats)->>'total')::int) > 0
-                ORDER BY (SUM((area_stats->jsonb_object_keys(area_stats)->>'correct')::int)::float / SUM((area_stats->jsonb_object_keys(area_stats)->>'total')::int)) DESC
+                    key as subtema,
+                    SUM((value->>'correct')::int) as correct_answers,
+                    SUM((value->>'total')::int) as total_answers
+                FROM quiz_history, jsonb_each(area_stats)
+                WHERE user_id = $1 ${topicFilter} AND jsonb_typeof(area_stats) = 'object'
+                GROUP BY key
+                HAVING SUM((value->>'total')::int) > 0
+                ORDER BY (SUM((value->>'correct')::int)::float / SUM((value->>'total')::int)) DESC
             `;
 
             let strongest = 'N/A';
@@ -257,11 +263,16 @@ class QuizController {
                     weakest = topicRes.rows[topicRes.rows.length - 1].subtema;
 
                     // Empaquetar data para UI (Radar/Bars)
-                    radarData = topicRes.rows.map(row => ({
-                        subject: row.subtema,
-                        accuracy: Math.round((row.correct_answers / row.total_answers) * 100),
-                        total: row.total_answers
-                    }));
+                    radarData = topicRes.rows.map(row => {
+                        const correctAnswers = parseInt(row.correct_answers || 0, 10);
+                        const totalAnswers = parseInt(row.total_answers || 0, 10);
+                        return {
+                            subject: row.subtema,
+                            accuracy: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
+                            correct: correctAnswers,
+                            total: totalAnswers
+                        };
+                    });
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo procesar area_stats JSONB. Fallback al mode antiguo.", e.message);
@@ -339,10 +350,10 @@ class QuizController {
     async getEvolution(req, res) {
         try {
             const userId = req.user.id;
-            const { context } = req.query;
+            const { context, target } = req.query;
             const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
 
-            const data = await TrainingRepository.getQuizEvolution(userId, context);
+            const data = await TrainingRepository.getQuizEvolution(userId, context, target);
 
             // Format for Chart.js
             const chartData = {
@@ -365,21 +376,22 @@ class QuizController {
      */
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, seenIds, topic } = req.body;
+            const { target, areas, difficulty, topic } = req.body;
             const userId = req.user.id;
-            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
 
             const finalTarget = target || 'MEDICINA';
             const finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : ['Medicina General']);
 
-            // Fetch 5 new questions 
-            // We pass the finalTarget (as domain) and finalAreas (as multiple topics)
-            const questions = await TrainingRepository.findQuestionsInBankBatch(finalTarget, finalAreas, difficulty, 5, userId);
+            // 🎯 FIX CRÍTICO: Usar el motor híbrido (DB + IA) para que NUNCA se corte a la mitad.
+            // Si el banco local se queda sin preguntas no vistas, el TrainingService llamará a Gemini.
+            const result = await TrainingService.generateQuiz(
+                { target: finalTarget, areas: finalAreas },
+                difficulty || 'Intermedio',
+                userId,
+                5
+            );
 
-            // Filter out any that strictly match seenIds just in case
-            const newQuestions = questions.filter(q => !seenIds.includes(q.id));
-
-            res.json({ success: true, questions: newQuestions });
+            res.json({ success: true, questions: result.questions });
 
         } catch (error) {
             console.error('Error fetching next batch:', error);

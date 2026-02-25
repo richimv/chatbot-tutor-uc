@@ -1,7 +1,9 @@
 const db = require('../../infrastructure/database/db');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
+const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -148,6 +150,161 @@ class AdminController {
             res.status(500).json({ error: 'Error interno.' });
         }
     }
+
+    /**
+     * POST /api/admin/questions/bulk
+     * Endpoint para importar preguntas masivas vía JSON
+     */
+    async bulkInjectQuestions(req, res) {
+        try {
+            const questions = req.body;
+            if (!Array.isArray(questions)) {
+                return res.status(400).json({ error: 'El cuerpo debe ser un array JSON.' });
+            }
+
+            console.log(`📥 Administrador subiendo lote de ${questions.length} preguntas masivas...`);
+
+            const result = await trainingRepository.saveBulkQuestionBankAdmin(questions);
+
+            if (result.success) {
+                res.json({ success: true, message: `Lote inyectado con éxito: ${result.inserted} preguntas`, count: result.inserted });
+            } else {
+                res.status(500).json({ error: 'Fallo al inyectar el lote.' });
+            }
+
+        } catch (error) {
+            console.error('❌ Error en inyección masiva:', error);
+            res.status(500).json({ error: 'Error del servidor procesando el lote.' });
+        }
+    }
+
+    /**
+     * GET /api/admin/questions
+     * Obtiene una lista paginada o completa de preguntas para el panel.
+     */
+    async getAllQuestions(req, res) {
+        try {
+            const result = await db.query(`
+                SELECT id, question_text, domain, target, topic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
+                FROM question_bank 
+                ORDER BY created_at DESC 
+                LIMIT 500
+            `);
+            res.json(result.rows);
+        } catch (error) {
+            console.error('Error fetching questions:', error);
+            res.status(500).json({ error: 'Error interno obteniendo preguntas.' });
+        }
+    }
+
+    /**
+     * POST /api/admin/question
+     * Añade una sola pregunta.
+     */
+    async addSingleQuestion(req, res) {
+        try {
+            const q = req.body;
+            // Validaciones básicas
+            if (!q.question_text || !q.options || q.correct_answer === undefined || !q.domain) {
+                return res.status(400).json({ error: 'Faltan campos obligatorios' });
+            }
+
+            // Hash único
+            const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
+            const hash = crypto.createHash('md5').update(rawString).digest('hex');
+
+            const insertQuery = `
+                INSERT INTO question_bank (
+                    question_text, options, correct_option_index, explanation, 
+                    domain, target, topic, difficulty, image_url, question_hash
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING id;
+            `;
+            const values = [
+                q.question_text,
+                JSON.stringify(q.options),
+                q.correct_answer,
+                q.explanation || '',
+                q.domain,
+                q.target || null,
+                q.topic || 'General',
+                q.difficulty || 'Intermedio',
+                q.image_url || null,
+                hash
+            ];
+
+            const result = await db.query(insertQuery, values);
+            res.json({ success: true, message: 'Pregunta añadida existosamente', id: result.rows[0].id });
+        } catch (error) {
+            console.error('Error adding single question:', error);
+            res.status(500).json({ error: 'Error del servidor al añadir pregunta.' });
+        }
+    }
+
+    /**
+     * PUT /api/admin/question/:id
+     * Actualiza una pregunta existente.
+     */
+    async updateSingleQuestion(req, res) {
+        try {
+            const { id } = req.params;
+            const q = req.body;
+
+            if (!q.question_text || !q.options || q.correct_answer === undefined || !q.domain) {
+                return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar' });
+            }
+
+            // Hash único (en caso se haya modificado la pregunta u opciones)
+            const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
+            const hash = crypto.createHash('md5').update(rawString).digest('hex');
+
+            const updateQuery = `
+                UPDATE question_bank 
+                SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4,
+                    domain = $5, target = $6, topic = $7, difficulty = $8, image_url = $9, question_hash = $10
+                WHERE id = $11
+                RETURNING id;
+            `;
+            const values = [
+                q.question_text,
+                JSON.stringify(q.options),
+                q.correct_answer,
+                q.explanation || '',
+                q.domain,
+                q.target || null,
+                q.topic || 'General',
+                q.difficulty || 'Intermedio',
+                q.image_url || null,
+                hash,
+                id
+            ];
+
+            const result = await db.query(updateQuery, values);
+            if (result.rowCount === 0) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+
+            res.json({ success: true, message: 'Pregunta actualizada exitosamente.' });
+        } catch (error) {
+            console.error('Error updating single question:', error);
+            res.status(500).json({ error: 'Error del servidor al actualizar pregunta.' });
+        }
+    }
+
+    /**
+     * DELETE /api/admin/question/:id
+     * Elimina una pregunta.
+     */
+    async deleteSingleQuestion(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await db.query('DELETE FROM question_bank WHERE id = $1 RETURNING id', [id]);
+            if (result.rowCount === 0) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+
+            res.json({ success: true, message: 'Pregunta eliminada exitosamente.' });
+        } catch (error) {
+            console.error('Error deleting single question:', error);
+            res.status(500).json({ error: 'Error del servidor al eliminar pregunta.' });
+        }
+    }
 }
 
 // Exportamos una instancia para poder usar 'this' correctamente si es necesario
@@ -157,5 +314,10 @@ const controller = new AdminController();
 // BINDING: Truco para no perder el contexto 'this' al pasarlo como callback en router
 module.exports = {
     getDashboardStats: controller.getDashboardStats.bind(controller),
-    runAiAnalysis: controller.runAiAnalysis.bind(controller)
+    runAiAnalysis: controller.runAiAnalysis.bind(controller),
+    bulkInjectQuestions: controller.bulkInjectQuestions.bind(controller),
+    getAllQuestions: controller.getAllQuestions.bind(controller),
+    addSingleQuestion: controller.addSingleQuestion.bind(controller),
+    updateSingleQuestion: controller.updateSingleQuestion.bind(controller),
+    deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller)
 };

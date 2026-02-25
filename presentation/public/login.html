@@ -278,6 +278,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // ✅ 0. INTERCEPTAR RECOVERY LINK SI SUPABASE REDIRIGE DIRECTO AQUI
+            if (window.location.hash && window.location.hash.includes('type=recovery')) {
+                console.log('🔑 Link de recuperación detectado en Login. Redirigiendo a update-password...');
+                window.location.href = '/update-password.html' + window.location.hash;
+                return;
+            }
+
             const forgotLink = document.getElementById('forgot-password-link');
             const forgotModal = document.getElementById('forgot-password-modal');
             const closeBtn = document.getElementById('close-forgot-modal');

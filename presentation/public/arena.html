@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Styles -->
-    <!-- Removed non-existent style.css to fix 404 -->
+    <link rel="stylesheet" href="css/modal.css">
+    <!-- Inline CSS for specific restoration to ensure override -->
     <!-- Inline CSS for specific restoration to ensure override -->
     <style>
         :root {
@@ -91,7 +92,8 @@
         .lobby-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 1.5rem 2rem;
+            /* REDUCED SPACING */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -101,6 +103,8 @@
             font-size: 3.5rem;
             font-weight: 800;
             text-align: center;
+            margin-top: 0;
+            /* ELIMINATE DEFAULT H1 SPACING */
             margin-bottom: 0.5rem;
             background: linear-gradient(to right, #fff, #94a3b8);
             -webkit-background-clip: text;
@@ -112,7 +116,8 @@
 
         .sub-title {
             color: #94a3b8;
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
+            /* REDUCED SPACING */
             font-size: 1.1rem;
         }
 
@@ -127,7 +132,8 @@
         .config-card {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 2.5rem;
+            padding: 1.5rem 2rem;
+            /* REDUCED SPACING */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -147,7 +153,8 @@
             padding: 1rem;
             border-radius: 10px;
             font-size: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+            /* REDUCED SPACING */
             font-family: inherit;
         }
 
@@ -156,7 +163,8 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+            /* REDUCED SPACING */
         }
 
         .diff-card {
@@ -298,7 +306,8 @@
         /* --- GAMEPLAY VIEW --- */
         .game-view {
             max-width: 900px;
-            margin: 4rem auto;
+            margin: 2rem auto;
+            /* REDUCED SPACING */
             padding: 2rem;
         }
 
@@ -310,7 +319,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
+            /* REDUCED SPACING */
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -332,8 +342,11 @@
 
         .progress-fill {
             height: 100%;
-            width: 50%;
+            width: 100%;
+            /* Default filled */
             background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+            transition: width 0.1s linear, background 0.3s ease;
+            /* SMOOTH ANIMATION */
         }
 
         .powerups {
@@ -392,14 +405,16 @@
             font-size: 0.85rem;
             text-transform: uppercase;
             display: inline-block;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
+            /* REDUCED SPACING */
         }
 
         .q-text {
             font-size: 1.8rem;
             font-weight: 700;
             line-height: 1.4;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
+            /* REDUCED SPACING */
         }
 
         .options-grid {
@@ -465,16 +480,86 @@
             line-height: 1.6;
             margin-bottom: 2rem;
         }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 768px) {
+            .arena-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .main-title {
+                font-size: 2.2rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .config-card,
+            .leaderboard-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .difficulty-grid {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .bottom-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .hud-bar {
+                flex-direction: column;
+                gap: 1.5rem;
+                border-radius: 20px;
+                padding: 1.5rem 1rem;
+                text-align: center;
+            }
+
+            .progress-track {
+                width: 100%;
+                margin: 0;
+            }
+
+            .powerups {
+                margin: 0;
+                justify-content: center;
+            }
+
+            .q-text {
+                font-size: 1.3rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .opt-btn {
+                padding: 1.2rem;
+                font-size: 1rem;
+            }
+
+            .feedback-card {
+                padding: 2rem 1.5rem;
+                width: 90%;
+            }
+        }
     </style>
 </head>
 
 <body>
 
     <!-- Header -->
-    <!-- Header -->
     <header class="arena-header">
-        <a href="/" class="arena-logo">
-            <i class="fas fa-gamepad"></i> QUIZ BATTLE
+        <a href="/" class="arena-logo" title="Volver al inicio">
+            <i class="fas fa-gamepad" style="font-size: 2rem;"></i>
         </a>
         <div class="user-controls">
             <span class="user-name" id="userNameDisplay">Cargando...</span>
@@ -608,7 +693,7 @@
             <i class="fas fa-check-circle fb-icon" id="fb-icon"></i>
             <h2 class="fb-title" id="fb-title">¡Excelente!</h2>
             <p class="fb-text" id="fb-msg">...</p>
-            <button class="btn-start" onclick="Arena.nextQ()"
+            <button class="btn-start" id="fb-btn-next" onclick="Arena.nextQ()"
                 style="margin: 0 auto; width: auto; padding: 0.8rem 2rem;">
                 Siguiente Pregunta <i class="fas fa-arrow-right"></i>
             </button>
@@ -616,7 +701,9 @@
     </div>
 
     <!-- Logic -->
+    <script src="js/config.js"></script> <!-- ✅ Required by UIManager -->
     <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js"></script> <!-- ✅ Global Auth Modal Hub -->
     <script src="js/arena.js"></script>
 
 </body>

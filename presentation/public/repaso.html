@@ -49,9 +49,9 @@
 
         .decks-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
 
         .deck-card {
@@ -127,16 +127,67 @@
             transition: width 0.5s ease;
         }
 
+        /* Dual-layout deck cards: desktop vs mobile */
+        .deck-card-desktop {
+            display: block;
+        }
+
+        .deck-card-mobile {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .deck-card-desktop {
+                display: none;
+            }
+
+            .deck-card-mobile {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+            }
+
+            .decks-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .deck-card {
+                max-width: none !important;
+                padding: 0.7rem 0.8rem !important;
+            }
+        }
+
         /* Badge for System/User Decks */
         .deck-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
+            position: static;
             padding: 4px 8px;
             border-radius: 6px;
             font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
+        }
+
+        /* Action buttons (edit/delete) */
+        .deck-action-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.65rem;
+            padding: 4px 6px;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .deck-action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #93c5fd;
+            transform: scale(1.15);
+        }
+
+        .deck-action-btn--delete:hover {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.12);
         }
 
         .badge-system {
@@ -209,7 +260,7 @@
         <!-- Header with Nav -->
         <header class="header-glass">
             <div class="header-nav" style="display: flex; align-items: center; gap: 1rem; flex-grow: 1;">
-                <a href="index.html" class="btn-back" title="Volver al Inicio">
+                <a href="/" class="btn-back" title="Volver al Inicio">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin-right: 0.5rem;"></div>
@@ -291,6 +342,15 @@
                     <label class="form-label">Nombre</label>
                     <input type="text" class="form-input" id="new-deck-name" required placeholder="Ej: Histología">
                 </div>
+
+                <!-- Icon Picker -->
+                <div class="form-group">
+                    <label class="form-label">Icono</label>
+                    <input type="hidden" id="new-deck-icon" value="fas fa-layer-group">
+                    <div id="icon-picker-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem;">
+                    </div>
+                </div>
+
                 <!-- Hidden IDs -->
                 <input type="hidden" id="new-deck-id">
                 <input type="hidden" id="new-deck-parent">
@@ -301,6 +361,26 @@
                     <button type="submit" class="btn-action" style="background: #3b82f6; color: white;">Crear</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-confirm-modal">
+        <div class="modal-content" style="max-width:400px; text-align:center;">
+            <div style="margin-bottom:1.5rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size:2.5rem; color:#f87171;"></i>
+            </div>
+            <h2 style="margin-bottom:0.5rem; font-size:1.2rem;">Eliminar Mazo</h2>
+            <p style="color:#94a3b8; margin-bottom:0.3rem;">¿Estás seguro de eliminar</p>
+            <p style="color:#f1f5f9; font-weight:600; margin-bottom:0.5rem;">"<span id="delete-deck-name"></span>"</p>
+            <p style="color:#94a3b8; font-size:0.8rem; margin-bottom:2rem;">y todo su contenido? Esta acción no se puede
+                deshacer.</p>
+            <div style="display:flex; gap:1rem; justify-content:center;">
+                <button id="btn-cancel-delete" class="btn-action btn-secondary-action"
+                    style="padding:0.6rem 1.5rem;">Cancelar</button>
+                <button id="btn-confirm-delete" class="btn-action"
+                    style="background:#ef4444; color:white; padding:0.6rem 1.5rem; border:none;">Eliminar</button>
+            </div>
         </div>
     </div>
 

@@ -34,5 +34,6 @@ module.exports = {
     coursesController: new CoursesController(searchService, adminService),
     usageController: new UsageController(usageService), // ✅ NUEVO
     adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
-    quizController: require('./quizController') // ✅ NUEVO: QuizController
+    quizController: require('./quizController'), // ✅ NUEVO: QuizController
+    userPreferencesController: require('./userPreferencesController') // ✅ NUEVO: Multi-Domain Simulator
 };

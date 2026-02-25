@@ -54,7 +54,7 @@ class DeckExplorer {
         this.treeContainer.innerHTML = '';
 
         // 1. "Inicio" / All
-        const rootItem = this.createTreeItem({ id: 'ROOT', name: 'Inicio', icon: '🏠', children_count: 0 }, 0, true);
+        const rootItem = this.createTreeItem({ id: 'ROOT', name: 'Inicio', icon: 'fas fa-home', children_count: 0 }, 0, true);
         this.treeContainer.appendChild(rootItem);
 
         // 2. Fetch API Roots
@@ -76,6 +76,7 @@ class DeckExplorer {
         const container = document.createElement('div');
         container.className = 'tree-node';
         container.dataset.id = deck.id;
+        container.dataset.level = level; // Store level for child reference
 
         // Indentation
         const paddingLeft = level * 1.5;
@@ -100,7 +101,8 @@ class DeckExplorer {
         // Icon + Name
         const label = document.createElement('span');
         label.className = 'tree-label';
-        label.innerHTML = `<span style="margin-right:8px">${deck.icon || '📁'}</span> ${deck.name}`;
+        const displayIcon = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
+        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center; display:inline-block;">${displayIcon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${deck.name}</span>`;
 
         // Click Action -> Set Active & Load View
         content.onclick = () => {
@@ -116,7 +118,7 @@ class DeckExplorer {
         addBtn.title = 'Crear Sub-mazo';
         addBtn.onclick = (e) => {
             e.stopPropagation();
-            this.openCreateModal(deck.id);
+            DeckExplorer.openCreateModal(deck.id);
         };
 
         content.appendChild(toggle);
@@ -146,33 +148,37 @@ class DeckExplorer {
             if (toggleIcon) toggleIcon.className = 'fas fa-chevron-right';
             this.expandedNodes.delete(deckId);
         } else {
-            // Expand
-            if (!childrenDiv.hasChildNodes()) {
-                // Lazy Load
-                const kids = await this.fetchDecks(deckId);
-                kids.forEach(k => {
-                    // Level + 1? We need to pass level. 
-                    // Hack: Calculate level from padding style? No. 
-                    // Better: Pass level in toggle?
-                    // Simplified: Just render children with simple padding relative to parent container?
-                    // CSS handles level via recursive nesting padding?
-                    // Let's pass level explicitly.
-                    // To do this, createTreeItem must be robust or we re-fetch DOM.
-                    // Easier: Just append. CSS padding is tricky recursively if not passed.
-
-                    // Fix: Let's assume infinite nesting supported by recursive CSS or margin-left on container.
-                    // Used: padding-left on content relative to root? 
-                    // Actually, if we nest `div.tree-children` inside correct parent, we can just use `padding-left: 1.5rem` on the children container?
-                    // Yes, hierarchical HTML structure.
-
-                    const childNode = this.createTreeItem(k, 0); // Level 0 because padding is handled by CSS hierarchy?
-                    // Let's verify CSS strategy.
-                    // If we nest, we can use `.tree-children { padding-left: 1rem }`.
-                    childrenDiv.appendChild(childNode);
-                });
-            }
+            // Expand — show container FIRST so spinner is visible
             childrenDiv.style.display = 'block';
             if (toggleIcon) toggleIcon.className = 'fas fa-chevron-down';
+
+            if (!childrenDiv.hasChildNodes()) {
+                // Lazy Load with Visual Feedback
+                const currentLevel = parseInt(nodeElement.dataset.level || 0);
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #64748b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;`;
+                loadingIndicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Cargando...';
+                childrenDiv.appendChild(loadingIndicator);
+
+                try {
+                    const kids = await this.fetchDecks(deckId);
+                    childrenDiv.innerHTML = ''; // Clear loading
+
+                    if (kids.length === 0) {
+                        const emptyState = document.createElement('div');
+                        emptyState.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #475569; font-size: 0.85rem; font-style: italic;`;
+                        emptyState.innerHTML = 'Sin sub-mazos';
+                        childrenDiv.appendChild(emptyState);
+                    } else {
+                        kids.forEach(k => {
+                            const childNode = this.createTreeItem(k, currentLevel + 1);
+                            childrenDiv.appendChild(childNode);
+                        });
+                    }
+                } catch (err) {
+                    childrenDiv.innerHTML = `<div style="padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #ef4444; font-size: 0.85rem;">Error al cargar</div>`;
+                }
+            }
             this.expandedNodes.add(deckId);
         }
     }
@@ -190,13 +196,58 @@ class DeckExplorer {
     }
 
     // --- Modals ---
+    static ICON_OPTIONS = [
+        { fa: 'fas fa-layer-group', color: '#60a5fa', label: 'Capas' },
+        { fa: 'fas fa-folder', color: '#fbbf24', label: 'Carpeta' },
+        { fa: 'fas fa-book-open', color: '#2dd4bf', label: 'Libro' },
+        { fa: 'fas fa-brain', color: '#f472b6', label: 'Cerebro' },
+        { fa: 'fas fa-stethoscope', color: '#22d3ee', label: 'Medicina' },
+        { fa: 'fas fa-comments', color: '#a78bfa', label: 'Idiomas' },
+        { fa: 'fas fa-lightbulb', color: '#fbbf24', label: 'Idea' },
+        { fa: 'fas fa-graduation-cap', color: '#818cf8', label: 'Estudio' },
+        { fa: 'fas fa-microscope', color: '#c084fc', label: 'Ciencia' },
+        { fa: 'fas fa-pills', color: '#f87171', label: 'Farmacia' },
+        { fa: 'fas fa-heartbeat', color: '#f87171', label: 'Cardio' },
+        { fa: 'fas fa-dna', color: '#34d399', label: 'Genética' },
+        { fa: 'fas fa-star', color: '#fbbf24', label: 'Favorito' },
+        { fa: 'fas fa-pen-alt', color: '#fb923c', label: 'Escritura' },
+    ];
+
     static openCreateModal(parentId = null) {
         document.getElementById('create-deck-form').reset();
-        document.getElementById('new-deck-id').value = ''; // Ensure we are NOT editing
+        document.getElementById('new-deck-id').value = '';
         document.getElementById('modal-deck-title').innerText = 'Crear Nuevo Mazo';
-
         document.getElementById('new-deck-parent').value = parentId || '';
         document.getElementById('new-deck-name').value = '';
+
+        // Populate Icon Picker
+        const iconInput = document.getElementById('new-deck-icon');
+        const grid = document.getElementById('icon-picker-grid');
+        if (grid && iconInput) {
+            iconInput.value = 'fas fa-layer-group'; // Default
+            grid.innerHTML = '';
+            DeckExplorer.ICON_OPTIONS.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.title = opt.label;
+                btn.dataset.icon = opt.fa;
+                const isSelected = opt.fa === iconInput.value;
+                btn.style.cssText = `width:40px; height:40px; border-radius:10px; border:2px solid ${isSelected ? opt.color : 'rgba(255,255,255,0.1)'}; background:${isSelected ? opt.color + '22' : 'rgba(255,255,255,0.05)'}; color:${opt.color}; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;`;
+                btn.innerHTML = `<i class="${opt.fa}"></i>`;
+                btn.onclick = () => {
+                    iconInput.value = opt.fa;
+                    // Update selection visuals
+                    grid.querySelectorAll('button').forEach(b => {
+                        const bOpt = DeckExplorer.ICON_OPTIONS.find(o => o.fa === b.dataset.icon);
+                        const sel = b.dataset.icon === opt.fa;
+                        b.style.borderColor = sel ? bOpt.color : 'rgba(255,255,255,0.1)';
+                        b.style.background = sel ? bOpt.color + '22' : 'rgba(255,255,255,0.05)';
+                    });
+                };
+                grid.appendChild(btn);
+            });
+        }
+
         document.getElementById('create-deck-modal').classList.add('active');
     }
 

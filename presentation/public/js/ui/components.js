@@ -510,13 +510,21 @@ function createTopicViewHTML(topic, description, books = [], showChatButton = fa
 
 function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = false) {
     // ✅ SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
-    const displayName = type === 'book' ? item.title : item.name;
+    let displayName = type === 'book' ? item.title : item.name;
+    if (type === 'question') {
+        displayName = item.question_text ? (item.question_text.substring(0, 80) + '...') : 'Pregunta sin texto';
+    }
+
     const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
 
     // ✅ NUEVO: Mostrar badge de área para carreras de forma más limpia
-    const areaBadge = (type === 'career' && item.area)
-        ? `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`
-        : '';
+    let areaBadge = '';
+    if (type === 'career' && item.area) {
+        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
+    } else if (type === 'question') {
+        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
+        subtitle = `Dificultad: ${item.difficulty || 'Intermedio'}`;
+    }
 
     // Subtitulo formateado
     const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
@@ -524,7 +532,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     return `
         <div class="admin-item-card item-card">
             <div class="item-card-content">
-                <h3>${displayName}</h3>
+                <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
                 ${areaBadge}
                 ${subtitleHTML}
             </div>
