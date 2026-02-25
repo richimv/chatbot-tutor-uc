@@ -387,9 +387,10 @@ const SimulatorDash = (() => {
 
     async function loadStats() {
         const token = localStorage.getItem('authToken');
-        if (!token) return;
 
         try {
+            if (!token) return;
+
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
@@ -478,15 +479,14 @@ const SimulatorDash = (() => {
                 });
             }
 
-            // Ocultar Loading
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
-
         } catch (error) {
-            console.error(error);
-            // Even on error, reveal dashboard to not block user interactions
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
+            console.warn('Stats not available:', error.message);
+        } finally {
+            // ALWAYS reveal dashboard content, even if API fails
+            const loadingEl = document.getElementById('loading');
+            const contentEl = document.getElementById('dashboard-content');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'block';
         }
     }
 
