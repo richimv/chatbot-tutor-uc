@@ -37,7 +37,7 @@ const elements = {
 };
 
 // Configuración
-const API_URL = '/api/quiz'; // Ajustar según config
+const API_URL = `${window.AppConfig.API_URL}/api/quiz`; // Ajustar según config
 
 // 1. Inicialización
 async function init() {

@@ -588,14 +588,14 @@ class RepasoManager {
             let res;
             if (cardId) {
                 // UPDATE: PUT /api/cards/:id
-                res = await fetch(`/api/cards/${cardId}`, {
+                res = await fetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ front, back })
                 });
             } else {
                 // CREATE: POST /api/decks/:deckId/cards
-                res = await fetch(`/api/decks/${deckId}/cards`, {
+                res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ front, back })
@@ -728,7 +728,7 @@ class RepasoManager {
 
         try {
             // DELETE /api/decks/:id
-            const res = await fetch(`/api/decks/${deckId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${this.token}` } });
+            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${this.token}` } });
 
             if (res.ok) {
                 // Refresh Tree and Dashboard
@@ -771,7 +771,7 @@ class RepasoManager {
 
     async deleteCard(cardId) {
         try {
-            const res = await fetch(`/api/cards/${cardId}`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });

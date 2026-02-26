@@ -32,7 +32,7 @@ const DeckDetails = (() => {
             // In Phase 2, we created /api/decks (List).
 
             // Fetch specific deck by ID
-            const res = await fetch(`/api/decks/${currentDeckId}`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${currentDeckId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -65,7 +65,7 @@ const DeckDetails = (() => {
         try {
             const token = localStorage.getItem('authToken');
             // Endpoint not yet created, we assume /api/decks/:id/cards
-            const res = await fetch(`/api/decks/${currentDeckId}/cards`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${currentDeckId}/cards`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -150,7 +150,7 @@ const DeckDetails = (() => {
 
         const token = localStorage.getItem('authToken');
         try {
-            const res = await fetch(`/api/cards/${cardId}`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -192,11 +192,11 @@ const DeckDetails = (() => {
 
             if (editingCardId) {
                 // Update
-                url = `/api/cards/${editingCardId}`;
+                url = `${window.AppConfig.API_URL}/api/cards/${editingCardId}`;
                 method = 'PUT';
             } else {
                 // Create
-                url = `/api/decks/${currentDeckId}/cards`;
+                url = `${window.AppConfig.API_URL}/api/decks/${currentDeckId}/cards`;
                 method = 'POST';
             }
 
@@ -266,7 +266,7 @@ const DeckDetails = (() => {
 
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/decks/${currentDeckId}/generate`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${currentDeckId}/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

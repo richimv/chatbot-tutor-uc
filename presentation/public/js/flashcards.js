@@ -5,7 +5,7 @@
 
 const FlashcardManager = (() => {
     // --- Config & State ---
-    const API_URL = '/api/training/flashcards';
+    const API_URL = `${window.AppConfig.API_URL}/api/training/flashcards`;
     let queue = [];
     let currentCard = null;
     let isFlipped = false;
@@ -83,7 +83,7 @@ const FlashcardManager = (() => {
         // 2. Build URL based on context (Deck vs Global)
         let endpoint = `${API_URL}/due`; // Default Legacy Global
         if (deckId) {
-            endpoint = `/api/decks/${deckId}/cards/due`;
+            endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId}/cards/due`;
         }
 
         const res = await fetch(endpoint, {
