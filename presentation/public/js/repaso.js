@@ -311,7 +311,7 @@ class RepasoManager {
             // Edit/Delete buttons HTML (only for user decks)
             const editDeleteBtns = !isSystem ? `
                 <div style="display:flex; gap:0.3rem;">
-                    <button class="deck-action-btn" onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                    <button class="deck-action-btn" onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')" 
                         title="Editar">
                         <i class="fas fa-pen"></i>
                     </button>
@@ -516,10 +516,11 @@ class RepasoManager {
         if (deckId) {
             // EDIT MODE
             try {
+                const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
                 const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name })
+                    body: JSON.stringify({ name, icon })
                 });
 
                 if (res.ok) {
@@ -554,12 +555,17 @@ class RepasoManager {
         }
     }
 
-    openEditDeckModal(id, currentName) {
+    openEditDeckModal(id, currentName, currentIcon) {
         document.getElementById('create-deck-form').reset();
         document.getElementById('modal-deck-title').innerText = 'Editar Mazo';
         document.getElementById('new-deck-name').value = currentName;
         document.getElementById('new-deck-id').value = id;
-        // document.getElementById('new-deck-parent-group').style.display = 'none'; // Removed: Element no longer exists
+
+        // Populate Icon Picker with current icon
+        if (window.DeckExplorer) {
+            window.DeckExplorer.renderIconPicker(currentIcon || 'fas fa-layer-group');
+        }
+
         const submitBtn = document.getElementById('btn-save-deck');
         if (submitBtn) submitBtn.innerText = 'Guardar';
         document.getElementById('create-deck-modal').classList.add('active');

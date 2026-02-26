@@ -59,12 +59,12 @@ class DeckController {
     async updateDeck(req, res) {
         try {
             const { deckId } = req.params;
-            const { name } = req.body;
+            const { name, icon } = req.body;
             const userId = req.user.id;
 
             if (!name) return res.status(400).json({ error: 'Name is required' });
 
-            const deck = await DeckService.updateDeck(userId, deckId, name);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon);
             res.json({ success: true, deck });
         } catch (error) {
             console.error(error);

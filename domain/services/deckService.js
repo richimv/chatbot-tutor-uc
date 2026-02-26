@@ -34,8 +34,8 @@ class DeckService {
         return await trainingRepository.deleteFlashcard(userId, cardId);
     }
 
-    async updateDeck(userId, deckId, name) {
-        return await trainingRepository.updateDeck(userId, deckId, name);
+    async updateDeck(userId, deckId, name, icon) {
+        return await trainingRepository.updateDeck(userId, deckId, name, icon);
     }
 
     async deleteDeck(userId, deckId) {

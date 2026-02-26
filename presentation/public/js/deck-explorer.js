@@ -213,6 +213,37 @@ class DeckExplorer {
         { fa: 'fas fa-pen-alt', color: '#fb923c', label: 'Escritura' },
     ];
 
+    static renderIconPicker(selectedIcon = 'fas fa-layer-group') {
+        const iconInput = document.getElementById('new-deck-icon');
+        const grid = document.getElementById('icon-picker-grid');
+        if (!grid || !iconInput) return;
+
+        iconInput.value = selectedIcon;
+        grid.innerHTML = '';
+
+        DeckExplorer.ICON_OPTIONS.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.title = opt.label;
+            btn.dataset.icon = opt.fa;
+            const isSelected = opt.fa === iconInput.value;
+            btn.style.cssText = `width:40px; height:40px; border-radius:10px; border:2px solid ${isSelected ? opt.color : 'rgba(255,255,255,0.1)'}; background:${isSelected ? opt.color + '22' : 'rgba(255,255,255,0.05)'}; color:${opt.color}; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;`;
+            btn.innerHTML = `<i class="${opt.fa}"></i>`;
+
+            btn.onclick = () => {
+                iconInput.value = opt.fa;
+                // Update selection visuals
+                grid.querySelectorAll('button').forEach(b => {
+                    const bOpt = DeckExplorer.ICON_OPTIONS.find(o => o.fa === b.dataset.icon);
+                    const sel = b.dataset.icon === opt.fa;
+                    b.style.borderColor = sel ? bOpt.color : 'rgba(255,255,255,0.1)';
+                    b.style.background = sel ? bOpt.color + '22' : 'rgba(255,255,255,0.05)';
+                });
+            };
+            grid.appendChild(btn);
+        });
+    }
+
     static openCreateModal(parentId = null) {
         document.getElementById('create-deck-form').reset();
         document.getElementById('new-deck-id').value = '';
@@ -223,32 +254,7 @@ class DeckExplorer {
         if (submitBtn) submitBtn.innerText = 'Crear';
 
         // Populate Icon Picker
-        const iconInput = document.getElementById('new-deck-icon');
-        const grid = document.getElementById('icon-picker-grid');
-        if (grid && iconInput) {
-            iconInput.value = 'fas fa-layer-group'; // Default
-            grid.innerHTML = '';
-            DeckExplorer.ICON_OPTIONS.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.title = opt.label;
-                btn.dataset.icon = opt.fa;
-                const isSelected = opt.fa === iconInput.value;
-                btn.style.cssText = `width:40px; height:40px; border-radius:10px; border:2px solid ${isSelected ? opt.color : 'rgba(255,255,255,0.1)'}; background:${isSelected ? opt.color + '22' : 'rgba(255,255,255,0.05)'}; color:${opt.color}; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;`;
-                btn.innerHTML = `<i class="${opt.fa}"></i>`;
-                btn.onclick = () => {
-                    iconInput.value = opt.fa;
-                    // Update selection visuals
-                    grid.querySelectorAll('button').forEach(b => {
-                        const bOpt = DeckExplorer.ICON_OPTIONS.find(o => o.fa === b.dataset.icon);
-                        const sel = b.dataset.icon === opt.fa;
-                        b.style.borderColor = sel ? bOpt.color : 'rgba(255,255,255,0.1)';
-                        b.style.background = sel ? bOpt.color + '22' : 'rgba(255,255,255,0.05)';
-                    });
-                };
-                grid.appendChild(btn);
-            });
-        }
+        DeckExplorer.renderIconPicker('fas fa-layer-group');
 
         document.getElementById('create-deck-modal').classList.add('active');
     }

@@ -387,14 +387,14 @@ class TrainingRepository {
         return result.rows[0];
     }
 
-    async updateDeck(userId, deckId, name) {
+    async updateDeck(userId, deckId, name, icon) {
         const query = `
             UPDATE decks 
-            SET name = $3
+            SET name = $3, icon = $4
             WHERE id = $2 AND user_id = $1
-            RETURNING id, name
+            RETURNING id, name, icon
         `;
-        const result = await db.query(query, [userId, deckId, name]);
+        const result = await db.query(query, [userId, deckId, name, icon]);
         return result.rows[0];
     }
 
