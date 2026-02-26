@@ -96,6 +96,10 @@
             "destination": "/presentation/public/simulators.html"
         },
         {
+            "source": "/api/(.*)",
+            "destination": "https://tutor-ia-backend.onrender.com/api/$1"
+        },
+        {
             "source": "/(.*)",
             "destination": "/presentation/public/$1"
         }
