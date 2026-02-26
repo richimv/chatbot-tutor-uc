@@ -516,7 +516,7 @@ class RepasoManager {
         if (deckId) {
             // EDIT MODE
             try {
-                const res = await fetch(`/api/decks/${deckId}`, {
+                const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ name })
@@ -560,6 +560,8 @@ class RepasoManager {
         document.getElementById('new-deck-name').value = currentName;
         document.getElementById('new-deck-id').value = id;
         // document.getElementById('new-deck-parent-group').style.display = 'none'; // Removed: Element no longer exists
+        const submitBtn = document.getElementById('btn-save-deck');
+        if (submitBtn) submitBtn.innerText = 'Guardar';
         document.getElementById('create-deck-modal').classList.add('active');
     }
 

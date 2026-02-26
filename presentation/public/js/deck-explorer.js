@@ -219,6 +219,8 @@ class DeckExplorer {
         document.getElementById('modal-deck-title').innerText = 'Crear Nuevo Mazo';
         document.getElementById('new-deck-parent').value = parentId || '';
         document.getElementById('new-deck-name').value = '';
+        const submitBtn = document.getElementById('btn-save-deck');
+        if (submitBtn) submitBtn.innerText = 'Crear';
 
         // Populate Icon Picker
         const iconInput = document.getElementById('new-deck-icon');
