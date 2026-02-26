@@ -465,9 +465,16 @@ El `quizController` recibe los parámetros y delega la tarea al `TrainingService
     *   **Dificultad Estricta:** El prompt varía drásticamente. Si el usuario elige "Básico", se prohíbe la redacción de viñetas o casos clínicos largos, forzando preguntas de opciones directas, conceptos y etiologías. Para "Intermedio/Avanzado", se fuerza el uso de casos clínicos progresivamente más complejos.
     *   **Etiquetado Exacto:** Se le exige a la IA que retorne, como parte del JSON de cada pregunta generada, el sub-atributo `"topic"` indicando a cuál de las áreas seleccionadas corresponde la pregunta inventada.
 
-### 14.3. Persistencia de Resultados y Analíticas Sensibles al Contexto
-*   **Guardado en DB (El Fallo Fundamental de Multi-Área):** Históricamente, al enviar las respuestas (`/api/quiz/submit`), el backend forzaba ciegamente el nombre de la *primera* área seleccionada a las 10, 20 o 50 preguntas del lote (Ej. guardando todo como "Cardiología").
-    *   *Solución Implementada:* El repositorio fue modificado (`trainingRepository.js`) para extraer dinámicamente el `q.topic` generado individualmente por la IA, guardando de forma granular el origen de cada pregunta.
+### 14.3. Persistencia de Resultados y Analíticas Sensibles al Contexto (Auditoría de Integridad)
+
+El sistema garantiza que cada respuesta se asigne a su especialidad real, resolviendo el "Fallo de la Primera Área" mediante un pipeline de datos blindado:
+
+1.  **Integridad en el Origen (Repository Level):** Se auditó que las funciones `findQuestionsInBank` y `findQuestionsInBankBatch` en `TrainingRepository.js` recuperaban el tema de la BD pero lo omitían en el mapeo hacia el objeto JSON. Se corrigió esto para asegurar que el campo `topic` viaje siempre desde PostgreSQL hasta el Frontend.
+2.  **Sanitización Inteligente (Service Level):** En `TrainingService.js`, la función `submitQuizResult` fue refactorizada para:
+    *   **Respeto a la Especialidad:** Si la pregunta trae un tema específico (ej. "Neurología"), este se preserva intacto.
+    *   **Tratamiento de Genéricos:** Solo si el tema es genérico ("MEDICINA", "General") o está vacío, el sistema lo mapea inteligente al primer área seleccionada por el usuario para evitar inconsistencias.
+    *   **Normalización:** Limpia temas combinados (ej. "Pediatría, Neonatología" -> "Pediatría") para mantener el Radar Chart limpio.
+3.  **Trazabilidad en Flashcards:** El repositorio ahora utiliza el `q.topic` individual de cada error para crear tarjetas, permitiendo que el mazo de "Repaso Médico" se categorice por sub-especialidades reales y no por el título global del examen.
 *   **Etiquetado del Examen Padre:** Para no contaminar el historial del usuario (`quiz_history`) con el nombre de una sola especialidad cuando se abarcan varias, el frontend evalúa la longitud del arreglo de áreas seleccionadas (`state.areas.length`). Si es mayor a 1, la "carátula" del examen se grabará permanentemente en base de datos como **"Multi-Área"**.
 *   **Columna JSONB `area_stats`:** En la tabla `quiz_history`, se crea de manera dinámica un objeto JSON que agrupa aciertos y errores por especialidad. Por ejemplo:
     ```json
@@ -580,6 +587,11 @@ Se detectó una falla crítica estructural en la persistencia del historial de u
 ### 18.3. Analytics Unitarios y Hashes Criptográficos
 *   **Métricas Dinámicas (`times_used`):** Se interceptó lógicamente el *query* de recolección principal (`findQuestionsInBankBatch`). Ahora el motor PostgreSQL realiza una operación atómica sub-query actualizando `UPDATE question_bank SET times_used = times_used + 1` de manera transparente para cada bloque recuperado, sirviendo para futuras proyecciones de popularidad y desgaste de banco.
 *   **Huellas MD5 Manuales:** Las preguntas añadidas individualmente por administradores carecían de Hash, generando tuplas Null. El `adminController.js` ahora importa `crypto` (Node.js nativo) y forja de manera imperativa una huella Hexagonal `MD5` (`Topic + Pregunta + Opciones`) asegurando la estabilidad global del motor transaccional `ON CONFLICT`.
+
+### 18.4. Auditoría de Integridad Temática (Anti-Anatomía Bug)
+Se detectó y resolvió un fallo de "atrapamiento" donde el sistema asumía que todas las respuestas de un multi-examen pertenecían al primer tema de la lista (ej. Anatomía).
+*   **Causa Raíz:** El repositorio recuperaba el `topic` de la base de datos pero lo omitía en la transferencia. Esto forzaba al servicio a "adivinar" el tema, fallando hacia el valor por defecto.
+*   **Blindaje:** Se forzó la inclusión de `topic` en todas las consultas del Banco Global y se implementó una sanitización inteligente que prioriza el tema médico de la pregunta sobre el tema general del examen.
 
 ---
 

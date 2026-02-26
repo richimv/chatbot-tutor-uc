@@ -524,13 +524,19 @@ class TrainingService {
                 let topic = q.topic || quizData.topic || 'General';
                 const isCorrect = q.userAnswer === q.correctAnswerIndex;
 
-                // 🧹 SANITIZACIÓN: Evitar que Gemini invente temas combinados como "Pediatría, Neonatología"
-                if (allowedAreas.length > 0) {
-                    // Buscar coincidencia parcial exacta (case-insensitive)
+                // 🧹 SANITIZACIÓN MEJORADA: 
+                // Si el topic de la pregunta es genérico (ej: "MEDICINA") o está vacío, 
+                // intentamos mapiar a la lista de áreas permitidas por el usuario.
+                const isGeneric = !topic || topic === 'MEDICINA' || topic === 'General' || topic === 'Medicina General';
+
+                if (isGeneric && allowedAreas.length > 0) {
+                    topic = allowedAreas[0];
+                } else if (allowedAreas.length > 0) {
+                    // Si el topic NO es genérico (ej: "Neurología"), solo verificamos si coincide con algo de allowedAreas
+                    // para normalizarlo, pero si no coincide, PRESERVAMOS el topic original en vez de forzar el primero.
                     const matched = allowedAreas.find(a => topic.toLowerCase().includes(a.toLowerCase()));
-                    topic = matched ? matched : allowedAreas[0];
+                    if (matched) topic = matched;
                 } else if (topic.includes(',')) {
-                    // Fallback extra
                     topic = topic.split(',')[0].trim();
                 }
 
@@ -542,6 +548,9 @@ class TrainingService {
                 if (isCorrect) {
                     areaStats[topic].correct += 1;
                 }
+
+                // Actualizar el topic en el objeto pregunta para que el Repo lo use fielmente
+                q.topic = topic;
             });
         }
 
@@ -549,11 +558,12 @@ class TrainingService {
 
         const attemptId = await repository.saveQuizHistory(userId, quizData);
 
-        // 🟢 MODULARIDAD: La decisión viene del controlador, no adivinamos por el topic/difficulty.
+        // 🟢 MODULARIDAD: Crear flashcards con topics individuales
         if (options.createFlashcards) {
             const errors = quizData.questions.filter(q => q.userAnswer !== q.correctAnswerIndex);
 
             if (errors.length > 0) {
+                // Pasamos quizData.topic como fallback, pero el repo ahora usará q.topic
                 await repository.createFlashcardsBatch(userId, errors, quizData.topic, attemptId);
                 return { attemptId, flashcardsCreated: errors.length };
             }

@@ -52,7 +52,8 @@ class TrainingRepository {
             question: row.question_text,
             options: row.options,
             correctAnswerIndex: row.correct_option_index,
-            explanation: row.explanation
+            explanation: row.explanation,
+            topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
         }));
     }
 
@@ -113,7 +114,8 @@ class TrainingRepository {
             question: row.question_text,
             options: row.options,
             correctAnswerIndex: row.correct_option_index,
-            explanation: row.explanation
+            explanation: row.explanation,
+            topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
         }));
     }
 
@@ -472,7 +474,7 @@ class TrainingRepository {
         `;
 
         await db.query(query, values);
-        console.log(`✅ Saved ${insertCount} new UNIQUE flashcards.`);
+        console.log(`✅ Saved ${insertCount} new UNIQUE flashcards with individual topics.`);
     }
 
     /**
