@@ -24,12 +24,25 @@ const SimulatorDash = (() => {
     let lineChartInst = null;
     let radarChartInst = null;
 
-    // Exam Areas Data
-    const examAreas = {
-        'ENAM': ['Cardiología', 'Neumología', 'Gastroenterología', 'Nefrología', 'Neurología', 'Ginecología', 'Pediatría', 'Cirugía', 'Salud Pública'],
-        'SERUMS': ['Salud Pública', 'Cuidado Integral', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios'],
-        'ENARM': ['Cardiología', 'Neumología', 'Gastroenterología', 'Nefrología', 'Neurología', 'Reumatología', 'Infectología', 'Endocrinología', 'Ginecología', 'Pediatría', 'Cirugía General']
-    };
+    // Exam Areas Data — Grouped by category (identical for all targets)
+    const examAreasGrouped = [
+        {
+            label: 'Ciencias Básicas',
+            areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología']
+        },
+        {
+            label: 'Las 4 Grandes',
+            areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General']
+        },
+        {
+            label: 'Especialidades Clínicas',
+            areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología']
+        },
+        {
+            label: 'Salud Pública y Gestión',
+            areas: ['Salud Pública y Epidemiología', 'Gestión de Servicios de Salud', 'Ética Deontología e Interculturalidad', 'Medicina Legal', 'Investigación y Bioestadística', 'Cuidado Integral']
+        }
+    ];
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -46,17 +59,18 @@ const SimulatorDash = (() => {
         const token = localStorage.getItem('authToken');
         if (token) {
             try {
+                // Fetch preferences from API instead of localStorage
                 const res = await fetch(`/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (res.ok) {
-                    const prefData = await res.json();
-                    if (prefData && prefData.data) {
-                        activeConfig = prefData.data;
-                        localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
-                    }
+                const prefData = await res.json();
+
+                if (prefData && prefData.data) {
+                    activeConfig = prefData.data;
+                    // Keep localStorage in sync for legacy code
+                    localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
                 } else {
-                    // API not available — use localStorage fallback silently
+                    // Fallback to localStorage if API has nothing
                     const savedConfig = localStorage.getItem('simActiveConfig');
                     if (savedConfig) activeConfig = JSON.parse(savedConfig);
                 }
@@ -70,75 +84,104 @@ const SimulatorDash = (() => {
                     `;
                 }
             } catch (e) {
-                console.warn("Config API not available, using localStorage fallback.");
-                const savedConfig = localStorage.getItem('simActiveConfig');
-                if (savedConfig) {
-                    try { activeConfig = JSON.parse(savedConfig); } catch (pe) { }
-                }
+                console.error("Error loading saved config from API", e);
             }
         }
 
         // 3. Setup Links (Modes) with initial default
         updateModeLinks(ctxConfig);
-
-        // 3.5 FREEMIUM: Lock simulator modes for non-premium users
-        applyFreemiumLocks();
-
-        // Also listen for session changes (handles race condition with async session init)
-        if (window.sessionManager) {
-            window.sessionManager.onStateChange(() => applyFreemiumLocks());
-        }
+        bindModeClicks();
 
         // Flashcard link will be dynamic based on System Deck ID
 
-        // 4. Fetch Stats (with graceful error handling for missing APIs)
+        // 4. Fetch Stats
         await loadStats();
         await loadEvolution();
+
+        // 5. Tooltip para usuarios nuevos sin configuración
+        if (!activeConfig) showFirstVisitTip();
     }
 
-    /**
-     * FREEMIUM: Lock ALL simulator modes for non-premium users.
-     * Premium = subscriptionStatus 'active' OR role 'admin'.
-     */
-    function applyFreemiumLocks() {
-        if (!window.sessionManager) return;
-        const user = window.sessionManager.getUser();
-        if (!user) return; // Not logged in yet or visitor
+    function showFirstVisitTip() {
+        const btn = document.getElementById('btn-start-config');
+        if (!btn) return;
 
-        const status = user.subscriptionStatus || user.subscription_status;
-        const isPremium = status === 'active' || user.role === 'admin';
+        // --- NEON PULSE: Persiste hasta que el usuario guarde una configuración ---
+        const pulseStyle = document.createElement('style');
+        pulseStyle.id = 'neon-pulse-style';
+        pulseStyle.textContent = `
+            @keyframes neonPulse {
+                0%, 100% { box-shadow: 0 0 5px rgba(96,165,250,0.4), 0 0 15px rgba(96,165,250,0.15); }
+                50%      { box-shadow: 0 0 12px rgba(96,165,250,0.7), 0 0 30px rgba(96,165,250,0.25), 0 0 4px rgba(96,165,250,0.5) inset; }
+            }
+            #btn-start-config.neon-active {
+                animation: neonPulse 2s ease-in-out infinite;
+                border-color: rgba(96,165,250,0.5) !important;
+            }
+        `;
+        document.head.appendChild(pulseStyle);
+        btn.classList.add('neon-active');
 
-        // Only apply locks for non-premium logged-in users
-        if (isPremium) return;
+        // --- TOOLTIP: Solo se muestra una vez, 15 segundos ---
+        if (localStorage.getItem('hasSeenConfigTip')) return;
 
-        // Lock ALL 3 simulator modes
-        const modeIds = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real'];
-
-        modeIds.forEach(id => {
-            const btn = document.getElementById(id);
-            if (!btn || btn.classList.contains('locked')) return; // Skip if already locked
-
-            btn.classList.add('locked');
-            btn.removeAttribute('href');
-            btn.style.cursor = 'pointer';
-
-            // Add Premium badge
-            const badge = document.createElement('span');
-            badge.className = 'mode-badge premium-lock-badge';
-            badge.innerHTML = '<i class="fas fa-lock"></i> Premium';
-            btn.appendChild(badge);
-
-            // Intercept click → paywall
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (window.uiManager && window.uiManager.showPaywallModal) {
-                    window.uiManager.showPaywallModal();
-                } else {
-                    window.location.href = '/pricing';
+        const tip = document.createElement('div');
+        tip.id = 'config-tip';
+        tip.innerHTML = `
+            <style>
+                #config-tip {
+                    position: absolute;
+                    top: calc(100% + 12px);
+                    right: 0;
+                    background: rgba(15, 23, 42, 0.95);
+                    backdrop-filter: blur(12px);
+                    border: 1px solid rgba(96, 165, 250, 0.3);
+                    border-radius: 14px;
+                    padding: 0.9rem 1.1rem;
+                    color: #e2e8f0;
+                    font-size: 0.82rem;
+                    line-height: 1.5;
+                    width: 240px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(96,165,250,0.1);
+                    z-index: 100;
+                    animation: tipFadeIn 0.5s ease-out;
                 }
-            });
-        });
+                #config-tip::before {
+                    content: '';
+                    position: absolute;
+                    top: -7px;
+                    right: 24px;
+                    width: 12px;
+                    height: 12px;
+                    background: rgba(15, 23, 42, 0.95);
+                    border-top: 1px solid rgba(96, 165, 250, 0.3);
+                    border-left: 1px solid rgba(96, 165, 250, 0.3);
+                    transform: rotate(45deg);
+                }
+                #config-tip .tip-icon { color: #60a5fa; margin-right: 4px; }
+                @keyframes tipFadeIn {
+                    from { opacity: 0; transform: translateY(-6px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+            </style>
+            <i class="fas fa-lightbulb tip-icon"></i>
+            <strong>Tip:</strong> Personaliza tu examen eligiendo tipo (ENAM, Pre-Internado, Residentado), áreas clínicas y dificultad.
+        `;
+
+        btn.parentElement.style.position = 'relative';
+        btn.parentElement.appendChild(tip);
+
+        const dismissTip = () => {
+            if (!document.getElementById('config-tip')) return;
+            tip.style.animation = 'tipFadeIn 0.3s ease-out reverse forwards';
+            setTimeout(() => tip.remove(), 300);
+            localStorage.setItem('hasSeenConfigTip', 'true');
+        };
+
+        // Auto-dismiss after 15 seconds
+        setTimeout(dismissTip, 15000);
+        // Also dismiss when clicking the config button
+        btn.addEventListener('click', dismissTip, { once: true });
     }
 
     function updateModeLinks(ctxConfig) {
@@ -153,22 +196,40 @@ const SimulatorDash = (() => {
         const btnArcade = document.getElementById('btn-mode-arcade');
         if (btnArcade) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnArcade.href = `/quiz${baseParams}${separator}limit=10`;
+            btnArcade.href = `quiz${baseParams}${separator}limit=10`;
         }
 
         // 2. Study Mode (20 questions)
         const btnStudy = document.getElementById('btn-mode-study');
         if (btnStudy) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnStudy.href = `/quiz${baseParams}${separator}limit=20`;
+            btnStudy.href = `quiz${baseParams}${separator}limit=20`;
         }
 
         // 3. Real Mock (100 questions - STRICTLY DB ONLY)
         const btnReal = document.getElementById('btn-mode-real');
         if (btnReal) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnReal.href = `/quiz${baseParams}${separator}limit=100`;
+            btnReal.href = `quiz${baseParams}${separator}limit=100`;
         }
+    }
+
+    /**
+     * Intercept clicks on mode buttons to validate freemium limits
+     */
+    function bindModeClicks() {
+        const ids = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real', 'btn-flashcards'];
+        ids.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
+                        // Returns false and calls showPaywallModal() if limit reached
+                        window.uiManager.validateFreemiumAction(e);
+                    }
+                });
+            }
+        });
     }
 
     function setupConfigModal() {
@@ -180,21 +241,38 @@ const SimulatorDash = (() => {
         const areasGrid = document.getElementById('config-areas-grid');
         const summaryBox = document.getElementById('active-config-summary');
 
-        // Render Checkboxes dynamically
+        // Render grouped checkboxes with sub-headers
         const renderAreas = (target) => {
             areasGrid.innerHTML = '';
-            const areas = examAreas[target] || [];
-            areas.forEach(area => {
-                const label = document.createElement('label');
-                label.className = 'area-checkbox-label';
+            areasGrid.style.display = 'flex';
+            areasGrid.style.flexDirection = 'column';
+            areasGrid.style.gap = '1rem';
 
-                let isChecked = true;
-                if (activeConfig && activeConfig.target === target && activeConfig.areas) {
-                    isChecked = activeConfig.areas.includes(area);
-                }
+            examAreasGrouped.forEach(group => {
+                // Group header
+                const header = document.createElement('div');
+                header.style.cssText = 'font-size:0.75rem; color:#60a5fa; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid rgba(96,165,250,0.15);';
+                header.textContent = group.label;
+                areasGrid.appendChild(header);
 
-                label.innerHTML = `<input type="checkbox" value="${area}" ${isChecked ? 'checked' : ''}> ${area}`;
-                areasGrid.appendChild(label);
+                // Checkbox grid for this group
+                const grid = document.createElement('div');
+                grid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;';
+
+                group.areas.forEach(area => {
+                    const label = document.createElement('label');
+                    label.className = 'area-checkbox-label';
+
+                    let isChecked = true;
+                    if (activeConfig && activeConfig.target === target && activeConfig.areas) {
+                        isChecked = activeConfig.areas.includes(area);
+                    }
+
+                    label.innerHTML = `<input type="checkbox" value="${area}" ${isChecked ? 'checked' : ''}> ${area}`;
+                    grid.appendChild(label);
+                });
+
+                areasGrid.appendChild(grid);
             });
         };
 
@@ -302,6 +380,10 @@ const SimulatorDash = (() => {
                 // Update Links
                 updateModeLinks(contexts[currentContext] || contexts['MEDICINA']);
 
+                // Quitar efecto neón — ya configuró
+                const cfgBtn = document.getElementById('btn-start-config');
+                if (cfgBtn) cfgBtn.classList.remove('neon-active');
+
                 // Relanzar fetch a base de datos de inmediato con nuevo target
                 loadStats();
                 loadEvolution();
@@ -321,7 +403,6 @@ const SimulatorDash = (() => {
             const res = await fetch(`/api/quiz/evolution${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!res.ok) return; // API not available, skip silently
             const data = await res.json();
 
             if (lineChartInst) lineChartInst.destroy();
@@ -387,10 +468,9 @@ const SimulatorDash = (() => {
 
     async function loadStats() {
         const token = localStorage.getItem('authToken');
+        if (!token) return;
 
         try {
-            if (!token) return;
-
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
@@ -398,7 +478,6 @@ const SimulatorDash = (() => {
             const res = await fetch(`/api/quiz/stats${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!res.ok) return; // API not available, skip silently
             const data = await res.json();
             cachedStats = data.kpis; // Store for AI Analysis
 
@@ -412,7 +491,7 @@ const SimulatorDash = (() => {
             // Setup Flashcard Link
             if (kpis.system_deck_id) {
                 const btnFlash = document.getElementById('btn-flashcards');
-                if (btnFlash) btnFlash.href = `/repaso?deckId=${kpis.system_deck_id}`;
+                if (btnFlash) btnFlash.href = `repaso?deckId=${kpis.system_deck_id}`;
             }
 
             // --- Render Radar Chart (Áreas) ---
@@ -479,14 +558,15 @@ const SimulatorDash = (() => {
                 });
             }
 
+            // Ocultar Loading
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+
         } catch (error) {
-            console.warn('Stats not available:', error.message);
-        } finally {
-            // ALWAYS reveal dashboard content, even if API fails
-            const loadingEl = document.getElementById('loading');
-            const contentEl = document.getElementById('dashboard-content');
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (contentEl) contentEl.style.display = 'block';
+            console.error(error);
+            // Even on error, reveal dashboard to not block user interactions
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
         }
     }
 
@@ -498,7 +578,12 @@ const SimulatorDash = (() => {
         const stateLoading = document.getElementById('ai-loading-state');
         const stateResults = document.getElementById('ai-results-state');
 
-        const runAnalysis = () => {
+        const runAnalysis = (e) => {
+            // ✅ Interceptar con Paywall si no tiene vidas
+            if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
+                if (!window.uiManager.validateFreemiumAction(e)) return;
+            }
+
             // UI Transitions
             stateInitial.style.display = 'none';
             stateResults.style.display = 'none';
@@ -523,8 +608,8 @@ const SimulatorDash = (() => {
             }, 1500); // 1.5s delay for effect
         }
 
-        if (btnAnalyze) btnAnalyze.addEventListener('click', runAnalysis);
-        if (btnAgain) btnAgain.addEventListener('click', runAnalysis);
+        if (btnAnalyze) btnAnalyze.addEventListener('click', (e) => runAnalysis(e));
+        if (btnAgain) btnAgain.addEventListener('click', (e) => runAnalysis(e));
     }
 
     // Modify init to call setupAIAnalysis

@@ -466,38 +466,13 @@ class RepasoManager {
         document.getElementById('stats-modal').classList.remove('active');
     }
 
-    startStudy(deckId) {
-        // FREEMIUM: Limitar sesiones de estudio a 3/día para usuarios free
-        if (window.sessionManager) {
-            const user = window.sessionManager.getUser();
-            if (user) {
-                const status = user.subscriptionStatus || user.subscription_status;
-                const isPremium = status === 'active' || user.role === 'admin';
-
-                if (!isPremium) {
-                    const today = new Date().toISOString().split('T')[0];
-                    const storageKey = `repaso_uses_${today}`;
-                    const usesToday = parseInt(localStorage.getItem(storageKey) || '0');
-                    const DAILY_LIMIT = 3;
-
-                    if (usesToday >= DAILY_LIMIT) {
-                        console.warn(`⛔ Repaso: Límite diario alcanzado (${usesToday}/${DAILY_LIMIT})`);
-                        if (window.uiManager && window.uiManager.showPaywallModal) {
-                            window.uiManager.showPaywallModal();
-                        } else {
-                            window.location.href = '/pricing';
-                        }
-                        return;
-                    }
-
-                    // Incrementar uso
-                    localStorage.setItem(storageKey, String(usesToday + 1));
-                }
-            }
-        }
+    async startStudy(deckId) {
+        // Verificar límite de vidas antes de iniciar sesión de estudio
+        const allowed = await this._checkUsageLimit();
+        if (!allowed) return;
 
         const deckName = this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || '';
-        window.location.href = `/flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
+        window.location.href = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
     }
 
     // --- API Helpers ---
@@ -662,6 +637,10 @@ class RepasoManager {
         const topic = document.getElementById('ai-topic').value;
         if (!topic) return alert('Escribe un tema');
 
+        // Verificar límite de vidas antes de generar con IA
+        const allowed = await this._checkUsageLimit();
+        if (!allowed) return;
+
         document.getElementById('ai-loading').style.display = 'block';
 
         try {
@@ -682,6 +661,50 @@ class RepasoManager {
             alert('Error de conexión');
         } finally {
             document.getElementById('ai-loading').style.display = 'none';
+        }
+    }
+
+    /**
+     * Verifica límite de vidas globales llamando al backend.
+     * Retorna true si puede proceder, false si está bloqueado.
+     */
+    async _checkUsageLimit() {
+        try {
+            const res = await fetch('/api/usage/verify', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.allowed) {
+                // Sincronizar estado local
+                if (data.plan === 'free' && window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    if (user) {
+                        user.usageCount = data.usage;
+                        window.sessionManager.notifyStateChange();
+                    }
+                }
+                return true;
+            } else if (res.status === 403) {
+                // Mostrar paywall
+                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    window.uiManager.showPaywallModal();
+                } else {
+                    alert('Has alcanzado tu límite de acciones gratuitas. Suscríbete para continuar.');
+                }
+                return false;
+            } else {
+                console.error('Error verificando acceso:', data);
+                return true; // Fail-open: dejar pasar si hay error inesperado
+            }
+        } catch (err) {
+            console.error('Error de red verificando uso:', err);
+            return true; // Fail-open en caso de error de red
         }
     }
 

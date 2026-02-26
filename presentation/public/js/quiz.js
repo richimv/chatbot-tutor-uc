@@ -87,7 +87,7 @@ async function init() {
     // Setup Exit Buttons
     const handleExit = () => {
         const ctx = state.context || 'MEDICINA';
-        window.location.href = `/simulator-dashboard?context=${ctx}`;
+        window.location.href = `simulator-dashboard?context=${ctx}`;
     };
 
     const btnExit = document.getElementById('btn-exit-quiz');
@@ -150,18 +150,21 @@ async function startQuiz() {
 
     const data = await response.json();
 
-    if (!data.success) {
-        // ⛔ Freemium: Límite diario o bloqueo premium
+    // ⛔ Freemium: Límite de vidas o bloqueo premium
+    if (response.status === 403) {
+        elements.loadingOverlay.classList.add('hidden');
         if (data.limitReached || data.premiumLock) {
-            elements.loadingOverlay.classList.add('hidden');
-            if (window.uiManager && window.uiManager.showPaywallModal) {
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal();
             } else {
-                alert(data.error || 'Límite alcanzado. Suscríbete para continuar.');
+                alert(data.error || 'Has alcanzado tu límite de acciones gratuitas.');
                 window.location.href = '/pricing';
             }
             return;
         }
+    }
+
+    if (!data.success) {
         throw new Error(data.error || 'Error desconocido del servidor');
     }
 

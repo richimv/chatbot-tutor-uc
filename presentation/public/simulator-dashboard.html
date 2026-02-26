@@ -506,12 +506,12 @@
                     <div class="target-card">ENAM</div>
                 </label>
                 <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="SERUMS">
-                    <div class="target-card">SERUMS</div>
+                    <input type="radio" name="examTarget" value="PRE-INTERNADO">
+                    <div class="target-card">PRE-INTERNADO</div>
                 </label>
                 <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="ENARM">
-                    <div class="target-card">ENARM</div>
+                    <input type="radio" name="examTarget" value="RESIDENTADO">
+                    <div class="target-card">RESIDENTADO</div>
                 </label>
             </div>
 
@@ -519,9 +519,9 @@
             <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Dificultad</h4>
             <select id="config-difficulty"
                 style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 1.5rem; outline: none;">
-                <option value="Básico">Básico (Directas / Teórico)</option>
-                <option value="Intermedio">Intermedio (Casos Clínicos Clínicos)</option>
-                <option value="Avanzado">Avanzado (Complejas / Terapéutica)</option>
+                <option value="Básico">Básico (Preguntas Directas / Teoría)</option>
+                <option value="Intermedio">Intermedio (Casos Clínicos - Diagnóstico)</option>
+                <option value="Avanzado">Avanzado (Casos Clínicos - Manejo y Terapéutica)</option>
             </select>
 
             <!-- Áreas Clínicas -->
@@ -560,7 +560,9 @@
             border-radius: 16px;
             width: 90%;
             max-width: 500px;
-            padding: 2rem;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 1.5rem;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             animation: modalFadeIn 0.3s ease-out;
         }

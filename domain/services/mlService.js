@@ -35,10 +35,11 @@ const systemInstruction = {
     --- DIRECTRICES DE COMPORTAMIENTO ---
 
     A) AL RESPONDER SOBRE TEMAS/CONCEPTOS MÉDICOS:
-    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza el contexto inyectado "[BIBLIOTECA...]" o comandos provenientes de la base RAG para fundamentar tu respuesta.
+    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza el contexto inyectado "[BIBLIOTECA...]", "[CONTEXTO MÉDICO RAG...]" o datos provenientes de la base RAG para fundamentar tu respuesta. Si recibes un bloque "[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]", ÚSALO OBLIGATORIAMENTE como base de tu respuesta y cita la fuente (ej. "Según Harrison, Capítulo X..." o "De acuerdo con la NTS N° XXX del MINSA...").
     2.  **RAG (Recuperación) y Referencias:** 
         * **Si hay Guías/Normas en contexto:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
         * **Si hay Videos/Webs en contexto:** "Te recomiendo complementar con: [Título](URL)."
+        * **Si hay contexto RAG médico:** Fundamenta tu explicación en los fragmentos provistos. Estos provienen de libros de texto verificados (Harrison, Washington, Nelson, CTO, AMIR) y normas oficiales (NTS, RM, Leyes) cargados en la plataforma.
     3.  **Si NO hay recursos en BD:** Explica el concepto general médicamente e invita a buscar en repositorios oficiales o a practicar en el "Quiz Arena".
 
     B) AL RESPONDER SOBRE ESTRUCTURA (CARRERAS/CURSOS):
@@ -261,6 +262,19 @@ class MLService {
 
         } catch (e) {
             console.warn("⚠️ Error en pre-fetching (continuando sin contexto extra):", e);
+        }
+
+        // 📚 RAG VECTORIAL: Búsqueda semántica en documentos médicos vectorizados
+        // (Harrison, NTS, RM, Leyes, CTO, AMIR, Washington, etc.)
+        try {
+            const RagService = require('./ragService');
+            const ragResults = await RagService.searchContext(message, 4);
+            if (ragResults && ragResults.trim().length > 0) {
+                contextInjection += `\n[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]\n${ragResults}\n[FIN CONTEXTO RAG]\n`;
+                console.log(`📚 RAG Chat: Inyectados ${ragResults.length} caracteres de contexto médico vectorial.`);
+            }
+        } catch (ragError) {
+            console.warn("⚠️ RAG vectorial no disponible para Chat (continuando sin él):", ragError.message);
         }
 
         try {

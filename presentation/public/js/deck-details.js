@@ -14,7 +14,7 @@ const DeckDetails = (() => {
         currentDeckId = urlParams.get('id');
 
         if (!currentDeckId) {
-            window.location.href = '/repaso';
+            window.location.href = 'repaso';
             return;
         }
 
@@ -120,7 +120,7 @@ const DeckDetails = (() => {
     function startStudy() {
         // Pass deck name for UI Context
         const deckName = document.getElementById('deck-title').textContent;
-        window.location.href = `/flashcards?deckId=${currentDeckId}&deckName=${encodeURIComponent(deckName)}`;
+        window.location.href = `flashcards?deckId=${currentDeckId}&deckName=${encodeURIComponent(deckName)}`;
     }
 
     function openAddModal() {

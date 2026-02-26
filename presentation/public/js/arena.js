@@ -100,15 +100,8 @@ const Arena = (() => {
                 ui.screens.loading.classList.add('hidden');
                 ui.screens.game.classList.remove('hidden');
                 renderQuestion();
-            } else if (data.limitReached) {
-                // ⛔ Límite diario alcanzado → Mostrar Paywall
-                ui.screens.loading.classList.add('hidden');
-                if (window.uiManager && window.uiManager.showPaywallModal) {
-                    window.uiManager.showPaywallModal();
-                } else {
-                    showCustomModal('Límite Alcanzado', data.error || 'Has alcanzado tu límite diario. Suscríbete para jugar sin límites.');
-                }
             } else {
+                // alert('Error: ' + data.error); 
                 showCustomModal('Error al Iniciar', data.error || 'No se pudo iniciar la partida.');
                 ui.screens.loading.classList.add('hidden');
             }
@@ -488,7 +481,7 @@ const Arena = (() => {
 
             if (!token) {
                 if (nameDisplay) {
-                    nameDisplay.innerHTML = '<a href="/login.html" style="color:#fbbf24; text-decoration:none;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>';
+                    nameDisplay.innerHTML = '<a href="/login" style="color:#fbbf24; text-decoration:none;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>';
                 }
                 return;
             }

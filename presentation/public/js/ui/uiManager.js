@@ -247,14 +247,14 @@ class UIManager {
         if (document.getElementById('video-player-modal')) return;
 
         const modalHTML = `
-            <div id="video-player-modal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()">&times;</button>
+            <div id="video-player-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                <div class="modal-content" style="background: transparent; border: none; box-shadow: none; width: 95%; max-width: 900px; position: relative;">
+                    <div class="modal-header" style="border: none; padding: 0; justify-content: flex-end; position: absolute; top: -40px; right: 0;">
+                        <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()" style="color: white; font-size: 2.5rem; background: none; border: none; cursor: pointer;">&times;</button>
                     </div>
-                    <div class="modal-body" style="overflow: visible;">
+                    <div class="modal-body" style="overflow: visible; padding: 0;">
                         <div id="video-modal-content-area"></div>
-                        <h3 id="video-modal-title-text" class="video-modal-title"></h3>
+                        <h3 id="video-modal-title-text" class="video-modal-title" style="color: white; text-align: center; margin-top: 15px; font-weight: 500;"></h3>
                     </div>
                 </div>
             </div>
@@ -296,21 +296,53 @@ class UIManager {
 
         if (!modal) {
             const modalHTML = `
-            <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex;">
-                <div class="modal-content" style="border: 2px solid #ffd700;"> <!-- Gold border -->
-                    <div class="modal-header">
-                        <h2>¡Te encantó la prueba!</h2>
-                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
+            <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                <div class="modal-content" style="
+                    background: linear-gradient(145deg, #0f172a, #1e293b); 
+                    border: 2px solid #ffd700; 
+                    box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
+                    width: 90%;
+                    max-width: 450px; 
+                    border-radius: 16px;
+                    font-family: 'Inter', sans-serif;
+                    overflow: hidden;
+                ">
+                    <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="
+                            background: linear-gradient(90deg, #f8fafc, #94a3b8); 
+                            -webkit-background-clip: text; 
+                            -webkit-text-fill-color: transparent; 
+                            font-weight: 800;
+                            font-size: 1.2rem;
+                            margin: 0;
+                        ">¡Te encantó la prueba!</h2>
+                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="color: #64748b; font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
                     </div>
-                    <div class="modal-body">
-                        <div class="auth-prompt-icon">
-                           <i class="fas fa-crown" style="color: #ffd700;"></i>
+                    <div class="modal-body" style="padding: 30px 25px; text-align: center;">
+                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
+                           <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                         </div>
-                        <div class="auth-prompt-main-text">
+                        <div class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6; margin-bottom: 25px;">
                             Ya usaste tus 3 pruebas gratuitas.
-                            <br>Para continuar, suscríbete por <strong>S/ 9.90</strong>.
+                            <br>Para continuar, suscríbete por <strong style="color: #ffd700;">S/ 9.90</strong>.
                         </div>
-                        <button class="btn-primary" style="width:100%; margin-top:15px; background: linear-gradient(45deg, #ffd700, #ffa500); color: black; font-weight:bold;" onclick="window.location.href='/pricing'">
+                        <button class="btn-primary" style="
+                            width: 100%; 
+                            background: linear-gradient(45deg, #ffd700, #ffa500); 
+                            color: #000; 
+                            font-weight: 800; 
+                            border: none;
+                            padding: 14px; 
+                            font-size: 1rem;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+                            cursor: pointer;
+                            transition: transform 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 10px;
+                        " onclick="window.location.href='/pricing'" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                             <i class="fas fa-rocket"></i> Suscríbete ahora
                         </button>
                     </div>

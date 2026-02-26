@@ -1,5 +1,7 @@
 const TrainingService = require('../../domain/services/trainingService');
 const db = require('../../infrastructure/database/db'); // Acceso directo a BD para guardar scores
+const UsageService = require('../../domain/services/usageService');
+const usageService = new UsageService();
 
 class QuizController {
 
@@ -20,32 +22,22 @@ class QuizController {
                 return res.status(400).json({ error: 'Falta proveer áreas o un tema válido.' });
             }
 
-            // 1. Lógica FREEMIUM: Verificar Límite Diario (Solo en Ronda 1)
-            // Fix: User model uses camelCase (subscriptionStatus), DB row uses snake_case. 
-            // Repository maps it to camelCase.
+            // 1. Lógica FREEMIUM: Verificar Límite Global de Vidas (Solo en Ronda 1)
             const isPremium = user.subscriptionStatus === 'active' || user.role === 'admin';
 
             if (round === 1 && !isPremium) {
-                const today = new Date().toISOString().split('T')[0];
-                const queryUsage = `
-                    SELECT COUNT(*) as count 
-                    FROM quiz_scores 
-                    WHERE user_id = $1 
-                    AND created_at::date = $2
-                `;
-                const resultUsage = await db.query(queryUsage, [user.id, today]);
-                const gamesToday = parseInt(resultUsage.rows[0].count);
-                const DAILY_LIMIT = 3;
-
-                if (gamesToday >= DAILY_LIMIT) {
+                const usageCheck = await usageService.checkAndIncrementUsage(user.id);
+                if (!usageCheck.allowed) {
                     return res.status(403).json({
-                        error: 'Has alcanzado tu límite diario de 3 partidas.',
-                        limitReached: true
+                        error: 'Has alcanzado tu límite de acciones gratuitas.',
+                        limitReached: true,
+                        usage: usageCheck.usage,
+                        limit: usageCheck.limit
                     });
                 }
             }
 
-            // 🎯 NEW: Round Cap for Free Users
+            // 🎯 Round Cap for Free Users
             // Rounds 1-2: Free
             // Rounds 3-5: Premium Only
             if (round > 2 && !isPremium) {
@@ -192,7 +184,7 @@ class QuizController {
                     topicFilter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
                 } else {
                     // Fallback para todo el ecosistema (todas las dificultades antiguas y modernas unificadas)
-                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'PRE-INTERNADO', 'RESIDENTADO', 'Básico', 'Intermedio', 'Avanzado')`;
                 }
             } else if (context) {
                 // Generic fallback

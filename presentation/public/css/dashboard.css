@@ -414,34 +414,6 @@ body {
     filter: grayscale(0.8);
 }
 
-/* Premium Lock State */
-.mode-card.locked {
-    opacity: 0.55;
-    filter: grayscale(0.5);
-    position: relative;
-    pointer-events: auto;
-}
-
-.mode-card.locked:hover {
-    transform: none;
-    border-color: rgba(255, 215, 0, 0.3);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-}
-
-.premium-lock-badge {
-    position: absolute !important;
-    top: 1rem !important;
-    left: 1rem !important;
-    right: auto !important;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.15)) !important;
-    color: #ffd700 !important;
-    border: 1px solid rgba(255, 215, 0, 0.3) !important;
-    font-weight: 700 !important;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
 @media (max-width: 768px) {
     .dashboard-container {
         padding: 1rem;

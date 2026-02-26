@@ -46,7 +46,6 @@ class DeckExplorer {
         // So default call is OK for root.
 
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${this.token}` } });
-        if (!res.ok) return []; // API error — return empty gracefully
         const data = await res.json();
         return data.decks || [];
     }

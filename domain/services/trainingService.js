@@ -72,6 +72,84 @@ class TrainingService {
     }
 
     /**
+     * Construye una query RAG enriquecida según Target + Área.
+     * En vez de "Protocolos ENAM de Cardiología", genera queries con
+     * términos médicos específicos que mejoran la relevancia del vector search.
+     */
+    _buildRagQuery(target, areas, difficulty) {
+        const areaString = areas.join(', ');
+
+        // Mapa de keywords por área para enriquecer la búsqueda vectorial
+        const areaKeywords = {
+            // Grupo A — Ciencias Básicas
+            'Anatomía': 'anatomía humana estructuras órganos relaciones topográficas',
+            'Fisiología': 'fisiología mecanismos homeostasis función orgánica',
+            'Farmacología': 'farmacología mecanismo de acción farmacocinética farmacodinamia interacciones medicamentosas',
+            'Microbiología y Parasitología': 'microbiología parasitología agentes infecciosos bacterias virus parásitos patogenia',
+
+            // Grupo B — Las 4 Grandes
+            'Medicina Interna': 'medicina interna diagnóstico diferencial adultos Harrison fisiopatología',
+            'Pediatría': 'pediatría neonatología crecimiento desarrollo inmunización infantil Nelson',
+            'Ginecología y Obstetricia': 'ginecología obstetricia embarazo parto preeclampsia control prenatal',
+            'Cirugía General': 'cirugía general abdomen agudo apendicitis colecistitis hernias manejo quirúrgico',
+
+            // Grupo C — Especialidades
+            'Cardiología': 'cardiología infarto síndrome coronario insuficiencia cardíaca arritmias ECG hipertensión',
+            'Gastroenterología': 'gastroenterología hígado hepatitis pancreatitis enfermedad ácido péptica hemorragia digestiva',
+            'Neurología': 'neurología ACV epilepsia meningitis cefalea neuropatía',
+            'Nefrología': 'nefrología insuficiencia renal síndrome nefrótico nefrítico electrolitos diálisis',
+            'Neumología': 'neumología neumonía EPOC asma tuberculosis pulmonar derrame pleural',
+            'Endocrinología': 'endocrinología diabetes mellitus tiroides hipotiroidismo hipertiroidismo Cushing',
+            'Infectología': 'infectología VIH SIDA tuberculosis dengue malaria sepsis antibioticoterapia',
+            'Reumatología': 'reumatología lupus artritis reumatoide vasculitis autoinmunidad',
+            'Traumatología': 'traumatología fracturas luxaciones ortopedia manejo trauma musculoesquelético',
+
+            // Grupo D — Salud Pública y Gestión
+            'Salud Pública y Epidemiología': 'salud pública epidemiología vigilancia epidemiológica brotes dengue malaria',
+            'Gestión de Servicios de Salud': 'gestión servicios salud categorización establecimientos calidad atención',
+            'Ética Deontología e Interculturalidad': 'ética médica deontología derechos paciente interculturalidad consentimiento',
+            'Medicina Legal': 'medicina legal certificado defunción peritaje responsabilidad médica autopsia',
+            'Investigación y Bioestadística': 'investigación bioestadística estudios clínicos sensibilidad especificidad',
+            'Cuidado Integral': 'cuidado integral MAIS-BFC etapas de vida paquetes atención MINSA'
+        };
+
+        // Keywords adicionales por Target (contexto de examen)
+        const targetContext = {
+            'ENAM': {
+                'Salud Pública y Epidemiología': 'Calendario Vacunación cadena frío NTS TBC NTS Materno-Perinatal esquema vacunal brote dengue',
+                'Cuidado Integral': 'MAIS-BFC modelo atención integral etapas vida paquetes atención primer nivel',
+                'Ética Deontología e Interculturalidad': 'parto vertical costumbres locales adecuación cultural interculturalidad',
+                'Medicina Legal': 'certificado defunción llenado correcto causa básica muerte',
+                '_default': 'examen nacional medicina ENAM diagnóstico conducta inicial primer nivel'
+            },
+            'PRE-INTERNADO': {
+                'Gestión de Servicios de Salud': 'categorización establecimientos I-1 III-2 triaje hospitalario ESN',
+                'Ética Deontología e Interculturalidad': 'derechos paciente consentimiento informado seguridad paciente',
+                'Investigación y Bioestadística': 'media mediana moda tipos variables estadística descriptiva básica',
+                '_default': 'pre-internado EsSalud seguridad paciente competencias pregrado'
+            },
+            'RESIDENTADO': {
+                'Investigación y Bioestadística': 'lectura crítica riesgo relativo odds ratio valores p sesgos tipos estudio cohorte ensayo clínico NNT',
+                'Gestión de Servicios de Salud': 'diagrama Ishikawa Pareto planeamiento estratégico FODA calidad mejora continua',
+                'Salud Pública y Epidemiología': 'sensibilidad especificidad valor predictivo positivo negativo curva ROC prevalencia incidencia',
+                '_default': 'residentado CONAREME especialidad diagnóstico diferencial manejo avanzado'
+            }
+        };
+
+        // Construir la query enriquecida
+        const primaryArea = areas[0];
+        const baseKeywords = areaKeywords[primaryArea] || primaryArea;
+
+        // Añadir contexto específico del target para esta área
+        const tCtx = targetContext[target] || {};
+        const specificBoost = tCtx[primaryArea] || tCtx['_default'] || '';
+
+        const query = `${baseKeywords} ${specificBoost}`.trim();
+
+        return query;
+    }
+
+    /**
      * Obtiene Preguntas (Híbrido: Banco -> IA).
      * Soporta tanto Modo Legacy (String) como Modo Multi-Area (Objeto).
      */
@@ -93,17 +171,17 @@ class TrainingService {
             areas = ['MEDICINA GENERAL'];
         }
 
-        // 🛠️ DB MAPPER FIX: 'target' holds the exam type (ENAM, ENARM) or 'GENERAL_TRIVIA' from Arena.
+        // 🛠️ DB MAPPER FIX: 'target' holds the exam type (ENAM, PRE-INTERNADO, RESIDENTADO) or 'GENERAL_TRIVIA' from Arena.
         const dbDomain = target === 'GENERAL_TRIVIA' ? 'GENERAL_TRIVIA' : 'medicine';
         const dbTarget = target === 'GENERAL_TRIVIA' ? null : target;
 
         // 🛡️ OVERRIDE DE DIFICULTAD OFICIAL (Simulacro Real)
         if (limit >= 100) {
             console.log(`⚖️ [Simulacro Real Detectado] Ignorando dificultad del usuario (${difficulty}). Aplicando Estándar Oficial...`);
-            if (target === 'ENARM') {
+            if (target === 'RESIDENTADO') {
                 difficulty = 'Avanzado'; // Especialidad compleja
             } else {
-                difficulty = 'Intermedio'; // Nivel troncal ENAM/SERUMS
+                difficulty = 'Intermedio'; // Nivel troncal ENAM/PRE-INTERNADO
             }
         }
 
@@ -195,11 +273,12 @@ class TrainingService {
         try {
             const areaString = areas.join(', ');
 
-            // 1. RAG Híbrido: Filtramos documentos por áreas
+            // 1. RAG Híbrido: Query contextual enriquecida por Target + Área
             let ragContext = "";
             try {
                 const RagService = require('./ragService');
-                const queryPrompt = `Protocolos ${target} de ${areaString}`;
+                const queryPrompt = this._buildRagQuery(target, areas, difficulty);
+                console.log(`🔍 RAG Query: "${queryPrompt}"`);
                 ragContext = await RagService.searchContext(queryPrompt, 5);
             } catch (e) { console.error("RAG Falló", e); }
 
@@ -227,7 +306,7 @@ class TrainingService {
             let optionsCount = 4;
             let optionsStr = '["Opción 1 limpia sin letra","Opción 2 limpia sin letra","Opción 3 limpia sin letra","Opción 4 limpia sin letra"]';
 
-            if (target === 'ENARM') {
+            if (target === 'RESIDENTADO') {
                 optionsCount = 5;
                 optionsStr = '["Opción 1 limpia","Opción 2 limpia","Opción 3 limpia","Opción 4 limpia","Opción 5 limpia"]';
             }
@@ -255,14 +334,14 @@ class TrainingService {
             ATENCIÓN: CADA PREGUNTA DEBE TENER EXACTAMENTE ${optionsCount} OPCIONES DE RESPUESTA, NI UNA MÁS NI UNA MENOS.
             
             DIRECTRICES CLAVE DEL TIPO DE EXAMEN (RESPETAR ESTRICTAMENTE):
-            - Si es ENAM (Examen Nacional de Medicina): Evalúa conocimientos GENERALES (fisiopatología, clínica, diagnóstico clásico). **AUNQUE EL CONTEXTO RAG PROVEA NORMAS TÉCNICAS (NTS), IGNÓRALAS POR COMPLETO Y GENERA PREGUNTAS CLÍNICAS UNIVERSALES.** PROHIBIDO incluir preguntas sobre flujogramas administrativos del MINSA o Normas Técnicas de Salud (NTS).
-            - Si es SERUMS (Servicio Rural): Enfócate 100% en salud pública, atención primaria, Norma Técnica de Salud (NTS) vigente del MINSA y manejo en el primer nivel de atención (Puesto de Salud).
-            - Si es ENARM (Residentado): Enfócate en Especialidad. Casos clínicos enrevesados, diagnóstico diferencial exhaustivo, examen auxiliar inicial ("Gold Standard") y tratamiento de segunda o tercera línea.
+            - Si es ENAM (Examen Nacional de Medicina - Perú, ASPEFAM): Evalúa conocimientos GENERALES troncales: fisiopatología, clínica y diagnóstico clásico. INCLUYE Normas Técnicas de Salud (NTS) básicas cuando el área sea de Salud Pública (Calendario de Vacunación, cadena de frío, NTS de TBC, NTS Materno-Perinatal, MAIS-BFC). Prioriza: conducta inicial, diagnóstico y manejo en el primer nivel de atención. Si el área es Ética, incluir Parto Vertical e interculturalidad. Si el área es Medicina Legal, el Certificado de Defunción es pregunta fija. Ciencias básicas + clínicas (180-200 preguntas en el examen real). Enfoque: "El Médico de Posta".
+            - Si es PRE-INTERNADO (Examen de Ingreso a Internado Médico, EsSalud): Enfócate en seguridad del paciente dentro del hospital. Atención primaria, NTS vigentes del MINSA, competencias clínicas de pregrado. Si el área es Gestión, priorizar Categorización de establecimientos (I-1 al III-2) y triaje hospitalario. Si el área es Ética, priorizar Derechos del paciente y Consentimiento Informado. Si el área es Investigación/Bioestadística, conceptos básicos: media, mediana, moda, tipos de variables. Ciencias básicas aplicadas a la clínica (ej. Anatomía de fracturas comunes). Enfoque: "Seguridad del Paciente".
+            - Si es RESIDENTADO (Examen Nacional de Residentado Médico, CONAREME): Enfócate en Especialidad avanzada. Casos clínicos enrevesados con diagnóstico diferencial exhaustivo, examen auxiliar Gold Standard y tratamiento de segunda o tercera línea. Si el área es Investigación/Bioestadística, enfoque PESADO en lectura crítica: Riesgo Relativo (RR), Odds Ratio (OR), valores p, tipos de sesgos en estudios clínicos. Si el área es Gestión, priorizar herramientas de calidad (Diagrama de Ishikawa, Pareto) y Planeamiento Estratégico (FODA). Si el área es Epidemiología, cálculos complejos de sensibilidad, especificidad y valores predictivos. 90% casos clínicos + 10% ciencias básicas aplicadas. Enfoque: "El Médico Científico/Gerente".
             
             INSTRUCCIÓN DE DIFICULTAD ESTRICTA:
-            ${difficulty === 'Básico' ? '- Nivel Básico: Usa preguntas directas, cortas y teóricas (conceptos, etiologías, definiciones simples). NO USES CASOS CLÍNICOS LARGOS.' : ''}
-            ${difficulty === 'Intermedio' ? '- Nivel Intermedio: Usa casos clínicos cortos típicos de viñetas de exámenes.' : ''}
-            ${difficulty === 'Avanzado' ? '- Nivel Avanzado: Casos clínicos complejos que requieran manejo de excepciones o decisiones ético-legales intrincadas.' : ''}
+            ${difficulty === 'Básico' ? '- Nivel Básico: Preguntas directas de memoria pura (etiologías, definiciones, mecanismos fisiopatológicos). NO USES CASOS CLÍNICOS LARGOS. Ejemplo: "¿Cuál es el agente causal de la sífilis?"' : ''}
+            ${difficulty === 'Intermedio' ? '- Nivel Intermedio: Viñetas clínicas que evalúan diagnóstico y análisis clínico. Casos clínicos cortos típicos de exámenes. Ejemplo: Paciente con fiebre y manchas, pedir diagnóstico.' : ''}
+            ${difficulty === 'Avanzado' ? '- Nivel Avanzado: Casos clínicos complejos que requieran manejo terapéutico, excepciones farmacológicas o decisiones ético-legales intrincadas. Ejemplo: Elegir tratamiento alternativo en paciente alérgico a primera línea.' : ''}
             
             JSON ESTRICTO:
             [{"question":"...","options":${optionsStr},"correctAnswerIndex":0,"explanation":"...", "topic": "<Especifica el área elegida de la lista provista>"}]
@@ -410,7 +489,7 @@ class TrainingService {
 
     // --- MÉTODOS LEGACY (Wrappers para compatibilidad) ---
 
-    // Usado por QuizController (Serum/ENAM/ENARM)
+    // Usado por QuizController (ENAM/PRE-INTERNADO/RESIDENTADO)
     async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5) {
         const result = await this.getQuestions(categoryOptions, difficulty, limit, userId);
         return { questions: result.questions, topic: result.topic };

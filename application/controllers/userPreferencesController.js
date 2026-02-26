@@ -33,7 +33,7 @@ class UserPreferencesController {
 
     /**
      * POST /api/users/preferences
-     * Body: { domain: 'medicine', config_json: { target: 'ENARM', difficulty: 'Avanzado', areas: [...] } }
+     * Body: { domain: 'medicine', config_json: { target: 'RESIDENTADO', difficulty: 'Avanzado', areas: [...] } }
      */
     async savePreferences(req, res) {
         try {

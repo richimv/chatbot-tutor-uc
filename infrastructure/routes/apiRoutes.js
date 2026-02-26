@@ -184,18 +184,4 @@ router.get('/arena/stats', auth, quizGameController.getUserStats);
 const customAnalyticsRoutes = require('./analyticsRoutes');
 router.use('/analytics', customAnalyticsRoutes);
 
-// --- Rutas de Mazos (Decks) y Flashcards ---
-const deckController = require('../../application/controllers/deckController');
-router.get('/decks', auth, deckController.listDecks);
-router.post('/decks', auth, deckController.createDeck);
-router.get('/decks/:deckId', auth, deckController.getDeckById);
-router.put('/decks/:deckId', auth, deckController.updateDeck);
-router.delete('/decks/:deckId', auth, deckController.deleteDeck);
-router.get('/decks/:deckId/cards', auth, deckController.listCards);
-router.post('/decks/:deckId/cards', auth, deckController.addCard);
-router.get('/decks/:deckId/cards/due', auth, deckController.getDueCards);
-router.post('/decks/:deckId/generate', auth, deckController.generateCards);
-router.put('/cards/:cardId', auth, deckController.updateCard);
-router.delete('/cards/:cardId', auth, deckController.deleteCard);
-
 module.exports = router;

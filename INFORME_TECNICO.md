@@ -119,21 +119,57 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
     *   **Modos de Entrenamiento (Grid Dinámico):**
         *   ⚡ **Simulacro Rápido:** 10 preguntas (Arcade).
         *   📚 **Modo Estudio:** 20 preguntas (Feedback inmediato).
+        *   🎯 **Simulacro Real:** 100 preguntas (Mock Test oficial, dificultad forzada).
         *   🧠 **Flashcards:** Acceso directo al sistema de Repaso Espaciado.
 
 2.  **Motor de Examen (`quiz.js`)**
     *   **Estado Reactivo:** Gestión de preguntas, respuestas y progreso en el cliente.
-    *   **Batch Loading:** Carga preguntas en lotes en segundo plano (`fetchNextBatch`) para mantener rendimiento fluido.
-    *   **Constructor de Examen Custom (v2.0):** Modal avanzado (UI Glassmorphism) que permite al estudiante armar simulacros a la carta. Envía los parámetros `target` (ENAM, ENARM, SERUMS), `difficulty` y `areas` múltiples al backend.
-    *   **Rotación Dinámica de Opciones (v2.0):** Ajuste algorítmico paramétrico en UI. Los simulacros base operan con 4 opciones clínicas. Aquellos tipificados como **ENARM** fuerzan la generación y renderizado de 5 opciones para simular rigurosidad real.
-    *   **Rastreo de Datos Granular:** Capacidad de enviar metadata avanzada on-submit hacia el backend (ej. Array multidimensional y mapeo de sub-tópicos resueltos por cada pregunta exacta).
+    *   **Batch Loading:** Carga preguntas en lotes de 5 en segundo plano (`fetchNextBatch`) para mantener rendimiento fluido.
+    *   **Rotación Dinámica de Opciones:** Los simulacros para ENAM y PRE-INTERNADO operan con 4 opciones. Aquellos tipificados como **RESIDENTADO** fuerzan la generación y renderizado de **5 opciones** para simular la rigurosidad del examen CONAREME real.
+    *   **Rastreo de Datos Granular:** Envío de metadata avanzada on-submit (target, áreas, dificultad, respuestas por pregunta) hacia el backend para analítica JSONB.
+
+3.  **Configuración de Examen (`simulator-dash.js` - Modal v2.0)**
+
+    Sistema de personalización del simulacro alineado con el sistema educativo médico peruano:
+
+    **Tipos de Examen Objetivo:**
+
+    | Target | Descripción | Opciones | Estilo IA |
+    | :--- | :--- | :--- | :--- |
+    | **ENAM** | Examen Nacional de Medicina (ASPEFAM). Obligatorio para egresados. 180-200 preguntas | 4 | Clínica general, fisiopatología, diagnóstico clásico. **Incluye NTS básicas** de Salud Pública (Vacunas, TB, Materno-Perinatal, MAIS-BFC). Certificado de Defunción (fijo). Enfoque: "El Médico de Posta" |
+    | **PRE-INTERNADO** | Examen de ingreso al internado médico (EsSalud) | 4 | Seguridad del paciente. Categorización de establecimientos (I-1 al III-2), triaje, Consentimiento Informado. Ciencias básicas aplicadas (ej. anatomía de fracturas). Enfoque: "Seguridad del Paciente" |
+    | **RESIDENTADO** | Examen Nacional de Residentado Médico (CONAREME) | 5 | Especialidad avanzada: diagnóstico diferencial exhaustivo, Gold Standard, tratamiento 2da/3ra línea. Investigación: RR, OR, sesgos. Gestión: Ishikawa, FODA. 90% casos clínicos. Enfoque: "El Médico Científico/Gerente" |
+
+    **Niveles de Dificultad (Basados en exigencia cognitiva, NO en materia):**
+
+    | Nivel | Evalúa | Ejemplo |
+    | :--- | :--- | :--- |
+    | **Básico** | Memoria pura: etiologías, definiciones, mecanismos | "¿Cuál es el agente causal de la sífilis?" |
+    | **Intermedio** | Análisis clínico: viñetas diagnósticas | Caso con fiebre + manchas → pedir diagnóstico |
+    | **Avanzado** | Toma de decisiones: manejo terapéutico, excepciones | Tratamiento alternativo en alérgico a 1ra línea |
+
+    **23 Áreas de Estudio en 4 Grupos:**
+
+    *   **Grupo A — Ciencias Básicas:** Anatomía, Fisiología, Farmacología, Microbiología y Parasitología.
+    *   **Grupo B — Las 4 Grandes:** Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía General.
+    *   **Grupo C — Especialidades Clínicas:** Cardiología, Gastroenterología, Neurología, Nefrología, Neumología, Endocrinología, Infectología, Reumatología, Traumatología.
+    *   **Grupo D — Salud Pública y Gestión:** Salud Pública y Epidemiología, Gestión de Servicios de Salud, Ética Deontología e Interculturalidad, Medicina Legal, Investigación y Bioestadística, Cuidado Integral.
+
+    Las áreas son idénticas para los 3 tipos de examen. Lo que cambia es el estilo del prompt de IA y las directrices de generación.
+
+    **UX del Modal:** Renderizado dinámico con sub-headers azules por grupo, scrollable (`max-height: 85vh`). Tooltip de primera visita (15s) + efecto neón pulsante en el botón "Configurar Examen" hasta que el usuario guarde una configuración.
 
 #### C. Lógica de Generación Híbrida (TrainingService v2.0)
 Estrategia costo-eficiente para generar contenido infinito y altamente preciso usando Inteligencia Artificial Agéntica:
-1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target, Arrays de Áreas Médicas, Dificultad y Contexto.
-2.  **Smart Filtering:** Excluye preguntas vistas históricamente por el usuario (`user_question_history`) para garantizar novedad en cada intento.
-3.  **AI Fallback Dinámico (Gemini 2.5 Flash):** Si el banco local es insolvente en preguntas "frescas", se conecta a un motor LLM pasándole en el *Prompt* perfiles estrictos ("Residente Junior/Senior"). El LLM genera preguntas estilo USMLE adaptadas, inyectando respuestas falsas pero patológicamente plausibles (Diagnósticos Diferenciales) y una explicación exhaustiva.
-4.  **Auto-Learning Global:** Las nuevas preguntas incubadas por IA se persisten atómicamente en el Banco Global para futuros estudiantes (con indexación MD5 contra duplicidad).
+1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target (ENAM/PRE-INTERNADO/RESIDENTADO), Arrays de Áreas Médicas (23 áreas), Dificultad y exclusión de preguntas vistas.
+2.  **Smart Filtering (Anti-Repetición 24h):** Excluye preguntas vistas por el usuario en las últimas 24 horas (`user_question_history`) con query `seen_at > NOW() - INTERVAL '24 hours'`. Después de 24h, las preguntas pueden reaparecer ("Olvido Saludable").
+3.  **AI Fallback Dinámico (Gemini 2.5 Flash):** Si el banco local no tiene suficientes preguntas frescas, se conecta al LLM con un prompt que incluye:
+    *   **Directrices por tipo de examen:** Diferentes instrucciones para ENAM (clínico universal), PRE-INTERNADO (atención primaria/NTS) y RESIDENTADO (especialidad avanzada).
+    *   **Contexto RAG:** Documentos reales del MINSA buscados semánticamente en el vector store.
+    *   **Deduplicación por Contexto Negativo:** 15 preguntas previas del banco inyectadas como "preguntas prohibidas" en el prompt.
+    *   **Semantic Sub-Drift:** Rotación aleatoria de enfoque clínico (etiología, diagnóstico, tratamiento, complicaciones, prevención) para garantizar diversidad temática.
+4.  **Auto-Learning Global:** Las nuevas preguntas generadas por IA se persisten atómicamente en el Banco Global (con `ON CONFLICT` contra duplicidad) y se marcan como vistas para el usuario.
+5.  **Protección Financiera (Mock Test):** En simulacros de 100+ preguntas, se bloquea la generación masiva por IA y se retorna solo preguntas del banco existente.
 
 #### D. Analítica de Rendimiento Profunda y JSONB (v2.0)
 El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un modelo granular subatómico alimentado por base de datos híbrida (Relacional/NoSQL Documental en PostgreSQL):
@@ -141,15 +177,17 @@ El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un mode
 *   **Motor KPI:** El endpoint `getStats` dispara queries analíticas sobre la nube estructurada JSON (`jsonb_object_keys`, `SUM`), lo que entrega agregaciones estadísticas vitales sin sobrecargar la estructura de la base de datos PostgreSQL.
 *   **Dashboard Visual (Radar Chart UX):** El ecosistema Frontend intercepta dicho pipeline mediante la biblioteca `Chart.js`, renderizando un gráfico Poligonal tipo Radar (Spider) responsivo que señala visual y matemáticamente las Fortalezas (ej. Pediatría: 85%) y Fallas (ej. Cirugía: 20%) de un Doctor.
 
-#### D. Base de Datos (Schema)
-*   `question_bank`: Repositorio global de preguntas (compartido).
-*   `quiz_history`: Registro de intentos, puntajes y puntos débiles.
-*   `user_flashcards`: Tarjetas generadas automáticamente a partir de errores.
+#### E. Base de Datos (Schema)
+*   `question_bank`: Repositorio global de preguntas (compartido). Columnas clave: `domain`, `target` (ENAM/PRE-INTERNADO/RESIDENTADO), `topic`, `difficulty`, `times_used`.
+*   `quiz_history`: Registro de intentos, puntajes y `area_stats` JSONB granular.
+*   `user_question_history`: Anti-repetición por usuario (`user_id`, `question_id`, `seen_at`, `times_seen`).
+*   `user_flashcards`: Tarjetas generadas automáticamente a partir de errores en simulacros.
 *   `decks`: Contenedores lógicos para tarjetas (System Decks vs Custom Decks).
 
-#### E. Funcionalidades Clave
-*   **Flashcards Automáticas:** Al fallar una pregunta en Simulacro Médico, se crea una flashcard automáticamente en el mazo "Repaso Medicina".
-*   **Simulacro Rápido vs Estudio:** Configuración dinámica de límites (`limit=10` vs `limit=20`) desde el backend.
+#### F. Funcionalidades Clave
+*   **Flashcards Automáticas:** Al fallar una pregunta en Simulacro Médico, se crea una flashcard automáticamente en el mazo "Repaso Medicina" (front = pregunta, back = explicación correcta).
+*   **Simulacro Rápido / Estudio / Real:** Configuración dinámica de límites (`limit=10` / `limit=20` / `limit=100`) desde el backend.
+*   **Sistema Freemium de Vidas Globales:** 3 vidas de por vida para usuarios gratuitos. Se consume 1 vida al iniciar un examen (Ronda 1) o al usar funciones de Repaso (Estudiar/Generar IA). Verificación server-side vía `UsageService.checkAndIncrementUsage()`. Paywall modal con corona dorada al agotar vidas.
 *   **Navegación Contextual:** Flujo fluido entre Dashboard -> Quiz -> Resultados -> Dashboard, manteniendo el contexto (ej: Medicina).
 *   **Mazos Anidados (Nested Decks):** Sistema de gestión de mazos híbrida en árbol (Estilo Anki: `Categoría::Curso::Tema`) con soporte para sub-mazos infinitos.
 *   **Gráfico de Retención:** Visualización analítica de barras ("Activity Chart") en el modal de estadísticas para rastrear la constancia diaria de estudio del usuario sobre los últimos 14 días.
