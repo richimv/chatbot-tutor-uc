@@ -644,10 +644,10 @@ class RepasoManager {
         document.getElementById('ai-loading').style.display = 'block';
 
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/ai/generate-flashcards`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                body: JSON.stringify({ deckId: this.currentDeck.id, topic, amount: 5 })
+                body: JSON.stringify({ topic, amount: 5 })
             });
 
             if (res.ok) {
