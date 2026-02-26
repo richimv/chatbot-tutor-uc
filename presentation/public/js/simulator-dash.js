@@ -60,7 +60,7 @@ const SimulatorDash = (() => {
         if (token) {
             try {
                 // Fetch preferences from API instead of localStorage
-                const res = await fetch(`/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
+                const res = await fetch(`${window.AppConfig.API_URL}/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const prefData = await res.json();
@@ -351,7 +351,7 @@ const SimulatorDash = (() => {
                 if (token) {
                     try {
                         // Persist to Database for Cross-Device Sync
-                        await fetch('/api/users/preferences', {
+                        await fetch(`${window.AppConfig.API_URL}/api/users/preferences`, {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${token}`,
@@ -400,7 +400,7 @@ const SimulatorDash = (() => {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
 
-            const res = await fetch(`/api/quiz/evolution${qs}`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/evolution${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -475,7 +475,7 @@ const SimulatorDash = (() => {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
 
-            const res = await fetch(`/api/quiz/stats${qs}`, {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/stats${qs}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();

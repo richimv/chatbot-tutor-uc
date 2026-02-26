@@ -8,7 +8,7 @@ class DeckExplorer {
         this.treeContainer = document.getElementById('deck-tree');
         this.expandedNodes = new Set(); // Store open folder IDs
         this.activeNodeId = null; // Current selection
-        this.api = '/api/decks';
+        this.api = `${window.AppConfig.API_URL}/api/decks`;
         this.token = localStorage.getItem('authToken');
     }
 

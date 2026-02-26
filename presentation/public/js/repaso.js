@@ -478,7 +478,7 @@ class RepasoManager {
     // --- API Helpers ---
 
     async fetchDeck(id) {
-        const res = await fetch(`/api/decks/${id}`, {
+        const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${id}`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
@@ -487,7 +487,7 @@ class RepasoManager {
     }
 
     async fetchDecks(parentId) {
-        let url = `/api/decks`;
+        let url = `${window.AppConfig.API_URL}/api/decks`;
         if (parentId) url += `?parentId=${parentId}`;
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${this.token}` },
@@ -498,7 +498,7 @@ class RepasoManager {
     }
 
     async fetchCards(deckId) {
-        const res = await fetch(`/api/decks/${deckId}/cards`, {
+        const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
@@ -534,7 +534,7 @@ class RepasoManager {
             // CREATE MODE
             try {
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
-                const res = await fetch('/api/decks', {
+                const res = await fetch(`${window.AppConfig.API_URL}/api/decks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ name, icon, parentId })
@@ -644,7 +644,7 @@ class RepasoManager {
         document.getElementById('ai-loading').style.display = 'block';
 
         try {
-            const res = await fetch('/api/ai/generate-flashcards', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/ai/generate-flashcards`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                 body: JSON.stringify({ deckId: this.currentDeck.id, topic, amount: 5 })
@@ -670,7 +670,7 @@ class RepasoManager {
      */
     async _checkUsageLimit() {
         try {
-            const res = await fetch('/api/usage/verify', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,

@@ -29,7 +29,7 @@ class LearningDashboard {
 
     async fetchStats() {
         // Solicitamos contexto explícito de MEDICINA para aislar las estadísticas
-        const res = await fetch('/api/quiz/stats?context=MEDICINA', {
+        const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/stats?context=MEDICINA`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
         if (!res.ok) throw new Error('Error de servidor');

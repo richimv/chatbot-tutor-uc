@@ -82,7 +82,7 @@ const Arena = (() => {
 
         try {
             // API CALL
-            const res = await fetch('/api/arena/start', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ const Arena = (() => {
 
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/arena/questions', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -417,7 +417,7 @@ const Arena = (() => {
                 return;
             }
 
-            const res = await fetch('/api/arena/ranking', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/ranking`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -444,7 +444,7 @@ const Arena = (() => {
 
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/arena/submit', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -486,7 +486,7 @@ const Arena = (() => {
                 return;
             }
 
-            const res = await fetch('/api/auth/me', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/auth/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -512,7 +512,7 @@ const Arena = (() => {
             const token = localStorage.getItem('authToken');
             if (!token) return; // Do not fetch stats for guests
 
-            const res = await fetch('/api/arena/stats', {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/stats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
