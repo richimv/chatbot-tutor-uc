@@ -223,6 +223,13 @@ const SimulatorDash = (() => {
             const btn = document.getElementById(id);
             if (btn) {
                 btn.addEventListener('click', (e) => {
+                    // Block disabled modes
+                    if (btn.classList.contains('mode-card--disabled')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+
                     if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
                         // Returns false and calls showPaywallModal() if limit reached
                         window.uiManager.validateFreemiumAction(e);

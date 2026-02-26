@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Simulador | Hub Academia</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -157,6 +158,37 @@
             font-weight: 700;
             color: white;
             line-height: 1;
+        }
+
+        /* Feature Soon / Disabled Badge */
+        .mode-card--disabled {
+            filter: grayscale(0.8);
+            opacity: 0.7;
+            cursor: not-allowed !important;
+            position: relative;
+            overflow: hidden;
+            pointer-events: all;
+            /* Allow click event to be captured then blocked by JS */
+        }
+
+        .mode-card--disabled:hover {
+            transform: none !important;
+            background: rgba(30, 41, 59, 0.4) !important;
+        }
+
+        .badge-soon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .stat-sub {
@@ -325,7 +357,8 @@
                 </a>
 
                 <!-- Card 3: Real Mock -->
-                <a href="#" id="btn-mode-real" class="mode-card">
+                <a href="#" id="btn-mode-real" class="mode-card mode-card--disabled">
+                    <span class="badge-soon">Muy Pronto</span>
                     <div class="mode-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
                         <i class="fas fa-hourglass-half"></i>
                     </div>
