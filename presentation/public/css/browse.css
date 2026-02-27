@@ -647,18 +647,21 @@
 
 /* Standardized spacing for sections */
 .section-spacer {
-    margin: 0.5rem;
+    margin: 1rem 0;
+    /* Reduced 3/4 from previous for subtle breath */
     width: 100%;
+    height: 1px;
+    opacity: 0.1;
+    /* Even more subtle line */
 }
 
 @media (max-width: 768px) {
     .section-spacer {
-        height: 0;
-        /* Remove spacer height completely on mobile */
-        margin: 0;
-        /* Remove margins */
-        display: none;
-        /* Hide if possible to completely collapse */
+        height: 1px;
+        margin: 0.75rem 0;
+        /* Subtle gap for mobile */
+        display: block;
+        opacity: 0.1;
     }
 
     /* 🔥 Ultra-Compact Grid for Mobile */
@@ -714,13 +717,12 @@
     }
 
     /* Reduce space around the "Ver todos" button if present in header */
+    /* ✅ SUBTLE Section Headers for Mobile */
     .section-header {
-        margin-top: 0.75rem !important;
-        /* Force tight top margin, overriding inline styles */
-        margin-bottom: 0;
-        /* Remove gap completely */
-        align-items: flex-end;
-        /* Align text bottom to reduce perceived gap */
+        margin-top: 0.8rem !important;
+        /* Reduced from 1.5rem */
+        margin-bottom: 0.3rem;
+        align-items: center;
     }
 
     .area-section {

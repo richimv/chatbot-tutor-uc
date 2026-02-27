@@ -1150,7 +1150,8 @@ class SearchComponent {
             </div>
             ${areasHTML}
             
-            <div style="margin-top: 5rem;"></div>
+            <!-- ✅ SECCIÓN ESPACIADORA ADICIONAL -->
+            <div class="section-spacer"></div>
             ${aiTeaserSection}
         `;
 
