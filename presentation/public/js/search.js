@@ -1148,7 +1148,7 @@ class SearchComponent {
                 </div>
                 <div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
                     
-                    <a href="/category?type=book" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1576091160550-2173ff9e5ee5?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                    <a href="/category?type=book" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/libros-oficiales.png'); background-size: cover; background-position: center; position: relative;">
                         <div class="module-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981; margin-bottom: 15px; position: relative; z-index: 2;">
                             <i class="fas fa-book-medical"></i>
                         </div>
@@ -1158,7 +1158,7 @@ class SearchComponent {
                         </div>
                     </a>
 
-                    <a href="/category?type=paper" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                    <a href="/category?type=paper" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/papers-oficiales.png'); background-size: cover; background-position: center; position: relative;">
                         <div class="module-icon icon-battle" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; margin-bottom: 15px; position: relative; z-index: 2;">
                             <i class="fas fa-microscope"></i>
                         </div>
@@ -1168,7 +1168,7 @@ class SearchComponent {
                         </div>
                     </a>
 
-                    <a href="/category?type=norma" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2112&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                    <a href="/category?type=norma" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/normas-oficiales.png'); background-size: cover; background-position: center; position: relative;">
                         <div class="module-icon icon-med" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; margin-bottom: 15px; position: relative; z-index: 2;">
                             <i class="fas fa-balance-scale"></i>
                         </div>
@@ -1178,7 +1178,7 @@ class SearchComponent {
                         </div>
                     </a>
 
-                    <a href="/category?type=guia" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1584982751601-97dcf099a3e1?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                    <a href="/category?type=guia" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/guias-oficiales.png'); background-size: cover; background-position: center; position: relative;">
                         <div class="module-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; margin-bottom: 15px; position: relative; z-index: 2;">
                             <i class="fas fa-notes-medical"></i>
                         </div>
