@@ -85,8 +85,8 @@ function renderCourse(course, container) {
                     <h2 class="section-title"><i class="fas fa-landmark" style="color:var(--accent)"></i> Normativas y Guías Clínicas</h2>
                     <p class="section-subtitle">Documentos oficiales de referencia obligatoria.</p>
                 </div>
-                <div class="documents-grid-premium">
-                    ${officialDocs.map(doc => createDocumentCardHTML(doc)).join('')}
+                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                    ${officialDocs.map(doc => createUnifiedResourceCardHTML(doc)).join('')}
                 </div>
                 <div class="section-spacer" style="height: 2.5rem;"></div>
             `;
@@ -98,8 +98,8 @@ function renderCourse(course, container) {
                 <div class="section-header">
                     <h2 class="section-title"><i class="fas fa-microscope" style="color:var(--accent)"></i> Investigación y Literatura Científica</h2>
                 </div>
-                <div class="documents-grid-premium">
-                    ${papers.map(p => createDocumentCardHTML(p)).join('')}
+                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                    ${papers.map(p => createUnifiedResourceCardHTML(p)).join('')}
                 </div>
                 <div class="section-spacer" style="height: 2.5rem;"></div>
             `;
@@ -124,8 +124,8 @@ function renderCourse(course, container) {
                 <div class="section-header">
                     <h2 class="section-title"><i class="fas fa-book-reader" style="color:var(--accent)"></i> Bibliografía y Material de Apoyo</h2>
                 </div>
-                <div class="documents-grid-premium">
-                    ${booksAndOthers.map(b => createDocumentCardHTML(b)).join('')}
+                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                    ${booksAndOthers.map(b => createUnifiedResourceCardHTML(b)).join('')}
                 </div>
             `;
         }

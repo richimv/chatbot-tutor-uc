@@ -263,6 +263,14 @@ class CoursesController {
             if (typeof req.body.careerIds === 'string') {
                 try { req.body.careerIds = JSON.parse(req.body.careerIds); } catch (e) { req.body.careerIds = []; }
             }
+            // ✅ NUEVO: Parsear topicIds (usado para recursos)
+            if (typeof req.body.topicIds === 'string') {
+                try { req.body.topicIds = JSON.parse(req.body.topicIds); } catch (e) { req.body.topicIds = []; }
+            }
+            // ✅ NUEVO: Parsear is_premium (FormData envía strings)
+            if (req.body.is_premium !== undefined) {
+                req.body.is_premium = req.body.is_premium === 'true';
+            }
 
             const newItem = await this.adminService.create(entityType, req.body);
             res.status(201).json(newItem);
@@ -394,6 +402,19 @@ class CoursesController {
                     console.error('Error parsing careerIds:', e);
                     req.body.careerIds = []; // Fallback seguro
                 }
+            }
+            // ✅ NUEVO: Parsear topicIds
+            if (typeof req.body.topicIds === 'string') {
+                try {
+                    req.body.topicIds = JSON.parse(req.body.topicIds);
+                } catch (e) {
+                    console.error('Error parsing topicIds:', e);
+                    req.body.topicIds = []; // Fallback seguro
+                }
+            }
+            // ✅ NUEVO: Parsear is_premium (FormData envía strings)
+            if (req.body.is_premium !== undefined) {
+                req.body.is_premium = req.body.is_premium === 'true';
             }
 
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);

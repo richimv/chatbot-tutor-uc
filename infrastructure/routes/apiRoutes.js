@@ -65,6 +65,7 @@ router.get('/courses', coursesController.getCourses);
 
 router.get('/topics', coursesController.getTopics);
 router.get('/books', coursesController.getBooks);
+router.get('/resources', coursesController.getBooks); // ✅ Alias dinámico para todos los recursos (Categorías/Directorios)
 router.get('/books/medical', coursesController.getMedicalBooks); // ✅ NUEVO: Libros de Medicina
 
 // ✅ RUTAS DE CONTENIDO DESTACADO (Analytics)

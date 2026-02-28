@@ -28,28 +28,11 @@ class UIManager {
         if (document.getElementById(modalId)) return;
 
         const modalHTML = `
-            <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.9); z-index: 10001; align-items: center; justify-content: center;">
-                <div class="modal-content" style="
-                    background: linear-gradient(145deg, #0f172a, #1e293b); 
-                    border: 1px solid rgba(255, 215, 0, 0.3); 
-                    box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); 
-                    width: 90%;
-                    max-width: 450px; 
-                    border-radius: 16px;
-                    font-family: 'Inter', sans-serif;
-                    text-align: center;
-                ">
-                    <div style="padding: 30px;">
-                        <div style="
-                            width: 70px; height: 70px; 
-                            background: rgba(255, 215, 0, 0.1); 
-                            border-radius: 50%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            margin: 0 auto 20px auto;
-                            border: 1px solid rgba(255, 215, 0, 0.4);
-                            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
-                        ">
-                            <i class="fas fa-crown" style="font-size: 2rem; color: #ffd700;"></i>
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
+                <div class="modal-content premium-variant">
+                    <div class="modal-body" style="padding-top: 40px;">
+                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
+                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                         </div>
                         
                         <h2 style="
@@ -68,7 +51,8 @@ class UIManager {
                             Ahora tienes <strong>Acceso Ilimitado</strong> a todos los recursos y al Tutor IA.
                         </p>
 
-                        <button onclick="document.getElementById('${modalId}').remove()" style="
+                        <button onclick="document.getElementById('${modalId}').remove()" class="btn-primary" style="
+                            width: 100%; 
                             background: linear-gradient(90deg, #f59e0b, #d97706); 
                             color: #fff; 
                             font-weight: 700; 
@@ -77,9 +61,7 @@ class UIManager {
                             font-size: 1rem;
                             border-radius: 50px;
                             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-                            cursor: pointer;
-                            transition: transform 0.2s;
-                        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        ">
                             ¡Comenzar! 🚀
                         </button>
                     </div>
@@ -102,23 +84,58 @@ class UIManager {
     }
 
     /**
-     * Intenta acceder a un recurso protegido (Libro, Video, Artículo).
-     * Valida límites de uso en el backend.
+     * Intenta acceder a un recurso protegido (Libro, Video, Artículo) o gratuito.
+     * Valida límites de uso en el backend si es Premium.
      * @param {string} id - ID del recurso.
      * @param {string} type - Tipo ('video', 'book', 'article').
+     * @param {boolean} isPremium - Si el recurso requiere autenticación y vidas/suscripción.
      * @param {string} videoContainerId - (Opcional) ID del contenedor DOM para inyectar video.
      */
-    async unlockResource(id, type = 'book', videoContainerId = null) {
-        this.checkAuthAndExecute(async () => {
-            const url = this.materialRegistry.get(String(id));
-            if (!url) {
-                console.error('Material no encontrado o acceso denegado.');
-                return;
-            }
+    async unlockResource(id, type = 'book', isPremium = false, videoContainerId = null) {
+        const url = this.materialRegistry.get(String(id));
+        if (!url) {
+            console.error('Material no encontrado o acceso denegado.');
+            return;
+        }
 
+        // ✅ LÓGICA DE RECURSOS GRATUITOS
+        // Si el recurso es gratuito (isPremium = false), se accede directamente sin descontar vidas ni pedir login.
+        if (!isPremium) {
+            if (type === 'video') {
+                this.openVideoModal(url, 'Video Gratuito');
+            } else {
+                window.open(url, '_blank');
+            }
+            if (window.AnalyticsApiService) window.AnalyticsApiService.recordView(type, id);
+            return;
+        }
+
+        // ✅ LÓGICA DE RECURSOS PREMIUM
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
+
+        // 1. Visitante: No Logueado -> Modal "Únete"
+        if (!token || !user) {
+            this.showAuthPromptModal();
+            return;
+        }
+
+        // 2. Freemium Sin Vidas: Cortocircuito Local -> Modal "Te encantó"
+        const status = user.subscriptionStatus || user.subscription_status;
+        if (status !== 'active' && user.role !== 'admin') {
+            const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+            if (usage >= limit) {
+                this.showPaywallModal();
+                return; // Cortocircuito, no llama al servidor
+            }
+        }
+
+        // 3. Autenticado (Freemium con Vidas o Premium): Validar uso exacto en el backend.
+        (async () => {
             try {
-                // ✅ Verificar límite de uso en el backend
-                const token = localStorage.getItem('authToken');
+                // Verificar límite de uso / grabar visita
                 const response = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
                     method: 'POST',
                     headers: {
@@ -131,7 +148,7 @@ class UIManager {
                 const data = await response.json();
 
                 if (response.ok && data.allowed) {
-                    // ✅ Éxito: Acceso concedido
+                    // Éxito: Acceso concedido
 
                     // 1. Actualizar estado local si es Freemium
                     if (data.plan === 'free' && window.sessionManager) {
@@ -147,7 +164,7 @@ class UIManager {
 
                     // 👉 ACCIÓN SEGÚN TIPO
                     if (type === 'video') {
-                        this.openVideoModal(url, data.title || 'Video');
+                        this.openVideoModal(url, data.title || 'Video Premium');
                     } else {
                         // Artículos y Libros se abren en nueva pestaña
                         window.open(url, '_blank');
@@ -158,8 +175,13 @@ class UIManager {
                         window.AnalyticsApiService.recordView(type, id);
                     }
 
-                } else if (response.status === 403) {
-                    // ⛔ Límite alcanzado
+                } else if (response.status === 403 || !data.allowed) {
+                    // ⛔ Límite alcanzado o suscripción inactiva
+                    // Actualizar estado local si el backend reporta límite
+                    if (user && window.sessionManager) {
+                        user.usageCount = data.usage || 3;
+                        window.sessionManager.notifyStateChange();
+                    }
                     this.showPaywallModal();
                 } else {
                     console.error('Error verificando acceso:', data);
@@ -168,14 +190,14 @@ class UIManager {
             } catch (error) {
                 console.error('Error de red:', error);
             }
-        });
+        })();
     }
 
     /**
      * Alias para compatibilidad con código existente de libros.
      */
-    openMaterial(id) {
-        this.unlockResource(id, 'book');
+    openMaterial(id, isPremium = false) {
+        this.unlockResource(id, 'book', isPremium);
     }
 
     /**
@@ -296,29 +318,13 @@ class UIManager {
 
         if (!modal) {
             const modalHTML = `
-            <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-                <div class="modal-content" style="
-                    background: linear-gradient(145deg, #0f172a, #1e293b); 
-                    border: 2px solid #ffd700; 
-                    box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
-                    width: 90%;
-                    max-width: 450px; 
-                    border-radius: 16px;
-                    font-family: 'Inter', sans-serif;
-                    overflow: hidden;
-                ">
-                    <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <h2 style="
-                            background: linear-gradient(90deg, #f8fafc, #94a3b8); 
-                            -webkit-background-clip: text; 
-                            -webkit-text-fill-color: transparent; 
-                            font-weight: 800;
-                            font-size: 1.2rem;
-                            margin: 0;
-                        ">¡Te encantó la prueba!</h2>
-                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="color: #64748b; font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
+                <div class="modal-content premium-variant">
+                    <div class="modal-header">
+                        <h2>¡Te encantó la prueba!</h2>
+                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
                     </div>
-                    <div class="modal-body" style="padding: 30px 25px; text-align: center;">
+                    <div class="modal-body">
                         <div class="auth-prompt-icon" style="margin-bottom: 20px;">
                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                         </div>
@@ -342,7 +348,7 @@ class UIManager {
                             align-items: center;
                             justify-content: center;
                             gap: 10px;
-                        " onclick="window.location.href='/pricing'" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        " onclick="window.location.href='/pricing'">
                             <i class="fas fa-rocket"></i> Suscríbete ahora
                         </button>
                     </div>
@@ -398,32 +404,14 @@ class UIManager {
         if (document.getElementById(this.modalId)) return;
 
         const modalHTML = `
-            <div id="${this.modalId}" class="modal auth-prompt-modal" style="display:none; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.85); z-index: 10001; align-items: center; justify-content: center;">
-                <div class="modal-content" style="
-                    background: linear-gradient(145deg, #0f172a, #1e293b); 
-                    border: 1px solid rgba(255, 215, 0, 0.15); 
-                    box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
-                    width: 90%;
-                    max-width: 450px; 
-                    border-radius: 16px;
-                    font-family: 'Inter', sans-serif;
-                ">
-                    <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding: 15px 20px;">
-                        <h2 style="
-                            background: linear-gradient(90deg, #f8fafc, #94a3b8); 
-                            -webkit-background-clip: text; 
-                            -webkit-text-fill-color: transparent; 
-                            font-weight: 800;
-                            font-size: 1.2rem;
-                            margin: 0;
-                            display: flex; align-items: center; gap: 8px;
-                        ">
-                            Únete a Hub Academia
-                        </h2>
-                        <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()" style="color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <div id="${this.modalId}" class="auth-prompt-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Únete a Hub Academia</h2>
+                        <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()">&times;</button>
                     </div>
                     
-                    <div class="modal-body" style="padding: 20px 25px; text-align: center;">
+                    <div class="modal-body">
                         <div class="auth-prompt-icon" style="margin-bottom: 15px;">
                             <div style="
                                 width: 50px; height: 50px; 
@@ -447,7 +435,7 @@ class UIManager {
                             <ul style="list-style: none; padding: 0; margin: 0; color: #cbd5e1; font-size: 0.85rem;">
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Simulacros médicos ilimitados con IA</span>
+                                    <span>Simulacros médicos ilimitados</span>
                                 </li>
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80;"></i>
@@ -469,14 +457,7 @@ class UIManager {
                         </div>
                     </div>
 
-                    <div class="modal-footer" style="
-                        justify-content: center; 
-                        gap: 10px; 
-                        padding: 0 25px 25px 25px; 
-                        border-top: none;
-                        display: flex;
-                        flex-direction: column; 
-                    ">
+                    <div class="modal-footer">
                         <button class="btn-primary" onclick="window.location.href='register'" style="
                             width: 100%; 
                             background: linear-gradient(90deg, #3b82f6, #2563eb); 
@@ -487,9 +468,8 @@ class UIManager {
                             font-size: 0.95rem;
                             border-radius: 10px;
                             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-                            transition: transform 0.2s;
                             cursor: pointer;
-                        " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        ">
                             Registrarse Gratis
                         </button>
                          <button class="btn-secondary" onclick="window.location.href='login'" style="
@@ -501,14 +481,12 @@ class UIManager {
                             font-size: 0.9rem;
                             border-radius: 10px;
                             cursor: pointer;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.borderColor='rgba(255,255,255,0.3)'; this.style.color='#e2e8f0'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8'">
+                        ">
                              Ya tengo cuenta
                         </button>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
@@ -702,34 +680,14 @@ class UIManager {
         if (document.getElementById(modalId)) return;
 
         const modalHTML = `
-            <div id="${modalId}" class="modal auth-prompt-modal" style="display:flex; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.85); z-index: 10001; align-items: center; justify-content: center;">
-                <div class="modal-content" style="
-                    background: linear-gradient(145deg, #0f172a, #1e293b); 
-                    border: 1px solid rgba(255, 215, 0, 0.15); 
-                    box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
-                    width: 90%;
-                    max-width: 450px; 
-                    border-radius: 16px;
-                    font-family: 'Inter', sans-serif;
-                    max-height: 90vh;
-                    overflow-y: auto; 
-                ">
-                    <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding: 15px 20px;">
-                        <h2 style="
-                            background: linear-gradient(90deg, #f8fafc, #94a3b8); 
-                            -webkit-background-clip: text; 
-                            -webkit-text-fill-color: transparent; 
-                            font-weight: 800;
-                            font-size: 1.25rem;
-                            margin: 0;
-                            display: flex; align-items: center; gap: 10px;
-                        ">
-                            ¡Bienvenido a Hub Academia!
-                        </h2>
-                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
+                <div class="modal-content premium-variant" style="max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h2>¡Bienvenido a Hub Academia!</h2>
+                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
                     </div>
                     
-                    <div class="modal-body" style="padding: 20px 25px; text-align: center;">
+                    <div class="modal-body">
                          <div class="auth-prompt-icon" style="margin-bottom: 15px;">
                             <div style="
                                 width: 60px; height: 60px; 
@@ -738,12 +696,12 @@ class UIManager {
                                 display: flex; align-items: center; justify-content: center; 
                                 margin: 0 auto;
                                 border: 1px solid rgba(255, 215, 0, 0.2);
-                                box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+                                box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
                             ">
                                 <i class="fas fa-gift" style="font-size: 1.8rem; color: #ffd700;"></i>
                             </div>
                         </div>
-                        
+
                         <div class="auth-prompt-main-text" style="font-size: 1rem; color: #e2e8f0; margin-bottom: 20px; line-height: 1.5;">
                             Te damos la bienvenida con un <br>
                             <span style="color: #fbbf24; font-weight: 700; letter-spacing: 0.5px;">Paquete de Inicio Gratuito</span>
@@ -769,13 +727,7 @@ class UIManager {
                         </div>
                     </div>
 
-                    <div class="modal-footer" style="
-                        justify-content: center; 
-                        gap: 10px; 
-                        padding: 0 25px 25px 25px; 
-                        border-top: none;
-                        flex-direction: column;
-                    ">
+                    <div class="modal-footer">
                         <button class="btn-primary" onclick="window.location.href='/pricing'" style="
                             width: 100%; 
                             background: linear-gradient(90deg, #f59e0b, #d97706); 

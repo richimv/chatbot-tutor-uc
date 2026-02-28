@@ -365,7 +365,6 @@
     }
 
     .browse-card:hover .card-actions,
-    .book-card-container:hover .card-actions,
     .full-image-card:hover .card-actions,
     .course-card:hover .card-actions {
         opacity: 1;
@@ -515,8 +514,7 @@
     }
 }
 
-.carousel-item .browse-card,
-.carousel-item .book-card-container {
+.carousel-item .browse-card {
     height: 100%;
     width: 100%;
 }

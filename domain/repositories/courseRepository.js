@@ -51,7 +51,7 @@ class CourseRepository {
                             'image_url', r.image_url,
                             'type', r.resource_type,
                             'url', r.url,
-                            'url', r.url
+                            'is_premium', r.is_premium
                         )
                     ), '[]')
                     FROM course_books cb

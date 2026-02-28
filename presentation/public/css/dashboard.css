@@ -572,12 +572,15 @@ body {
 .form-input {
     width: 100%;
     padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.6);
+    /* Fondo más oscuro para contrastar con el modal */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Borde más visible */
     border-radius: 8px;
     color: white;
     font-size: 1rem;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 textarea.form-input {
@@ -589,8 +592,9 @@ textarea.form-input {
 
 .form-input:focus {
     outline: none;
-    border-color: var(--accent-primary);
-    background: rgba(59, 130, 246, 0.05);
+    border-color: var(--accent-primary, #3b82f6);
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 /* Button Utilities for Modal */

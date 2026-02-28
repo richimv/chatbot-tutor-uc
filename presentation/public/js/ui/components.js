@@ -136,7 +136,8 @@ function createCarouselHTML(id, contentHTML) {
  * @returns {string} La clase de Font Awesome para el icono.
  */
 function getIconForItem(name, type) {
-    const lowerCaseName = name.toLowerCase();
+    const rawName = name || '';
+    const lowerCaseName = rawName.toLowerCase();
 
     if (type === 'career') {
         if (lowerCaseName.includes('informática') || lowerCaseName.includes('sistemas')) return 'fa-laptop-code';
@@ -550,230 +551,139 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     `;
 }
 
-function create3DBookCardHTML(book) {
-    const title = book.title || 'Sin Título';
-    // const author = book.author || 'Autor Desconocido'; // ✅ UPDATE: Autor oculto en vista destacada
+// --- Tarjeta de Recursos Estándar Unificada (Single Source of Truth) ---
+function createUnifiedResourceCardHTML(item) {
+    // 1. Validaciones y Fallbacks
+    const title = item.title || item.name || 'Material sin título';
+    const author = item.author || '';
+    const url = item.url || '#';
+    // ✅ Homologación de tipos para cubrir libros, artículos, normas, etc.
+    const type = item.type || item.resource_type || 'other';
 
-    const rawCoverUrl = book.image_url || book.coverUrl;
-    const coverUrl = (rawCoverUrl && rawCoverUrl.trim() !== "")
-        ? rawCoverUrl
-        : 'https://placehold.co/150x220/1e293b/ffffff?text=Material';
-
-    const url = book.url || '#';
-
+    // 2. Registrar URL de forma segura en UI Manager para accesos protegidos
     if (url && url !== '#') {
-        window.uiManager.registerMaterial(book.id, url);
+        window.uiManager.registerMaterial(item.id, url);
     }
 
-    const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
+    // 3. Estado de acceso (Freemium/Premium)
+    const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
+    let isLocked = false;
 
-    const actionButtons = `
-        <div class="card-actions"> <!-- Inline styles moved to CSS -->
-            <button class="action-btn save-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-            <button class="action-btn fav-btn js-library-btn" data-id="${book.id}" data-type="book" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
-            
-        </div>
-    `;
+    if (isPremium) {
+        // ✅ PRIORIDAD: Usar datos directos de sesión si el manager falla (Race Condition)
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
 
-    // ✅ DISEÑO TIPO REFERENCE (Title Overlay)
-    return `
-        <div class="book-card-container" style="position: relative; height: 100%;">
-            ${actionButtons}
-            <div class="book-card overlay-style" role="button" tabindex="0" onclick="window.uiManager.openMaterial('${book.id}')" title="${title}" style="cursor: pointer; height: 100%; border-radius: 8px; overflow: hidden; position: relative;">
-                
-                <div class="book-cover-container" style="height: 100%;">
-                    <img src="${coverUrl}" alt="${title}" class="book-cover-img" loading="lazy" style="height: 100%; width: 100%; object-fit: cover;" onerror="this.src='https://placehold.co/150x220/1e293b/ffffff?text=Sin+Imagen'">
-                    
-                    <!-- ✅ Overlay Gradient & Title -->
-                    <div class="book-gradient-overlay" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%); display: flex; align-items: flex-end; padding: 10px;">
-                        <h3 class="book-title-overlay" style="color: white; font-size: 0.9rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin: 0; line-height: 1.25;">${title}</h3>
-                    </div>
+        // Si no hay usuario ni token, está bloqueado al 100% (Visitante)
+        if (!user && !token) {
+            isLocked = true;
+        } else if (user) {
+            const status = user.subscriptionStatus || user.subscription_status;
 
-                    ${(!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'))
-            ? `<div class="book-overlay-icon" style="bottom: 50%; right: 50%; transform: translate(50%, 50%);"><i class="fas fa-lock"></i></div>`
-            : ''}
-                </div>
-                
-                <!-- Info externa eliminada -->
-            </div>
-        </div>
-    `;
-}
-
-
-/**
- * Crea una tarjeta de video (YouTube) PROTEGIDA.
- * Muestra miniatura + botón Play. Al hacer clic, valida auth/uso y luego reproduce.
- */
-function createVideoCardHTML(video) {
-    let videoId = '';
-    try {
-        const urlObj = new URL(video.url);
-        if (urlObj.hostname.includes('youtube.com')) videoId = urlObj.searchParams.get('v');
-        else if (urlObj.hostname.includes('youtu.be')) videoId = urlObj.pathname.slice(1);
-    } catch (e) { console.warn('URL de video inválida:', video.url); }
-
-    // Registrar URL para seguridad
-    window.uiManager.registerMaterial(video.id, video.url);
-
-    const safeId = video.id || `vid_${Math.random().toString(36).substr(2, 9)}`;
-
-    // ✅ Lógica de Miniatura Inteligente
-    let thumbnailUrl;
-    if (videoId) {
-        thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-    } else {
-        // Si no es YouTube, usar imagen personalizada o placeholder bonito
-        thumbnailUrl = video.image_url
-            || video.imageUrl
-            || 'https://placehold.co/600x400/1e1e1e/ffffff?text=Video+Multimedia';
+            // Si es active (Premium) o admin, NUNCA está bloqueado visualmente
+            if (status === 'active' || user.role === 'admin') {
+                isLocked = false;
+            } else {
+                // Freemium (no active). Solo bloquear si ya no tiene usos
+                const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+                if (usage >= limit) {
+                    isLocked = true;
+                } else {
+                    isLocked = false;
+                }
+            }
+        }
     }
 
-    // Estado de bloqueo visual
-    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
+    // 4. Determinar Iconos, Textos y Colores SVG(CSS) según el Tipo (Single Source of Truth)
+    let iconClass, typeLabel, typeColorClass;
 
-    // ✅ UI: Thumbnail con Overlay (Unificado para todos los videos)
-    return `
-        <div class="video-card">
-            <div class="video-frame-container" style="position: relative; cursor: pointer;" 
-                 onclick="window.uiManager.unlockResource('${video.id}', 'video')">
-                
-                <img src="${thumbnailUrl}" alt="${video.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://placehold.co/600x400/1e1e1e/ffffff?text=Video'">
-                
-                <!-- Overlay Oscuro -->
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1)); display: flex; align-items: center; justify-content: center;">
-                    
-                    <!-- Badge de Tipo (si no es YT) -->
-                    ${!videoId ? `<div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">WEB</div>` : ''}
-
-                    <!-- Botón Play o Candado -->
-                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); transition: all 0.3s ease;">
-                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}" style="margin-left: ${isLocked ? '0' : '4px'};"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="video-info">
-                <h4 class="video-title" title="${video.title}">${video.title}</h4>
-                ${video.author ? `<span class="video-author">${video.author}</span>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Crea una tarjeta horizontal premium para documentos institucionales (Normas, Guías, Papers).
- */
-function createDocumentCardHTML(doc) {
-    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
-
-    // Registrar URl
-    if (doc.url && doc.url !== '#') {
-        window.uiManager.registerMaterial(doc.id, doc.url);
-    }
-
-    // Determinar Icono y Etiqueta Visual según el tipo
-    let iconClass = 'fa-file-alt';
-    let typeLabel = 'Documento';
-    let typeColor = 'var(--accent)';
-
-    switch (doc.type || doc.resource_type) {
+    switch (type) {
+        case 'book':
+            iconClass = 'fa-book';
+            typeLabel = 'Libro/Manual';
+            typeColorClass = 'urc-color-book'; // Definido en CSS
+            break;
         case 'norma':
             iconClass = 'fa-balance-scale';
             typeLabel = 'Norma Técnica';
-            typeColor = '#f59e0b'; // Amber
+            typeColorClass = 'urc-color-norma';
             break;
         case 'guia':
             iconClass = 'fa-file-medical';
             typeLabel = 'Guía Clínica';
-            typeColor = '#10b981'; // Emerald
+            typeColorClass = 'urc-color-guia';
             break;
         case 'paper':
+        case 'article':
             iconClass = 'fa-microscope';
-            typeLabel = 'Artículo Científico';
-            typeColor = '#3b82f6'; // Blue
+            typeLabel = 'Artículo / Paper';
+            typeColorClass = 'urc-color-paper';
             break;
-        case 'book':
-            iconClass = 'fa-book';
-            typeLabel = 'Libro/Manual';
-            typeColor = '#8b5cf6'; // Violet
-            break;
-        case 'other':
         default:
             iconClass = 'fa-folder-open';
             typeLabel = 'Material de Apoyo';
-            typeColor = '#64748b'; // Slate
+            typeColorClass = 'urc-color-other';
             break;
     }
 
-    return `
-        <div class="document-card-premium" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${doc.id}', '${doc.type || 'document'}')" title="${doc.title}">
-            <div class="document-icon-wrapper" style="background-color: ${typeColor}15; color: ${typeColor};">
+    // 5. Layout Híbrido: Si tiene imagen priorizamos imagen, sino un fondo degradado con Icono grande
+    const rawImage = item.image_url || item.coverUrl;
+    let visualHTML = '';
+
+    if (rawImage && rawImage.trim() !== '') {
+        visualHTML = `<img src="${rawImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='https://placehold.co/200x260/1e293b/ffffff?text=Material'">`;
+    } else {
+        visualHTML = `
+            <div class="urc-icon-fallback ${typeColorClass}">
                 <i class="fas ${iconClass}"></i>
             </div>
-            
-            <div class="document-info">
-                <div class="document-meta">
-                    <span class="document-type-badge" style="color: ${typeColor}; border-color: ${typeColor}40;">${typeLabel}</span>
-                    ${doc.size ? `<span class="document-size"><i class="fas fa-hdd"></i> ${doc.size}</span>` : ''}
-                </div>
-                <h4 class="document-title">${doc.title || 'Documento sin título'}</h4>
-                ${doc.author ? `<p class="document-author"><i class="fas fa-user-edit"></i> ${doc.author}</p>` : ''}
-            </div>
-
-            <div class="document-actions">
-                ${isLocked
-            ? `<button class="btn-icon-lock" title="Requiere Premium"><i class="fas fa-lock"></i></button>`
-            : `<button class="btn-secondary btn-small"><i class="fas fa-external-link-alt"></i> Abrir</button>`
-        }
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Crea una tarjeta genérica para recursos PROTEGIDA.
- */
-function createResourceCardHTML(resource, iconClass = 'fa-external-link-alt') {
-    if (resource.type === 'article') iconClass = 'fa-newspaper';
-    if (resource.type === 'other') iconClass = 'fa-file-alt';
-    if (resource.url && resource.url.endsWith('.pdf')) iconClass = 'fa-file-pdf';
-
-    // Registrar URL
-    window.uiManager.registerMaterial(resource.id, resource.url);
-
-    const isLocked = (!window.sessionManager?.getUser() || (window.sessionManager.getUser().subscriptionStatus !== 'active' && window.sessionManager.getUser().subscription_status !== 'active'));
-
-    // ✅ New Layout: Left Info | Right Visual
-    const typeLabel = resource.type === 'other' ? 'Material' : 'Artículo';
-
-    // Determine Visual Content (Image or Icon)
-    let visualHTML = '';
-    if (resource.image_url && resource.image_url.trim() !== '') {
-        visualHTML = `<img src="${resource.image_url}" alt="${resource.title}">`;
-    } else {
-        visualHTML = `<i class="fas ${iconClass} resource-visual-icon"></i>`;
+        `;
     }
 
+    // 6. Ensamblaje del Componente Universal
+    // Nota: El type interno para la biblioteca siempre será "book" para guardar favoritos (legado compatible)
     return `
-        <div class="resource-card generic-resource" role="button" tabindex="0"
-             onclick="window.uiManager.unlockResource('${resource.id}', '${resource.type || 'article'}')"
-             title="${resource.title}">
+        <div class="unified-resource-card" data-resource-type="${type}">
             
-            <!-- Left Info -->
-            <div class="resource-info">
-                <h4 class="resource-title">${resource.title}</h4>
-                ${resource.author ? `<span class="resource-author">${resource.author}</span>` : ''}
-                
-                <div class="resource-meta-row">
-                     <span class="resource-type-badge">${typeLabel}</span>
-                     ${isLocked ? '<i class="fas fa-lock" style="font-size: 0.7rem; color: var(--text-muted);"></i>' : ''}
-                </div>
+            <!-- Zona de Acciones Flotantes (Librería) -->
+            <div class="urc-library-actions">
+                <button class="urc-action-btn js-library-btn action-save" data-id="${item.id}" data-type="book" data-action="save" title="Guardar">
+                    <i class="far fa-bookmark"></i>
+                </button>
+                <button class="urc-action-btn js-library-btn action-fav" data-id="${item.id}" data-type="book" data-action="favorite" title="Favorito">
+                    <i class="far fa-heart"></i>
+                </button>
             </div>
 
-            <!-- Right Visual -->
-            <div class="resource-visual">
+            <!-- Zona Superior: Visual (Clicable) -->
+            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})" title="Abrir ${title}">
                 ${visualHTML}
+                
+                <!-- Overlay Oscuro y Candado -->
+                <div class="urc-visual-overlay"></div>
+                ${isPremium ? `<div class="urc-premium-indicator" title="Recurso Premium"><i class="fas fa-crown"></i></div>` : ''}
+                ${isLocked ? `<div class="urc-lock-indicator" title="Requiere Premium"><i class="fas fa-lock"></i></div>` : ''}
             </div>
+
+            <!-- Zona Inferior: Información (Clicable) -->
+            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})" title="Abrir ${title}">
+                <div class="urc-meta">
+                    <span class="urc-badge ${typeColorClass}"><i class="fas ${iconClass}"></i> ${typeLabel}</span>
+                    ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
+                </div>
+                
+                <h4 class="urc-title" title="${title}">${title}</h4>
+                
+                ${author ? `
+                    <div class="urc-author" title="${author}">
+                        <i class="fas fa-user-edit"></i> ${author}
+                    </div>
+                ` : ''}
+            </div>
+            
         </div>
     `;
 }
@@ -873,3 +783,52 @@ function createSkeletonCardHTML(type = 'Grid') {
         </div>
     `;
 }
+
+// ✅ NUEVO: Tarjeta de Video Estandarizada
+window.createVideoCardHTML = function (item) {
+    const title = item.title || item.name || 'Video Educativo';
+    const author = item.author || 'Hub Academia';
+    const url = item.url || '#';
+    const thumbnail = item.image_url || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
+
+    if (url && url !== '#') {
+        window.uiManager.registerMaterial(item.id, url);
+    }
+
+    const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
+    let isLocked = false;
+
+    if (isPremium) {
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
+
+        if (!user || !token) {
+            isLocked = true;
+        } else {
+            const status = user.subscriptionStatus || user.subscription_status;
+            if (status !== 'active' && user.role !== 'admin') {
+                const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+                if (usage >= limit) isLocked = true;
+            }
+        }
+    }
+
+    return `
+        < div class="video-card ${isPremium ? 'premium-item' : ''} ${isLocked ? 'locked' : ''}" data - id="${item.id}" style = "cursor: pointer; position: relative;" >
+            <div class="video-thumbnail-container" onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})" style="position: relative;">
+                <img src="${thumbnail}" alt="${title}" class="video-thumbnail" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;" onerror="this.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'">
+                <div class="play-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; opacity: 0.8; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                ${isPremium ? `<div class="urc-premium-indicator" title="Video Premium" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); z-index: 2;"><i class="fas fa-crown"></i></div>` : ''}
+                ${isLocked ? `<div class="urc-lock-indicator" title="Requiere Premium" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #f8fafc; border-radius: 12px; z-index: 3;"><i class="fas fa-lock"></i></div>` : ''}
+            </div>
+            <div class="video-info" style="padding: 12px 5px;" onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})">
+                <h3 class="video-title" style="font-size: 1rem; margin: 0; color: var(--text-primary); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8rem;">${title}</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;"><i class="fas fa-chalkboard-teacher"></i> ${author}</p>
+            </div>
+        </div >
+        `;
+};

@@ -12,14 +12,20 @@ class BookRepository {
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
                     JOIN course_careers cc ON cb.course_id = cc.course_id
                     JOIN careers car ON cc.career_id = car.id
                     WHERE cb.resource_id = r.id AND car.area IS NOT NULL
-                ) as areas
+                ) as areas,
+                (
+                    SELECT COALESCE(JSON_AGG(json_build_object('id', t.id, 'name', t.name)), '[]')
+                    FROM topic_resources tr
+                    JOIN topics t ON tr.topic_id = t.id
+                    WHERE tr.resource_id = r.id
+                ) as topics
             FROM resources r
             ${type ? 'WHERE r.resource_type = $1' : ''}
             ORDER BY r.title
@@ -54,24 +60,55 @@ class BookRepository {
     }
 
     async findById(id) {
-        const { rows } = await db.query('SELECT * FROM resources WHERE id = $1', [id]);
+        const query = `
+            SELECT 
+                r.*,
+                (
+                    SELECT COALESCE(JSON_AGG(t.id), '[]')
+                    FROM topic_resources tr
+                    JOIN topics t ON tr.topic_id = t.id
+                    WHERE tr.resource_id = r.id
+                ) as "topicIds"
+            FROM resources r
+            WHERE r.id = $1
+        `;
+        const { rows } = await db.query(query, [id]);
         return rows[0];
     }
 
     async create(bookData) {
-        const { title, author, url, image_url, resource_type } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], is_premium = false } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
-        const { rows } = await db.query(
-            'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [resourceId, title, author, url, image_url || null, resource_type || 'book']
-        );
-        return rows[0];
+
+        try {
+            await db.query('BEGIN');
+
+            const { rows } = await db.query(
+                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium]
+            );
+            const newResource = rows[0];
+
+            // Insertar relaciones con los temas (topicIds)
+            if (Array.isArray(topicIds) && topicIds.length > 0) {
+                // Generar query de insert masivo: ($1, $2), ($1, $3)...
+                const valuesStr = topicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                const params = [newResource.id, ...topicIds.map(id => parseInt(id, 10))];
+                await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, params);
+            }
+
+            await db.query('COMMIT');
+            return newResource;
+        } catch (error) {
+            await db.query('ROLLBACK');
+            throw error;
+        }
     }
 
     async update(id, bookData) {
         // ✅ MEJORA ROBUSTA: Construcción dinámica de la query.
-        const { title, author, url, image_url, resource_type } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], is_premium } = bookData;
 
         const fields = [
             'title = $1', 'author = $2', 'url = $3', 'resource_type = $4'
@@ -85,17 +122,40 @@ class BookRepository {
             fields.push(`image_url = $${params.length}`);
         }
 
+        if (is_premium !== undefined) {
+            params.push(is_premium);
+            fields.push(`is_premium = $${params.length}`);
+        }
+
         params.push(id);
         const query = `UPDATE resources SET ${fields.join(', ')} WHERE id = $${params.length} RETURNING *`;
 
         console.log('📚 Updating Resource:', { id, type: resource_type, query });
 
-        const { rows } = await db.query(query, params);
+        try {
+            await db.query('BEGIN');
 
-        if (rows.length === 0) {
-            throw new Error(`Recurso (libro) con ID ${id} no encontrado.`);
+            const { rows } = await db.query(query, params);
+
+            if (rows.length === 0) {
+                throw new Error(`Recurso (libro) con ID ${id} no encontrado.`);
+            }
+
+            // Actualizar relaciones con temas: Borrar antiguas e insertar nuevas
+            await db.query('DELETE FROM topic_resources WHERE resource_id = $1', [id]);
+
+            if (Array.isArray(topicIds) && topicIds.length > 0) {
+                const valuesStr = topicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                const relParams = [id, ...topicIds.map(tid => parseInt(tid, 10))];
+                await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, relParams);
+            }
+
+            await db.query('COMMIT');
+            return rows[0];
+        } catch (error) {
+            await db.query('ROLLBACK');
+            throw error;
         }
-        return rows[0];
     }
 
     async delete(id) {
@@ -149,6 +209,7 @@ class BookRepository {
                 r.image_url, 
                 r.url, 
                 r.resource_type,
+                r.is_premium,
                 (
                     CASE 
                         -- Prioridad 0: Match Exacto de TIPO (Usuario busca "Libros") -> 50 pts base

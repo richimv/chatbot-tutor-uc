@@ -13,7 +13,7 @@
 
 /* --- REDISEÑO COMPLETO DE MODALES --- */
 .modal-content {
-    background: var(--surface-alt);
+    background: var(--surface-alt, #1e293b);
     border-radius: 16px;
     width: 90%;
     max-width: 550px;
@@ -110,8 +110,10 @@
     width: 100%;
     padding: 0.75rem;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Borde más visible */
+    background: rgba(15, 23, 42, 0.6);
+    /* Fondo más oscuro para contraste */
     color: var(--text-main);
     outline: none;
     transition: 0.2s;
@@ -123,7 +125,8 @@
 .form-group textarea:focus,
 .form-group select:focus {
     border-color: var(--accent);
-    background: var(--surface-alt);
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .modal-footer {
@@ -160,64 +163,99 @@
     }
 }
 
-/* Modal de Auth Prompt */
+/* === MODAL FLOTANTE UNIVERSAL (Single Source of Truth) === */
+.auth-prompt-modal {
+    display: none;
+    /* Flex cuando activo */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    /* Dark Slate overlay */
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+}
+
+.auth-prompt-modal .modal-content {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    /* Subtly golden border */
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+    width: 90%;
+    max-width: 450px;
+    border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Variante premium */
+.auth-prompt-modal .modal-content.premium-variant {
+    border: 2px solid #ffd700;
+}
+
+.auth-prompt-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .auth-prompt-modal .modal-header h2 {
-    color: var(--text-main);
-    /* Título más neutro */
+    background: linear-gradient(90deg, #f8fafc, #94a3b8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 1.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth-prompt-modal .modal-close-btn {
+    color: #64748b;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
 }
 
 .auth-prompt-modal .modal-body {
+    padding: 30px 25px;
     text-align: center;
-    gap: 1rem;
-    /* Espacio entre el ícono y el texto */
 }
 
-.auth-prompt-icon {
-    font-size: 4rem;
-    /* Ícono grande y llamativo */
-    color: var(--accent);
-}
-
-.auth-prompt-main-text {
-    font-size: 1rem;
-    line-height: 1.6;
-    font-weight: 500;
-    color: var(--text-main);
-}
-
-.auth-prompt-benefits {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: left;
-    font-size: 0.9rem;
-}
-
-.auth-prompt-benefits p {
-    margin: 0 0 0.5rem 0;
-    font-weight: 600;
-}
-
-.auth-prompt-benefits ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.auth-prompt-modal .modal-footer {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 25px 25px 25px;
 }
 
-.auth-prompt-benefits li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    color: var(--text-muted);
-    line-height: 1.4;
+/* Animaciones */
+@keyframes modalScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
-.auth-prompt-benefits li i {
-    color: var(--accent);
+.auth-prompt-modal .modal-content {
+    animation: modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 /* --- Estilos para el Modal de Filtros (Móvil) --- */

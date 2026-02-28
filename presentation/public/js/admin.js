@@ -748,6 +748,19 @@ class AdminManager {
                     ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, currentItem?.resource_type || 'book', false)}
                 </div>
 
+                <!-- ✅ Checkbox Premium -->
+                <div class="form-group" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="generic-is-premium" style="width: 20px; height: 20px; cursor: pointer;" ${currentItem?.is_premium ? 'checked' : ''}>
+                    <label for="generic-is-premium" style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-crown" style="color: var(--warning-color);"></i> Recurso Premium (Requiere suscripción o vidas)
+                    </label>
+                </div>
+
+                <!-- ✅ NUEVO: Asignación de Temas (Topics) al Recurso -->
+                <div style="margin-bottom: 15px;">
+                    ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, currentItem?.topics?.map(t => t.id) || currentItem?.topicIds || [], 'topic')}
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div style="grid-column: 1 / -1;">
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', currentItem?.title || '', true)}
@@ -1221,6 +1234,12 @@ class AdminManager {
                     formData.append('url', document.getElementById('generic-url').value);
                     // ✅ Type Field
                     formData.append('resource_type', document.getElementById('generic-type').value);
+                    // ✅ Premium Field
+                    formData.append('is_premium', document.getElementById('generic-is-premium').checked);
+
+                    // ✅ NUEVO: Capturar Temas Seleccionados
+                    const resourceTopicIds = this.getSelectedIds('generic-topics');
+                    formData.append('topicIds', JSON.stringify(resourceTopicIds));
 
                     // ✅ NUEVO: Manejo de eliminación de imagen
                     const deleteImageFlag = document.getElementById('generic-delete-image')?.value;

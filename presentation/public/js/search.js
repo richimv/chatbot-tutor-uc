@@ -518,12 +518,13 @@ class SearchComponent {
 
         // 0. SECCIÓN: DOCUMENTOS FORMALES (Normas, Guías, Papers)
         if (foundDocs.length > 0) {
-            const docsHTML = foundDocs.map(doc => createDocumentCardHTML(doc)).join('');
+            const docsHTML = foundDocs.map(doc => createUnifiedResourceCardHTML(doc)).join('');
             contentHTML += `
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Documentos Encontrados (${foundDocs.length})</h3>
                 </div>
-                <div class="documents-grid-premium"> 
+                <!-- Ahora usamos el grid que dicta el diseño general .books-grid para mantener single source of truth en grillas -->
+                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"> 
                     ${docsHTML}
                 </div>
             `;
@@ -539,13 +540,13 @@ class SearchComponent {
             const initialBatch = this.currentBookList.slice(0, ITEMS_PER_PAGE);
             this.loadedBooksCount = initialBatch.length;
 
-            const booksHTML = initialBatch.map(book => create3DBookCardHTML(book)).join('');
+            const booksHTML = initialBatch.map(book => createUnifiedResourceCardHTML(book)).join('');
 
             contentHTML += `
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Libros Encontrados (${foundBooks.length})</h3>
                 </div>
-                <div id="books-grid-container" class="books-grid"> 
+                <div id="books-grid-container" class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"> 
                     ${booksHTML}
                 </div>
                 <!-- Sentinel for Infinite Scroll -->
@@ -571,12 +572,12 @@ class SearchComponent {
 
         // 3. SECCIÓN: ARTÍCULOS Y RECURSOS
         if (foundArticles.length > 0) {
-            const articlesHTML = foundArticles.map(resource => createResourceCardHTML(resource)).join('');
+            const articlesHTML = foundArticles.map(resource => createUnifiedResourceCardHTML(resource)).join('');
             contentHTML += `
                 <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Materiales y Lecturas (${foundArticles.length})</h3>
                 </div>
-                <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 0.5rem;"> 
+                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-top: 0.5rem;"> 
                     ${articlesHTML}
                 </div>
             `;
@@ -694,7 +695,7 @@ class SearchComponent {
         const nextBatch = this.currentBookList.slice(this.loadedBooksCount, this.loadedBooksCount + ITEMS_PER_LOAD);
         this.loadedBooksCount += nextBatch.length;
 
-        const newBooksHTML = nextBatch.map(book => create3DBookCardHTML(book)).join('');
+        const newBooksHTML = nextBatch.map(book => createUnifiedResourceCardHTML(book)).join('');
         const grid = document.getElementById('books-grid-container');
 
         if (grid) {
@@ -821,7 +822,7 @@ class SearchComponent {
         let newHtml = '';
         nextAreas.forEach(area => {
             const books = this.booksByAreaContext[area];
-            const booksGrid = books.map(book => create3DBookCardHTML(book)).join('');
+            const booksGrid = books.map(book => createUnifiedResourceCardHTML(book)).join('');
             newHtml += `
                 <div class="area-group-section" style="margin-bottom: 3rem; opacity: 0; animation: fadeInUp 0.5s ease forwards;">
                      <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
@@ -1058,8 +1059,8 @@ class SearchComponent {
         let featuredResourcesSection = '';
         if (this.featuredResources && this.featuredResources.length > 0) {
             const docsHTML = this.featuredResources.map(doc => `
-                <div class="carousel-item" style="min-width: 320px; padding: 0.5rem 0;">
-                    ${createDocumentCardHTML(doc)}
+                <div class="carousel-item" style="min-width: 180px; max-width: 200px; padding: 0.5rem 0;">
+                    ${createUnifiedResourceCardHTML(doc)}
                 </div>
             `).join('');
 
@@ -1136,8 +1137,64 @@ class SearchComponent {
             `;
         });
 
+        // ==========================================
+        // 1.1 SECCIÓN: DIRECTORIOS / CATEGORÍAS (NUEVO)
+        // ==========================================
+        const categoriesHTML = `
+            <section class="featured-section" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <h2 class="browse-title" style="margin-bottom: 0;"><i class="fas fa-folder-open" style="color:var(--accent)"></i> Bibliotecas Oficiales</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Explora recursos especializados organizados por temas y especialidades.</p>
+                </div>
+                <div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                    
+                    <a href="/category?type=book" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1576091160550-2173ff9e5ee5?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                        <div class="module-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981; margin-bottom: 15px; position: relative; z-index: 2;">
+                            <i class="fas fa-book-medical"></i>
+                        </div>
+                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
+                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Libros y Manuales</h3>
+                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Colección de libros médicos, manuales y textos de referencia.</p>
+                        </div>
+                    </a>
+
+                    <a href="/category?type=paper" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                        <div class="module-icon icon-battle" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; margin-bottom: 15px; position: relative; z-index: 2;">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
+                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Papers Científicos</h3>
+                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Artículos de investigación, revisiones y medicina basada en evidencia.</p>
+                        </div>
+                    </a>
+
+                    <a href="/category?type=norma" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2112&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                        <div class="module-icon icon-med" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; margin-bottom: 15px; position: relative; z-index: 2;">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
+                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Normas y Directivas</h3>
+                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Normas Técnicas de Salud (NTS) y regulaciones del MINSA/ESSALUD.</p>
+                        </div>
+                    </a>
+
+                    <a href="/category?type=guia" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1584982751601-97dcf099a3e1?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative;">
+                        <div class="module-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; margin-bottom: 15px; position: relative; z-index: 2;">
+                            <i class="fas fa-notes-medical"></i>
+                        </div>
+                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
+                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Guías Clínicas</h3>
+                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Guías de Práctica Clínica (GPC) nacionales e internacionales.</p>
+                        </div>
+                    </a>
+                    
+                </div>
+            </section>
+            <div class="section-spacer"></div>
+        `;
+
         this.browseContainer.innerHTML = /*html*/`
-            ${featuredCoursesSection}
+            ${categoriesHTML}
             ${featuredResourcesSection}
             
             <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
@@ -1145,13 +1202,13 @@ class SearchComponent {
             ${createGamePromoSectionHTML()}
             <div class="section-spacer"></div>
 
+            ${featuredCoursesSection}
+
             <div class="section-header">
                 <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
             </div>
             ${areasHTML}
             
-            <!-- ✅ SECCIÓN ESPACIADORA ADICIONAL -->
-            <div class="section-spacer"></div>
             ${aiTeaserSection}
         `;
 
@@ -1196,9 +1253,9 @@ class SearchComponent {
                     </div>
                 </div>
 
-                <div class="course-detail-grid" style="grid-template-columns: 1fr;"> 
-                     <div class="books-grid">
-                        ${this.medicalBooks.map(book => create3DBookCardHTML(book)).join('')}
+                    <!-- Usamos el mismo diseño en grilla (.books-grid) -->
+                    <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));" id="medical-books-grid">
+                        ${this.medicalBooks.map(book => createUnifiedResourceCardHTML(book)).join('')}
                     </div>
                 </div>
             </div>

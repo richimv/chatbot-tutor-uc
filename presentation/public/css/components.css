@@ -692,6 +692,325 @@
     }
 }
 
+/* =================================================== */
+/* == NUEVO: Unified Resource Card (Single Source) == */
+/* =================================================== */
+
+.unified-resource-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    /* Aseguramos proporciones estéticas en Grid */
+    max-width: 200px;
+    /* Reducido de 250px */
+    margin: 0 auto;
+}
+
+.unified-resource-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Acciones Flotantes de la Librería */
+.urc-library-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.unified-resource-card:hover .urc-library-actions {
+    opacity: 1;
+}
+
+.urc-action-btn {
+    background: rgba(15, 23, 42, 0.7);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 28px;
+    /* Reducido de 32px */
+    height: 28px;
+    /* Reducido de 32px */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s;
+}
+
+.urc-action-btn:hover {
+    background: var(--accent);
+    transform: scale(1.1);
+}
+
+/* Zona Visual (Top) */
+.urc-visual-zone {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    /* Más ancho que alto (landscape compacto en lugar de retrato de libro 3/4) */
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+.urc-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.unified-resource-card:hover .urc-image {
+    transform: scale(1.05);
+}
+
+/* Fallback (No imagen) */
+.urc-icon-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    /* Reducido de 4rem */
+    position: relative;
+}
+
+.urc-icon-fallback::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* Overlay sutil inferior en la imagen para contraste si fuera necesario */
+.urc-visual-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.6), transparent);
+    pointer-events: none;
+}
+
+.urc-lock-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 3;
+}
+
+.urc-premium-indicator {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    /* Reducido de 32px */
+    height: 24px;
+    /* Reducido de 32px */
+    background: linear-gradient(135deg, var(--warning-color, #fbbf24), #d97706);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    z-index: 2;
+}
+
+/* Zona de Información (Bottom) */
+.urc-info-zone {
+    padding: 0.75rem;
+    /* Reducido de 1rem */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    cursor: pointer;
+    background: var(--surface);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.urc-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.urc-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.urc-size {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.urc-title {
+    font-size: 0.85rem;
+    /* Reducido de 0.95rem */
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+    /* Truncar a 2 líneas siempre */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.urc-author {
+    font-size: 0.75rem;
+    /* Reducido de 0.8rem */
+    color: var(--text-muted);
+    margin-top: auto;
+    /* Empujar hacia abajo */
+    /* Truncar a 1 línea */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Variantes de Color por Tipo */
+.urc-color-book {
+    background-color: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+    /* Violet */
+}
+
+.urc-icon-fallback.urc-color-book {
+    background: #8b5cf6;
+    color: white;
+}
+
+.urc-color-norma {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    /* Amber */
+}
+
+.urc-icon-fallback.urc-color-norma {
+    background: #f59e0b;
+    color: white;
+}
+
+.urc-color-guia {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    /* Emerald */
+}
+
+.urc-icon-fallback.urc-color-guia {
+    background: #10b981;
+    color: white;
+}
+
+.urc-color-paper {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    /* Blue */
+}
+
+.urc-icon-fallback.urc-color-paper {
+    background: #3b82f6;
+    color: white;
+}
+
+.urc-color-other {
+    background-color: rgba(100, 116, 139, 0.15);
+    color: #64748b;
+    /* Slate */
+}
+
+.urc-icon-fallback.urc-color-other {
+    background: #64748b;
+    color: white;
+}
+
+/* --- Responsive para Móviles --- */
+@media (max-width: 768px) {
+    .unified-resource-card {
+        max-width: none;
+        width: 100%;
+    }
+
+    /* Reducir aún más los textos y padding en móviles */
+    .urc-info-zone {
+        padding: 0.6rem;
+    }
+
+    .urc-title {
+        font-size: 0.8rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .urc-author {
+        font-size: 0.7rem;
+    }
+
+    .urc-badge {
+        font-size: 0.55rem;
+        padding: 2px 5px;
+    }
+
+    .urc-icon-fallback {
+        font-size: 2rem;
+    }
+
+    /* Forzar un grid de 2 o 3 columnas en contenedores que lo usen */
+    .books-grid,
+    .ml-grid,
+    .general-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 0.8rem !important;
+    }
+}
+
 /* =================================
    Visor Modal de PDF
    ================================= */

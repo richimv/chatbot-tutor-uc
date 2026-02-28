@@ -1,0 +1,260 @@
+.category-main {
+    padding-top: calc(var(--header-height) + 20px);
+    min-height: calc(100vh - var(--header-height));
+    background-color: var(--bg-default);
+
+    /* PC Margins & Max Width */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: var(--spacing-lg, 2.5rem);
+    padding-right: var(--spacing-lg, 2.5rem);
+    padding-bottom: 2rem;
+}
+
+/* Rediseño del Header de Categoría (Reemplaza al antiguo Hero) */
+.category-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(147, 51, 234, 0.02));
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+    margin-top: 10px;
+}
+
+.hero-text-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.category-icon-wrapper {
+    width: 45px;
+    height: 45px;
+    background: var(--bg-surface);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    color: var(--accent-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-text-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.hero-text-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    display: none;
+    /* Ocultar para ser más minimalista y ahorrar espacio */
+}
+
+/* Colores Dinámicos por Tipo de Categoría */
+.category-filters[data-type="guia"] {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(217, 119, 6, 0.02));
+}
+
+.category-filters[data-type="guia"] .category-icon-wrapper {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), transparent);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.category-search {
+    flex: 1;
+    max-width: 350px;
+    margin: 0;
+    height: 45px;
+    background: var(--bg-default);
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.category-search:focus-within {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.category-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    padding-left: 10px;
+}
+
+/* --- Responsive Móvil --- */
+@media (max-width: 768px) {
+    .category-main {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .category-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .category-search {
+        max-width: 100%;
+        width: 100%;
+        height: 48px;
+        /* Aumentado de 40px para que no se vea aplastado */
+    }
+}
+
+.category-search .search-icon {
+    color: var(--text-muted);
+}
+
+/* Topic Groups / Accordions */
+.topic-group {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.topic-group:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.topic-header {
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s ease;
+}
+
+.topic-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.topic-info h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.topic-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-left: 10px;
+}
+
+.topic-toggle-icon {
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+}
+
+.topic-group.active .topic-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.topic-content {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 25px;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s ease;
+}
+
+.topic-group.active .topic-content {
+    max-height: 2000px;
+    /* Suficiente para expandir */
+    padding: 20px 25px 30px;
+}
+
+.topic-grid {
+    display: grid;
+    /* Las tarjetas miden max 200px, por lo que minmax de 160px permite encajar perfecto sin gaps exagerados */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    justify-items: center;
+    /* Asegura que la tarjeta quede al centro de su columna */
+}
+
+@media (max-width: 768px) {
+    .topic-grid {
+        /* En móviles permitimos que sean más pequeñas para tener mínimo 2 columnas */
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+}
+
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.skeleton-text {
+    background: linear-gradient(90deg, var(--bg-surface) 25%, rgba(255, 255, 255, 0.05) 50%, var(--bg-surface) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    color: transparent !important;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .category-hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .category-hero p {
+        font-size: 1rem;
+    }
+
+    .topic-header {
+        padding: 15px 20px;
+    }
+
+    .topic-content {
+        padding: 0 20px;
+    }
+
+    .topic-group.active .topic-content {
+        padding: 15px 20px 25px;
+    }
+}
