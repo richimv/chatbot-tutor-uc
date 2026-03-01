@@ -490,7 +490,8 @@
     <script>
         window.addEventListener('DOMContentLoaded', function () {
             MobileDragDrop.polyfill({
-                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride,
+                holdToDrag: 150 // Leve retraso mitigador para scrolls accidentales
             });
             window.addEventListener('touchmove', function () { }, { passive: false });
         });

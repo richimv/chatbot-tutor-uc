@@ -9,6 +9,10 @@ class ChatComponent {
         this.conversations = [];
         // ✅ NUEVO: Contador para generar IDs únicos de mensajes del bot para el feedback.
         this.messageIdCounter = 0;
+
+        // Callback binding para el listener de resize/history
+        this.handlePopState = this.handlePopState.bind(this);
+
         this.init();
     }
 
@@ -138,7 +142,6 @@ Puedo ayudarte con:
         console.log('Close button:', closeBtn);
 
         // BOTÓN FLOTANTE - Con delegación de eventos más robusta
-        // BOTÓN FLOTANTE - Con delegación de eventos más robusta
         if (toggleBtn) {
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -151,6 +154,9 @@ Puedo ayudarte con:
                 });
             });
         }
+
+        // ✅ MEJORA UI/UX MÓVIL: Listener para el botón hardware 'Atrás'
+        window.addEventListener('popstate', this.handlePopState);
 
         // BOTÓN CERRAR
         if (closeBtn) {
@@ -302,6 +308,18 @@ Puedo ayudarte con:
         }
     }
 
+    // ✅ NUEVO: Lógica para manejar el botón físico "Atrás" en móviles
+    handlePopState(e) {
+        // Obtenemos el estado. Si NO existe el estado chatbotOpen pero ESTÁ abierto internamente, lo cerramos
+        if (this.isOpen && (!e.state || !e.state.chatbotOpen)) {
+            console.log('🔙 Botón hardware "Atrás" detectado. Cerrando chat para prevenir salida...');
+
+            // Llamamos al cierre pero le decimos explícitamente que NO toque la API history
+            // ya que el navegador y el `popstate` acaban de retroceder por sí solos.
+            this.forceCloseChatFromBack();
+        }
+    }
+
     toggleChat() {
         this.isOpen = !this.isOpen;
         const container = document.getElementById('chatbot-container');
@@ -313,6 +331,12 @@ Puedo ayudarte con:
         toggleBtn.setAttribute('aria-expanded', this.isOpen);
 
         if (this.isOpen) {
+            // ✅ UX: Modificamos el historial al ABRIR para crear un "checkpoint" falso
+            // que nos permita atrapar el botón de "Atrás"
+            if (window.history && window.history.pushState) {
+                window.history.pushState({ chatbotOpen: true }, '', '');
+            }
+
             // ✅ CORRECCIÓN: Ocultar el botón flotante solo en vista móvil.
             if (window.innerWidth <= 750) {
                 toggleBtn.style.display = 'none';
@@ -332,21 +356,39 @@ Puedo ayudarte con:
     closeChat() {
         if (!this.isOpen) return;
 
-        // ✅ SOLUCIÓN DEFINITIVA DE ACCESIBILIDAD:
-        // 1. Mover el foco explícitamente al botón de abrir. Esto es lo más importante.
+        // ✅ LÓGICA DE HISTORIAL: Cierre manual
+        // El usuario hizo click visualmente en la "X" o el toggle, no usó el botón back del celular.
+        // Si hay estado historial de chat, lo intentamos purgar retrocediendo el navegador
+        // Ojo que al retroceder el navegador se disparará `handlePopState`, 
+        // pero como ya entraremos al flujo normal no es un problema.
+        const state = window.history.state;
+        if (state && state.chatbotOpen) {
+            window.history.back(); // Esto eventualmente dispara popstate y limpia
+        } else {
+            // Si por algún motivo no estaba en history, lo cerramos manual directo.
+            this.forceCloseChatFromBack();
+        }
+    }
+
+    // Función helper para cerrar visualmente sin alterar history (usado cuando history ya disparó popstate)
+    forceCloseChatFromBack() {
+        if (!this.isOpen) return;
+
+        // 1. Mostrar el botón de nuevo (si estamos en móvil se ocultó)
+        // ✅ DEBE hacerse ANTES de enfocar para que el focus funcione
         const toggleBtn = document.getElementById('chatbot-toggle');
-        if (toggleBtn) toggleBtn.focus();
+        if (toggleBtn) {
+            toggleBtn.style.display = 'block';
+            toggleBtn.focus();
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.setAttribute('aria-label', 'Abrir chat del Tutor IA');
+        }
 
         // 2. Ocultar el contenedor del chat.
         this.isOpen = false;
         const container = document.getElementById('chatbot-container');
         container.classList.remove('open');
         container.setAttribute('aria-hidden', 'true');
-
-        // 3. Asegurarse de que el botón de abrir esté visible y con el ARIA correcto.
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        toggleBtn.setAttribute('aria-label', 'Abrir chat del Tutor IA');
-        toggleBtn.style.display = 'block';
     }
 
     async sendMessage() {

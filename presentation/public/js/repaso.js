@@ -7,6 +7,10 @@ class RepasoManager {
         this.explorer = new DeckExplorer(this);
         this.token = localStorage.getItem('authToken');
         this.currentDeck = null;
+
+        // Callback para interceptar el botón Atrás del móvil cuando hay tarjetas seleccionadas
+        this.handlePopState = this.handlePopState.bind(this);
+        window.addEventListener('popstate', this.handlePopState);
     }
 
     /**
@@ -420,7 +424,7 @@ class RepasoManager {
             row.dataset.id = c.id;
             row.dataset.index = index;
             row.draggable = true;
-            row.style.cssText = 'display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:transparent;';
+            row.style.cssText = 'display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;';
             row.onmouseover = () => row.style.background = 'rgba(255,255,255,0.03)';
             row.onmouseout = () => row.style.background = 'transparent';
 
@@ -439,8 +443,8 @@ class RepasoManager {
             const checkDiv = document.createElement('div');
             checkDiv.style.cssText = 'display:flex; align-items:center; gap:0.5rem; color:#64748b;';
             checkDiv.innerHTML = `
-                <i class="fas fa-grip-vertical" style="cursor:grab; font-size:0.9rem;"></i>
-                <input type="checkbox" class="card-checkbox" value="${c.id}" onchange="window.repasoManager.updateBulkDeleteButton()" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer;" onclick="event.stopPropagation()">
+                <i class="fas fa-grip-vertical" style="cursor:grab; font-size:1rem; padding:10px 10px 10px 0; touch-action:none;"></i>
+                <input type="checkbox" class="card-checkbox" value="${c.id}" onchange="window.repasoManager.updateBulkDeleteButton()" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer; margin-left:2px;" onclick="event.stopPropagation()">
             `;
 
             // Column 2: Front
@@ -487,7 +491,12 @@ class RepasoManager {
             let longPressed = false;
 
             row.addEventListener('touchstart', (e) => {
-                if (e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'i' || e.target.tagName.toLowerCase() === 'input') return;
+                const targetTag = e.target.tagName.toLowerCase();
+                // 🚫 IGNORAR COMPONENTES ACCIONABLES: botones, inputs y especfícamente THE DRAG HANDLE (fa-grip-vertical)
+                if (targetTag === 'button' || targetTag === 'input' || e.target.classList.contains('fa-grip-vertical')) {
+                    return;
+                }
+
                 longPressed = false;
                 pressTimer = setTimeout(() => {
                     longPressed = true;
@@ -505,7 +514,10 @@ class RepasoManager {
 
             row.addEventListener('click', (e) => {
                 const targetTag = e.target.tagName.toLowerCase();
-                if (targetTag === 'button' || targetTag === 'i' || targetTag === 'input') return;
+                // 🚫 IGNORAR COMPONENTES ACCIONABLES: botones, inputs y especfícamente THE DRAG HANDLE
+                if (targetTag === 'button' || targetTag === 'input' || e.target.classList.contains('fa-grip-vertical')) {
+                    return;
+                }
 
                 // Si fue long press, ya se seleccionó, no hacemos el toggle de nuevo.
                 if (longPressed) {
@@ -574,6 +586,32 @@ class RepasoManager {
         if (masterCb) {
             masterCb.checked = (checked.length === total && total > 0);
             masterCb.indeterminate = (checked.length > 0 && checked.length < total);
+        }
+
+        // ✅ MANEJO DE HISTORIAL PARA MÓVILES (Descartar selección con botón atrás)
+        if (this.isSelectionMode) {
+            // Si acabamos de entrar en modo selección, empujamos un estado
+            if (!this._lastSelectionState) {
+                if (window.history && window.history.pushState) {
+                    window.history.pushState({ selectionMode: true }, '', '');
+                }
+                this._lastSelectionState = true;
+            }
+        } else {
+            // Si salimos del modo selección estando en la misma página
+            if (this._lastSelectionState) {
+                this._lastSelectionState = false;
+            }
+        }
+    }
+
+    // ✅ NUEVO: Interceptor del botón físico "Atrás" en móviles
+    handlePopState(e) {
+        if (this.isSelectionMode && (!e.state || !e.state.selectionMode)) {
+            console.log('🔙 Botón Atrás detectado. Deseleccionando tarjetas para prevenir salida...');
+            this.toggleSelectAllCards(false);
+        } else {
+            this._lastSelectionState = false;
         }
     }
 

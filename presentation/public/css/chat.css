@@ -36,7 +36,7 @@
     display: flex;
     flex-direction: row;
     /* Sidebar + Main */
-    z-index: 10000;
+    z-index: 2147483647;
     font-family: var(--chat-font);
     overflow: hidden;
     transform: translateY(20px) scale(0.95);
@@ -551,7 +551,7 @@
     align-items: center;
     justify-content: center;
     font-size: 1.6rem;
-    z-index: 9999;
+    z-index: 2147483647;
     transition: transform 0.2s;
 }
 
@@ -600,7 +600,7 @@
         border-radius: 0;
         transform: translateY(100%);
         /* Ensure z-index is high enough to cover everything */
-        z-index: 10000;
+        z-index: 2147483647;
         border: none;
     }
 
@@ -611,7 +611,7 @@
     .chatbot-history-panel {
         width: 85%;
         max-width: 320px;
-        z-index: 25;
+        z-index: 2147483647;
     }
 
     .chatbot-toggle {
