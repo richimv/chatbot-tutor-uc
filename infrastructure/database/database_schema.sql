@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS public.user_flashcards (
     interval_days INTEGER DEFAULT 0,
     last_reviewed_at TIMESTAMP WITH TIME ZONE,
     next_review_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

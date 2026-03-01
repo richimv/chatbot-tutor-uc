@@ -121,6 +121,49 @@ class DeckController {
     }
 
     /**
+     * PUT /api/decks/:deckId/cards/reorder
+     * Body: { sortedIds: [uuid1, uuid2, ...] }
+     */
+    async reorderCards(req, res) {
+        try {
+            const { deckId } = req.params;
+            const { sortedIds } = req.body;
+            const userId = req.user.id;
+
+            if (!sortedIds || !Array.isArray(sortedIds)) {
+                return res.status(400).json({ error: 'Array of sortedIds is required' });
+            }
+
+            await DeckService.updateCardsOrder(userId, deckId, sortedIds);
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error reordering cards:", error);
+            res.status(500).json({ error: 'Error reordering cards' });
+        }
+    }
+
+    /**
+     * DELETE /api/cards/batch
+     * Body: { cardIds: [uuid1, uuid2, ...] }
+     */
+    async deleteBulkCards(req, res) {
+        try {
+            const { cardIds } = req.body;
+            const userId = req.user.id;
+
+            if (!cardIds || !Array.isArray(cardIds) || cardIds.length === 0) {
+                return res.status(400).json({ error: 'Array of cardIds is required' });
+            }
+
+            await DeckService.deleteBulkCards(userId, cardIds);
+            res.json({ success: true, deletedCount: cardIds.length });
+        } catch (error) {
+            console.error("Error batch deleting cards:", error);
+            res.status(500).json({ error: 'Error batch deleting cards' });
+        }
+    }
+
+    /**
      * PUT /api/cards/:cardId
      */
     async updateCard(req, res) {

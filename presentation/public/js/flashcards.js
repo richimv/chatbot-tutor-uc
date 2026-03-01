@@ -131,31 +131,38 @@ const FlashcardManager = (() => {
     }
 
     /**
-     * Dynamically reduces font size until text fits the container.
-     * Desktop max: 1.6rem, Mobile max: 1.0rem, Min: 0.65rem
-     * After sizing, adds .sized class to enable scrollbar for extreme overflow.
+     * Dynamically adjusts font size based on text length and container size.
      */
     function adjustFontSize(element) {
-        // Reset: remove sized class so overflow is hidden for accurate measurement
         element.classList.remove('sized');
         element.style.overflow = 'hidden';
 
         const isMobile = window.innerWidth <= 768;
-        let size = isMobile ? 1.0 : 1.6;
-        const minSize = 0.65;
+        const textLength = element.textContent.length;
+
+        // Base sizing heuristics based on character count
+        let size = isMobile ? 1.2 : 2.0;
+
+        if (textLength > 50) size = isMobile ? 1.1 : 1.6;
+        if (textLength > 150) size = isMobile ? 1.0 : 1.4;
+        if (textLength > 300) size = isMobile ? 0.9 : 1.1;
+
+        const minSize = 0.7;
         const step = 0.05;
 
         element.style.fontSize = `${size}rem`;
 
-        // Reduce font until it fits or hits minimum
+        // Reduce font incrementally if it STILL overflows vertically
         while (element.scrollHeight > element.clientHeight && size > minSize) {
             size -= step;
             element.style.fontSize = `${size}rem`;
         }
 
-        // After sizing, enable scroll for any remaining overflow (extreme text)
+        // If it still overflows after max shrinkage, enable scrollbar
         element.style.overflow = '';
-        element.classList.add('sized');
+        if (element.scrollHeight > element.clientHeight) {
+            element.classList.add('sized');
+        }
     }
 
     function toggleFlip() {

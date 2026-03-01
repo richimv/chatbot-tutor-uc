@@ -101,8 +101,10 @@ class DeckExplorer {
         // Icon + Name
         const label = document.createElement('span');
         label.className = 'tree-label';
+        label.style.cssText = 'display: inline-flex; align-items: center; white-space: nowrap;';
+
         const displayIcon = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
-        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center; display:inline-block;">${displayIcon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${deck.name}</span>`;
+        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center;">${displayIcon}</span> <span style="white-space:nowrap;">${deck.name}</span>`;
 
         // Click Action -> Set Active & Load View
         content.onclick = () => {

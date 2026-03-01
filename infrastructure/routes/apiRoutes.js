@@ -166,6 +166,8 @@ router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
 router.post('/decks/:deckId/generate', auth, DeckController.generateCards); // ✅✨ NUEVO: IA Gen
 router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
+router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); // ✅ NUEVO: Reorder
+router.delete('/cards/batch', auth, DeckController.deleteBulkCards); // ✅ NUEVO: Batch Delete
 router.put('/cards/:cardId', auth, DeckController.updateCard); // ✅ NUEVO
 router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
 

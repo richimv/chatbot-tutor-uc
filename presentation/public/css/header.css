@@ -2,7 +2,7 @@
 :root {
     --header-height-desktop: 70px;
     --header-height-mobile: 50px;
-    --header-z-index: 1000;
+    --header-z-index: 2147483647;
 
     /* ✅ NEW: Trial Bar Variables */
     --trial-bar-height: 0px;
@@ -39,6 +39,8 @@ body.has-trial-mode {
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     /* Frosted glass border */
+    overflow: visible !important;
+    /* Force visible just in case */
 }
 
 /* ✅ SPACER: Compensate for fixed header */
@@ -58,6 +60,8 @@ body {
     justify-content: space-between;
     align-items: center;
     box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 2147483647;
 }
 
 .header-nav {
@@ -222,12 +226,14 @@ body {
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    background: var(--bg-secondary);
+    background: #0f172a;
+    /* Solid color to prevent overlapping transparency bug */
     min-width: 240px;
-    z-index: 1001;
+    z-index: 2147483647;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Stronger border */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 

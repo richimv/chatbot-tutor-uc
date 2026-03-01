@@ -34,6 +34,14 @@ class DeckService {
         return await trainingRepository.deleteFlashcard(userId, cardId);
     }
 
+    async updateCardsOrder(userId, deckId, sortedIds) {
+        return await trainingRepository.updateFlashcardsOrder(userId, deckId, sortedIds);
+    }
+
+    async deleteBulkCards(userId, cardIds) {
+        return await trainingRepository.deleteBulkFlashcards(userId, cardIds);
+    }
+
     async updateDeck(userId, deckId, name, icon) {
         return await trainingRepository.updateDeck(userId, deckId, name, icon);
     }

@@ -157,9 +157,10 @@ class RepasoManager {
             ]);
 
             this.currentDeck = deck;
+            this.currentCards = cards || [];
             this.renderDeckHeader(deck, cards);
             this.renderSubDecks(children);
-            this.renderCards(cards);
+            this.renderCards(this.currentCards);
 
         } catch (e) {
             console.error(e);
@@ -374,58 +375,300 @@ class RepasoManager {
         });
     }
 
-    renderCards(cards) {
+    renderCards(cards = this.currentCards) {
         const container = document.getElementById('cards-container');
 
-        if (cards.length === 0) {
+        if (!this.currentCards || this.currentCards.length === 0) {
             container.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px;">No hay tarjetas en este mazo. ¡Crea la primera!</div>';
             return;
         }
 
-        container.innerHTML = '<h3 style="margin-bottom:1rem; font-size:1.2rem; font-weight:600;">Tarjetas</h3>';
+        this.isSelectionMode = false;
 
-        cards.forEach(c => {
+        // Build header with search and bulk actions
+        let html = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <h3 style="margin:0; font-size:1.2rem; font-weight:600;">Tarjetas (${cards.length})</h3>
+                <div style="position:relative; width:100%; max-width:250px;">
+                    <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+                    <input type="text" id="card-search-input" placeholder="Buscar tarjetas..." style="width:100%; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white; font-size:0.9rem;" onkeyup="window.repasoManager.filterCards(this.value)">
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center; background:rgba(255,255,255,0.02); padding:0.5rem 1rem; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin:0;">
+                    <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer;">
+                    <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
+                </label>
+                <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="window.repasoManager.confirmBulkDelete()">
+                    <i class="fas fa-trash"></i> Eliminar Selección
+                </button>
+            </div>
+            <div id="cards-list-container"></div>
+        `;
+        container.innerHTML = html;
+
+        const listContainer = document.getElementById('cards-list-container');
+
+        if (cards.length === 0) {
+            listContainer.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; font-size:0.9rem;">No se encontraron tarjetas en esta búsqueda.</div>';
+            return;
+        }
+
+        cards.forEach((c, index) => {
             const row = document.createElement('div');
-            row.style.cssText = 'display:grid; grid-template-columns: 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s;';
-            row.onmouseover = () => row.style.background = 'rgba(255,255,255,0.02)';
+            row.className = 'card-row-item';
+            row.dataset.id = c.id;
+            row.dataset.index = index;
+            row.draggable = true;
+            row.style.cssText = 'display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:transparent;';
+            row.onmouseover = () => row.style.background = 'rgba(255,255,255,0.03)';
             row.onmouseout = () => row.style.background = 'transparent';
 
+            // Drag Events
+            row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
+            row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
+            row.addEventListener('drop', (e) => this.handleDrop(e, row));
+            row.addEventListener('dragenter', (e) => row.style.borderTop = '2px solid #3b82f6');
+            row.addEventListener('dragleave', (e) => row.style.borderTop = '');
+            row.addEventListener('dragend', (e) => {
+                row.style.opacity = '1';
+                document.querySelectorAll('.card-row-item').forEach(r => r.style.borderTop = '');
+            });
+
+            // Column 1: Drag Handle & Checkbox
+            const checkDiv = document.createElement('div');
+            checkDiv.style.cssText = 'display:flex; align-items:center; gap:0.5rem; color:#64748b;';
+            checkDiv.innerHTML = `
+                <i class="fas fa-grip-vertical" style="cursor:grab; font-size:0.9rem;"></i>
+                <input type="checkbox" class="card-checkbox" value="${c.id}" onchange="window.repasoManager.updateBulkDeleteButton()" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer;" onclick="event.stopPropagation()">
+            `;
+
+            // Column 2: Front
             const frontDiv = document.createElement('div');
             frontDiv.style.cssText = 'color:#cbd5e1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
             frontDiv.textContent = c.front_content;
 
+            // Column 3: Back
             const backDiv = document.createElement('div');
             backDiv.style.cssText = 'color:#94a3b8; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
             backDiv.textContent = c.back_content;
 
+            // Column 4: Actions
             const actionsDiv = document.createElement('div');
             actionsDiv.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
 
-            // Edit Button with hover effect
             const editBtn = document.createElement('button');
             editBtn.className = 'deck-action-btn';
             editBtn.title = 'Editar';
             editBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
             editBtn.innerHTML = '<i class="fas fa-pen"></i>';
-            editBtn.onclick = () => window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content);
+            editBtn.onclick = (e) => { e.stopPropagation(); window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content); };
 
-            // Delete Button with hover effect
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'deck-action-btn deck-action-btn--delete';
             deleteBtn.title = 'Eliminar';
             deleteBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.onclick = () => window.repasoManager.confirmDeleteCard(c.id, c.front_content);
+            deleteBtn.onclick = (e) => { e.stopPropagation(); window.repasoManager.confirmDeleteCard(c.id, c.front_content); };
 
             actionsDiv.appendChild(editBtn);
             actionsDiv.appendChild(deleteBtn);
 
+            row.appendChild(checkDiv);
             row.appendChild(frontDiv);
             row.appendChild(backDiv);
             row.appendChild(actionsDiv);
 
-            container.appendChild(row);
+            listContainer.appendChild(row);
+
+            // Setup mobile touch-to-select (Long Press) via pure JS timeout
+            // Also allow standard click on the row to toggle selection
+            let pressTimer = null;
+            let longPressed = false;
+
+            row.addEventListener('touchstart', (e) => {
+                if (e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'i' || e.target.tagName.toLowerCase() === 'input') return;
+                longPressed = false;
+                pressTimer = setTimeout(() => {
+                    longPressed = true;
+                    const cb = row.querySelector('.card-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        window.repasoManager.updateBulkDeleteButton();
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }
+                }, 500);
+            }, { passive: true });
+
+            row.addEventListener('touchend', () => clearTimeout(pressTimer));
+            row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+            row.addEventListener('click', (e) => {
+                const targetTag = e.target.tagName.toLowerCase();
+                if (targetTag === 'button' || targetTag === 'i' || targetTag === 'input') return;
+
+                // Si fue long press, ya se seleccionó, no hacemos el toggle de nuevo.
+                if (longPressed) {
+                    longPressed = false;
+                    return;
+                }
+
+                // Sólo seleccionar automáticamente si YA ESTAMOS en modo de selección
+                if (window.repasoManager.isSelectionMode) {
+                    const cb = row.querySelector('.card-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        window.repasoManager.updateBulkDeleteButton();
+                    }
+                }
+            });
         });
+
+        // Ensure input holds focus if it had it
+        const searchInput = document.getElementById('card-search-input');
+        if (this._lastSearchQuery) {
+            searchInput.value = this._lastSearchQuery;
+            searchInput.focus();
+        }
+    }
+
+    // --- Search & Bulk Actions Helpers ---
+
+    filterCards(query) {
+        if (!this.currentCards) return;
+        this._lastSearchQuery = query;
+        const q = query.toLowerCase().trim();
+        if (!q) {
+            this.renderCards(this.currentCards);
+            return;
+        }
+        const filtered = this.currentCards.filter(c =>
+            c.front_content.toLowerCase().includes(q) ||
+            c.back_content.toLowerCase().includes(q)
+        );
+        this.renderCards(filtered);
+    }
+
+    toggleSelectAllCards(isChecked) {
+        document.querySelectorAll('.card-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+        });
+        this.updateBulkDeleteButton();
+    }
+
+    updateBulkDeleteButton() {
+        const checked = document.querySelectorAll('.card-checkbox:checked');
+        const btn = document.getElementById('btn-bulk-delete');
+
+        this.isSelectionMode = checked.length > 0;
+
+        if (checked.length > 0) {
+            btn.style.display = 'inline-flex';
+            btn.innerHTML = `<i class="fas fa-trash"></i> Eliminar (${checked.length})`;
+        } else {
+            btn.style.display = 'none';
+        }
+
+        const total = document.querySelectorAll('.card-checkbox').length;
+        const masterCb = document.getElementById('select-all-cards');
+        if (masterCb) {
+            masterCb.checked = (checked.length === total && total > 0);
+            masterCb.indeterminate = (checked.length > 0 && checked.length < total);
+        }
+    }
+
+    confirmBulkDelete() {
+        const checked = Array.from(document.querySelectorAll('.card-checkbox:checked')).map(cb => cb.value);
+        if (checked.length === 0) return;
+
+        const modal = document.getElementById('delete-confirm-modal');
+        document.getElementById('delete-deck-name').textContent = `${checked.length} tarjetas seleccionadas`;
+        document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Múltiples Tarjetas';
+
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            modal.classList.remove('active');
+            await this.deleteBulkCards(checked);
+        };
+        document.getElementById('btn-cancel-delete').onclick = () => {
+            modal.classList.remove('active');
+            document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Mazo'; // Reset
+        };
+        modal.classList.add('active');
+    }
+
+    async deleteBulkCards(cardIds) {
+        try {
+            const res = await fetch(`${window.AppConfig.API_URL}/api/cards/batch`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cardIds })
+            });
+
+            if (res.ok) {
+                if (this.currentDeck) this.loadFolder(this.currentDeck.id);
+            } else {
+                alert('No se pudieron eliminar las tarjetas masivamente.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // --- Drag & Drop Reordering ---
+    handleDragStart(e, row) {
+        this.draggedRowId = row.dataset.id;
+        this.draggedRowIndex = parseInt(row.dataset.index);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '0.4', 0);
+    }
+
+    handleDragOver(e, row) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    async handleDrop(e, targetRow) {
+        e.stopPropagation();
+        targetRow.style.borderTop = '';
+
+        const draggedId = this.draggedRowId;
+        const targetId = targetRow.dataset.id;
+
+        if (!draggedId || draggedId === targetId) return false;
+
+        const draggedIndex = this.currentCards.findIndex(c => c.id === draggedId);
+        const targetIndex = this.currentCards.findIndex(c => c.id === targetId);
+
+        if (draggedIndex === -1 || targetIndex === -1) return false;
+
+        const [movedCard] = this.currentCards.splice(draggedIndex, 1);
+        this.currentCards.splice(targetIndex, 0, movedCard);
+
+        this.renderCards(this.currentCards);
+        await this.syncCardOrder();
+        return false;
+    }
+
+    async syncCardOrder() {
+        if (!this.currentDeck || !this.currentCards) return;
+        const sortedIds = this.currentCards.map(c => c.id);
+
+        try {
+            await fetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/cards/reorder`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sortedIds })
+            });
+        } catch (err) {
+            console.error("Failed to sync card order:", err);
+        }
     }
 
     // --- Actions ---

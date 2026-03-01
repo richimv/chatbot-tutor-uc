@@ -494,7 +494,7 @@ class TrainingRepository {
             params.push(deckId);
         }
 
-        query += ` ORDER BY next_review_at ASC LIMIT 50`; // Limit batch size
+        query += ` ORDER BY sort_order ASC, next_review_at ASC LIMIT 50`; // Limit batch size
 
         const result = await db.query(query, params);
         return result.rows;
@@ -519,7 +519,7 @@ class TrainingRepository {
         const query = `
             SELECT * FROM user_flashcards 
             WHERE deck_id = $1 
-            ORDER BY created_at DESC
+            ORDER BY sort_order ASC, created_at ASC
         `;
         const result = await db.query(query, [deckId]);
         return result.rows;
@@ -556,6 +556,41 @@ class TrainingRepository {
         // Ensure ownership
         const query = `DELETE FROM user_flashcards WHERE id = $1 AND user_id = $2`;
         await db.query(query, [cardId, userId]);
+    }
+
+    async updateFlashcardsOrder(userId, deckId, sortedIds) {
+        // Ensure ownership of the deck first
+        const checkQuery = `SELECT id FROM decks WHERE id = $1 AND user_id = $2`;
+        const checkRes = await db.query(checkQuery, [deckId, userId]);
+        if (checkRes.rows.length === 0) throw new Error("Deck not found or access denied");
+
+        const client = await db.pool().connect();
+        try {
+            await client.query('BEGIN');
+            const updateQuery = `
+                UPDATE user_flashcards 
+                SET sort_order = $1 
+                WHERE id = $2 AND deck_id = $3 AND user_id = $4
+            `;
+
+            for (let i = 0; i < sortedIds.length; i++) {
+                await client.query(updateQuery, [i, sortedIds[i], deckId, userId]);
+            }
+
+            await client.query('COMMIT');
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteBulkFlashcards(userId, cardIds) {
+        if (!cardIds || cardIds.length === 0) return;
+        // Postgres IN with parameter array using = ANY($1::uuid[])
+        const query = `DELETE FROM user_flashcards WHERE id = ANY($1::uuid[]) AND user_id = $2`;
+        await db.query(query, [cardIds, userId]);
     }
 
     async deleteDeck(userId, deckId) {
