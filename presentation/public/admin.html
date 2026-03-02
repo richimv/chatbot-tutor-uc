@@ -30,9 +30,8 @@
             <h1>Panel de Gestión</h1>
         </a>
         <div class="header-nav">
-            
 
-            <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
+
             <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <a href="/dashboard" class="nav-link">📊 Estadísticas</a>
         </div>
@@ -82,7 +81,8 @@
     </div>
 
     <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
-    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2000;">
+    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
+        <!--2147483647 para que este por encima de todo-->
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h2 id="confirmation-modal-title">Confirmación</h2>
@@ -111,4 +111,3 @@
 </body>
 
 </html>
-

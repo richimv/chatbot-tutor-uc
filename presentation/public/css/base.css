@@ -251,3 +251,40 @@ h6 {
     margin: 0 auto;
     padding: var(--spacing-md) var(--page-padding-x);
 }
+
+/* presentation/public/css/quiz.css */
+/* THEME: HIGH-END CYBERPUNK / GLASSMORPHISM */
+
+/* --- 0. BUTTON FOR MAIN PAGE (Shared) --- */
+/* Estilos para el botón en index.html, fuera del scope del juego */
+.btn-gamified {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    text-decoration: none;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    /* Match index.html font */
+}
+
+.btn-gamified:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+}
+
+.btn-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}

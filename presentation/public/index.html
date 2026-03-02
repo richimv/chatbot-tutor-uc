@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/course.css">
-    <link rel="stylesheet" href="css/quiz.css"> <!-- ✅ NUEVO: Estilos Quiz -->
     <link rel="stylesheet" href="css/hero.css"> <!-- ✅ NUEVO: Estilos Slider -->
     <link rel="stylesheet" href="css/modules.css"> <!-- ✅ NUEVO: Estilos Hub Modulos -->
     <!-- Legacy CSS files removed -->
@@ -39,7 +38,7 @@
             </button>
         </div>
         <div class="header-nav">
-            
+
             <div id="user-session-controls">
                 <!-- Estado de carga inicial -->
                 <span class="loading-user">Cargando...</span>
@@ -219,7 +218,8 @@
     </div>
 
     <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
-    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2000;">
+    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
+        <!--2147483647 para que este por encima de todo-->
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h2 id="confirmation-modal-title">Confirmación</h2>
@@ -312,4 +312,3 @@
 </body>
 
 </html>
-

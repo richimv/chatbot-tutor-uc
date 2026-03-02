@@ -726,3 +726,13 @@ El fallo técnico más frustrante en *Mobile Web Apps* es perder la página ente
 Inesperadamente, menús descolgables nativos del Header (Ej. Caja de Cuenta de Usuario) colapsaban al desplegarse solapados por Cajas Modales gigantescas (Ej. "Suscríbete" u "Opinión IA"), creando la imposibilidad gráfica de interactuar si el usuario ignoraba dicho modal. 
 - **Cálculo Físico Definitivo:** En lugar de malabares de 1000 en 1000, los Modales y overlays transparentes ostentan rigidez matemática extrema: `z-index: 2147483647;`.
 - **Evasión Contextual:** Para contrarrestar apilamiento irresoluble del HTML (`stacking context`), el nav-bar decreció forituitamente a `z-index: 999;` brindándole prioridad absoluta a modales de importancia crítica transversalmente para salvar flujos de transaccionalidad interrumpidos en Desktop y Mobile.
+
+### 23.6. Simplificación de la UX del Tutor IA
+Para reducir la carga cognitiva del usuario al abrir el chat, se simplificó el mensaje de bienvenida inicial.
+- **Reducción de Mensaje:** El saludo inicial fue refinado a una única pregunta directa: "¿En qué puedo ayudarte hoy?".
+- **Sugerencias de Contexto:** Se actualizaron las `defaultSuggestions` para incluir accesos rápidos a Simulacros y Repasos, alineando el chat con las funcionalidades principales de la plataforma.
+
+### 23.7. Visibilidad de Botones de Acción sobre Fondos Oscuros
+Con la implementación del tema **Manta Black**, ciertos iconos heredados (Editar y Eliminar) que carecían de color definido se volvieron invisibles al mostrarse como negro sobre negro.
+- **Corrección Croma Global:** Se inyectó `color: var(--text-main, #ffffff)` en los selectores `.edit-btn-small` y `.delete-btn-small` de `admin.css`.
+- **Refinamiento en Chat:** Los controles de gestión de conversaciones en `chat.css` fueron ajustados a un blanco translúcido (`rgba(255, 255, 255, 0.7)`), garantizando legibilidad sin romper la estética minimalista del sidebar.

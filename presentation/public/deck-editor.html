@@ -16,81 +16,7 @@
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/dashboard.css">
-    <style>
-        .editor-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #cbd5e1;
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: white;
-            font-family: inherit;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-        }
-
-        .icon-grid {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-top: 0.5rem;
-        }
-
-        .icon-option {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            font-size: 1.25rem;
-        }
-
-        .icon-option.selected {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 1rem;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-submit:hover {
-            background: #2563eb;
-        }
-    </style>
+    <link rel="stylesheet" href="css/deck-editor.css">
     <link rel="stylesheet" href="css/modal.css">
 </head>
 
@@ -107,7 +33,7 @@
             </a>
         </div>
         <div class="header-nav">
-            
+
             <div id="user-session-controls">
                 <span class="loading-user">Cargando...</span>
             </div>
@@ -197,64 +123,7 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Get Parent ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const parentId = urlParams.get('parentId');
-
-            if (parentId) {
-                document.getElementById('page-title').textContent = 'Nuevo Sub-Mazo';
-                document.getElementById('page-subtitle').textContent = 'Organiza tu contenido dentro de la carpeta actual';
-            }
-
-            // Icon Selection
-            const icons = document.querySelectorAll('.icon-option');
-            const inputIcon = document.getElementById('deck-icon'); // Value input
-
-            icons.forEach(icon => {
-                icon.addEventListener('click', () => {
-                    document.querySelector('.icon-option.selected')?.classList.remove('selected');
-                    icon.classList.add('selected');
-                    inputIcon.value = icon.dataset.icon;
-                });
-            });
-
-            // Form Submit
-            document.getElementById('deck-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('deck-name').value;
-                const icon = document.getElementById('deck-icon').value;
-                const token = localStorage.getItem('authToken');
-
-                try {
-                    const res = await fetch('/api/decks', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ name, icon, parentId }) // Send parentId (null or uuid)
-                    });
-
-                    if (res.ok) {
-                        // Redirect back to parent folder if exists
-                        // We need to pass state back or just use history?
-                        // Simple: Go to repaso.html?parentId=... but repaso.js needs to handle query param on load? 
-                        // Current repaso.js doesn't read URL params on init, it starts at Root.
-                        // Let's just go to root for now, or update RepasoManager to read URL.
-                        window.location.href = '/repaso';
-                    } else {
-                        alert('Error al crear mazo');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error de conexión');
-                }
-            });
-        });
-    </script>
+    <script src="js/deck-editor.js"></script>
 </body>
 
 </html>
-
