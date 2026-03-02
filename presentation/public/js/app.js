@@ -168,25 +168,33 @@ function updateHeaderUI(user) {
         const displayName = user.name || 'Estudiante';
 
         container.innerHTML = `
-            <div class="user-menu-container" style="position: relative; display: inline-block;">
-                <button id="user-menu-toggle" class="user-menu-toggle" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <img src="${avatarUrl}" style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid #2563eb;">
-                    <span style="font-weight: 500;">${displayName}</span>
-                    <i class="fas fa-chevron-down" style="font-size: 0.8em;"></i>
+            <div class="user-menu-container">
+                <button id="user-menu-toggle" class="user-menu-toggle">
+                    <img src="${avatarUrl}" class="user-avatar">
+                    <span class="user-menu-name-label">${displayName}</span>
+                    <i class="fas fa-chevron-down"></i>
                 </button>
-                <div id="user-menu-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 8px; width: 200px; padding: 10px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                    <div style="padding-bottom: 8px; border-bottom: 1px solid #334155; margin-bottom: 8px;">
-                        <div style="font-size: 0.85em; color: #94a3b8;">${user.email}</div>
+                <div id="user-menu-dropdown" class="user-menu-dropdown">
+                    <div class="user-menu-header">
+                        <span class="user-menu-name">${displayName}</span>
+                        <span class="user-menu-email">${user.email}</span>
                          ${user.subscriptionStatus !== 'active' ? `
-                            <div style="font-size: 0.75em; color: #60a5fa; margin-top: 4px;">
+                            <div class="user-usage-badge">
                                 🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))}
                             </div>` : ''}
                     </div>
-                    ${user.role === 'admin' ? '<a href="/admin" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
-                    <a href="/profile" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-user-cog"></i> Mi Perfil</a>
+                    
+                    <div class="user-menu-group">
+                        ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
+                        <a href="/profile" class="user-menu-item"><i class="fas fa-user-cog"></i> Mi Perfil</a>
+                        <a href="/change-password" class="user-menu-item"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+                    </div>
 
-                    <a href="/change-password" style="display: block; color: white; text-decoration: none; padding: 5px 0;"><i class="fas fa-key"></i> Cambiar Contraseña</a>
-                    <button id="logout-btn-action" style="background: none; border: none; color: #ef4444; cursor: pointer; width: 100%; text-align: left; padding: 5px 0;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                    <div class="user-menu-group">
+                        <button id="logout-btn-action" class="user-menu-item logout-item">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
+                    </div>
                 </div>
             </div>
         `;

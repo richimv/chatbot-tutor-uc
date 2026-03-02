@@ -1,7 +1,7 @@
 /* --- Global Footer Styles --- */
 .main-footer {
     background-color: var(--bg-secondary);
-    /* #1e293b */
+    /* #141414 */
     border-top: 1px solid var(--border-color);
     padding: 5rem 0 2rem;
     /* Increased top padding for better separation */

@@ -9,6 +9,45 @@ class UIManager {
 
         // ✅ NUEVO: Verificar estado de pago al cargar
         this.checkPaymentStatus();
+
+        // ✅ NUEVO: Lógica de Botón "Atrás" para Modales
+        this.openModals = new Set();
+        window.addEventListener('popstate', (e) => this.handlePopState(e));
+    }
+
+    handlePopState(event) {
+        // Cerrar todos los modales abiertos si el usuario navega hacia atrás físicamente
+        if (this.openModals.size > 0) {
+            this.openModals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('active');
+                }
+            });
+            this.openModals.clear();
+        }
+    }
+
+    /**
+     * Registra el modal en la historia para cerrarlo con botón Atrás.
+     */
+    pushModalState(modalId) {
+        this.openModals.add(modalId);
+        window.history.pushState({ modalOpen: true, modalId }, '');
+    }
+
+    /**
+     * Quita el modal del Set cuando se cierra manualmente (botón 'x').
+     */
+    popModalState(modalId) {
+        if (this.openModals.has(modalId)) {
+            this.openModals.delete(modalId);
+            // Hacer "atrás" invisible si cerramos manual para no ensuciar el historial extra
+            if (window.history.state && window.history.state.modalOpen) {
+                window.history.back();
+            }
+        }
     }
 
     checkPaymentStatus() {
@@ -69,6 +108,16 @@ class UIManager {
             </div>`;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.pushModalState(modalId);
+
+        // Interceptar cierre X
+        const realCloseBtn = document.querySelector(`#${modalId} .close-success`);
+        if (realCloseBtn) {
+            realCloseBtn.addEventListener('click', () => {
+                document.getElementById(modalId).remove();
+                this.popModalState(modalId);
+            });
+        }
 
         // Confetti effect (simulated via toast for now, or just the modal is enough)
         if (window.confetti) window.confetti();
@@ -236,6 +285,7 @@ class UIManager {
             `;
             if (titleEl) titleEl.innerText = title;
             modal.style.display = 'flex';
+            this.pushModalState('video-player-modal');
 
             // ✅ OPTIMIZACIÓN MÓVIL: Solicitar Fullscreen Automático
             // Esto ayuda a que los celulares giren o ocupen toda la pantalla.
@@ -259,6 +309,7 @@ class UIManager {
             modal.style.display = 'none';
             // Limpiar iframe para detener el audio
             if (container) container.innerHTML = '';
+            this.popModalState('video-player-modal');
         }
     }
 
@@ -322,7 +373,7 @@ class UIManager {
                 <div class="modal-content premium-variant">
                     <div class="modal-header">
                         <h2>¡Te encantó la prueba!</h2>
-                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
+                        <button class="modal-close-btn" onclick="window.uiManager.popModalState('${modalId}'); document.getElementById('${modalId}').style.display='none'">&times;</button>
                     </div>
                     <div class="modal-body">
                         <div class="auth-prompt-icon" style="margin-bottom: 20px;">
@@ -359,6 +410,7 @@ class UIManager {
         } else {
             modal.style.display = 'flex';
         }
+        this.pushModalState(modalId);
     }
 
     /**
@@ -381,6 +433,7 @@ class UIManager {
         const modal = document.getElementById(this.modalId);
         if (modal) {
             modal.style.display = 'flex';
+            this.pushModalState(this.modalId);
         } else {
             console.error('Auth Modal not found in DOM');
         }
@@ -393,6 +446,7 @@ class UIManager {
         const modal = document.getElementById(this.modalId);
         if (modal) {
             modal.style.display = 'none';
+            this.popModalState(this.modalId);
         }
     }
 
@@ -684,7 +738,7 @@ class UIManager {
                 <div class="modal-content premium-variant" style="max-height: 90vh; overflow-y: auto;">
                     <div class="modal-header">
                         <h2>¡Bienvenido a Hub Academia!</h2>
-                        <button class="modal-close-btn" onclick="document.getElementById('${modalId}').style.display='none'">&times;</button>
+                        <button class="modal-close-btn" onclick="window.uiManager.closeWelcomeModal('${modalId}')">&times;</button>
                     </div>
                     
                     <div class="modal-body">
@@ -762,11 +816,15 @@ class UIManager {
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         localStorage.setItem('hasSeenFreemiumWelcome_v2', 'true');
+        this.pushModalState(modalId);
     }
 
     closeWelcomeModal(id) {
         const modal = document.getElementById(id);
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            this.popModalState(id);
+        }
     }
 }
 

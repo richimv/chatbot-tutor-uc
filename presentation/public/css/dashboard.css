@@ -1,8 +1,8 @@
 :root {
-    --bg-page: #0f172a;
-    /* Slate 900 */
-    --bg-card: #1e293b;
-    /* Slate 800 */
+    --bg-page: #141414;
+    /* Main Base Match */
+    --bg-card: #1f1f1f;
+    /* Elevated Match */
     --text-main: #f8fafc;
     /* Slate 50 */
     --text-muted: #94a3b8;
@@ -34,9 +34,9 @@ body {
 
 /* Layout Grid */
 .dashboard-container {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 2rem var(--page-padding-x);
     display: grid;
     gap: 2rem;
     /* Header, KPIs, Charts */
@@ -79,7 +79,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(20, 20, 20, 0.7);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
@@ -241,7 +241,7 @@ body {
 
 /* AI Insights Card */
 .ai-card {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, #141414 0%, #0a0a0a 100%);
     border: 1px solid #6366f1;
     /* Color Indigo */
     border-radius: 12px;
@@ -306,7 +306,7 @@ body {
 }
 
 .ai-loading-card {
-    background: #1e293b;
+    background: #141414;
     padding: 2rem;
     border-radius: 12px;
     text-align: center;
@@ -537,7 +537,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 2147483647;
+    /* Garantizar sobreponerse al Header */
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
@@ -691,11 +692,7 @@ textarea.form-input {
 
     /* 2. Action Buttons: FORCE ROW */
     .action-bar {
-        display: flex !important;
-        flex-direction: row !important;
-        /* Force row */
         flex-wrap: nowrap !important;
-        /* No wrapping */
         gap: 0.5rem !important;
         overflow-x: auto;
         /* Scroll if needed */

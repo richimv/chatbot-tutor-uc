@@ -8,12 +8,13 @@
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 2147483647;
+    /* Garantizar que flote por encima del header siempre */
 }
 
 /* --- REDISEÑO COMPLETO DE MODALES --- */
 .modal-content {
-    background: var(--surface-alt, #1e293b);
+    background: var(--surface-alt, #1f1f1f);
     border-radius: 16px;
     width: 90%;
     max-width: 550px;
@@ -174,14 +175,15 @@
     height: 100vh;
     background: rgba(15, 23, 42, 0.85);
     /* Dark Slate overlay */
-    z-index: 10001;
+    z-index: 2147483647;
+    /* Garantizar sobreponerse al Header */
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(8px);
 }
 
 .auth-prompt-modal .modal-content {
-    background: linear-gradient(145deg, #0f172a, #1e293b);
+    background: linear-gradient(145deg, #0a0a0a, #141414);
     border: 1px solid rgba(255, 215, 0, 0.15);
     /* Subtly golden border */
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);

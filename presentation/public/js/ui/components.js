@@ -606,6 +606,11 @@ function createUnifiedResourceCardHTML(item) {
             typeLabel = 'Libro/Manual';
             typeColorClass = 'urc-color-book'; // Definido en CSS
             break;
+        case 'course':
+            iconClass = 'fa-graduation-cap';
+            typeLabel = 'Curso Premium';
+            typeColorClass = 'urc-color-course';
+            break;
         case 'norma':
             iconClass = 'fa-balance-scale';
             typeLabel = 'Norma Técnica';
@@ -650,16 +655,16 @@ function createUnifiedResourceCardHTML(item) {
             
             <!-- Zona de Acciones Flotantes (Librería) -->
             <div class="urc-library-actions">
-                <button class="urc-action-btn js-library-btn action-save" data-id="${item.id}" data-type="book" data-action="save" title="Guardar">
+                <button class="urc-action-btn js-library-btn action-save" data-id="${item.id}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="save" title="Guardar">
                     <i class="far fa-bookmark"></i>
                 </button>
-                <button class="urc-action-btn js-library-btn action-fav" data-id="${item.id}" data-type="book" data-action="favorite" title="Favorito">
+                <button class="urc-action-btn js-library-btn action-fav" data-id="${item.id}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="favorite" title="Favorito">
                     <i class="far fa-heart"></i>
                 </button>
             </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
-            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})" title="Abrir ${title}">
+            <div class="urc-visual-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})`}" title="Abrir ${title}">
                 ${visualHTML}
                 
                 <!-- Overlay Oscuro y Candado -->
@@ -669,7 +674,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Inferior: Información (Clicable) -->
-            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})" title="Abrir ${title}">
+            <div class="urc-info-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})`}" title="Abrir ${title}">
                 <div class="urc-meta">
                     <span class="urc-badge ${typeColorClass}"><i class="fas ${iconClass}"></i> ${typeLabel}</span>
                     ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
@@ -720,35 +725,7 @@ function createCarouselHTML(id, contentHTML) {
     `;
 }
 
-// ✅ NUEVO: Banner Promocional del Juego (Mid-Page)
-function createGamePromoSectionHTML() {
-    return /*html*/`
-        <section class="game-promo-banner">
-            <div class="game-promo-content">
-                <div class="game-promo-text">
-                    <span class="game-promo-badge"><i class="fas fa-trophy"></i> Nuevo Desafío</span>
-                    <h2 class="game-promo-title">Hub Quiz Arena</h2>
-                    <p class="game-promo-description">
-                        Convierte el estudio en un juego. 🏆<br>
-                        Desbloquea logros, repasa conceptos clave y visualiza tu progreso académico.
-                    </p>
-                    <button class="btn-gamified" onclick="window.uiManager.checkAuthAndExecute(() => window.location.href='quiz')">
-                        <i class="fas fa-gamepad"></i> Jugar Ahora
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Background Art -->
-            <div class="game-promo-bg">
-                <picture>
-                    <source media="(max-width: 768px)" srcset="assets/quiz-bg-mobile.png">
-                    <img src="assets/quiz-bg-desktop.png" alt="Quiz Arena Art" loading="lazy">
-                </picture>
-                <div class="game-promo-overlay"></div>
-            </div>
-        </section>
-    `;
-}
+// (Banner Promocional Eliminado en Phase 29)
 
 // =========================================
 // 💀 SKELETON LOADERS

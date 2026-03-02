@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Shared CSS -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <style>
         .editor-container {
@@ -91,51 +94,108 @@
     <link rel="stylesheet" href="css/modal.css">
 </head>
 
-<body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="header">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <a href="/repaso" style="color:white; text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
-                <div>
-                    <h1 id="page-title">Nuevo Mazo</h1>
-                    <p id="page-subtitle" style="color: #94a3b8; font-size: 0.9rem; margin:0;">Crea tu propia colección
-                        de flashcards</p>
-                </div>
-            </div>
-        </header>
-
-        <div class="editor-container">
-            <form id="deck-form">
-
-                <div class="form-group">
-                    <label class="form-label">Nombre del Mazo</label>
-                    <input type="text" id="deck-name" class="form-input"
-                        placeholder="Ej: Inglés Básico, Fórmulas Físicas..." required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Icono</label>
-                    <div class="icon-grid" id="icon-selector">
-                        <div class="icon-option selected" data-icon="📚">📚</div>
-                        <div class="icon-option" data-icon="🧠">🧠</div>
-                        <div class="icon-option" data-icon="🗣️">🗣️</div>
-                        <div class="icon-option" data-icon="💻">💻</div>
-                        <div class="icon-option" data-icon="⚡">⚡</div>
-                        <div class="icon-option" data-icon="🧪">🧪</div>
-                        <div class="icon-option" data-icon="🎵">🎵</div>
-                        <div class="icon-option" data-icon="🌎">🌎</div>
-                    </div>
-                    <input type="hidden" id="deck-icon" value="📚">
-                </div>
-
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i> Crear Mazo
-                </button>
-
-            </form>
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Tutor Académico</span>
+            </a>
+            <a href="/repaso" id="header-back-btn" class="header-back-btn">
+                <i class="fas fa-arrow-left"></i> <span>Volver a Repaso</span>
+            </a>
         </div>
+        <div class="header-nav">
+            
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <form id="deck-form">
+
+            <div class="form-group">
+                <label class="form-label">Nombre del Mazo</label>
+                <input type="text" id="deck-name" class="form-input"
+                    placeholder="Ej: Inglés Básico, Fórmulas Físicas..." required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Icono</label>
+                <div class="icon-grid" id="icon-selector">
+                    <div class="icon-option selected" data-icon="📚">📚</div>
+                    <div class="icon-option" data-icon="🧠">🧠</div>
+                    <div class="icon-option" data-icon="🗣️">🗣️</div>
+                    <div class="icon-option" data-icon="💻">💻</div>
+                    <div class="icon-option" data-icon="⚡">⚡</div>
+                    <div class="icon-option" data-icon="🧪">🧪</div>
+                    <div class="icon-option" data-icon="🎵">🎵</div>
+                    <div class="icon-option" data-icon="🌎">🌎</div>
+                </div>
+                <input type="hidden" id="deck-icon" value="📚">
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> Crear Mazo
+            </button>
+
+        </form>
     </div>
+    </div>
+
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Col 1 -->
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
+            </div>
+            <div class="footer-socials">
+                <a href="https://www.facebook.com/profile.php?id=61586735506660" target="_blank"
+                    rel="noopener noreferrer" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="https://www.instagram.com/hubacademia_" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@hub.academia" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -197,3 +257,4 @@
 </body>
 
 </html>
+

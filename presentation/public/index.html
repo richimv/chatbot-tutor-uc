@@ -30,18 +30,16 @@
 <body>
     <header class="main-header">
         <div class="header-start">
-            <div class="logo">
+            <a href="/" class="logo">
                 <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
                 <span class="logo-text">Tutor Académico</span>
-            </div>
+            </a>
             <button id="header-back-btn" class="header-back-btn hidden">
                 <i class="fas fa-arrow-left"></i> <span>Volver</span>
             </button>
         </div>
         <div class="header-nav">
-            <a href="#" class="nav-link nav-home-button" title="Ir al inicio">
-                <i class="fas fa-home"></i>
-            </a>
+            
             <div id="user-session-controls">
                 <!-- Estado de carga inicial -->
                 <span class="loading-user">Cargando...</span>
@@ -194,6 +192,14 @@
 
         <div id="content-container">
             <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
+
+            <!-- CONTENEDOR TABS Y FILTROS ESTILO MANTA -->
+            <div id="manta-navigation" class="manta-navigation-area">
+                <div id="manta-tabs" class="manta-tabs-container"></div>
+                <div id="manta-filters" class="manta-filters-container"></div>
+            </div>
+
+            <!-- CONTENEDOR GRILLAS Y BUSQUEDAS -->
             <div id="browse-container"></div>
             <div id="results-container" class="hidden"></div>
         </div>
@@ -306,3 +312,4 @@
 </body>
 
 </html>
+

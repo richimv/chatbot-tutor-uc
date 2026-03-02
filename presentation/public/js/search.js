@@ -21,9 +21,12 @@ class SearchComponent {
         // ✅ DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
         this.featuredCourses = [];
 
-        // Estado de la vista para la navegación de retorno
         this.viewStack = []; // Pila para gestionar el historial de navegación
         this.currentView = { name: 'home', args: [] }; // Vista actual
+
+        // ✅ MANTA TABS STATE (Phase 30)
+        this.activeTab = 'biblioteca'; // 'biblioteca' | 'cursos'
+        this.activeFilter = 'Libros y Manuales'; // Default param for first tab
 
         this.init();
 
@@ -222,7 +225,13 @@ class SearchComponent {
      */
     handlePopState(event) {
         const state = event.state;
-        if (!state) {
+
+        // ✅ CORRECCIÓN BUG 303: Ignorar estados empujados por uiManager (Modales)
+        if (state && state.modalOpen) {
+            return;
+        }
+
+        if (!state || !state.view) {
             // Si no hay estado (ej: estado inicial vacío), volvemos al home.
             this.renderInitialView();
             return;
@@ -523,8 +532,7 @@ class SearchComponent {
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Documentos Encontrados (${foundDocs.length})</h3>
                 </div>
-                <!-- Ahora usamos el grid que dicta el diseño general .books-grid para mantener single source of truth en grillas -->
-                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"> 
+                <div class="books-grid"> 
                     ${docsHTML}
                 </div>
             `;
@@ -546,7 +554,7 @@ class SearchComponent {
                 <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Libros Encontrados (${foundBooks.length})</h3>
                 </div>
-                <div id="books-grid-container" class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"> 
+                <div id="books-grid-container" class="books-grid"> 
                     ${booksHTML}
                 </div>
                 <!-- Sentinel for Infinite Scroll -->
@@ -577,7 +585,7 @@ class SearchComponent {
                 <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Materiales y Lecturas (${foundArticles.length})</h3>
                 </div>
-                <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-top: 0.5rem;"> 
+                <div class="books-grid" style="margin-top: 0.5rem;"> 
                     ${articlesHTML}
                 </div>
             `;
@@ -585,7 +593,7 @@ class SearchComponent {
 
         // 4. SECCIÓN: CURSOS (Ahora al final)
         if (foundCourses.length > 0) {
-            const coursesHTML = foundCourses.map(course => createBrowseCardHTML(course, 'course')).join('');
+            const coursesHTML = foundCourses.map(course => createUnifiedResourceCardHTML({ ...course, type: 'course' })).join('');
             contentHTML += `
                 <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
                      <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Cursos Encontrados (${foundCourses.length})</h3>
@@ -962,7 +970,7 @@ class SearchComponent {
         let newHtml = '';
         nextAreas.forEach(area => {
             const courses = this.coursesByAreaContext[area];
-            const coursesGrid = courses.map(course => createBrowseCardHTML(course, 'course')).join('');
+            const coursesGrid = courses.map(course => createUnifiedResourceCardHTML({ ...course, type: 'course' })).join('');
 
             newHtml += `
                  <div class="area-group-section" style="margin-bottom: 3rem; opacity: 0; animation: fadeInUp 0.5s ease forwards;">
@@ -993,247 +1001,224 @@ class SearchComponent {
         }
     }
 
-    async renderInitialView() {
+    async renderInitialView(pushToStack = true) {
+        if (pushToStack && this.viewStack[this.viewStack.length - 1] !== 'home') {
+            this.viewStack.push('home');
+        }
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
 
-        // ✅ CORRECCIÓN: Asegurarse de que this.allData.careers esté cargado.
-        if (!this.allData.careers || this.allData.careers.length === 0) {
-            this.browseContainer.innerHTML = `<h2 class="browse-title">Áreas de Estudio</h2><p class="empty-state">No se encontraron áreas para mostrar.</p>`;
-            return;
-        }
+        // ✅ MANTA REDESIGN (PHASE 30) - TABS SKELETON
+        // 1. DIBUJAR LAS PESTAÑAS Y EL CONTENEDOR DE FILTROS A NIVEL ESTRUCTURAL
 
-        // ✅ CARGAR DATOS DESTACADOS SI NO EXISTEN
-        if (!this.featuredCourses || this.featuredCourses.length === 0) {
-            const skeletonCourses = Array(4).fill('<div class="carousel-item course-item">' + createSkeletonCardHTML('Grid') + '</div>').join('');
-            const skeletonDocs = Array(3).fill('<div class="carousel-item" style="min-width: 320px; padding: 0.5rem 0;">' + createSkeletonCardHTML('Premium') + '</div>').join('');
-
-            this.browseContainer.innerHTML = `
-                <section class="featured-section">
-                     <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0; opacity: 0.7;">Descubriendo Contenido...</h2>
-                    </div>
-                    ${createCarouselHTML('skeleton-courses', skeletonCourses)}
-                </section>
-                <div class="section-spacer"></div>
-                <section class="featured-docs-section">
-                     <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0; opacity: 0.7;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Consultando repositorios...</h2>
-                    </div>
-                    ${createCarouselHTML('skeleton-docs', skeletonDocs)}
-                </section>
-            `;
-            await this.loadFeaturedContent();
-        }
-
-        // ==========================================
-        // 1.5. SECCIÓN: CURSOS DESTACADOS (Analytics)
-        // ==========================================
-        let featuredCoursesSection = '';
-        if (this.featuredCourses.length > 0) {
-            // ✅ UPDATE: Clase .course-item para tamaño correcto (Landscape)
-            const coursesHTML = this.featuredCourses.map(course => `
-                <div class="carousel-item course-item">
-                    ${createBrowseCardHTML(course, 'course')}
+        const tabsHTML = `
+            <div id="manta-navigation" class="manta-navigation-area">
+                <div class="manta-tabs-container" id="manta-tabs">
+                    <button class="manta-tab ${this.activeTab === 'biblioteca' ? 'active' : ''}" data-tab="biblioteca">Biblioteca</button>
+                    <button class="manta-tab ${this.activeTab === 'cursos' ? 'active' : ''}" data-tab="cursos">Cursos</button>
                 </div>
-            `).join('');
-
-            featuredCoursesSection = `
-                <section class="featured-section">
-                     <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0;">Cursos Populares</h2>
-                        <!-- ✅ NUEVO: Botón Ver Todos Cursos -->
-                        <button class="btn-text view-all-btn" data-view="all-courses" style="font-size: 0.9rem; color: var(--accent); font-weight: 500;">
-                            Ver todos los cursos <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
-                        </button>
-                    </div>
-                    ${createCarouselHTML('featured-courses-carousel', coursesHTML)}
-                </section>
-                <div class="section-spacer"></div>
-            `;
-        }
-
-        // ==========================================
-        // 1.8. SECCIÓN: ÚLTIMOS DOCUMENTOS DESTACADOS
-        // ==========================================
-        let featuredResourcesSection = '';
-        if (this.featuredResources && this.featuredResources.length > 0) {
-            const docsHTML = this.featuredResources.map(doc => `
-                <div class="carousel-item" style="min-width: 180px; max-width: 200px; padding: 0.5rem 0;">
-                    ${createUnifiedResourceCardHTML(doc)}
+                <div class="manta-filters-container" id="manta-filters">
+                    <!-- Pills renderizados dinámicamente aquí -->
                 </div>
-            `).join('');
-
-            featuredResourcesSection = `
-                <section class="featured-docs-section">
-                     <div class="section-header">
-                        <h2 class="browse-title" style="margin-bottom: 0;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Últimos Materiales Oficiales</h2>
-                    </div>
-                    ${createCarouselHTML('featured-docs-carousel', docsHTML)}
-                </section>
-                <div class="section-spacer"></div>
-            `;
-        }
-
-        // ==========================================
-        // 2. SECCIÓN: TEASER DEL TUTOR IA
-        // ==========================================
-        const aiTeaserSection = `
-            <div class="ai-teaser-card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--surface) 100%); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative; overflow: hidden;">
-                <!-- Decoración de fondo -->
-                <div style="position: absolute; right: -20px; top: -20px; opacity: 0.05; font-size: 10rem; transform: rotate(15deg); pointer-events: none;">
-                    <i class="fas fa-robot"></i>
-                </div>
-                
-                <div class="ai-teaser-icon" style="flex-shrink: 0; width: 80px; height: 80px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; box-shadow: 0 8px 16px rgba(56, 189, 248, 0.3);">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div class="ai-teaser-content" style="flex: 1; z-index: 1;">
-                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">Tu Asistente Académico Inteligente</h3>
-                    <p style="margin: 0 0 1.5rem 0; color: var(--text-muted); line-height: 1.6; max-width: 600px;">Obtén respuestas instantáneas sobre tus cursos, resúmenes de temas complejos y recomendaciones personalizadas de estudio.</p>
-                    <button class="btn-primary" onclick="window.openChat()" style="padding: 12px 24px; font-size: 1rem;">
-                        <i class="fas fa-comments"></i> Pregúntale al Tutor
-                    </button>
-                </div>
+            </div>
+            <div id="manta-grid-container" class="manta-content-grid" style="margin-top: 0;">
+                <!-- Contenido (Cartas) renderizado dinámicamente aquí -->
             </div>
         `;
 
-        // ==========================================
-        // 3. SECCIÓN: ÁREAS DE ESTUDIO (Agrupadas)
-        // ==========================================
-        const careersByArea = this.allData.careers.reduce((acc, career) => {
-            const area = career.area || 'Otras Áreas';
-            if (!acc[area]) acc[area] = [];
-            acc[area].push(career);
-            return acc;
-        }, {});
+        // REEMPLAZAMOS EL BROWSE CONTAINER CON NUESTRA ESTRUCTURA LIMPIA
+        this.browseContainer.innerHTML = tabsHTML;
 
-        // Ordenar áreas alfabéticamente, dejando 'Otras Áreas' al final si existe
-        const sortedAreas = Object.keys(careersByArea).sort((a, b) => {
-            if (a === 'Otras Áreas') return 1;
-            if (b === 'Otras Áreas') return -1;
-            return a.localeCompare(b);
+        // ASIGNAR EVENT LISTENERS A LAS PESTAÑAS
+        this.browseContainer.querySelectorAll('.manta-tab').forEach(tabBtn => {
+            tabBtn.addEventListener('click', (e) => {
+                // Actualizar estado activo visual
+                this.browseContainer.querySelectorAll('.manta-tab').forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+
+                // Actualizar logica
+                this.activeTab = e.currentTarget.dataset.tab;
+
+                // Resetear el sub-filtro por defecto cuando se cambia de pestaña
+                if (this.activeTab === 'biblioteca') {
+                    this.activeFilter = 'Libros y Manuales';
+                } else if (this.activeTab === 'cursos') {
+                    // Buscar la primera área de carreras como default
+                    const areas = [...new Set(this.allData.careers.map(c => c.area || 'Otras Áreas'))];
+                    this.activeFilter = areas[0] || 'Ciencias de la salud';
+                }
+
+                this.renderTabContent();
+            });
         });
 
-        let areasHTML = '';
-        sortedAreas.forEach((area, index) => {
-            const careers = careersByArea[area];
-            // WRAP EACH CARD IN .carousel-item.career-item
-            const careersHTML = careers.map(career => `
-                <div class="carousel-item career-item">
-                    ${createBrowseCardHTML(career, 'career')}
-                </div>
+        // 2. DISPARAR RENDERIZACION DEL CONTENIDO ACTUAL
+        this.renderTabContent();
+    }
+
+    // ✅ NUEVO: Lógica dinámica de renderizado de contenido según Tab y Filtro
+    async renderTabContent() {
+        const filtersContainer = this.browseContainer.querySelector('#manta-filters');
+        const gridContainer = this.browseContainer.querySelector('#manta-grid-container');
+
+        // Limpiamos grilla y mostramos skeleton
+        gridContainer.innerHTML = Array(6).fill('<div class="course-card">' + createSkeletonCardHTML('Grid') + '</div>').join('');
+
+        if (this.activeTab === 'biblioteca') {
+            // 1. DIBUJAR PILDORAS DE BIBLIOTECA
+            const biblioFilters = [
+                { id: 'Libros y Manuales', val: 'book' },
+                { id: 'Papers Científicos', val: 'paper' },
+                { id: 'Normas y Directivas', val: 'norma' },
+                { id: 'Guías Clínicas', val: 'guia' }
+            ];
+
+            filtersContainer.innerHTML = biblioFilters.map(f => `
+                <button class="manta-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" data-filter-id="${f.id}" data-filter-val="${f.val}">
+                    ${f.id}
+                </button>
             `).join('');
 
-            // USE createCarouselHTML INSTEAD OF .browse-grid
-            const safeAreaId = `area-carousel-${index}`;
+            // Escuchar clics en pill
+            this._attachFilterListeners(filtersContainer, async (valStr) => {
+                // Llamar a Supabase o Cache
+                let data = [];
+                try {
+                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}`);
+                    if (res.ok) data = await res.json();
+                } catch (e) { console.error('Error fetching library type', e); }
 
-            areasHTML += `
-                <div class="area-section">
-                    <h3 class="area-title">${area}</h3>
-                    ${createCarouselHTML(safeAreaId, careersHTML)}
-                </div>
-                <div class="section-spacer"></div>
-            `;
-        });
+                if (!data || data.length === 0) {
+                    gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
+                } else {
+                    // Agrupar por Topic (ahora usando doc.topics array devuelto por el backend)
+                    const groupedData = data.reduce((acc, doc) => {
+                        let topicName = 'General';
+                        if (doc.topics && doc.topics.length > 0) {
+                            topicName = doc.topics[0];
+                            if (typeof topicName === 'object' && topicName !== null) {
+                                topicName = topicName.name || topicName.title || 'General';
+                            }
+                        }
+                        if (!acc[topicName]) acc[topicName] = [];
+                        acc[topicName].push(doc);
+                        return acc;
+                    }, {});
 
-        // ==========================================
-        // 1.1 SECCIÓN: DIRECTORIOS / CATEGORÍAS (NUEVO)
-        // ==========================================
-        const categoriesHTML = `
-            <section class="featured-section" style="margin-top: 2rem;">
-                <div class="section-header">
-                    <h2 class="browse-title" style="margin-bottom: 0;"><i class="fas fa-folder-open" style="color:var(--accent)"></i> Bibliotecas Oficiales</h2>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Explora recursos especializados organizados por temas y especialidades.</p>
-                </div>
-                <div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-                    
-                    <a href="/category?type=book" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/libros-oficiales.png'); background-size: cover; background-position: center; position: relative;">
-                        <div class="module-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981; margin-bottom: 15px; position: relative; z-index: 2;">
-                            <i class="fas fa-book-medical"></i>
-                        </div>
-                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
-                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Libros y Manuales</h3>
-                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Colección de libros médicos, manuales y textos de referencia.</p>
-                        </div>
-                    </a>
-
-                    <a href="/category?type=paper" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/papers-oficiales.png'); background-size: cover; background-position: center; position: relative;">
-                        <div class="module-icon icon-battle" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; margin-bottom: 15px; position: relative; z-index: 2;">
-                            <i class="fas fa-microscope"></i>
-                        </div>
-                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
-                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Papers Científicos</h3>
-                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Artículos de investigación, revisiones y medicina basada en evidencia.</p>
-                        </div>
-                    </a>
-
-                    <a href="/category?type=norma" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/normas-oficiales.png'); background-size: cover; background-position: center; position: relative;">
-                        <div class="module-icon icon-med" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; margin-bottom: 15px; position: relative; z-index: 2;">
-                            <i class="fas fa-balance-scale"></i>
-                        </div>
-                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
-                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Normas y Directivas</h3>
-                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Normas Técnicas de Salud (NTS) y regulaciones del MINSA/ESSALUD.</p>
-                        </div>
-                    </a>
-
-                    <a href="/category?type=guia" class="module-card" style="text-decoration: none; border: 1px solid var(--border-color); padding: 20px; background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9)), url('/assets/guias-oficiales.png'); background-size: cover; background-position: center; position: relative;">
-                        <div class="module-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; margin-bottom: 15px; position: relative; z-index: 2;">
-                            <i class="fas fa-notes-medical"></i>
-                        </div>
-                        <div class="module-info" style="margin: 0; position: relative; z-index: 2;">
-                            <h3 style="color: #ffffff; margin-bottom: 8px; font-weight: 700; font-size: 1.25rem;">Guías Clínicas</h3>
-                            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">Guías de Práctica Clínica (GPC) nacionales e internacionales.</p>
-                        </div>
-                    </a>
-                    
-                </div>
-            </section>
-            <div class="section-spacer"></div>
-        `;
-
-        this.browseContainer.innerHTML = /*html*/`
-            ${categoriesHTML}
-            ${featuredResourcesSection}
-            
-            <!-- ✅ NUEVO: Banner del Juego (Mid-Page) -->
-            <div class="section-spacer"></div>
-            ${createGamePromoSectionHTML()}
-            <div class="section-spacer"></div>
-
-            ${featuredCoursesSection}
-
-            <div class="section-header">
-                <h2 class="browse-title" style="margin-bottom: 0;">Áreas de Estudio</h2>
-            </div>
-            ${areasHTML}
-            
-            ${aiTeaserSection}
-        `;
-
-        // Inicializar carruseles
-        setTimeout(() => {
-            initializeCarousel('featured-courses-carousel');
-            // Initialize areas carousels
-            sortedAreas.forEach((area, index) => {
-                initializeCarousel(`area-carousel-${index}`);
+                    let html = '';
+                    for (const topic of Object.keys(groupedData).sort()) {
+                        html += `<div class="manta-group-title">${topic}</div>`;
+                        groupedData[topic].forEach(doc => {
+                            html += createUnifiedResourceCardHTML(doc);
+                        });
+                    }
+                    gridContainer.innerHTML = html;
+                }
             });
-        }, 100);
 
-        // ✅ EVENT LISTENER PARA BOTONES "VER TODOS"
-        this.browseContainer.querySelectorAll('.view-all-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const viewType = e.currentTarget.dataset.view;
-                if (viewType === 'all-books') this.renderAllBooks();
-                else if (viewType === 'all-courses') this.renderAllCourses();
-                else if (viewType === 'medical-books') this.renderMedicalBooksView(); // ✅ NUEVO HANDLER
+            // Disparar autollenado para la pildora activa
+            const activePill = biblioFilters.find(f => f.id === this.activeFilter);
+            if (activePill) {
+                // Manual simulate fetch
+                let data = [];
+                try {
+                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}`);
+                    if (res.ok) data = await res.json();
+                } catch (e) { }
+
+                if (!data || data.length === 0) {
+                    gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos disponibles.</p>';
+                } else {
+                    // Agrupar por Topic (ahora usando doc.topics array devuelto por el backend)
+                    const groupedData = data.reduce((acc, doc) => {
+                        let topicName = 'General';
+                        if (doc.topics && doc.topics.length > 0) {
+                            topicName = doc.topics[0];
+                            if (typeof topicName === 'object' && topicName !== null) {
+                                topicName = topicName.name || topicName.title || 'General';
+                            }
+                        }
+                        if (!acc[topicName]) acc[topicName] = [];
+                        acc[topicName].push(doc);
+                        return acc;
+                    }, {});
+
+                    let html = '';
+                    for (const topic of Object.keys(groupedData).sort()) {
+                        html += `<div class="manta-group-title">${topic}</div>`;
+                        groupedData[topic].forEach(doc => {
+                            html += createUnifiedResourceCardHTML(doc);
+                        });
+                    }
+                    gridContainer.innerHTML = html;
+                }
+            }
+
+
+        } else if (this.activeTab === 'cursos') {
+            // 1. DIBUJAR PILDORAS DINAMICAS SEGUN AREAS DE CARRERAS
+            const areas = [...new Set(this.allData.careers.map(c => c.area || 'Otras Áreas'))].sort();
+
+            filtersContainer.innerHTML = areas.map(a => `
+                <button class="manta-filter-pill ${this.activeFilter === a ? 'active' : ''}" data-filter-id="${a}">
+                    ${a}
+                </button>
+            `).join('');
+
+            // Función helper para renderizar Cursos agrupados por Carrera
+            const renderCoursesByCareer = (careersInArea) => {
+                if (!careersInArea || careersInArea.length === 0) {
+                    return '<p class="empty-state" style="grid-column: 1 / -1;">No hay carreras en esta área.</p>';
+                }
+
+                let html = '';
+                careersInArea.forEach(career => {
+                    // Filtrar cursos (castear IDs a String para evitar fallos strict equality)
+                    const strCareerId = String(career.id);
+                    const linkedCourses = this.allData.courses.filter(c => c.careerIds && c.careerIds.some(id => String(id) === strCareerId));
+                    if (linkedCourses.length > 0) {
+                        html += `<div class="manta-group-title">${career.title || career.name}</div>`;
+                        linkedCourses.forEach(course => {
+                            html += createUnifiedResourceCardHTML({ ...course, type: 'course' });
+                        });
+                    }
+                });
+
+                return html || '<p class="empty-state" style="grid-column: 1 / -1;">Aún no hay cursos asignados a las carreras de esta área.</p>';
+            };
+
+            // Escuchar clics
+            this._attachFilterListeners(filtersContainer, (areaStr) => {
+                const careersInArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === areaStr);
+                gridContainer.innerHTML = renderCoursesByCareer(careersInArea);
             });
-        });
 
-        // Inicializar acordeones de áreas (Search.js)
-        this.browseContainer.querySelectorAll('.section-header').forEach(header => {
-            // Logic handled by inline onclick
+            // Disparar autollenado
+            const careersInActiveArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === this.activeFilter);
+            gridContainer.innerHTML = renderCoursesByCareer(careersInActiveArea);
+        }
+    }
+
+    // Helper privado para añadir Event Listeners a los filtros dinamicos
+    _attachFilterListeners(container, fetchCallback) {
+        container.querySelectorAll('.manta-filter-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                // Actualizar estado visual
+                container.querySelectorAll('.manta-filter-pill').forEach(p => p.classList.remove('active'));
+                const btn = e.currentTarget;
+                btn.classList.add('active');
+
+                // Actualizar estado logico
+                this.activeFilter = btn.dataset.filterId;
+
+                // Mostrar skeleton momentaneo
+                const gridContainer = this.browseContainer.querySelector('#manta-grid-container');
+                gridContainer.innerHTML = Array(6).fill('<div class="course-card">' + createSkeletonCardHTML('Grid') + '</div>').join('');
+
+                // Ejecutar Callback con valor
+                const fetchVal = btn.dataset.filterVal || btn.dataset.filterId;
+                fetchCallback(fetchVal);
+            });
         });
     }
 
@@ -1254,7 +1239,7 @@ class SearchComponent {
                 </div>
 
                     <!-- Usamos el mismo diseño en grilla (.books-grid) -->
-                    <div class="books-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));" id="medical-books-grid">
+                    <div class="books-grid" id="medical-books-grid">
                         ${this.medicalBooks.map(book => createUnifiedResourceCardHTML(book)).join('')}
                     </div>
                 </div>

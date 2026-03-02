@@ -114,21 +114,16 @@ class ChatComponent {
         // Se usa `this.messages.length` en lugar del antiguo `this.conversationHistory.length`.
         // Esto evita que el mensaje aparezca al cambiar entre chats existentes.
         if (this.messages.length === 0) {
-            const welcomeText = `**¡Hola! Soy tu tutor IA 🤖**
-Puedo ayudarte con:
-*   🎓 Orientación sobre Carreras y Cursos
-*   📚 Búsqueda de Libros y Recursos
-*   💡 Explicación de conceptos teóricos
-¿En qué puedo ayudarte hoy?`;
+            const welcomeText = `**¡Hola! Soy tu tutor IA.**
+¿               En qué puedo ayudarte hoy?`;
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
 
             // ✅ RESTAURADO: Sugerencias iniciales
             const defaultSuggestions = [
-                "¿Qué cursos hay?",
-                "Recomienda libros de Anatomía",
                 "¿Cómo funciona la plataforma?",
-                "Ayuda con mi Tesis",
-                "Quiero hacer un Quiz"
+                "Quiero hacer un Quiz",
+                "Quiero hacer un Simulacro",
+                "Quiero hacer un Repaso",
             ];
             this.showFollowUpSuggestions(defaultSuggestions);
         }

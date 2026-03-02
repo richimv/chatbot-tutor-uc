@@ -227,23 +227,23 @@ class RepasoManager {
                             
                             <!-- 1. Study (Primary - Standard Size) -->
                             ${total > 0 ? `
-                            <button class="btn-action" style="background:#3b82f6; color:white; padding:0.7rem 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; gap:0.6rem; cursor:pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s;" onclick="window.repasoManager.startStudy('${deck.id}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                            <button class="btn-action" style="background:#3b82f6; color:white; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s; white-space:nowrap;" onclick="window.repasoManager.startStudy('${deck.id}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
 
                             <!-- 2. Add Card -->
-                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; padding:0.7rem 1.2rem; border-radius:12px; font-weight:500; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; gap:0.6rem; transition: background 0.2s;" onclick="window.repasoManager.openAddCardModal()" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
+                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAddCardModal()" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
 
                             <!-- 3. AI -->
-                            <button class="btn-action" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:#d8b4fe; padding:0.7rem 1.2rem; border-radius:12px; font-weight:500; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; gap:0.6rem; transition: background 0.2s;" onclick="window.repasoManager.openAiModal()" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
+                            <button class="btn-action" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:#d8b4fe; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAiModal()" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
                                 <i class="fas fa-magic"></i> <span class="btn-text">Generar con IA</span>
                             </button>
                             
                             <!-- 4. Stats -->
-                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; padding:0.7rem 1.2rem; border-radius:12px; font-weight:500; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; gap:0.6rem; transition: background 0.2s;" onclick="window.repasoManager.openStatsModal(${total}, ${mastered})" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
+                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openStatsModal(${total}, ${mastered})" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
                         </div>
@@ -717,24 +717,39 @@ class RepasoManager {
         document.getElementById('card-id').value = ''; // Clear ID for new
         document.getElementById('modal-title').innerText = 'Añadir Tarjeta';
         document.getElementById('card-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('card-modal');
+        }
     }
 
     closeCardModal() {
         document.getElementById('card-modal').classList.remove('active');
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('card-modal');
+        }
     }
 
     openAiModal() {
         document.getElementById('ai-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('ai-modal');
+        }
     }
 
     closeAiModal() {
         document.getElementById('ai-modal').classList.remove('active');
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('ai-modal');
+        }
     }
 
     openStatsModal(total, mastered) {
         document.getElementById('modal-total').textContent = total;
         document.getElementById('modal-mastered').textContent = mastered;
         document.getElementById('stats-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('stats-modal');
+        }
 
         // Render Heatmap
         if (window.ActivityHeatmap) {
@@ -745,6 +760,9 @@ class RepasoManager {
 
     closeStatsModal() {
         document.getElementById('stats-modal').classList.remove('active');
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('stats-modal');
+        }
     }
 
     async startStudy(deckId) {
@@ -850,6 +868,9 @@ class RepasoManager {
         const submitBtn = document.getElementById('btn-save-deck');
         if (submitBtn) submitBtn.innerText = 'Guardar';
         document.getElementById('create-deck-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('create-deck-modal');
+        }
     }
 
     // Create/Edit Card (Consolidated)
@@ -919,6 +940,9 @@ class RepasoManager {
         document.getElementById('modal-title').innerText = 'Editar Tarjeta';
 
         document.getElementById('card-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('card-modal');
+        }
     }
 
     // AI Generation

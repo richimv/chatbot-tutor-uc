@@ -8,6 +8,9 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -50,7 +53,7 @@
         }
 
         .stat-box {
-            background: #1e293b;
+            background: #1f1f1f;
             border-radius: 16px;
             padding: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -65,19 +68,19 @@
 
         /* Tinted backgrounds per stat */
         .stat-box--score {
-            background: linear-gradient(135deg, #1e293b 60%, rgba(59, 130, 246, 0.1));
+            background: linear-gradient(135deg, #1f1f1f 60%, rgba(59, 130, 246, 0.1));
             border-color: rgba(59, 130, 246, 0.15);
             box-shadow: 0 4px 20px rgba(59, 130, 246, 0.08);
         }
 
         .stat-box--accuracy {
-            background: linear-gradient(135deg, #1e293b 60%, rgba(16, 185, 129, 0.1));
+            background: linear-gradient(135deg, #1f1f1f 60%, rgba(16, 185, 129, 0.1));
             border-color: rgba(16, 185, 129, 0.15);
             box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
         }
 
         .stat-box--mastery {
-            background: linear-gradient(135deg, #1e293b 60%, rgba(139, 92, 246, 0.1));
+            background: linear-gradient(135deg, #1f1f1f 60%, rgba(139, 92, 246, 0.1));
             border-color: rgba(139, 92, 246, 0.15);
             box-shadow: 0 4px 20px rgba(139, 92, 246, 0.08);
         }
@@ -173,7 +176,8 @@
 
         .mode-card--disabled:hover {
             transform: none !important;
-            background: rgba(30, 41, 59, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(31, 31, 31, 0.4) !important;
         }
 
         .badge-soon {
@@ -212,7 +216,7 @@
         }
 
         .detail-card {
-            background: linear-gradient(135deg, #1e293b 70%, rgba(59, 130, 246, 0.05));
+            background: linear-gradient(135deg, #1f1f1f 70%, rgba(59, 130, 246, 0.05));
             border-radius: 16px;
             padding: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -267,6 +271,12 @@
             transform: translateY(-2px);
         }
 
+        .mode-card.mode-card--disabled {
+            background: rgba(31, 31, 31, 0.5);
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
         .action-icon {
             width: 50px;
             height: 50px;
@@ -283,21 +293,27 @@
     <link rel="stylesheet" href="css/modal.css">
 </head>
 
-<body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="header-glass">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <a href="/simulators" class="btn-back" title="Volver a Simuladores">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <div class="header-divider"></div>
-                <img src="assets/logo.png" alt="Logo" height="32">
-                <span class="header-title-text" style="font-weight: 600; color: #fff; font-size: 1.1rem;">Hub
-                    Academia</span>
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Tutor Académico</span>
+            </a>
+            <a href="/simulators" id="header-back-btn" class="header-back-btn">
+                <i class="fas fa-arrow-left"></i> <span>Volver a Simuladores</span>
+            </a>
+        </div>
+        <div class="header-nav">
+
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
             </div>
-            <div id="user-session-controls"></div>
-        </header>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
 
         <!-- Loading -->
         <div id="loading" style="text-align: center; padding: 4rem;">
@@ -572,6 +588,57 @@
         </div>
     </div>
 
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Col 1 -->
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
+            </div>
+            <div class="footer-socials">
+                <a href="https://www.facebook.com/profile.php?id=61586735506660" target="_blank"
+                    rel="noopener noreferrer" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="https://www.instagram.com/hubacademia_" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@hub.academia" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </footer>
+
     <style>
         /* Estilos para el Modal de Configuración */
         .modal-overlay {
@@ -580,16 +647,17 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(20, 20, 20, 0.9);
             backdrop-filter: blur(5px);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            z-index: 2147483647;
+            /* Garantizar sobreponerse al Header */
         }
 
         .config-modal {
-            background: #1e293b;
+            background: #1f1f1f;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             width: 90%;
@@ -664,7 +732,7 @@
         }
 
         #config-difficulty option {
-            background: #1e293b;
+            background: #1f1f1f;
             color: white;
         }
 

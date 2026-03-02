@@ -70,6 +70,9 @@ class ConfirmationModal {
         this.confirmBtn.style.display = 'flex';
 
         this.modal.style.display = 'flex';
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('confirmation-modal');
+        }
         this.confirmBtn.focus(); // Accesibilidad: poner foco en la acción principal
 
         return new Promise((resolve) => {
@@ -94,6 +97,9 @@ class ConfirmationModal {
         this.confirmBtn.style.display = 'flex';
 
         this.modal.style.display = 'flex';
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('confirmation-modal');
+        }
         this.confirmBtn.focus();
 
         return new Promise((resolve) => {
@@ -118,6 +124,9 @@ class ConfirmationModal {
     }
 
     close() {
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('confirmation-modal');
+        }
         this.modal.style.display = 'none';
     }
 }

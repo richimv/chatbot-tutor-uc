@@ -7,7 +7,7 @@
     max-height: 550px;
     min-height: 400px;
     overflow: hidden;
-    background: #0f172a;
+    background: #0a0a0a;
     /* Fallback */
     color: white;
 }
@@ -63,10 +63,10 @@
     height: 100%;
     /* Gradient Logic: Darker Left (Text) -> Transparent Right (Art) */
     background: linear-gradient(to right,
-            rgba(15, 23, 42, 0.9) 0%,
-            rgba(15, 23, 42, 0.7) 40%,
-            rgba(15, 23, 42, 0.1) 80%,
-            rgba(15, 23, 42, 0) 100%);
+            rgba(10, 10, 10, 0.9) 0%,
+            rgba(10, 10, 10, 0.7) 40%,
+            rgba(10, 10, 10, 0.1) 80%,
+            rgba(10, 10, 10, 0) 100%);
     z-index: -1;
     pointer-events: none;
 }
@@ -307,9 +307,9 @@
     .slide-overlay {
         /* PROMO: Darker overlay for better text contrast on busy images */
         background: linear-gradient(to top,
-                rgba(15, 23, 42, 0.95) 0%,
-                rgba(15, 23, 42, 0.7) 60%,
-                rgba(15, 23, 42, 0.4) 100%);
+                rgba(10, 10, 10, 0.95) 0%,
+                rgba(10, 10, 10, 0.7) 60%,
+                rgba(10, 10, 10, 0.4) 100%);
     }
 
     .hero-content {

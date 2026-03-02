@@ -294,6 +294,10 @@ const SimulatorDash = (() => {
                 modal.style.zIndex = '99999';
                 modal.style.opacity = '1';
 
+                if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+                    window.uiManager.pushModalState('config-modal-overlay');
+                }
+
                 // Trigger initial render safely
                 let activeTarget = 'ENAM';
                 if (activeConfig) {
@@ -319,6 +323,9 @@ const SimulatorDash = (() => {
 
         // Close Modal
         const closeModal = () => {
+            if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+                window.uiManager.popModalState('config-modal-overlay');
+            }
             modal.classList.remove('active');
             modal.style.opacity = '0';
             modal.style.visibility = 'hidden';

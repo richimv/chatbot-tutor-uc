@@ -2,19 +2,19 @@
 :root {
     /* Tema Profesional "Slate" (Dark Mode by Default) */
 
-    /* Core Palette - Slate Scale */
-    --bg-main: #0f172a;
-    /* Slate 900 */
-    --bg-secondary: #1e293b;
-    /* Slate 800 */
-    --bg-tertiary: #334155;
-    /* Slate 700 */
+    /* Core Palette - Dark Matte Scale */
+    --bg-main: #141414;
+    /* Manta Black Match Footer */
+    --bg-secondary: #0a0a0a;
+    /* Extra Dark */
+    --bg-tertiary: #1f1f1f;
+    /* Dark Surface */
 
     /* Surfaces */
-    --surface: #1e293b;
-    --surface-hover: #334155;
-    --card-bg: #1e293b;
-    --modal-bg: #0f172a;
+    --surface: #141414;
+    --surface-hover: #1f1f1f;
+    --card-bg: #141414;
+    --modal-bg: #0a0a0a;
 
     /* Accents - Trustworthy Blue */
     --primary: #3b82f6;
@@ -34,9 +34,9 @@
     --text-inverse: #ffffff;
 
     /* Borders */
-    --border-color: #334155;
-    /* Slate 700 */
-    --border-hover: #475569;
+    --border-color: #2a2a2a;
+    /* Dark subtle border */
+    --border-hover: #3a3a3a;
     /* Slate 600 */
 
     /* Functional Colors */
@@ -87,6 +87,21 @@
     --accent-bright: var(--primary-light);
     --accent-hover: var(--primary-hover);
     --accent-dark: rgba(59, 130, 246, 0.1);
+
+    /* ✅ Manta-style Edge-to-Edge Layout */
+    --page-padding-x: 1rem;
+}
+
+@media (min-width: 768px) {
+    :root {
+        --page-padding-x: 4%;
+    }
+}
+
+@media (min-width: 1600px) {
+    :root {
+        --page-padding-x: 8%;
+    }
 }
 
 * {
@@ -230,15 +245,9 @@ h6 {
     background: var(--border-hover);
 }
 
-/* Global Animations */
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(100%);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Container principal (Unified Layout) */
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md) var(--page-padding-x);
 }

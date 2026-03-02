@@ -12,13 +12,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Styles -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/modal.css">
     <!-- Inline CSS for specific restoration to ensure override -->
     <!-- Inline CSS for specific restoration to ensure override -->
     <style>
         :root {
-            --bg-deep: #050b14;
-            --card-bg: #0f172a;
+            --bg-deep: #141414;
+            --card-bg: #1f1f1f;
             --accent-purple: #8b5cf6;
             --accent-blue: #3b82f6;
             --text-main: #f8fafc;
@@ -32,7 +35,7 @@
         body {
             background-color: var(--bg-deep);
             background-image:
-                radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%),
+                radial-gradient(circle at 50% 0%, #1f1f1f 0%, transparent 60%),
                 radial-gradient(circle at 10% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
             color: var(--text-main);
             font-family: 'Outfit', sans-serif;
@@ -46,7 +49,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem 2rem;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(20, 20, 20, 0.85);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -95,10 +98,10 @@
 
         /* MAIN LAYOUT (LOBBY) */
         .lobby-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 1.5rem 2rem;
-            /* REDUCED SPACING */
+            padding: 1.5rem var(--page-padding-x);
+            /* REDUCED SPACING, UNIFIED MARGINS */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -152,7 +155,7 @@
 
         .custom-input {
             width: 100%;
-            background: #1e293b;
+            background: #2a2a2a;
             border: 1px solid #334155;
             color: white;
             padding: 1rem;
@@ -173,7 +176,7 @@
         }
 
         .diff-card {
-            background: #1e293b;
+            background: #2a2a2a;
             border: 2px solid transparent;
             border-radius: 12px;
             padding: 1.5rem;
@@ -283,13 +286,13 @@
         }
 
         .stat-box {
-            background: #0f172a;
+            background: #1f1f1f;
             border-radius: 12px;
             padding: 1rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-            border: 1px solid #1e293b;
+            border: 1px solid #2a2a2a;
         }
 
         .stat-icon {
@@ -318,7 +321,7 @@
 
         /* HUD */
         .hud-bar {
-            background: #0f172a;
+            background: #1f1f1f;
             padding: 1rem 2rem;
             border-radius: 50px;
             display: flex;
@@ -340,7 +343,7 @@
             flex-grow: 1;
             margin: 0 2rem;
             height: 10px;
-            background: #1e293b;
+            background: #2a2a2a;
             border-radius: 10px;
             overflow: hidden;
         }
@@ -361,7 +364,7 @@
         }
 
         .p-btn {
-            background: #1e293b;
+            background: #2a2a2a;
             border: none;
             width: 40px;
             height: 40px;
@@ -403,7 +406,7 @@
         }
 
         .q-meta {
-            background: #1e293b;
+            background: #2a2a2a;
             color: #94a3b8;
             padding: 5px 15px;
             border-radius: 20px;
@@ -429,7 +432,7 @@
         }
 
         .opt-btn {
-            background: #1e293b;
+            background: #2a2a2a;
             border: 1px solid #334155;
             padding: 1.5rem;
             border-radius: 16px;
@@ -458,7 +461,7 @@
         }
 
         .feedback-card {
-            background: #1e293b;
+            background: #2a2a2a;
             padding: 3rem;
             border-radius: 24px;
             text-align: center;
@@ -559,16 +562,24 @@
     </style>
 </head>
 
-<body>
+<body class="hero-hidden">
 
     <!-- Header -->
-    <header class="arena-header">
-        <a href="/" class="arena-logo" title="Volver al inicio">
-            <i class="fas fa-gamepad" style="font-size: 2rem;"></i>
-        </a>
-        <div class="user-controls">
-            <span class="user-name" id="userNameDisplay">Cargando...</span>
-            <a href="/" class="btn-exit"><i class="fas fa-sign-out-alt"></i> Salir</a>
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Tutor Académico</span>
+            </a>
+            <a href="/" id="header-back-btn" class="header-back-btn">
+                <i class="fas fa-arrow-left"></i> <span>Volver</span>
+            </a>
+        </div>
+        <div class="header-nav">
+
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
         </div>
     </header>
 
@@ -704,6 +715,57 @@
             </button>
         </div>
     </div>
+
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Col 1 -->
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
+            </div>
+            <div class="footer-socials">
+                <a href="https://www.facebook.com/profile.php?id=61586735506660" target="_blank"
+                    rel="noopener noreferrer" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="https://www.instagram.com/hubacademia_" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@hub.academia" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Logic -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

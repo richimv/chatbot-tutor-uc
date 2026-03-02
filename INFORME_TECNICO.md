@@ -693,3 +693,36 @@ Se incorporó un `input type="search"` que filtra síncronamente los arrays carg
 ### 22.4 Solución de Fallas Estructurales de UI (CSS Overlaps)
 - **Desbordamiento del Explorador de Mazos:** Los nombres de los sub-mazos anidados no se truncan cortando el texto. El panel lateral (`.explorer-sidebar`) ahora ostenta `overflow-x: auto` con fondos Flex elásticos que expanden su horizonte según la profundidad del nivel del árbol.
 - **Bug Fatal del Menú Desplegable:** El menú principal superior ("Cerrar Sesión") se veía tapado por las tarjetas secundarias a causa de la propiedad `backdrop-filter` (Glassmorphism) que forzaba un nuevo contexto de apilamiento en el HTML. Se aplicó `position: relative` interconstruido con `z-index: 2147483647` al header principal, aislando al menú de cualquier conflicto z-index en la aplicación.
+
+---
+
+## 23. 🎨 Mega-Refactorización Visual y Comportamental (UI/UX Absoluta)
+
+Para consolidar a **Hub Academia** como una plataforma EdTech de rango Premium, se realizó una reestructuración dramática de las reglas CSS globales, layouts responsivos y mecánicas emergentes (Modales) a través de todos los módulos.
+
+### 23.1. Layout "True Edge-to-Edge" y Eliminación de Cajas Duras
+Históricamente, los contenedores principales (`.main-container`, `.dashboard-container`) estaban restringidos por un bloqueo máximo de `1200px` (`max-width: 1200px`), provocando que subpáginas como el Buscador o Cursos se vieran truncadas o atrapadas en el medio de monitores grandes.
+- **Liberación Absoluta:** Se erradicaron estas limitantes rígidas de `search.css`, `course.css` y `dashboard.css`. Todos los contenedores respiran horizontalmente al **100% de la pantalla**, limitados armónicamente por la variable fluida `--page-padding-x`.
+- **Headers/Footers Aislados (Single Source of Truth):** Se identificó que vistas internas críticas (ej. Simulador Médico, Editor de Mazos) poseían cabeceras `<header>` codificadas directamente (`<header class="header-glass">`), causando diseños asimétricos. Fueron purgados e inyectadós con los bloques universales `<header class="main-header">` y `<footer class="main-footer">`.
+
+### 23.2. Formulación Geométrica Estricta en Cuadrículas
+- **El 6x3 Grid:** En listados panorámicos enormes (Ej. Pestañas Biblioteca y Cursos), CSS *Grid Auto-Fill* variaba impredeciblemente tamaños de libros perdiendo la estética. En Escritorio, el `browse.css` restringe la exhibición a exactamente **6 columnas inquebrantables**. En dispositivos móviles (Smartphones), la proporción es forzada milimétricamente a **3 columnas verticales**, garantizando que las portadas tengan la perfecta silueta tipo *Spotify* o *Netflix*.
+- **Cierre Semántico de Recursos:** Los tópicos de separación ya no tienen márgenes inmensos abajo (`marginBottom: 0.25rem`), lo que empalma visualmente las portadas de los recursos directamente bajo su temática, condensando drásticamente el uso visual de pantalla e impidiendo la necesidad de `scroll` interminable al alumno.
+
+### 23.3. Tema "Manta Black" (Erradicación del Slate Residual)
+Originalmente, el dashboard principal ostentaba un profundo Negro Mate (`#141414`), pero módulos independientes como el **Quiz Arena**, la interfaz del **Examen Simulado** (`quiz.html`), y el Repaso (`flashcards.html`) mantenían variables duras nativas heredadas de esquemas grises azulados pasados (*Slate*: `#0f172a`, `#1e293b`).
+- **Inyección Acromática:** Se ejecutó una purga del espectro azul en `quiz.css`, `dashboard.css` y `components.css`. 
+- **Fondo Global (Main):** Estandarizado implacablemente a `--bg-main: #141414`.
+- **Elevación de Superficies (Cards/Modals):** Modificado a `--bg-tertiary: #1f1f1f`.
+- **Bordes Invisibles:** Transiciones azules (`#334155`) neutralizadas a `rgba(255, 255, 255, 0.05)`, fusionándose enteramente en la oscuridad armónica dictada inicialmente por el *footer*.
+
+### 23.4. Motor Interactivo API "PopState" (Back-Button UX)
+El fallo técnico más frustrante en *Mobile Web Apps* es perder la página entera cuando el usuario despliega un menú modal y presiona el gesto "Atrás" en Android, ocasionando que retroceda la historia de navegación del navegador en lugar de solo ocultar la ventana.
+- **Inyección Histórica Transversal:** `uiManager.js` fue fortificado con dos comandos: `pushModalState` y `popModalState`.
+- **Registro Ficticio:** Cada vez que el motor abre el Paywall, el modal Generador IA de Flashcards, o el Configurador Crítico de Simulacros, empuja un "estado oculto" (`window.history.pushState`) al navegador de internet. 
+- **Interceptación Segura:** El listener central `handlePopState` entra en acción cuando el usuario ejecuta físicamente el "Volver". Dicho comando identifica modales vivos por su ID en el `openModals Set` y remueve sus trazos (sean `style.display="none"` o `.classList.remove('active')`) cerrándolos instantáneamente sin expulsar al usuario fuera de su progreso formativo. 
+
+### 23.5. Apilamiento Universal Z-Index (Z-Stack Bug)
+Inesperadamente, menús descolgables nativos del Header (Ej. Caja de Cuenta de Usuario) colapsaban al desplegarse solapados por Cajas Modales gigantescas (Ej. "Suscríbete" u "Opinión IA"), creando la imposibilidad gráfica de interactuar si el usuario ignoraba dicho modal. 
+- **Cálculo Físico Definitivo:** En lugar de malabares de 1000 en 1000, los Modales y overlays transparentes ostentan rigidez matemática extrema: `z-index: 2147483647;`.
+- **Evasión Contextual:** Para contrarrestar apilamiento irresoluble del HTML (`stacking context`), el nav-bar decreció forituitamente a `z-index: 999;` brindándole prioridad absoluta a modales de importancia crítica transversalmente para salvar flujos de transaccionalidad interrumpidos en Desktop y Mobile.

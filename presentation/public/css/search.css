@@ -1,9 +1,4 @@
-/* Container principal */
-.main-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--spacing-md);
-}
+/* Container rules moved completely to base.css unification */
 
 /* Hero section wrapper for positioning */
 .hero-wrapper {
@@ -25,12 +20,7 @@
         /* Reduced from 2rem */
     }
 
-    .main-container {
-        padding: 0.75rem 0.5rem !important;
-        /* Espaciado ultra-compacto lateral */
-        padding-top: 0 !important;
-        /* Pull content up */
-    }
+    /* Mobile constraints handled by base.css var(--page-padding-x) responsive rules now */
 
     /* ✅ ALIGN: Search matches Mobile Header (42px) */
     body.hero-hidden .search-section {
@@ -420,9 +410,106 @@ body.hero-hidden .search-subtitle {
 
 .recommendations-section {
     width: 100%;
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
+    margin-top: 0;
+    padding-top: 0;
+    /* Eliminamos lineas divisorias y espacios */
+}
+
+/* TABS CONTAINER (MANTA STYLE) */
+.manta-tabs-container {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0;
+    margin-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.manta-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    /* Gris apagado para inactivos */
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.8rem 0;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.manta-tab:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.manta-tab.active {
+    color: white;
+    /* Blanco encendido */
+}
+
+.manta-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    /* Superpone sobre el borde del contenedor */
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: white;
+    /* Línea inferior blanca de Manta */
+    border-radius: 3px 3px 0 0;
+}
+
+/* FILTERS CONTAINER (PILLS MANTA STYLE) */
+.manta-filters-container {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.manta-filters-container::-webkit-scrollbar {
+    display: none;
+}
+
+.manta-filter-pill {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-secondary);
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.manta-filter-pill:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.manta-filter-pill.active {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: white;
+    font-weight: 600;
+}
+
+/* GROUP TITLES (SUBTÍTULOS ESTILO MANTA) */
+.manta-group-title {
+    width: 100%;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: white;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    grid-column: 1 / -1;
+    /* Ocupar toda la fila en grillas */
 }
 
 .recommendations-container {
