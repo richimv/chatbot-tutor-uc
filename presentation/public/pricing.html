@@ -19,52 +19,73 @@
         <div id="pricing-content">
             <div class="pricing-header">
                 <h1>Desbloquea tu Potencial</h1>
-                <p>Únete a la plataforma de entrenamiento médico más avanzada.</p>
+                <p>Elige el plan que mejor se adapte a tu ritmo de estudio y accede a herramientas de IA médicas de
+                    vanguardia.</p>
             </div>
 
-            <div class="plan-card">
-                <h3 class="plan-title">Acceso Vitalicio</h3>
-                <div class="plan-price">S/ 9.90 <span>/ único</span></div>
+            <div class="pricing-cards-container">
+                <!-- Plan Básico -->
+                <div class="plan-card">
+                    <h3 class="plan-title">Plan Básico</h3>
+                    <div class="plan-price">S/ 9.90 <span>/ 2 meses</span></div>
 
-                <ul class="plan-benefits">
-                    <li>
-                        <i class="fas fa-check-circle"></i>
-                        <span><strong>Simulacros médicos ilimitados</strong> generados por IA (ENAM, Pre-Internado,
-                            Residentado).</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-check-circle"></i>
-                        <span><strong>Tutor IA ilimitado 24/7</strong> basado en Guías Clínicas y Normas Técnicas
-                            oficiales.</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-check-circle"></i>
-                        <span><strong>Flashcards con repaso espaciado</strong> (Creación automática desde tus
-                            errores).</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-check-circle"></i>
-                        <span><strong>Analítica de rendimiento avanzada</strong> (Radar Chart, diagnóstico IA y
-                            tendencias).</span>
-                    </li>
-                </ul>
+                    <ul class="plan-benefits">
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Simulador Médico</strong>
+                                (Exámenes)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Tutor IA Estándar</strong></span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Quiz Arena</strong> (5 partidas
+                                diarias)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Flashcards Manuales</strong>
+                                (Ilimitadas)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Flashcards IA</strong> (20 tarjetas por
+                                mes)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Análisis de tu Estadística</strong>
+                                (Estático)</span></li>
+                    </ul>
 
-                <button id="pay-button" class="btn-pay"> <!-- Mantenemos ID crítico -->
-                    Pagar con Mercado Pago <i class="fas fa-arrow-right"></i>
-                </button>
-
-                <div class="trust-badges">
-                    <div class="secure-text">
-                        <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
-                    </div>
-                    <div class="payment-logos">
-                        <i class="fab fa-cc-visa" title="Visa"></i>
-                        <i class="fab fa-cc-mastercard" title="Mastercard"></i>
-                        <!-- Icono genérico para Yape/Plin ya que FA no tiene, usamos mobile-alt como ref visual -->
-                        <i class="fas fa-mobile-alt" title="Yape/Plin"></i>
-                    </div>
+                    <button class="btn-pay plan-select-btn" data-plan="basic">
+                        Elegir Plan Básico <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
-            </div> <!-- End .plan-card -->
+
+                <!-- Plan Avanzado -->
+                <div class="plan-card highlighted-plan">
+                    <div class="recommended-badge">Recomendado</div>
+                    <h3 class="plan-title">Plan Avanzado</h3>
+                    <div class="plan-price">S/ 24.90 <span>/ 6 meses</span></div>
+
+                    <ul class="plan-benefits">
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Simulador Médico</strong>
+                                (Exámenes)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Tutor IA Pro (Thinking)</strong></span>
+                        </li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Quiz Arena</strong> (10 partidas
+                                diarias)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Flashcards Manuales</strong>
+                                (Ilimitadas)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Flashcards IA</strong> (100 tarjetas por
+                                mes)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span><strong>Análisis de tu Estadística</strong>
+                                (Diagnóstico
+                                IA Pro 1/mes)</span></li>
+                    </ul>
+
+                    <button class="btn-pay plan-select-btn" data-plan="advanced">
+                        Elegir Plan Avanzado <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div> <!-- End .pricing-cards-container -->
+
+            <div class="trust-badges" style="margin-top: 2rem;">
+                <div class="secure-text">
+                    <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
+                </div>
+                <div class="payment-logos">
+                    <i class="fab fa-cc-visa" title="Visa"></i>
+                    <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+                    <i class="fas fa-mobile-alt" title="Yape/Plin"></i>
+                </div>
+            </div>
         </div> <!-- End #pricing-content -->
 
         <!-- Contenido Premium (Oculto por defecto) -->

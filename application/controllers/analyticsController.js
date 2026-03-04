@@ -1,5 +1,21 @@
 const AnalyticsService = require('../../domain/services/analyticsService');
 const UserRepository = require('../../domain/repositories/userRepository'); // 1. Importar la CLASE del repositorio.
+const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
+
+// CONFIGURACIÓN VERTEX AI
+const project = process.env.GOOGLE_CLOUD_PROJECT;
+const location = process.env.GOOGLE_CLOUD_LOCATION;
+const vertex_ai = new VertexAI({ project: project, location: location });
+
+// Instancia Modelo PRO (Para Análisis de Patrones Clínicos)
+const modelPro = vertex_ai.preview.getGenerativeModel({
+    model: 'gemini-2.5-flash', // Flash / Pro (lo que use Thinking)
+    generationConfig: {
+        maxOutputTokens: 2048, // Un resumen estructurado
+        temperature: 0.3, // Análisis objetivo
+        responseMimeType: 'application/json'
+    },
+});
 
 class AnalyticsController {
     constructor(analyticsService, userRepository) { // 2. Recibir el repositorio en el constructor.
@@ -23,6 +39,7 @@ class AnalyticsController {
         this.getFeaturedCourses = this.getFeaturedCourses.bind(this); // NUEVO
         this.getAIAnalytics = this.getAIAnalytics.bind(this); // ✅ NUEVO: Bindeo para método de IA
         this.getHeatmap = this.getHeatmap.bind(this); // ✅ NUEVO: Heatmap
+        this.getAIDiagnostic = this.getAIDiagnostic.bind(this); // ✅ NUEVO: Diagnóstico Thinking
     }
 
     async getAnalytics(req, res) {
@@ -195,6 +212,77 @@ class AnalyticsController {
             res.status(500).json({ error: 'Error fetching heatmap' });
         }
     }
+
+    // ✅ NUEVO ESPACIO PENSANTE (Thinking API / Reasoning)
+    async getAIDiagnostic(req, res) {
+        try {
+            const userId = req.user.id;
+            const { stats } = req.body; // Llega cacheado desde el front (radar_data, avg_score, accuracy)
+
+            if (!stats || !stats.radar_data) {
+                return res.status(400).json({ error: 'Faltan datos estadísticos para analizar.' });
+            }
+
+            console.log(`🧠 [THINKING] Generando diagnóstico clínico para el usuario ${userId}...`);
+
+            // Prompt analítico (Rol: Tutor Jefe de Residentes)
+            const prompt = `
+            Actúa como un Tutor Médico experto (Jefe de Residentes).
+            Analiza el siguiente historial reciente de un estudiante de medicina preparando sus exámenes de titulación:
+            
+            Nota Promedio: ${stats.avg_score} / 20
+            Precisión Global: ${stats.accuracy}%
+            Tarjetas Repasadas y Dominadas: ${stats.mastered_cards}
+            
+            RENDIMIENTO POR ÁREAS CLÍNICAS:
+            ${JSON.stringify(stats.radar_data, null, 2)}
+            
+            TAREA:
+            Genera un diagnóstico preciso y directo de máximo 2 párrafos indicando en qué áreas es fuerte, y en cuáles DEBE reforzar su estudio para no jalar el examen. Usa un tono alentador pero estricto y profesional.
+            
+            JSON ESTRICTO:
+            {
+                "strengths": "Texto HTML crudo con puntos fuertes (ej. <strong>Cardiología:</strong> Buen manejo de ECG...).",
+                "weaknesses": "Texto HTML crudo con debilidades críticas resaltadas (ej. <strong>Pediatría:</strong> Urge repasar inmunizaciones...)"
+            }
+            `;
+
+            const result = await modelPro.generateContent(prompt);
+            const text = result.response.candidates[0].content.parts[0].text;
+
+            let diagnostic;
+            try {
+                diagnostic = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+
+                // 💸 DESCONTAR LÍMITE (Thinking Token) - SOLO SI EL PARSEO FUE EXITOSO
+                try {
+                    const db = require('../../infrastructure/database/db');
+                    if (req.usageType) {
+                        await db.query(
+                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                            [userId]
+                        );
+                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (THINKING EXITOSO)`);
+                    }
+                } catch (limitErr) {
+                    console.error("⚠️ No se pudo actualizar el límite Thinking. Continuando...", limitErr);
+                }
+
+            } catch (err) {
+                console.error("❌ Fallo parseando el JSON del Diagnóstico", err);
+                diagnostic = {
+                    strengths: "Tus datos base son sólidos, sigue practicando.",
+                    weaknesses: "Hubo un pequeño error procesando tus áreas débiles, intenta más tarde. (No se consumió cuota)"
+                };
+            }
+
+            res.json({ success: true, ...diagnostic });
+
+        } catch (error) {
+            console.error('❌ Error en getAIDiagnostic:', error);
+            res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
+        }
+    }
 }
 
-module.exports = AnalyticsController; // ✅ CORRECCIÓN: Exportar la clase, no la instancia.
+module.exports = AnalyticsController;

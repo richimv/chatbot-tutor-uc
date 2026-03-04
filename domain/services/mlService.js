@@ -142,7 +142,7 @@ class MLService {
         console.log(`🤖 MLService: Generando respuesta con LLM para: ${message}`);
 
         // Usar los repositorios pasados como argumentos.
-        const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet } = dependencies;
+        const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet, userTier } = dependencies;
 
         // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite)
         let contextInjection = "";
@@ -266,15 +266,27 @@ class MLService {
 
         // 📚 RAG VECTORIAL: Búsqueda semántica en documentos médicos vectorizados
         // (Harrison, NTS, RM, Leyes, CTO, AMIR, Washington, etc.)
-        try {
-            const RagService = require('./ragService');
-            const ragResults = await RagService.searchContext(message, 4);
-            if (ragResults && ragResults.trim().length > 0) {
-                contextInjection += `\n[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]\n${ragResults}\n[FIN CONTEXTO RAG]\n`;
-                console.log(`📚 RAG Chat: Inyectados ${ragResults.length} caracteres de contexto médico vectorial.`);
+        const isAdvanced = userTier === 'advanced' || userTier === 'elite' || userTier === 'admin';
+        let usedRAG = false;
+
+        if (isAdvanced && !dependencies.disableRAG) {
+            try {
+                const RagService = require('./ragService');
+                const ragResults = await RagService.searchContext(message, 4);
+                if (ragResults && ragResults.trim().length > 0) {
+                    contextInjection += `\n[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]\n${ragResults}\n[FIN CONTEXTO RAG]\n`;
+                    console.log(`📚 RAG Chat: Inyectados ${ragResults.length} caracteres de contexto médico vectorial.`);
+                    usedRAG = true; // Flag Activa para cobrar Token Pesado al usuario
+                }
+            } catch (ragError) {
+                console.warn("⚠️ RAG vectorial no disponible para Chat (continuando sin él):", ragError.message);
             }
-        } catch (ragError) {
-            console.warn("⚠️ RAG vectorial no disponible para Chat (continuando sin él):", ragError.message);
+        } else {
+            if (dependencies.disableRAG) {
+                console.log(`🚫 RAG Vectorial Omitido: Usuario Nivel '${userTier}' excedió la cuota mensual de Thinking/RAG.`);
+            } else {
+                console.log(`🚫 RAG Vectorial Bloqueado: Usuario nivel '${userTier}' no tiene acceso a RAG.`);
+            }
         }
 
         try {
@@ -496,6 +508,7 @@ class MLService {
             }
 
             parsedResult = this._validateResponseWithLocalKB(parsedResult, knowledgeBaseSet);
+            parsedResult.usedRAG = usedRAG;
             return parsedResult;
 
         } catch (error) {
@@ -503,7 +516,8 @@ class MLService {
             return {
                 intencion: 'error_general',
                 confianza: 1.0,
-                respuesta: 'Lo siento, estoy teniendo problemas para conectarme con mi cerebro de IA en este momento. Por favor, intenta de nuevo en unos instantes.'
+                respuesta: 'Lo siento, estoy teniendo problemas para conectarme con mi cerebro de IA en este momento. Por favor, intenta de nuevo en unos instantes.',
+                usedRAG: false
             };
         }
     }
@@ -565,6 +579,94 @@ class MLService {
     }
 
 
+
+    /**
+     * ✅ NUEVO: Generador RAG de Preguntas para el Banco (Admin)
+     */
+    static async generateRAGQuestions(target, difficulty, domain) {
+        console.log(`🤖 MLService: Iniciando Generación RAG Administrativa -> Target: ${target}, Diff: ${difficulty}, Domain: ${domain}`);
+        try {
+            const RagService = require('./ragService');
+            // 1. Extraer contexto (5 chunks) de la BD nativa
+            // 1. Extraer contexto (mayor densidad para abarcar libros y normas) de la BD nativa
+            // Modificamos el query RAG para que fuerce la búsqueda en normas, libros y guías
+            const queryVectorial = `Conceptos médicos, guías clínicas, normas técnicas, leyes y preguntas de ${domain} para ${target} dificultad ${difficulty}`;
+            const ragContext = await RagService.searchContext(queryVectorial, 12); // Subimos de 5 a 12 fragmentos para obtener más variedad
+
+            // 2. Instanciar Gemini forzando salida JSON y subiendo la temperatura para mayor variedad
+            const jsonModel = vertex_ai.preview.getGenerativeModel({
+                model: 'gemini-2.5-flash',
+                generationConfig: {
+                    maxOutputTokens: 8192,
+                    temperature: 0.7, // 0.7 para asegurar alta variedad y evitar duplicados genéricos
+                    responseMimeType: "application/json" // Fuerza salida JSON estricta
+                }
+            });
+
+            // 2.5. Definir reglas específicas del target y la dificultad
+            let targetRules = "";
+            if (target === "ENAM") {
+                targetRules = "Enfoque: 'El Médico de Posta' para su SERUMS. Clínica general, fisiopatología, diagnóstico clásico. Debe incluir Normas Técnicas (NTS) básicas de Salud Pública (Vacunas, TB, Materno-Perinatal, MAIS-BFC) y Certificado de Defunción. OBLIGATORIO: Generar 4 opciones.";
+            } else if (target === "PRE-INTERNADO") {
+                targetRules = "Enfoque: 'Seguridad del Paciente'. Categorización de establecimientos (I-1 al III-2), triaje, Consentimiento Informado. Ciencias básicas aplicadas (ej. anatomía de fracturas). OBLIGATORIO: Generar 4 opciones.";
+            } else if (target === "RESIDENTADO") {
+                targetRules = "Enfoque: 'El Médico Científico/Gerente'. Especialidad avanzada: diagnóstico diferencial exhaustivo, Gold Standard, tratamiento de 2da/3ra línea. Investigación: RR, OR, sesgos. Gestión: Ishikawa, FODA. 90% DEBEN SER CASOS CLÍNICOS. OBLIGATORIO: Generar 5 opciones.";
+            }
+
+            let diffRules = "";
+            if (difficulty === "Básico") {
+                diffRules = "Evalúa memoria pura: etiologías, definiciones, mecanismos. Ejemplo: '¿Cuál es el agente causal de la sífilis?'";
+            } else if (difficulty === "Intermedio") {
+                diffRules = "Evalúa análisis clínico: viñetas diagnósticas. Ejemplo: 'Caso con fiebre + manchas → pedir diagnóstico'.";
+            } else if (difficulty === "Avanzado") {
+                diffRules = "Evalúa toma de decisiones: manejo terapéutico, excepciones. Ejemplo: 'Tratamiento alternativo en alérgico a 1ra línea'.";
+            }
+
+            // 3. System Prompt Reforzado
+            const prompt = `
+            Eres un experto catedrático creador de exámenes médicos de altísimo nivel para Perú. Genera exactamente 20 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
+            
+            - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
+            - Nivel de Dificultad: ${difficulty} -> EXIGENCIA COGNITIVA: ${diffRules}
+            - Áreas/Especialidades Seleccionadas: ${domain} (Distribuye las 20 preguntas equilibradamente entre estas áreas, mezclando temas transversales si es posible).
+
+            INSTRUCCIONES CRÍTICAS SOBRE EL CONTEXTO:
+            - Abajo recibirás fragmentos mixtos de la BD Documental. Estos incluyen: Exámenes Pasados, Libros Base (Harrison, Washington), Manuales de Resumen (CTO, AMIR), Normas Técnicas del MINSA, Guías de Práctica Clínica y Leyes Peruanas en Salud.
+            - DEBES extraer la información clínica de estos fragmentos para redactar las preguntas.
+            - REQUISITO ANTI-DUPLICACIÓN: Crea casos clínicos únicos, cruza variables de edad, sexo y sintomatología clínica. Evita a toda costa preguntas genéricas (ej. "¿Cuál es la causa más frecuente de X?"). Elabora preguntas de nicho para garantizar que no existan duplicados en nuestra base de datos.
+            - REQUISITO TRAMPAS EXÁMENES (DISTRACTORES): Las opciones incorrectas DEBEN ser sumamente plausibles (distractores y trampas comunes). No hagas que la respuesta correcta sea evidente pónsela muy difícil. El médico evaluado debe dudar y afilar su análisis. La explicación obligatoriamente debe detallar la respuesta correcta y por qué la trampa aparente es falsa.
+            
+            CONTEXTO OFICIAL RECUPERADO DE LA BD RAG:
+            ${ragContext || "No hay contexto alojado. Usa conocimiento médico general oficial del Perú (MINSA/EsSalud)."}
+
+            REGLAS ESTRICTAS DEL JSON:
+            Devuelve un ARRAY DE OBJETOS JSON puros. NO incluyas markdown, solo el array [ {...}, {...} ].
+            Estructura EXACTA de cada objeto:
+            {
+              "question_text": "Texto completo del caso clínico o pregunta.",
+              "options": ["Opción A", "Opción B", "Opción C", "Opción D"], // Genera 4 o 5 opciones dependiendo del PERFIL DEL EXAMEN (Target).
+              "correct_option_index": 0, // Índice de la respuesta correcta (obliga que sea de 0 a (N-1) )
+              "explanation": "Explicación académica fundamentada en libros o normas técnicas.",
+              "domain": "ESPECIFICAR_EL_AREA_USADA_AQUI", // (Ej. Pediatría, o Cirugía General, debe pertenecer a las áreas solicitadas)
+              "target": "${target}",
+              "topic": "Nombre del tema o subtema específico (Ej. Preeclampsia, Asma)",
+              "difficulty": "${difficulty}",
+              "image_url": ""
+            }
+            `;
+
+            const result = await jsonModel.generateContent(prompt);
+            const responseText = result.response.candidates[0].content.parts[0].text;
+
+            const questions = JSON.parse(responseText);
+            console.log(`✅ MLService: Lote RAG generado con éxito (${questions.length} preguntas)`);
+            return questions;
+
+        } catch (error) {
+            console.error('❌ Error crítico en Generación RAG Administrativa:', error);
+            throw error;
+        }
+    }
 
     static async trainModel() {
         console.warn('⚠️ El entrenamiento del modelo local ya no es necesario con la nueva arquitectura LLM.');

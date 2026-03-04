@@ -157,7 +157,7 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
 
     Las áreas son idénticas para los 3 tipos de examen. Lo que cambia es el estilo del prompt de IA y las directrices de generación.
 
-    **UX del Modal:** Renderizado dinámico con sub-headers azules por grupo, scrollable (`max-height: 85vh`). Tooltip de primera visita (15s) + efecto neón pulsante en el botón "Configurar Examen" hasta que el usuario guarde una configuración.
+    **UX del Modal:** Renderizado dinámico con sub-headers por grupo, scrollable (`max-height: 85vh`). Tooltip de primera visita (15s) + efecto neón pulsante en el botón "Configurar Examen" hasta que el usuario guarde una configuración.
 
 #### C. Lógica de Generación Híbrida (TrainingService v2.0)
 Estrategia costo-eficiente para generar contenido infinito y altamente preciso usando Inteligencia Artificial Agéntica:

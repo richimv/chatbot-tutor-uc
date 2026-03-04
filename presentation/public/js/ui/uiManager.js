@@ -766,15 +766,15 @@ class UIManager {
                                 <li style="margin-bottom: 10px; display: flex; align-items: start; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
                                     <div>
-                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Pases Premium de Regalo</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea recursos, videos y el Tutor IA.</div>
+                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Pases de Vidas Globales</strong>
+                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea simulacros, retos de Arena, Tutor IA y más.</div>
                                     </div>
                                 </li>
                                 <li style="margin-bottom: 0; display: flex; align-items: start; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
                                     <div>
-                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Partidas de Quiz Diarias</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Pon a prueba tus conocimientos cada 24h.</div>
+                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">Estadísticas en Tiempo Real</strong>
+                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Mide tu rendimiento clínico y académico instantáneamente.</div>
                                     </div>
                                 </li>
                             </ul>

@@ -21,6 +21,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         return; // Detener inicialización normal para evitar logueo silencioso
     }
 
+    // ✅ 0.5 INTERCEPTAR RETORNO DE PAGO EXITOSO
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+        console.log('🎉 Retorno de Pago Exitoso Detectado.');
+
+        // Limpiamos la URL por estética sin recargar la página
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Obligamos al App a volver a descargar sus privilegios (Pasa de Pending a Active)
+        setTimeout(async () => {
+            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                await window.sessionManager.validateSession();
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<span style="color: #ffd700; font-weight:800;">¡Pago Procesado con Éxito!</span>',
+                    html: '<p style="color:#cbd5e1;">Tu Cuenta se ha actualizado a Premium. Tus limites se han restablecido. ¡A estudiar sin límites!</p>',
+                    icon: 'success',
+                    background: 'rgba(20,20,20,0.95)',
+                    confirmButtonText: 'Genial, gracias'
+                });
+            } else {
+                alert('¡Pago procesado con éxito! Tu cuenta ahora es Premium.');
+            }
+        }, 1200); // Pequeño delay de 1.2s para dar tiempo al Webhook a escribir en la DB
+    }
+
     // ✅ TRACKING AUTOMÁTICO DE VISTAS (Career / Course)
     try {
         if (window.AnalyticsApiService) {

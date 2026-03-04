@@ -251,7 +251,44 @@ const DeckDetails = (() => {
     }
 
     // --- AI Generation ---
-    function openAiModal() {
+    // Función interna para chequear límite global o mensual sin gastarlos
+    async function checkUsageLimit() {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`${window.AppConfig.API_URL}/api/usage/check-ai-limits`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                return true;
+            } else if (res.status === 403) {
+                if (data.reason === 'FREE_LIVES_EXHAUSTED') {
+                    if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                        window.uiManager.showPaywallModal();
+                    } else {
+                        alert(data.error || 'Has agotado tus vidas de Prueba.');
+                    }
+                } else {
+                    showLimitModal(data.error || 'Has agotado tus tarjetas mensuales. Mejora tu plan.');
+                }
+                return false;
+            } else {
+                return true; // Fail open for other weird errors
+            }
+        } catch (err) {
+            console.error('Error verificando límites globales (Red):', err);
+            return true; // Fail open
+        }
+    }
+
+    async function openAiModal() {
+        const allowed = await checkUsageLimit();
+        if (!allowed) return;
+
         document.getElementById('ai-topic').value = '';
         document.getElementById('ai-loading').style.display = 'none';
         document.getElementById('ai-modal').classList.add('active');
@@ -275,23 +312,67 @@ const DeckDetails = (() => {
                 body: JSON.stringify({ topic })
             });
 
-            const data = await res.json();
-
-            if (data.success) {
+            if (res.ok) {
+                const data = await res.json();
                 document.getElementById('ai-modal').classList.remove('active');
                 await loadCards(); // Refresh list associated with deck
                 await loadDeckInfo(); // Refresh counts
-                alert(`✨ ¡Éxito! Se generaron ${data.count} tarjetas sobre "${topic}".`);
+
+                // Mostrar alerta bonita de éxito en vez del window.alert si está disponible
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Tarjetas Generadas!',
+                        text: `Se generaron ${data.count} tarjetas sobre "${topic}".`,
+                        background: 'rgba(20, 20, 20, 0.95)',
+                        confirmButtonText: 'Genial'
+                    });
+                } else {
+                    alert(`✨ ¡Éxito! Se generaron ${data.count} tarjetas sobre "${topic}".`);
+                }
+            } else if (res.status === 403) {
+                const data = await res.json().catch(() => ({}));
+                document.getElementById('ai-modal').classList.remove('active');
+                showLimitModal(data.error || 'Has agotado tus tarjetas mensuales. Mejora tu plan.');
             } else {
-                alert('Error: ' + (data.error || 'No se pudo generar.'));
+                const errorData = await res.json().catch(() => ({}));
+                document.getElementById('ai-modal').classList.remove('active');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error del Servidor', errorData.error || 'Hubo un fallo generando las tarjetas. Intenta de nuevo.', 'error');
+                } else {
+                    alert('Error al generar tarjetas: ' + (errorData.error || 'Fallo desconocido'));
+                }
             }
 
         } catch (error) {
-            console.error(error);
-            alert('Error de conexión con la IA.');
+            console.error('Network Error AI Cards:', error);
+            document.getElementById('ai-modal').classList.remove('active');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor. Revisa tu internet.', 'error');
+            } else {
+                alert('Error de conexión al generar la IA.');
+            }
         } finally {
             document.getElementById('ai-loading').style.display = 'none';
         }
+    }
+
+    // Modal helpers genéricos
+    function showLimitModal(msg) {
+        if (document.getElementById('custom-limit-modal')) return;
+        const modalHtml = `
+            <div class="modal-overlay" id="custom-limit-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; justify-content:center; align-items:center; background:rgba(15,23,42,0.85); z-index:9999; opacity:1 !important; visibility:visible !important;">
+                <div class="modal-content" style="background:#1e293b; padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+                    <div style="margin-bottom:1.5rem;">
+                        <i class="fas fa-exclamation-circle" style="font-size:3rem; color:#f87171;"></i>
+                    </div>
+                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main);">Límite Alcanzado</h2>
+                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
+                    <button class="btn-action" style="background:#3b82f6; color:white; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="document.getElementById('custom-limit-modal').remove()">Entendido</button>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
     return {

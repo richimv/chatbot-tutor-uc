@@ -160,6 +160,25 @@ body.quiz-body {
     }
 }
 
+/* Custom SweetAlert Glassmorphism (Cyberpunk Dark) */
+.swal-glass-popup {
+    background: rgba(20, 20, 20, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+    padding: 2.5rem 2rem !important;
+}
+
+.swal-glass-popup .swal2-title {
+    color: #f8fafc !important;
+}
+
+.swal-glass-popup .swal2-html-container {
+    color: #cbd5e1 !important;
+}
+
 /* Results Modal (Premium) */
 .results-overlay {
     position: fixed;

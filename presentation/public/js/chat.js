@@ -465,12 +465,21 @@ class ChatComponent {
 
                 // ✅ NUEVO: Manejo de Soft Block (Límite alcanzado)
                 if (response.status === 403) {
-                    // Verificamos si es un error de Paywall (Limit Reached)
+                    // Verificamos si es un error de Paywall (Limit Reached para Nativos/Trials)
                     if (data && data.paywall) {
                         this.hideTypingIndicator();
                         window.uiManager.showPaywallModal();
                         this.addMessage('🔒 Límite de prueba alcanzado. Actualiza tu plan para continuar.', 'bot');
                         return;
+                    }
+
+                    // ✅ EXCEPCIÓN ELEGANTE PARA LÍMITES DIARIOS (Basic/Advanced)
+                    // Si el backend mandó un mensaje de error limpio por agotamiento, lo lanzamos
+                    // con un identificador especial para que el catch no le ponga "Error HTTP".
+                    if (data && data.error) {
+                        const limitError = new Error(data.error);
+                        limitError.isLimitReached = true;
+                        throw limitError;
                     }
                 }
 
@@ -524,21 +533,25 @@ class ChatComponent {
             this.hideTypingIndicator();
 
             // ✅ MENSAJE DE ERROR ESPECÍFICO
-            let errorMessage = '❌ ';
-
-            if (error.message.includes('Timeout')) {
-                errorMessage += 'El servidor tardó demasiado en responder. ';
-            } else if (error.message.includes('400')) {
-                errorMessage += 'Error en la solicitud al servidor. ';
-            } else if (error.message.includes('HTTP')) {
-                errorMessage += `Error del servidor: ${error.message}. `;
+            if (error.isLimitReached) {
+                // Mensaje limpio y elegante del Tutor
+                this.addMessage(`⚠️ ${error.message}`, 'bot');
             } else {
-                errorMessage += 'Error de conexión. ';
+                let errorMessage = '❌ ';
+
+                if (error.message.includes('Timeout')) {
+                    errorMessage += 'El servidor tardó demasiado en responder. ';
+                } else if (error.message.includes('400')) {
+                    errorMessage += 'Error en la solicitud al servidor. ';
+                } else if (error.message.includes('HTTP')) {
+                    errorMessage += `Error del servidor: ${error.message}. `;
+                } else {
+                    errorMessage += 'Error de conexión. ';
+                }
+
+                errorMessage += 'Por favor, intenta nuevamente.';
+                this.addMessage(errorMessage, 'bot');
             }
-
-            errorMessage += 'Por favor, intenta nuevamente.';
-
-            this.addMessage(errorMessage, 'bot');
         } finally {
             // ✅ RESTABLECER ESTADO
             this.isSending = false;

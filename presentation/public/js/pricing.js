@@ -89,47 +89,55 @@ function logout() {
     }
 }
 
-document.getElementById('pay-button').addEventListener('click', async () => {
-    // ✅ CORRECCIÓN: Obtener el token correctamente
-    const token = localStorage.getItem('authToken');
+// ✅ Lógica de Pago Multi-Plan
+document.querySelectorAll('.plan-select-btn').forEach(button => {
+    button.addEventListener('click', async (event) => {
+        // Obtenemos qué plan seleccionó el usuario desde el atributo data-plan
+        const selectedPlan = event.currentTarget.getAttribute('data-plan');
+        console.log("Iniciando pago para el plan:", selectedPlan);
 
-    // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
-    if (!token) {
-        window.location.href = 'login?redirect=pricing';
-        return;
-    }
+        // ✅ Obtener el token correctamente
+        const token = localStorage.getItem('authToken');
 
-    const loading = document.getElementById('loading-overlay');
-    loading.classList.remove('hidden');
-
-    try {
-        // ✅ Mantener lógica de conexión intacta
-        const response = await fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || 'Error al iniciar el pago');
+        // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
+        if (!token) {
+            window.location.href = 'login?redirect=pricing';
+            return;
         }
 
-        const data = await response.json();
+        const loading = document.getElementById('loading-overlay');
+        loading.classList.remove('hidden');
 
-        if (data.init_point) {
-            // Redirect to Mercado Pago logic
-            window.location.href = data.init_point;
-        } else {
-            alert('Error: No se recibió el link de pago.');
+        try {
+            // ✅ Enviar el planId en el body
+            const response = await fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ planId: selectedPlan })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error al iniciar el pago');
+            }
+
+            const data = await response.json();
+
+            if (data.init_point) {
+                // Redirect to Mercado Pago logic
+                window.location.href = data.init_point;
+            } else {
+                alert('Error: No se recibió el link de pago.');
+                loading.classList.add('hidden');
+            }
+
+        } catch (error) {
+            console.error("Error de pago:", error);
+            alert('Hubo un problema al conectar con el servidor de pagos. ' + error.message);
             loading.classList.add('hidden');
         }
-
-    } catch (error) {
-        console.error("Error de pago:", error);
-        alert('Hubo un problema al conectar con el servidor de pagos. ' + error.message);
-        loading.classList.add('hidden');
-    }
+    });
 });

@@ -72,24 +72,33 @@ class ChatController {
             // 3. Obtener el historial COMPLETO desde la BD para dar contexto a la IA.
             const conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
 
-            // --- LÓGICA ORIGINAL DE IA (MODIFICADA PARA USAR EL HISTORIAL DE LA BD) ---
+            // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---
+            const pool = require('../../infrastructure/database/db');
+            const userQuery = await pool.query('SELECT subscription_tier, monthly_thinking_usage FROM users WHERE id = $1', [userId]);
+            const userAct = userQuery.rows[0];
+            const tierLimits = { free: 0, basic: 0, advanced: 5 }; // Hardcode referencial a matriz de límites
+            const maxThinking = tierLimits[userAct.subscription_tier] || 0;
+            const hasThinkingQuota = userAct.monthly_thinking_usage < maxThinking;
+
+            // --- LÓGICA ORIGINAL DE IA (MODIFICADA PARA USAR EL HISTORIAL Y FILTROS) ---
             let classification;
             try {
                 const loadedKBSet = await this.knowledgeBaseRepo.load();
 
-                console.log('🤖 Intentando generar respuesta con LLM...');
+                console.log(`🤖 Intentando generar respuesta con LLM. Cuota Thinking Activa: ${hasThinkingQuota}`);
                 // Se pasa el historial obtenido de la base de datos.
                 classification = await this.mlService.classifyIntent(message, conversationHistory, {
                     knowledgeBaseRepo: this.knowledgeBaseRepo,
                     courseRepo: new CourseRepository(),
                     careerRepo: new CareerRepository(),
                     bookRepo: new BookRepository(),
-                    knowledgeBaseSet: loadedKBSet
+                    knowledgeBaseSet: loadedKBSet,
+                    userTier: req.userTier || 'free',
+                    disableRAG: !hasThinkingQuota // Bloquea silenciosamente RAG si no hay cuota, degradando la IA
                 });
                 console.log('✅ Respuesta de LLM recibida:', classification);
             } catch (mlError) {
                 console.error('❌ ERROR CRÍTICO llamando a mlService:', mlError);
-                // Si el servicio de ML falla por completo, devolvemos un error 500.
                 return res.status(500).json({ error: 'El servicio de IA no está disponible' });
             }
 
@@ -109,6 +118,26 @@ class ChatController {
                     isEducational,
                     userId, 'chatbot' // ✅ MEJORA: Especificar que la fuente es el chatbot.
                 );
+            }
+
+            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Híbrido: Standard vs Thinking)
+            try {
+                const pool = require('../../infrastructure/database/db');
+                // Si la IA empleó contexto RAG complejo, se cobrará de la cuota mensual Thinking (solo disponible para Avanzados)
+                // ✅ RESTRICCIÓN: Jamás sobrescribir si el Middleware dictó el consumo de una Vida Global Trial (usage_count)
+                if (classification && classification.usedRAG && req.usageType !== 'usage_count') {
+                    req.usageType = 'monthly_thinking_usage';
+                }
+
+                if (req.usageType) {
+                    await pool.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [userId]
+                    );
+                    console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
+                }
+            } catch (limitErr) {
+                console.error("⚠️ No se pudo actualizar el límite del usuario. Continuando igualmente...", limitErr);
             }
 
             console.log('✅ Respuesta generada exitosamente');

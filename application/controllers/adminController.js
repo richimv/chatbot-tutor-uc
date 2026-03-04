@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
+const MLService = require('../../domain/services/mlService'); // ✅ IMPORTANTE: Invocando la IA del Dominio
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -179,6 +180,41 @@ class AdminController {
     }
 
     /**
+     * POST /api/admin/questions/generate-ai
+     * Endpoint para generar un set de 20 preguntas empleando Retrieval Augmented Generation (RAG)
+     */
+    async generateAiQuestions(req, res) {
+        try {
+            const { target, difficulty, domain } = req.body;
+            if (!target || !difficulty || !domain) {
+                return res.status(400).json({ error: 'Faltan parámetros de configuración RAG.' });
+            }
+
+            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, ${domain}`);
+
+            // 1. Mandar a Gemini 2.5 a construir las preguntas leyendo de la Vectorial RAG
+            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, domain);
+
+            if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
+                throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
+            }
+
+            // 2. Inyectar masivamente en base de datos como si fuera un JSON normal cargado por Admin
+            const result = await trainingRepository.saveBulkQuestionBankAdmin(generatedQuestions);
+
+            if (result.success) {
+                res.json({ success: true, message: `IA RAG ha Inyectado ${result.inserted} preguntas nuevas con éxito al Banco.`, count: result.inserted });
+            } else {
+                res.status(500).json({ error: 'Fallo al inyectar el lote generado por la IA en la BD.' });
+            }
+
+        } catch (error) {
+            console.error('❌ Error en generador RAG Masivo Admin:', error);
+            res.status(500).json({ error: error.message || 'Error del servidor procesando el RAG.' });
+        }
+    }
+
+    /**
      * GET /api/admin/questions
      * Obtiene una lista paginada o completa de preguntas para el panel.
      */
@@ -316,6 +352,7 @@ module.exports = {
     getDashboardStats: controller.getDashboardStats.bind(controller),
     runAiAnalysis: controller.runAiAnalysis.bind(controller),
     bulkInjectQuestions: controller.bulkInjectQuestions.bind(controller),
+    generateAiQuestions: controller.generateAiQuestions.bind(controller), // ✅ Rutina RAG añadida
     getAllQuestions: controller.getAllQuestions.bind(controller),
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),

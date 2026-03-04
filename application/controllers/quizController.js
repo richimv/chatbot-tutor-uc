@@ -74,6 +74,9 @@ class QuizController {
 
         } catch (error) {
             console.error('Error en startQuiz:', error);
+            if (error.message && error.message.includes("No hay preguntas disponibles")) {
+                return res.status(404).json({ error: error.message, noQuestions: true });
+            }
             res.status(500).json({ error: 'Error interno generando el quiz.' });
         }
     }
@@ -387,6 +390,9 @@ class QuizController {
 
         } catch (error) {
             console.error('Error fetching next batch:', error);
+            if (error.message && error.message.includes("No hay preguntas disponibles")) {
+                return res.status(404).json({ error: error.message, noQuestions: true });
+            }
             res.status(500).json({ error: 'Error cargando más preguntas.' });
         }
     }

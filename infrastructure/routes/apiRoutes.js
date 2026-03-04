@@ -8,6 +8,7 @@ const { coursesController, analyticsController, authController, chatController, 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
 const usageMiddleware = require('../middleware/usageMiddleware');
+const checkAILimits = require('../../application/middlewares/checkLimitsMiddleware'); // ✅ NUEVO LÍMITE DE PRECIOS
 const { authLimiter } = require('../config/rateLimiters');
 
 // ======================
@@ -19,6 +20,7 @@ router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboa
 
 router.post('/admin/run-ai', auth, adminOnly, adminController.runAiAnalysis);
 router.post('/admin/questions/bulk', auth, adminOnly, adminController.bulkInjectQuestions); // ✅ NUEVO: Inyección Masiva
+router.post('/admin/questions/generate-ai', auth, adminOnly, adminController.generateAiQuestions); // ✅ NUEVO: Generador IA Masivo
 router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions);
 router.post('/admin/question', auth, adminOnly, adminController.addSingleQuestion);
 router.put('/admin/question/:id', auth, adminOnly, adminController.updateSingleQuestion);
@@ -34,6 +36,10 @@ router.use('/library', libraryRoutes);
 
 // --- Rutas de Control de Acceso (Uso Gratuito) ---
 router.post('/usage/verify', auth, usageController.checkAccess); // ✅ NUEVO
+router.get('/usage/check-ai-limits', auth, checkAILimits('monthly_flashcards'), (req, res) => {
+    req.usageType = null;
+    return res.json({ allowed: true });
+}); // ✅ NUEVO: Validación pasiva de saldos sin gastarlos
 
 // --- Rutas de Preferencias de Usuario (Multi-Simulador) ---
 router.get('/users/preferences', auth, (req, res) => userPreferencesController.getPreferences(req, res));
@@ -51,7 +57,8 @@ router.post('/auth/users/:id/reset-password', auth, adminOnly, authController.ad
 router.delete('/auth/delete-account', auth, authController.deleteAccount); // ✅ NUEVO: Eliminar cuenta
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
-router.post('/chat', auth, usageMiddleware, chatController.processMessage); // ✅ Middleware aplicado
+// SE AGREGA checkAILimits('chat_standard') ANTES DE PROCESS MESSAGE
+router.post('/chat', auth, usageMiddleware, checkAILimits('chat_standard'), chatController.processMessage); // ✅ Middleware aplicado
 router.get('/chat/conversations', auth, chatController.getUserConversations);
 router.get('/chat/conversations/:id', auth, chatController.getConversationMessages);
 router.put('/chat/conversations/:id', auth, chatController.updateConversationTitle);
@@ -163,7 +170,7 @@ router.post('/decks', auth, DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
 router.get('/decks/:deckId/cards', auth, DeckController.listCards); // ✅ NUEVO
 router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
-router.post('/decks/:deckId/generate', auth, DeckController.generateCards); // ✅✨ NUEVO: IA Gen
+router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
 router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
 router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); // ✅ NUEVO: Reorder
@@ -177,7 +184,7 @@ router.post('/training/flashcards/review', auth, quizController.reviewFlashcard)
 
 // --- Rutas de Quiz Battle (Arena / Arcade) ---
 const quizGameController = require('../../application/controllers/quizGameController');
-router.post('/arena/start', auth, quizGameController.startGame);
+router.post('/arena/start', auth, checkAILimits('quiz_arena'), quizGameController.startGame);
 router.post('/arena/questions', auth, quizGameController.getQuestions); // ✅ NUEVO: Fetch Background
 router.post('/arena/submit', auth, quizGameController.submitScore);
 router.get('/arena/ranking', auth, quizGameController.getRanking);

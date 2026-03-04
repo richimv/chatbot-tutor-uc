@@ -498,6 +498,9 @@ class AdminManager {
                 <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
                     <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar JSON/CSV</span>
                 </button>
+                <button class="btn-primary" onclick="window.adminManager.openGenericModal('ai-question')" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: transparent; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <i class="fas fa-robot"></i> <span class="hide-mobile">Generar con IA</span>
+                </button>
                 <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
                     <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Pregunta</span>
                 </button>
@@ -638,6 +641,78 @@ class AdminManager {
                 setTimeout(() => {
                     const ta = document.getElementById('generic-bulk-json');
                     if (ta) ta.rows = 15;
+                }, 0);
+                break;
+            case 'ai-question':
+                title.textContent = 'Generador de Preguntas IA (RAG)';
+                fieldsHTML = `
+                    <div style="margin-bottom:15px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.1); padding: 10px; border-radius: 8px;">
+                        <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 20 preguntas sin duplicarse con el banco existente.
+                    </div>
+                    <h4 style="margin-bottom:0.5rem;">Examen Objetivo</h4>
+                    <select id="ai-target" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
+                        <option value="ENAM">ENAM</option>
+                        <option value="PRE-INTERNADO">PRE-INTERNADO</option>
+                        <option value="RESIDENTADO">RESIDENTADO</option>
+                    </select>
+                    <h4 style="margin-bottom:0.5rem;">Dificultad</h4>
+                    <select id="ai-difficulty" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
+                        <option value="Básico">Básico</option>
+                        <option value="Intermedio" selected>Intermedio</option>
+                        <option value="Avanzado">Avanzado</option>
+                    </select>
+                    <h4 style="margin-bottom:0.5rem;">Áreas de Estudio</h4>
+                    <div id="ai-domain-container" style="min-height: 200px; max-height: 250px; overflow-y: scroll; display: block; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: var(--bg-secondary); margin-bottom: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo A — Ciencias Básicas</strong>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Anatomía"> Anatomía</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Fisiología"> Fisiología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Farmacología"> Farmacología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Microbiología y Parasitología"> Microbiología y Parasitología</label>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo B — Las 4 Grandes</strong>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Medicina Interna"> Medicina Interna</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Pediatría"> Pediatría</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Ginecología y Obstetricia"> Ginecología y Obstetricia</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cirugía General"> Cirugía General</label>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo C — Especialidades Clínicas</strong>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cardiología"> Cardiología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gastroenterología"> Gastroenterología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Neurología"> Neurología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Nefrología"> Nefrología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Neumología"> Neumología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Endocrinología"> Endocrinología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Infectología"> Infectología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Reumatología"> Reumatología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Traumatología"> Traumatología</label>
+                        </div>
+                        <div style="margin-bottom: 5px;">
+                            <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo D — Salud Pública y Gestión</strong>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Salud Pública y Epidemiología"> Salud Pública y Epidemiología</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gestión de Servicios de Salud"> Gestión de Servicios de Salud</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Ética Deontología e Interculturalidad"> Ética Deontología e Interculturalidad</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Medicina Legal"> Medicina Legal</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Investigación y Bioestadística"> Investigación y Bioestadística</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cuidado Integral"> Cuidado Integral</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-primary); font-weight: 500;">
+                            <input type="checkbox" id="ai-domain-all" onchange="document.querySelectorAll('.ai-domain-cb').forEach(c => c.checked = this.checked)"> 
+                            Seleccionar/Deseleccionar Todas
+                        </label>
+                    </div>
+                `;
+                setTimeout(() => {
+                    const btn = document.getElementById('generic-save-btn');
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-magic"></i> Iniciar Generación RAG';
+                        btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
+                        btn.style.borderColor = 'transparent';
+                    }
                 }, 0);
                 break;
             // ...
@@ -1277,6 +1352,42 @@ class AdminManager {
                         image_url: document.getElementById('generic-image-url').value
                     };
                     break;
+                case 'ai-question': {
+                    const aiBtn = document.getElementById('generic-save-btn');
+                    const originalText = aiBtn.innerHTML;
+                    try {
+                        aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Lote (2-3 min)... por favor no cierre.';
+                        aiBtn.disabled = true;
+
+                        const selectedDomains = Array.from(document.querySelectorAll('.ai-domain-cb:checked')).map(cb => cb.value);
+                        if (selectedDomains.length === 0) {
+                            throw new Error("Por favor selecciona al menos una Área de Estudio/Especialidad.");
+                        }
+
+                        const reqBody = {
+                            target: document.getElementById('ai-target').value,
+                            difficulty: document.getElementById('ai-difficulty').value,
+                            domain: selectedDomains.join(', ')
+                        };
+                        const aiUrl = `${window.AppConfig.API_URL}/api/admin/questions/generate-ai`;
+                        const resAi = await fetch(aiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                            body: JSON.stringify(reqBody)
+                        });
+                        const resDataAi = await resAi.json();
+                        if (!resAi.ok) throw new Error(resDataAi.error || 'Error al generar preguntas IA');
+
+                        await window.confirmationModal.showAlert(`¡Éxito! ${resDataAi.message}`, 'Banco Inyectado Automáticamente');
+                        this.closeGenericModal();
+                        await this.loadAllData();
+                        return; // Retorno anticipado
+                    } catch (err) {
+                        throw err; // Pasa el error al catch global
+                    } finally {
+                        if (aiBtn) { aiBtn.innerHTML = originalText; aiBtn.disabled = false; }
+                    }
+                }
                 case 'bulk-question':
                     const jsonVal = document.getElementById('generic-bulk-json').value;
                     let parsedData = [];

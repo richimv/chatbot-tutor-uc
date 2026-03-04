@@ -237,6 +237,20 @@ class DeckController {
                 savedCards.push(saved);
             }
 
+            // 3. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
+            try {
+                const db = require('../../infrastructure/database/db');
+                if (req.usageType) {
+                    await db.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [userId]
+                    );
+                    console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
+                }
+            } catch (limitErr) {
+                console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
+            }
+
             res.json({ success: true, count: savedCards.length, cards: savedCards });
 
         } catch (error) {

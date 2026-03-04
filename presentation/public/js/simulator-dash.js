@@ -592,7 +592,7 @@ const SimulatorDash = (() => {
         const stateLoading = document.getElementById('ai-loading-state');
         const stateResults = document.getElementById('ai-results-state');
 
-        const runAnalysis = (e) => {
+        const runAnalysis = async (e) => {
             // ✅ Interceptar con Paywall si no tiene vidas
             if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
                 if (!window.uiManager.validateFreemiumAction(e)) return;
@@ -603,23 +603,64 @@ const SimulatorDash = (() => {
             stateResults.style.display = 'none';
             stateLoading.style.display = 'flex';
 
-            // Simulate "Thinking" (or call real AI endpoint later)
-            setTimeout(() => {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+
+            try {
+                // LLAMADA REAL A LA IA DE DIAGNÓSTICO PROFUNDO
+                const response = await fetch(`${window.AppConfig.API_URL}/api/analytics/diagnostic`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ stats: cachedStats }) // data que llega desde loadStats() previamente
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        // Límite sobrepasado o usuario Básico/Free sin acceso a IA.
+                        // EN LUGAR DE PAYWALL INTRUSIVO, HACEMOS FALLBACK AL DIAGNÓSTICO ESTÁTICO (Clásico)
+                        console.log("⚠️ Fallback a Diagnóstico Clínico Estático (Límites o Tier Básico)");
+                        stateLoading.style.display = 'none';
+                        stateResults.style.display = 'block';
+
+                        const fStrong = cachedStats.strongest_topic && cachedStats.strongest_topic !== 'N/A'
+                            ? `<strong>${cachedStats.strongest_topic}:</strong> Tienes un alto dominio en esta materia basado en tu ratio de aciertos histórico.`
+                            : "Continúa practicando para encontrar tus fortalezas.";
+
+                        const fWeak = cachedStats.weakest_topic && cachedStats.weakest_topic !== 'N/A'
+                            ? `<strong>${cachedStats.weakest_topic}:</strong> Necesitas repasar intensivamente los tópicos y leer la bibliografía de este curso para mejorar tus puntajes.`
+                            : "Aún no hay suficientes datos para determinar tu eslabón débil.";
+
+                        document.getElementById('ai-strengths').innerHTML = fStrong;
+                        document.getElementById('ai-weaknesses').innerHTML = fWeak;
+                        return;
+                    }
+                    throw new Error(data.error || 'Error en servidor de IA');
+                }
+
+                // Mostrar Respuesta Real
                 stateLoading.style.display = 'none';
                 stateResults.style.display = 'block';
 
-                // Populate Logic (Using cached stats for now)
-                if (cachedStats) {
-                    const strong = cachedStats.strongest_topic || 'No hay suficientes datos';
-                    const weak = cachedStats.weakest_topic || 'No hay suficientes datos';
+                document.getElementById('ai-strengths').innerHTML = data.strengths || "Análisis no disponible.";
+                document.getElementById('ai-weaknesses').innerHTML = data.weaknesses || "Análisis no disponible.";
 
-                    document.getElementById('ai-strengths').innerHTML =
-                        `Has demostrado un dominio sólido en <strong>${strong}</strong>. Sigue manteniendo este nivel.`;
-
-                    document.getElementById('ai-weaknesses').innerHTML =
-                        `Detectamos oportunidades de mejora en <strong>${weak}</strong>. Te recomendamos enfocar tus próximas sesiones de estudio aquí.`;
+                // Si existe UiManager usamos decrement vidas (Opcional visual)
+                if (window.uiManager && typeof window.uiManager.updateLifeCounters === 'function') {
+                    // Update visual local si es posible (solo para no recargar front)
+                    window.uiManager.updateLifeCounters();
                 }
-            }, 1500); // 1.5s delay for effect
+
+            } catch (err) {
+                console.error("AI Analysis Failed", err);
+                stateLoading.style.display = 'none';
+                stateInitial.style.display = 'flex';
+                alert("Hubo un problema de conexión al tutor de inteligencia artificial. Intenta nuevamente.");
+            }
         }
 
         if (btnAnalyze) btnAnalyze.addEventListener('click', (e) => runAnalysis(e));

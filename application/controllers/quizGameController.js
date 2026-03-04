@@ -21,20 +21,23 @@ class QuizGameController {
 
             console.log(`⚔️ Iniciando Quiz Battle: ${topic || 'Aleatorio'} para ${user.name} (ID: ${user.id})`);
 
-            // 0. VERIFICAR USO (Limitar Free Users para ahorrar tokens)
-            // No aplicamos bloqueo estricto al Simulador Serum (como pidió el usuario), pero sí al Arena General.
-            const usageCheck = await usageService.checkAndIncrementUsage(user.id);
-            if (!usageCheck.allowed) {
-                console.warn(`⛔ Límite alcanzado para usuario ${user.id} (${usageCheck.plan})`);
-                return res.status(403).json({
-                    error: 'Has alcanzado tu límite diario de juegos gratuitos. 😢 ¡Suscríbete para jugar sin límites!',
-                    limitReached: true
-                });
-            }
-
             // 1. Generar Preguntas (Modo Rápido: General / Arcade)
-            // Usamos generateGeneralQuiz para evitar contexto médico forzado
             const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', difficulty || 'Intermedio', user.id);
+
+            // 2. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
+            // 💡 IMPORTANTE: Aquí se hace efectivo el cobro de "1 Vida" para usuarios Free (1/1), Basic (5/5) o Advanced (10/10).
+            // Se inyecta la columna a actualizar a través del middleware (req.usageType = 'daily_arena_usage').
+            try {
+                if (req.usageType) {
+                    await db.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [user.id]
+                    );
+                    console.log(`📉 Límite de ${req.usageType} incrementado (1 Vida descontada) para usuario ${user.id}.`);
+                }
+            } catch (limitErr) {
+                console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
+            }
 
             res.json({
                 success: true,

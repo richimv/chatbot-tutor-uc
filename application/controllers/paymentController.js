@@ -8,22 +8,27 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
 
+const PLANS = {
+    basic: { price: 9.90, months: 2, title: 'Plan Básico - Entrenamiento Médico' },
+    advanced: { price: 24.90, months: 6, title: 'Plan Avanzado - Tutor IA Médica' }
+};
+
 exports.createOrder = async (req, res) => {
     try {
-        // Validar usuario
         if (!req.user || !req.user.email) {
             console.error('❌ Error: Usuario sin email intentando pagar.');
             return res.status(400).json({ error: 'Usuario no válido. Se requiere email.' });
         }
 
         const userId = req.user.id;
+        const planId = req.body.planId;
 
-        // 1. Configuración de URLs (Simplificada y Robusta)
-        // En Render, process.env.RENDER_EXTERNAL_URL suele dar la URL pública HTTPS automáticamente.
-        // Si no, usamos la variable manual BACKEND_URL.
+        if (!planId || !PLANS[planId]) {
+            return res.status(400).json({ error: 'Plan seleccionado inválido.' });
+        }
+
+        const plan = PLANS[planId];
         const backendUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://tutor-ia-backend.onrender.com';
-
-        // Frontend URL (Debe venir de variables de entorno o hardcoded si es fija)
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.hubacademia.com';
 
         const preference = new Preference(client);
@@ -32,11 +37,11 @@ exports.createOrder = async (req, res) => {
             body: {
                 items: [
                     {
-                        id: 'suscripcion-vitalicia',
-                        title: 'Suscripción Biblioteca Académica - Premium',
-                        description: 'Acceso ilimitado a libros y tutoría IA',
-                        picture_url: 'https://www.hubacademia.com/assets/logo.png', // Opcional: Logo de tu marca
-                        unit_price: 9.90,
+                        id: `suscripcion-${planId}`,
+                        title: plan.title,
+                        description: `Acceso por ${plan.months} meses`,
+                        picture_url: 'https://www.hubacademia.com/assets/logo.png',
+                        unit_price: plan.price,
                         currency_id: 'PEN',
                         quantity: 1,
                     }
@@ -45,31 +50,22 @@ exports.createOrder = async (req, res) => {
                     email: req.user.email,
                     name: req.user.name || 'Estudiante',
                 },
-                //binary_mode: true, // Aprobación inmediata (Rechaza pagos pendientes como PagoEfectivo si quieres velocidad)
-                external_reference: userId.toString(), // CLAVE: Aquí viaja el ID del usuario
-
-                // Rutas de retorno al Frontend
+                external_reference: `${userId}|${planId}`, // Pasamos ID y el Plan elegido
                 back_urls: {
-                    success: `${frontendUrl}/?payment=success`, // ✅ CORREGIDO: Redirige al Inicio (Hub), no al Admin
+                    success: `${frontendUrl}/?payment=success`,
                     failure: `${frontendUrl}/pricing?payment=failure`,
                     pending: `${frontendUrl}/pricing?payment=pending`
                 },
                 auto_return: 'approved',
-
-                // Métodos de pago
                 payment_methods: {
-                    excluded_payment_types: [
-                        { id: "ticket" } // Excluye PagoEfectivo si quieres acceso inmediato
-                    ],
-                    installments: 1 // Solo 1 cuota (opcional)
+                    excluded_payment_types: [{ id: "ticket" }],
+                    installments: 1
                 },
-
-                // Webhook: A dónde avisar (Debe ser HTTPS y Público)
                 notification_url: `${backendUrl}/api/payment/webhook`
             }
         });
 
-        console.log(`✅ Preferencia creada para ${req.user.email}. Webhook: ${backendUrl}/api/payment/webhook`);
+        console.log(`✅ Preferencia creada para ${req.user.email} (Plan: ${planId})`);
         res.json({ init_point: result.init_point });
 
     } catch (error) {
@@ -79,45 +75,45 @@ exports.createOrder = async (req, res) => {
 };
 
 exports.handleWebhook = async (req, res) => {
-    // Mercado Pago envía los datos en query string o body dependiendo de la versión
     const paymentId = req.query.id || req.query['data.id'];
     const type = req.query.type || req.query.topic;
 
-    // Responder rápido a MP para que deje de enviar la notificación
-    // (Importante: MP espera un 200 OK en menos de 3 seg)
     res.sendStatus(200);
 
     try {
         if (type === 'payment' && paymentId) {
-            console.log(`🔔 Webhook recibido: Pago ID ${paymentId}`);
-
             const payment = new Payment(client);
             const data = await payment.get({ id: paymentId });
 
             if (data.status === 'approved') {
-                const userId = data.external_reference;
+                const parts = data.external_reference.split('|');
+                const userId = parts[0];
+                const planId = parts[1] || 'basic'; // Fallback a basic si falta
                 const paidAmount = data.transaction_amount;
 
-                // Verificación de seguridad extra: ¿Pagó lo correcto?
-                if (paidAmount >= 1.00) {
+                const plan = PLANS[planId] || PLANS.basic;
+
+                if (paidAmount >= plan.price - 0.1) { // Tolerancia decimal
                     await pool.query(
                         `UPDATE users SET 
-                            subscription_status = 'active', 
-                            payment_id = $1,
-                            updated_at = NOW() 
-                         WHERE id = $2`,
-                        [paymentId, userId]
+                            subscription_status = 'active',
+                            subscription_tier = $1,
+                            subscription_expires_at = NOW() + INTERVAL '${plan.months} months',
+                            daily_ai_usage = 0,
+                            monthly_thinking_usage = 0,
+                            monthly_flashcards_usage = 0,
+                            daily_arena_usage = 0,
+                            payment_id = $2
+                         WHERE id = $3`,
+                        [planId, paymentId, userId]
                     );
-                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado. Monto: ${paidAmount}`);
+                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
                 } else {
-                    console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}`);
+                    console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}, Plan esperado: ${plan.price}`);
                 }
-            } else {
-                console.log(`ℹ️ Webhook procesado: Pago ID ${paymentId} está en estado: ${data.status}`);
             }
         }
     } catch (error) {
-        console.error('⚠️ Error procesando Webhook en segundo plano:', error.message);
-        // No enviamos error 500 porque ya respondimos 200 al inicio
+        console.error('⚠️ Error procesando Webhook:', error.message);
     }
 };

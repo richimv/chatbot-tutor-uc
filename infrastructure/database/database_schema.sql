@@ -1,5 +1,5 @@
 -- Database Schema Dump
--- Generated at: 2026-01-16T18:38:34.237Z
+-- Generated at: 2026-03-04T16:58:51.772Z
 
 -- Table: careers
 CREATE TABLE IF NOT EXISTS public.careers (
@@ -62,6 +62,28 @@ CREATE TABLE IF NOT EXISTS public.courses (
     CONSTRAINT courses_pkey PRIMARY KEY (id)
 );
 
+-- Table: decks
+CREATE TABLE IF NOT EXISTS public.decks (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    user_id UUID NOT NULL,
+    name CHARACTER VARYING(100) NOT NULL,
+    type CHARACTER VARYING(20) DEFAULT 'USER'::character varying,
+    source_module CHARACTER VARYING(50) DEFAULT 'MANUAL'::character varying,
+    icon CHARACTER VARYING(50) DEFAULT '📚'::character varying,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    parent_id UUID,
+    CONSTRAINT decks_pkey PRIMARY KEY (id)
+);
+
+-- Table: documents
+CREATE TABLE IF NOT EXISTS public.documents (
+    id BIGINT DEFAULT nextval('documents_id_seq'::regclass) NOT NULL,
+    content TEXT,
+    metadata JSONB,
+    embedding USER-DEFINED,
+    CONSTRAINT documents_pkey PRIMARY KEY (id)
+);
+
 -- Table: feedback
 CREATE TABLE IF NOT EXISTS public.feedback (
     id INTEGER DEFAULT nextval('feedback_id_seq'::regclass) NOT NULL,
@@ -84,6 +106,53 @@ CREATE TABLE IF NOT EXISTS public.page_views (
     CONSTRAINT page_views_pkey PRIMARY KEY (id)
 );
 
+-- Table: question_bank
+CREATE TABLE IF NOT EXISTS public.question_bank (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    domain CHARACTER VARYING(20) DEFAULT 'GENERAL'::character varying,
+    topic CHARACTER VARYING(100) NOT NULL,
+    difficulty CHARACTER VARYING(50) DEFAULT 'Intermedio'::character varying,
+    question_text TEXT NOT NULL,
+    options JSONB NOT NULL,
+    correct_option_index INTEGER NOT NULL,
+    explanation TEXT,
+    times_used INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    question_hash TEXT,
+    image_url TEXT,
+    target CHARACTER VARYING(255),
+    CONSTRAINT question_bank_pkey PRIMARY KEY (id)
+);
+
+-- Table: quiz_history
+CREATE TABLE IF NOT EXISTS public.quiz_history (
+    id UUID DEFAULT uuid_generate_v4() NOT NULL,
+    user_id UUID NOT NULL,
+    topic CHARACTER VARYING(100) NOT NULL,
+    difficulty CHARACTER VARYING(20) DEFAULT 'ENAM'::character varying,
+    score INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    weak_points ARRAY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    area_stats JSONB DEFAULT '{}'::jsonb,
+    target CHARACTER VARYING(50),
+    CONSTRAINT quiz_history_pkey PRIMARY KEY (id)
+);
+
+-- Table: quiz_scores
+CREATE TABLE IF NOT EXISTS public.quiz_scores (
+    id BIGINT NOT NULL,
+    user_id UUID NOT NULL,
+    topic CHARACTER VARYING(255) NOT NULL,
+    difficulty CHARACTER VARYING(50),
+    score INTEGER DEFAULT 0 NOT NULL,
+    rounds_completed INTEGER DEFAULT 1,
+    correct_answers_count INTEGER DEFAULT 0,
+    total_questions_played INTEGER DEFAULT 10,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    CONSTRAINT quiz_scores_pkey PRIMARY KEY (id)
+);
+
 -- Table: resources
 CREATE TABLE IF NOT EXISTS public.resources (
     id INTEGER DEFAULT nextval('resources_id_seq'::regclass) NOT NULL,
@@ -91,14 +160,9 @@ CREATE TABLE IF NOT EXISTS public.resources (
     title CHARACTER VARYING(255) NOT NULL,
     author CHARACTER VARYING(255),
     url CHARACTER VARYING(255),
-    size CHARACTER VARYING(50),
     image_url CHARACTER VARYING(500),
-    publication_year INTEGER,
-    publisher CHARACTER VARYING(255),
-    edition CHARACTER VARYING(100),
-    city CHARACTER VARYING(100),
-    isbn CHARACTER VARYING(50),
     resource_type CHARACTER VARYING(50) DEFAULT 'book'::character varying,
+    is_premium BOOLEAN DEFAULT false,
     CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 
@@ -149,6 +213,44 @@ CREATE TABLE IF NOT EXISTS public.user_course_library (
     CONSTRAINT user_course_library_pkey PRIMARY KEY (user_id, course_id)
 );
 
+-- Table: user_flashcards
+CREATE TABLE IF NOT EXISTS public.user_flashcards (
+    id UUID DEFAULT uuid_generate_v4() NOT NULL,
+    user_id UUID NOT NULL,
+    front_content TEXT NOT NULL,
+    back_content TEXT NOT NULL,
+    topic CHARACTER VARYING(100),
+    source_quiz_id UUID,
+    repetition_number INTEGER DEFAULT 0,
+    easiness_factor REAL DEFAULT 2.5,
+    interval_days INTEGER DEFAULT 0,
+    last_reviewed_at TIMESTAMP WITH TIME ZONE,
+    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    deck_id UUID,
+    sort_order INTEGER DEFAULT 0,
+    CONSTRAINT user_flashcards_pkey PRIMARY KEY (id)
+);
+
+-- Table: user_question_history
+CREATE TABLE IF NOT EXISTS public.user_question_history (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    user_id UUID,
+    question_id UUID,
+    seen_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
+    times_seen INTEGER DEFAULT 1,
+    CONSTRAINT user_question_history_pkey PRIMARY KEY (id)
+);
+
+-- Table: user_simulator_preferences
+CREATE TABLE IF NOT EXISTS public.user_simulator_preferences (
+    user_id UUID NOT NULL,
+    domain CHARACTER VARYING(50) NOT NULL,
+    config_json JSONB DEFAULT '{}'::jsonb NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    CONSTRAINT user_simulator_preferences_pkey PRIMARY KEY (user_id, domain)
+);
+
 -- Table: users
 CREATE TABLE IF NOT EXISTS public.users (
     name CHARACTER VARYING(255) NOT NULL,
@@ -161,6 +263,14 @@ CREATE TABLE IF NOT EXISTS public.users (
     payment_id CHARACTER VARYING(255) DEFAULT NULL::character varying,
     usage_count INTEGER DEFAULT 0,
     max_free_limit INTEGER DEFAULT 3,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    monthly_flashcards_usage INTEGER DEFAULT 0,
+    subscription_tier CHARACTER VARYING(50) DEFAULT 'free'::character varying,
+    subscription_expires_at TIMESTAMP WITH TIME ZONE,
+    daily_ai_usage INTEGER DEFAULT 0,
+    monthly_thinking_usage INTEGER DEFAULT 0,
+    daily_arena_usage INTEGER DEFAULT 0,
+    last_usage_reset DATE,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
@@ -176,29 +286,23 @@ ALTER TABLE ONLY public.course_books
 ALTER TABLE ONLY public.course_books
     ADD CONSTRAINT course_books_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.chat_messages
-    ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE;
+    ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.conversations
-    ADD CONSTRAINT conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.search_history
-    ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.page_views
-    ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT fk_feedback_message FOREIGN KEY (message_id) REFERENCES public.chat_messages(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_feedback_message FOREIGN KEY (message_id) REFERENCES public.chat_messages(id);
 
 ALTER TABLE ONLY public.course_careers
     ADD CONSTRAINT course_careers_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
@@ -212,33 +316,43 @@ ALTER TABLE ONLY public.topic_resources
 ALTER TABLE ONLY public.topic_resources
     ADD CONSTRAINT topic_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.user_course_library
-    ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 ALTER TABLE ONLY public.user_course_library
     ADD CONSTRAINT user_course_library_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
 
--- ✅ MODIFIED: ON DELETE CASCADE
 ALTER TABLE ONLY public.user_book_library
-    ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 ALTER TABLE ONLY public.user_book_library
     ADD CONSTRAINT user_book_library_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.resources(id);
 
--- Table: quiz_scores (Added manually as it was missing from original dump)
-CREATE TABLE IF NOT EXISTS public.quiz_scores (
-    id SERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,
-    topic TEXT NOT NULL,
-    difficulty CHARACTER VARYING(50) NOT NULL,
-    score INTEGER NOT NULL,
-    correct_answers_count INTEGER DEFAULT 0,
-    total_questions_played INTEGER DEFAULT 10,
-    rounds_completed INTEGER DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT quiz_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
-);
+ALTER TABLE ONLY public.user_flashcards
+    ADD CONSTRAINT user_flashcards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+ALTER TABLE ONLY public.quiz_history
+    ADD CONSTRAINT quiz_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+ALTER TABLE ONLY public.user_question_history
+    ADD CONSTRAINT user_question_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+ALTER TABLE ONLY public.user_question_history
+    ADD CONSTRAINT user_question_history_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.question_bank(id);
+
+ALTER TABLE ONLY public.decks
+    ADD CONSTRAINT decks_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+ALTER TABLE ONLY public.user_flashcards
+    ADD CONSTRAINT user_flashcards_deck_id_fkey FOREIGN KEY (deck_id) REFERENCES public.decks(id);
+
+ALTER TABLE ONLY public.decks
+    ADD CONSTRAINT decks_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.decks(id);
+
+ALTER TABLE ONLY public.user_simulator_preferences
+    ADD CONSTRAINT user_simulator_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
 
 -- Habilitar RLS en quiz_scores existente
 ALTER TABLE public.quiz_scores ENABLE ROW LEVEL SECURITY;

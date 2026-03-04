@@ -1,23 +1,20 @@
 /* Estilos Específicos para Pricing Dark Mode */
 body {
     background-color: var(--bg-main);
-    /* #0f172a */
     color: var(--text-main);
     display: flex;
     flex-direction: column;
     margin: 0;
     font-family: var(--font-main);
-    /* gap: 4rem; REMOVED to let margin-auto handle spacing */
 }
 
 .pricing-container {
     width: 100%;
-    max-width: 480px;
-    /* Tarjeta centrada y contenida */
+    max-width: 1000px;
+    /* Ampliado para 2 tarjetas */
     padding: 2rem;
     text-align: center;
     margin: auto;
-    /* ✅ Centers content vertically and horizontally */
 }
 
 .pricing-header {
@@ -25,7 +22,7 @@ body {
 }
 
 .pricing-header h1 {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
     background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
@@ -39,22 +36,52 @@ body {
     font-size: 1.1rem;
 }
 
+/* Contenedor de las dos tarjetas */
+.pricing-cards-container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    /* Para responsive */
+}
+
 /* Tarjeta Premium */
 .plan-card {
     background: var(--bg-secondary);
-    /* #1e293b */
     border-radius: 16px;
     padding: 2.5rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-    /* Sombra profunda */
     border: 1px solid rgba(255, 255, 255, 0.05);
-    /* Borde sutil */
     position: relative;
     overflow: hidden;
+    flex: 1;
+    /* Para que ocupen el mismo ancho */
+    min-width: 300px;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Efecto de borde brillante superior */
-.plan-card::before {
+/* Plan Básico borde normal */
+.plan-card:not(.highlighted-plan)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--text-muted);
+}
+
+/* Plan Avanzado Destacado */
+.highlighted-plan {
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transform: scale(1.02);
+    box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.4);
+}
+
+.highlighted-plan::before {
     content: '';
     position: absolute;
     top: 0;
@@ -62,6 +89,32 @@ body {
     width: 100%;
     height: 4px;
     background: linear-gradient(90deg, var(--primary), var(--primary-light));
+}
+
+.recommended-badge {
+    position: absolute;
+    top: 15px;
+    right: -35px;
+    background: var(--primary);
+    color: white;
+    padding: 5px 40px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Media Query Responsive */
+@media (max-width: 768px) {
+    .pricing-cards-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .highlighted-plan {
+        transform: scale(1);
+    }
 }
 
 .plan-title {

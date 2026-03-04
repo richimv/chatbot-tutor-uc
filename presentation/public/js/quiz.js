@@ -165,7 +165,47 @@ async function startQuiz() {
     }
 
     if (!data.success) {
-        throw new Error(data.error || 'Error desconocido del servidor');
+        elements.loadingOverlay.classList.add('hidden');
+
+        if (response.status === 404 && data.noQuestions) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<span class="text-gradient-primary" style="font-size: 1.5rem; font-weight: 800;">¡Banco Agotado!</span>',
+                    html: `
+                        <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
+                            <i class="fas fa-info-circle" style="color: #3b82f6; margin-right: 5px;"></i> 
+                            Genial, has abarcado <strong>todas las preguntas reservadas</strong> para esta configuración en particular.<br><br>
+                            Intenta cambiar de Área de Estudio, Dificultad o Tipo de Examen en el Dashboard para desbloquear nuevos escenarios clínicos.
+                        </div>
+                    `,
+                    icon: 'info',
+                    iconColor: '#60a5fa',
+                    background: 'rgba(30, 41, 59, 0.85)',
+                    color: '#f8fafc',
+                    backdrop: `rgba(10, 10, 10, 0.8) backdrop-filter: blur(4px);`,
+                    customClass: {
+                        popup: 'swal-glass-popup',
+                        confirmButton: 'btn-neon'
+                    },
+                    buttonsStyling: false,
+                    confirmButtonText: '<i class="fas fa-sliders-h" style="margin-right: 5px;"></i> Configurar otro Simulacro',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
+                });
+            } else {
+                alert('¡Banco Agotado!\\n\\nHas abarcado todas las preguntas de este tema y dificultad. Intenta cambiar tu configuración en el dashboard para acceder a más casos clínicos.');
+                window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
+            }
+            return;
+        }
+
+        if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+            window.uiManager.showPaywallModal(data.error || 'No hay más preguntas disponibles en el Banco para este tema. Cambia de tema o mejora tu plan para utilizar Inteligencia Artificial ilimitada.');
+        } else {
+            alert(data.error || 'Hubo un error cargando el simulacro.');
+        }
+        return;
     }
 
     state.questions = data.questions;
@@ -212,6 +252,49 @@ async function fetchNextBatch() {
         });
 
         const data = await response.json();
+
+        // 🚦 Manejo del Error 500/404 Controlado (Límite Básico u otros)
+        if (!response.ok || !data.success) {
+            elements.loadingOverlay.classList.add('hidden');
+
+            if (response.status === 404 && data.noQuestions) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '<span style="color: #10b981; font-size: 1.5rem; font-weight: 800;"><i class="fas fa-award"></i> ¡Banco Agotado!</span>',
+                        html: `
+                            <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
+                                ¡Excelente trabajo! Has terminado con <strong>todas las preguntas disponibles</strong> para esta configuración exacta.<br><br>
+                                Te entregaremos tu simulacro ahora mismo evaluando las preguntas que llegaste a contestar.
+                            </div>
+                        `,
+                        icon: 'success',
+                        iconColor: '#10b981',
+                        background: 'rgba(30, 41, 59, 0.85)',
+                        color: '#f8fafc',
+                        backdrop: `rgba(10, 10, 10, 0.8) backdrop-filter: blur(4px);`,
+                        customClass: {
+                            popup: 'swal-glass-popup',
+                            confirmButton: 'btn-neon'
+                        },
+                        buttonsStyling: false,
+                        confirmButtonText: '<i class="fas fa-chart-line" style="margin-right: 5px;"></i> Ver mis Resultados',
+                        allowOutsideClick: false
+                    }).then(() => finishQuiz());
+                } else {
+                    alert('¡Banco Agotado!\\nHas terminado con todas las preguntas disponibles para esta configuración. Puntuando lo que respondiste...');
+                    finishQuiz();
+                }
+                return;
+            }
+
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error || "No hay más preguntas disponibles para tu Plan. Mejora a Advanced para Generación AI ilimitada.");
+            } else {
+                alert(data.error || "No hay más preguntas disponibles para tu Plan actual.");
+            }
+            return finishQuiz(); // Acabar el examen con lo poco que tenía
+        }
+
         if (data.success && data.questions.length > 0) {
             state.questions.push(...data.questions);
             console.log(`✅ Batch loaded. Total questions: ${state.questions.length}`);
@@ -219,6 +302,8 @@ async function fetchNextBatch() {
         }
     } catch (e) {
         console.error("Error fetching batch:", e);
+        elements.loadingOverlay.classList.add('hidden');
+        alert("Ocurrió un error cargando nuevas preguntas o se cortó tu conexión.");
     } finally {
         state.isLoadingBatch = false;
     }

@@ -94,16 +94,61 @@ const Arena = (() => {
             const data = await res.json();
 
             if (data.success) {
-                state.questions = data.questions;
+                state.questions = data.questions.slice(0, 20); // Hardcap local preventivo a 20
                 resetGame();
                 ui.screens.lobby.classList.add('hidden');
                 ui.screens.loading.classList.add('hidden');
                 ui.screens.game.classList.remove('hidden');
                 renderQuestion();
             } else {
-                // alert('Error: ' + data.error); 
-                showCustomModal('Error al Iniciar', data.error || 'No se pudo iniciar la partida.');
                 ui.screens.loading.classList.add('hidden');
+
+                // Error de Límite Diario / Suscripción
+                if (res.status === 403) {
+                    if (typeof Swal !== 'undefined') {
+                        // Detectar si el error es para Free (necesita upgrade) o de pago (solo debe esperar al día sgte)
+                        const isUpgradeNeeded = data.error && (data.error.includes("Mejora tu plan") || data.error.toLowerCase().includes("free"));
+
+                        if (isUpgradeNeeded && window.uiManager) {
+                            // Si es una cuenta Free/Pending sin vidas globales, mostramos la gran modal de Paywall Oficial
+                            window.uiManager.showPaywallModal();
+                            return;
+                        }
+
+                        // Si es un límite diario normal, mostramos la alerta de que regrese mañana
+                        Swal.fire({
+                            title: '<span class="text-gradient-primary" style="font-size: 1.5rem; font-weight: 800;">Límite Alcanzado</span>',
+                            html: `
+                                <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
+                                    <i class="fas fa-lock" style="color: #ef4444; margin-right: 5px;"></i> 
+                                    ${data.error || 'Has agotado tus partidas de Arena Daily.'}<br><br>
+                                    Intenta regresar mañana cuando tus vidas se hayan restablecido. Puedes seguir repasando en las demás herramientas.
+                                </div>
+                            `,
+                            icon: 'warning',
+                            iconColor: '#f59e0b',
+                            background: 'rgba(20, 20, 20, 0.95)',
+                            color: '#f8fafc',
+                            backdrop: `rgba(10, 10, 10, 0.8) backdrop-filter: blur(8px);`,
+                            customClass: {
+                                popup: 'swal-glass-popup',
+                                confirmButton: 'btn-neon'
+                            },
+                            buttonsStyling: false,
+                            confirmButtonText: '<i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Regresar a Quiz Arena',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.reload(); // Recarga la arena para reiniciar el estado gráfico
+                        });
+                        return; // Termina aquí para no lanzar el customModal alterno
+                    }
+                }
+
+                // Errores Generales Fallback (Solo si no fue 403)
+                showCustomModal('Error al Iniciar', data.error || 'No se pudo iniciar la partida o no hay preguntas.');
+                // En error de fallback (ej: No hay stock o servidor caido) no pongamos botón de jugar
+                ui.modal.btn.innerHTML = 'Regresar a la Lobby <i class="fas fa-undo"></i>';
+                ui.modal.btn.onclick = () => { ui.screens.modal.classList.add('hidden'); window.location.reload(); };
             }
 
         } catch (e) {
@@ -121,8 +166,36 @@ const Arena = (() => {
         updateHUD();
     }
 
-    function renderQuestion() {
-        if (state.currIdx >= state.questions.length) return finishGame();
+    async function renderQuestion() {
+        // ✅ SOLUCIÓN RACE CONDITION:
+        // Si el usuario contestó más rápido que la generación IA, no abortamos; ESPERAMOS.
+        if (state.currIdx >= state.questions.length) {
+            if (isLoadingMore) {
+                console.log("⏳ [Arena] IA trabajando en el backend. Pausando render para esperar el paquete...");
+                ui.game.text.innerHTML = '<span class="loading-pulse"><i class="fas fa-brain fa-spin"></i> La IA está formulando nuevos desafíos...</span>';
+                ui.game.grid.innerHTML = '';
+                ui.game.meta.textContent = `NIVEL ${calculateLevel()} | CARGANDO...`;
+
+                // Active Polling hasta que isLoadingMore sea false
+                await new Promise(resolve => {
+                    const checkInterval = setInterval(() => {
+                        if (!isLoadingMore) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 400);
+                });
+
+                // Doble chequeo: Si después de cargar fracasó en traer data, fin real de juego.
+                if (state.currIdx >= state.questions.length) {
+                    showCustomModal('⚠️ Reserva Agotada', 'Ni la base de datos ni la IA pudieron proporcionar más preguntas para este tema hoy.');
+                    setTimeout(() => finishGame(), 2500);
+                    return;
+                }
+            } else {
+                return finishGame(); // Terminó las 20 sin recargas extra
+            }
+        }
 
         const q = state.questions[state.currIdx];
 
@@ -131,7 +204,8 @@ const Arena = (() => {
         startTimer();
 
         // UI
-        ui.game.meta.textContent = `NIVEL ${calculateLevel()} | PREGUNTA ${state.currIdx + 1} DE ${state.questions.length}`;
+        const questionN = state.currIdx + 1;
+        ui.game.meta.textContent = `NIVEL ${calculateLevel()} | PREGUNTA ${questionN} DE 20`;
         ui.game.text.textContent = q.question;
         ui.game.grid.innerHTML = '';
 
@@ -194,10 +268,15 @@ const Arena = (() => {
             const data = await res.json();
 
             if (data.success && data.questions.length > 0) {
-                state.questions.push(...data.questions);
+                // Agregar preguntas manteniendo strict hard cap de 20 total.
+                const remainingSlots = 20 - state.questions.length;
+                if (remainingSlots > 0) {
+                    const allowedToAdd = data.questions.slice(0, remainingSlots);
+                    state.questions.push(...allowedToAdd);
+                }
                 console.log(`✅ [Arena] Batch loaded. New Total: ${state.questions.length}`);
                 // Update HUD total immediately to reflect new length
-                ui.game.meta.textContent = `NIVEL ${calculateLevel()} | PREGUNTA ${state.currIdx + 1} DE ${state.questions.length}`;
+                ui.game.meta.textContent = `NIVEL ${calculateLevel()} | PREGUNTA ${state.currIdx + 1} DE 20`;
             } else {
                 console.warn("⚠️ [Arena] No questions returned from server.");
             }
@@ -223,9 +302,9 @@ const Arena = (() => {
         }
         updateHUD();
 
-        // ** TRIGGER PRELOAD **
-        // If we are close to the end (e.g., 3 questions left), fetch more.
-        if (state.questions.length - state.currIdx <= 3) {
+        // ** TRIGGER PRELOAD TÁCTICO **
+        // Se activa cuando quedan 4 preguntas en el cajón para darle a la IA al menos ~20 segs de margen.
+        if (state.questions.length - state.currIdx <= 4) {
             preloadNextBatch();
         }
     }
@@ -331,55 +410,19 @@ const Arena = (() => {
         ui.screens.modal.classList.add('hidden');
         if (state.lives > 0) {
             state.currIdx++;
+
+            // Hard Stop a las 20 victorias.
+            if (state.currIdx >= 20) {
+                showCustomModal('🏆 ¡VICTORIA ABSOLUTA!', 'Has derrotado las 20 rondas. Eres una leyenda.');
+                setTimeout(() => finishGame(), 3000);
+                return;
+            }
+
             renderQuestion();
         }
     }
 
-    // --- WILDCARDS (COMODINES) ---
-    function useWildcard(type, btn) {
-        if (btn.classList.contains('disabled')) return;
-
-        // Mark as used
-        btn.classList.add('disabled');
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-        const badge = btn.querySelector('.p-badge');
-        if (badge) badge.style.display = 'none';
-
-        if (type === '5050') {
-            apply5050();
-        } else if (type === 'skip') {
-            applySkip();
-        }
-    }
-
-    function apply5050() {
-        const q = state.questions[state.currIdx];
-        const correctIdx = q.correctAnswer;
-        const buttons = ui.game.grid.children;
-        let removed = 0;
-
-        for (let i = 0; i < buttons.length; i++) {
-            if (i !== correctIdx && removed < 2) {
-                buttons[i].style.visibility = 'hidden';
-                removed++;
-            }
-        }
-        showCustomModal('Comodín activado', 'Se han eliminado 2 opciones incorrectas. 🍀');
-    }
-
-    function applySkip() {
-        clearInterval(state.timer);
-        showCustomModal('Comodín activado', 'Saltando pregunta... no pierdes vida. ⏩');
-        setTimeout(() => {
-            ui.screens.modal.classList.add('hidden');
-            // Hack: Reset modal specifically for nextQ
-            const modal = document.getElementById('customModal');
-            if (modal) modal.classList.add('hidden');
-
-            nextQ();
-        }, 1500);
-    }
+    // Se eliminó la duplicación de funciones de WILDCARD (useWildcard, apply5050, applySkip) aquí
 
     // --- UTILS & MODALS ---
     function showCustomModal(title, msg) {
@@ -441,6 +484,14 @@ const Arena = (() => {
     async function finishGame() {
         // Stop timer just in case
         clearInterval(state.timer);
+
+        // ✅ Validación preventiva: Si el juego terminó pero el usuario no contestó al menos 1 pregunta bien o mal (score 0 en idx 0)
+        // Significa que fue expulsado en el lobby preliminarmente (ej. límite de tiempo sin jugar, limite bug). No guardar score basura.
+        if (state.currIdx === 0 && state.score === 0) {
+            console.log("Juego anulado/aborte pre-partida. Evitando guardado nulo.");
+            window.location.reload();
+            return;
+        }
 
         try {
             const token = localStorage.getItem('authToken');
