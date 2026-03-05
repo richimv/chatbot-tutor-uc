@@ -64,8 +64,9 @@ class TrainingRepository {
      * @param {string} difficulty - Dificultad (ej: 'Básico', 'Avanzado')
      * @param {number} limit - Cantidad requerida
      * @param {string} userId - ID del usuario para excluir vistas recientes
+     * @param {string} career - Carrera seleccionada para filtrado específico (Opcional, mayormente SERUMS)
      */
-    async findQuestionsInBankBatch(domain, target, topics, difficulty, limit = 5, userId) {
+    async findQuestionsInBankBatch(domain, target, topics, difficulty, limit = 5, userId, career = null) {
         // 1. Obtener IDs que el usuario ya vio (últimas 24 horas - Olvido Saludable)
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
@@ -85,6 +86,14 @@ class TrainingRepository {
 
         const params = [topics, domain, target, difficulty];
         let paramIdx = 5;
+
+        // Fusión experta: Filtrado por Especialidad Paramédica solo si fue solicitada (ej. SERUMS).
+        // Si career está nulo en la BD es una pregunta general válida para cualquier profesional.
+        if (target === 'SERUMS' && career) {
+            query += ` AND (career IS NULL OR career = $${paramIdx}) `;
+            params.push(career);
+            paramIdx++;
+        }
 
         if (seenIds.length > 0) {
             query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
@@ -210,19 +219,21 @@ class TrainingRepository {
             // Auto-curar BD si es una instancia vieja
             await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS image_url TEXT');
             await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS target VARCHAR(255)');
+            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS career VARCHAR(100)');
 
             await client.query('BEGIN');
             let insertedCount = 0;
             const crypto = require('crypto');
 
             const query = `
-                INSERT INTO question_bank (domain, target, topic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO question_bank (domain, target, topic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash, career)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (question_hash) DO UPDATE SET 
                     target = EXCLUDED.target,
                     image_url = EXCLUDED.image_url,
                     explanation = EXCLUDED.explanation,
-                    options = EXCLUDED.options
+                    options = EXCLUDED.options,
+                    career = EXCLUDED.career
                 RETURNING id;
             `;
 
@@ -231,11 +242,12 @@ class TrainingRepository {
                 const target = q.target || 'N/A';
                 const exactTopic = q.topic || q.areas || 'General';
                 const difficulty = q.difficulty || 'Básico';
-                const question_text = String(q.question);
+                const question_text = String(q.question_text || q.question);
                 const optionsStr = JSON.stringify(q.options || []);
-                const correct_option_index = q.correctAnswerIndex || 0;
+                const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correctAnswerIndex || 0);
                 const explanation = q.explanation || '';
                 const image_url = q.image_url || null;
+                const career = q.career || null;
 
                 // Hash único
                 const rawString = `${exactTopic}-${question_text}-${optionsStr}`;
@@ -243,7 +255,7 @@ class TrainingRepository {
 
                 await client.query(query, [
                     domain, target, exactTopic, difficulty, question_text, optionsStr,
-                    correct_option_index, explanation, image_url, hash
+                    correct_option_index, explanation, image_url, hash, career
                 ]);
                 insertedCount++;
             }
@@ -301,8 +313,8 @@ class TrainingRepository {
      */
     async saveQuizHistory(userId, quizData) {
         const query = `
-            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats, target)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats, target, career)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id;
         `;
 
@@ -318,7 +330,8 @@ class TrainingRepository {
             quizData.totalQuestions,
             weakPoints,
             quizData.areaStats || '{}', // ✅ NUEVO: JSONB precalculado
-            quizData.target || 'ENAM'   // ✅ NUEVO: Guardar target explícito
+            quizData.target || 'ENAM',  // ✅ NUEVO: Guardar target explícito
+            quizData.career || null     // ✅ NUEVO: Guardar carrera explícita
         ];
 
         const res = await db.query(query, values);

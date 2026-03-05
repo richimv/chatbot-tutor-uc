@@ -11,7 +11,7 @@ class QuizController {
      */
     async startQuiz(req, res) {
         try {
-            const { target, areas, difficulty, round = 1, limit = 5, topic } = req.body;
+            const { target, areas, difficulty, round = 1, limit = 5, topic, career } = req.body;
             const user = req.user;
 
             const finalTarget = target || 'MEDICINA';
@@ -54,7 +54,7 @@ class QuizController {
             console.log(`🎮 Generando Ronda ${round} [Nivel ${aiDifficulty}] de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
             // Llamar al servicio de IA Médico (TrainingService)
-            const result = await TrainingService.generateQuiz({ target: finalTarget, areas: finalAreas }, aiDifficulty, user.id, limit);
+            const result = await TrainingService.generateQuiz({ target: finalTarget, areas: finalAreas, career: career }, aiDifficulty, user.id, limit);
 
             // 💡 FIX: Devolver el tema ESPECÍFICO (ej: "CARDIOLOGIA") rotado por el servicio,
             // en lugar del genérico "Medicina General".
@@ -87,7 +87,7 @@ class QuizController {
      */
     async submitScore(req, res) {
         try {
-            const { topic, areas, target, difficulty, score, correct_answers_count, total_questions, rounds_completed, questions } = req.body;
+            const { topic, areas, target, difficulty, career, score, correct_answers_count, total_questions, rounds_completed, questions } = req.body;
             const userId = req.user.id;
 
             if (score === undefined || !topic) {
@@ -100,6 +100,7 @@ class QuizController {
                 topic,
                 areas, // Pasamos al servicio
                 target, // Pasamos al servicio
+                career, // Pasamos al servicio
                 difficulty,
                 score,
                 totalQuestions: total_questions || 10,
@@ -187,7 +188,7 @@ class QuizController {
                     topicFilter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
                 } else {
                     // Fallback para todo el ecosistema (todas las dificultades antiguas y modernas unificadas)
-                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'PRE-INTERNADO', 'RESIDENTADO', 'Básico', 'Intermedio', 'Avanzado')`;
+                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'RESIDENTADO', 'Básico', 'Intermedio', 'Avanzado')`;
                 }
             } else if (context) {
                 // Generic fallback
@@ -371,7 +372,7 @@ class QuizController {
      */
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, topic } = req.body;
+            const { target, areas, difficulty, topic, career } = req.body;
             const userId = req.user.id;
 
             const finalTarget = target || 'MEDICINA';
@@ -380,7 +381,7 @@ class QuizController {
             // 🎯 FIX CRÍTICO: Usar el motor híbrido (DB + IA) para que NUNCA se corte a la mitad.
             // Si el banco local se queda sin preguntas no vistas, el TrainingService llamará a Gemini.
             const result = await TrainingService.generateQuiz(
-                { target: finalTarget, areas: finalAreas },
+                { target: finalTarget, areas: finalAreas, career: career },
                 difficulty || 'Intermedio',
                 userId,
                 5

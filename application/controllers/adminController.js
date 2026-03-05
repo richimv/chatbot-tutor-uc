@@ -185,15 +185,15 @@ class AdminController {
      */
     async generateAiQuestions(req, res) {
         try {
-            const { target, difficulty, domain } = req.body;
+            const { target, difficulty, domain, career } = req.body;
             if (!target || !difficulty || !domain) {
                 return res.status(400).json({ error: 'Faltan parámetros de configuración RAG.' });
             }
 
-            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, ${domain}`);
+            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, ${domain}, Carrera: ${career || 'N/A'}`);
 
             // 1. Mandar a Gemini 2.5 a construir las preguntas leyendo de la Vectorial RAG
-            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, domain);
+            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, domain, career);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
@@ -221,7 +221,7 @@ class AdminController {
     async getAllQuestions(req, res) {
         try {
             const result = await db.query(`
-                SELECT id, question_text, domain, target, topic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
+                SELECT id, question_text, domain, target, career, topic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
                 FROM question_bank 
                 ORDER BY created_at DESC 
                 LIMIT 500
@@ -252,8 +252,8 @@ class AdminController {
             const insertQuery = `
                 INSERT INTO question_bank (
                     question_text, options, correct_option_index, explanation, 
-                    domain, target, topic, difficulty, image_url, question_hash
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    domain, target, career, topic, difficulty, image_url, question_hash
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 RETURNING id;
             `;
             const values = [
@@ -263,6 +263,7 @@ class AdminController {
                 q.explanation || '',
                 q.domain,
                 q.target || null,
+                q.career || null,
                 q.topic || 'General',
                 q.difficulty || 'Intermedio',
                 q.image_url || null,
@@ -297,8 +298,8 @@ class AdminController {
             const updateQuery = `
                 UPDATE question_bank 
                 SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4,
-                    domain = $5, target = $6, topic = $7, difficulty = $8, image_url = $9, question_hash = $10
-                WHERE id = $11
+                    domain = $5, target = $6, career = $7, topic = $8, difficulty = $9, image_url = $10, question_hash = $11
+                WHERE id = $12
                 RETURNING id;
             `;
             const values = [
@@ -308,6 +309,7 @@ class AdminController {
                 q.explanation || '',
                 q.domain,
                 q.target || null,
+                q.career || null,
                 q.topic || 'General',
                 q.difficulty || 'Intermedio',
                 q.image_url || null,

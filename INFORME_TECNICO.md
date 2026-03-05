@@ -125,7 +125,7 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
 2.  **Motor de Examen (`quiz.js`)**
     *   **Estado Reactivo:** Gestión de preguntas, respuestas y progreso en el cliente.
     *   **Batch Loading:** Carga preguntas en lotes de 5 en segundo plano (`fetchNextBatch`) para mantener rendimiento fluido.
-    *   **Rotación Dinámica de Opciones:** Los simulacros para ENAM y PRE-INTERNADO operan con 4 opciones. Aquellos tipificados como **RESIDENTADO** fuerzan la generación y renderizado de **5 opciones** para simular la rigurosidad del examen CONAREME real.
+    *   **Rotación Dinámica de Opciones:** Los simulacros para ENAM y SERUMS operan con 4 opciones. Aquellos tipificados como **RESIDENTADO** fuerzan la generación y renderizado de **5 opciones** para simular la rigurosidad del examen CONAREME real.
     *   **Rastreo de Datos Granular:** Envío de metadata avanzada on-submit (target, áreas, dificultad, respuestas por pregunta) hacia el backend para analítica JSONB.
 
 3.  **Configuración de Examen (`simulator-dash.js` - Modal v2.0)**
@@ -137,7 +137,7 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
     | Target | Descripción | Opciones | Estilo IA |
     | :--- | :--- | :--- | :--- |
     | **ENAM** | Examen Nacional de Medicina (ASPEFAM). Obligatorio para egresados. 180-200 preguntas | 4 | Clínica general, fisiopatología, diagnóstico clásico. **Incluye NTS básicas** de Salud Pública (Vacunas, TB, Materno-Perinatal, MAIS-BFC). Certificado de Defunción (fijo). Enfoque: "El Médico de Posta" |
-    | **PRE-INTERNADO** | Examen de ingreso al internado médico (EsSalud) | 4 | Seguridad del paciente. Categorización de establecimientos (I-1 al III-2), triaje, Consentimiento Informado. Ciencias básicas aplicadas (ej. anatomía de fracturas). Enfoque: "Seguridad del Paciente" |
+    | **SERUMS** | Evaluación SERUMS (ENCAPS) del MINSA para médicos, enfermeras, obstetras, odontólogos, etc. | 4 | Prioriza Seguridad del Paciente, Medicina Preventiva/Comunitaria, Categorización de establecimientos (I-1 al III-2), triaje, y ciencias básicas aplicadas a la salud pública. Enfoque holístico de atención primaria. |
     | **RESIDENTADO** | Examen Nacional de Residentado Médico (CONAREME) | 5 | Especialidad avanzada: diagnóstico diferencial exhaustivo, Gold Standard, tratamiento 2da/3ra línea. Investigación: RR, OR, sesgos. Gestión: Ishikawa, FODA. 90% casos clínicos. Enfoque: "El Médico Científico/Gerente" |
 
     **Niveles de Dificultad (Basados en exigencia cognitiva, NO en materia):**
@@ -161,10 +161,10 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
 
 #### C. Lógica de Generación Híbrida (TrainingService v2.0)
 Estrategia costo-eficiente para generar contenido infinito y altamente preciso usando Inteligencia Artificial Agéntica:
-1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target (ENAM/PRE-INTERNADO/RESIDENTADO), Arrays de Áreas Médicas (23 áreas), Dificultad y exclusión de preguntas vistas.
+1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target (ENAM/SERUMS/RESIDENTADO), Arrays de Áreas Médicas (23 áreas), Dificultad y exclusión de preguntas vistas.
 2.  **Smart Filtering (Anti-Repetición 24h):** Excluye preguntas vistas por el usuario en las últimas 24 horas (`user_question_history`) con query `seen_at > NOW() - INTERVAL '24 hours'`. Después de 24h, las preguntas pueden reaparecer ("Olvido Saludable").
 3.  **AI Fallback Dinámico (Gemini 2.5 Flash):** Si el banco local no tiene suficientes preguntas frescas, se conecta al LLM con un prompt que incluye:
-    *   **Directrices por tipo de examen:** Diferentes instrucciones para ENAM (clínico universal), PRE-INTERNADO (atención primaria/NTS) y RESIDENTADO (especialidad avanzada).
+    *   **Directrices por tipo de examen:** Diferentes instrucciones para ENAM (clínico universal), SERUMS (atención primaria holística) y RESIDENTADO (especialidad avanzada).
     *   **Contexto RAG:** Documentos reales del MINSA buscados semánticamente en el vector store.
     *   **Deduplicación por Contexto Negativo:** 15 preguntas previas del banco inyectadas como "preguntas prohibidas" en el prompt.
     *   **Semantic Sub-Drift:** Rotación aleatoria de enfoque clínico (etiología, diagnóstico, tratamiento, complicaciones, prevención) para garantizar diversidad temática.
@@ -178,7 +178,7 @@ El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un mode
 *   **Dashboard Visual (Radar Chart UX):** El ecosistema Frontend intercepta dicho pipeline mediante la biblioteca `Chart.js`, renderizando un gráfico Poligonal tipo Radar (Spider) responsivo que señala visual y matemáticamente las Fortalezas (ej. Pediatría: 85%) y Fallas (ej. Cirugía: 20%) de un Doctor.
 
 #### E. Base de Datos (Schema)
-*   `question_bank`: Repositorio global de preguntas (compartido). Columnas clave: `domain`, `target` (ENAM/PRE-INTERNADO/RESIDENTADO), `topic`, `difficulty`, `times_used`.
+*   `question_bank`: Repositorio global de preguntas (compartido). Columnas clave: `domain`, `target` (ENAM/SERUMS/RESIDENTADO), `topic`, `difficulty`, `times_used`.
 *   `quiz_history`: Registro de intentos, puntajes y `area_stats` JSONB granular.
 *   `user_question_history`: Anti-repetición por usuario (`user_id`, `question_id`, `seen_at`, `times_seen`).
 *   `user_flashcards`: Tarjetas generadas automáticamente a partir de errores en simulacros.
@@ -543,8 +543,8 @@ El volumen masivo del "Simulacro Real" opera a dos niveles asíncronos bajo la s
 
 Para resolver el problema del LLM repitiendo conceptos clínicos a través de múltiples simulacros generados secuencialmente, se implementó una arquitectura de deduplicación de 3 capas en la inyección de contexto:
 
-### 16.1. Capa 1: Exclusión en Base de Datos
-El sistema intenta primero extraer preguntas no vistas en las últimas 24 horas del banco de datos. Solo llama al modelo GenAI (Gemini) si el banco local se queda sin preguntas suficientes para satisfacer el requisito del examen actual, reduciendo activamente el consumo de tokens y latencia.
+### 16.1. Capa 1: Exclusión Histórica Estricta (Base de Datos a Prompt)
+A nivel de arquitectura, antes de que el backend solicite la confección de 20 preguntas nuevas, el servicio (`mlService.js`) escudriña atómicamente la base de datos PostgreSQL, extrayendo las **últimas 200 preguntas previamente inyectadas** bajo esa misma configuración exacta (Target + Área + Dificultad + Carrera). Esta ráfaga de datos reales se incrusta textualmente como una "Restricción Absoluta" en el System Prompt de Gemini, forzando matemáticamente a la IA a virar su creatividad hacia patologías, tratamientos o casos clínicos completamente vírgenes y no tocar nunca la lista de temas "Bloqueados".
 
 ### 16.2. Capa 2: Contexto Negativo Aleatorio (Randomized RAG Constraint)
 Cada vez que el backend (`trainingService.js`) invoca a Gemini, `trainingRepository.js` extrae en paralelo un bloque ligero de 15 preguntas *aleatorias* del banco histórico pertenecientes a esa misma área (Ej. "Cardiología"). Estas se inyectan en el prompt maestro bajo una directiva restrictiva absoluta ("Regla de Oro de Deduplicación"), prohibiéndole a la IA evaluar o retornar los escenarios clínicos contenidos en este extracto, forzando matemáticamente la novedad.
@@ -561,14 +561,22 @@ Para transformar el motor de "Simulador Médico" a un "Hub Académico Multi-Domi
 ### 17.1. Hydration Activa (Configuración JSONB) 
 Se erradicó la gestión de estado basada puramente en el `localStorage` del navegador. Se implementó la tabla `user_simulator_preferences` utilizando el tipo de dato **JSONB** nativo de PostgreSQL. Al cargar el Dashboard, el Frontend consume la API REST `GET /api/users/preferences?domain=medicine` y restaura exactamente el *Target*, *Dificultad* y selección multi-área transversal a todos los dispositivos móviles y navegadores del usuario (Cross-Device Sync).
 
-### 17.2. Inyección Masiva (Bulk Admin Panel)
-En el portal `/admin`, se implementó una interfaz gráfica JSON habilitando a los administradores a volcar miles de preguntas pre-elaboradas hacia el `question_bank` en segundos. Esto se respalda con un controlador asíncrono robusto (`/api/admin/questions/bulk`) ejecutado sobre una única transacción SQL (`BEGIN/COMMIT`) capaz de soportar operaciones atómicas de ingestión masiva mitigando el consumo en la API de Google Vertex AI.
+### 17.2. Inyección Masiva Profesional (Upload Excel/CSV)
+En el portal `/admin`, se implementó una interfaz gráfica avanzada sustituyendo la antigua caja de texto JSON por un cargador nativo de archivos binarios tabulares.
+*   **Motor Interpretativo en Cliente:** Se integró la librería **SheetJS** (`xlsx`) vía CDN para que el propio navegador del administrador descifre asíncronamente archivos `.xlsx`, `.xls` y `.csv` pesados.
+*   **Estructura Estricta:** El sistema valida y transfiere un mapa de 13 columnas rígido (`pregunta, dominio, target, carrera, tema, dificultad, opt0... explicacion`). Adicionalmente, cuenta con un botón interactivo para generar y descargar dinámicamente una "Plantilla Oficial" preformateada lista para el llenado en Excel.
+*   **Backend Bulk:** Tras ser convertido silenciosamente a JSON por SheetJS, este es capturado por `/api/admin/questions/bulk` y ejecutado sobre una única transacción SQL (`BEGIN/COMMIT`) minimizando la carga de red.
 
 ### 17.3. Motor de Imágenes Estáticas Desacoplado (CDN jsDelivr)
 Para reducir agresivamente el consumo de Ancho de Banda (Transferencia) de la capa gratuita del servidor Backend (Supabase/Vercel) al cargar casos clínicos radiológicos o multimedia, se integró soporte nativo para `image_url` en los esquemas de visualización del Quiz (`quiz.html`). Como directiva oficial, el Administrador aloja directamente los pesados *assets* de imagen en un branch de infraestructura de GitHub y propaga estas imágenes instantáneamente al frontend mediante la red de Edge Caching global de **jsDelivr**, resultando en un costo marginal de transferencia de $0 para la institución educativa.
 
 ### 17.4. Gestión de Preguntas Individuales y UI de Administración (CRUD Full)
 Como evolución lógica a la inyección masiva, se desarrolló una suite completa de administración unitaria (`GET`, `POST`, `PUT`, `DELETE` en `/api/admin/questions`). En el portal Admin, la pestaña "Preguntas" ahora presenta un Grid dinámico robusto que renderiza metadatos médicos (`domain`, `target`). Se construyó un modal de edición avanzado que permite a los supervisores importar JSON o utilizar un formulario generativo para corregir sobre la marcha opciones o explicaciones de la IA sin depender exclusivamente de operaciones masivas (Bulk).
+
+### 17.5. Especialización Profiláctica (Careers Mapping para SERUMS)
+Ante la necesidad legal de adaptar el examen SERUMS (ENCAPS) a múltiples carreras de ciencias de la salud, el modelo de datos PostgreSQL de `question_bank` y de `quiz_history` fue alterado para alojar la columna `career`.
+*   **Comportamiento Dinámico UI:** Tanto en el Dashboard del Alumno como en el portal Admin, seleccionar "SERUMS" como Target despliega reactivamente un menú secundario bloqueando o revelando 11 carreras (Medicina Humana, Enfermería, Odontología, etc.).
+*   **RAG Profiláctico:** Al generar preguntas con IA para SERUMS, la variable `career` viaja hacia el Cerebro LLM, el cual adapta su léxico, prioridades y escenarios clínicos en exclusiva sintonía a las competencias legales de la carrera elegida.
 
 ---
 

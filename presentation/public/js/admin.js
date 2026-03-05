@@ -595,9 +595,26 @@ class AdminManager {
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', currentItem?.question_text || '', true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, currentItem?.domain || 'medicine', false)}
-                        ${this.createFormGroup('text', 'generic-target', 'Target (Ej: ENAM, Opcional)', currentItem?.target || '', false)}
+                        <div>
+                            <label class="form-label" for="generic-target">Programa/Target (Ej: ENAM, SERUMS, RESIDENTADO)</label>
+                            <input type="text" id="generic-target" class="form-input" value="${currentItem?.target || ''}" oninput="
+                                const isSerums = this.value.toUpperCase() === 'SERUMS';
+                                const cm = document.getElementById('generic-career-wrapper');
+                                if(cm) cm.style.display = isSerums ? 'block' : 'none';
+                                if(!isSerums) document.getElementById('generic-career').value = '';
+                            ">
+                        </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div id="generic-career-wrapper" style="display: ${currentItem?.target?.toUpperCase() === 'SERUMS' ? 'block' : 'none'}; margin-top: 15px;">
+                        <label class="form-label" for="generic-career">Carrera Profesional (Sólo SERUMS)</label>
+                        <select id="generic-career" class="form-input" style="outline: none;">
+                            <option value="">Selecciona una carrera...</option>
+                            <option value="Medicina Humana" ${currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
+                            <option value="Enfermería" ${currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
+                            <option value="Obstetricia" ${currentItem?.career === 'Obstetricia' ? 'selected' : ''}>Obstetricia</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         ${this.createFormGroup('text', 'generic-topic', 'Tema / Subtema (*)', currentItem?.topic || '', true)}
                         ${this.createSelect('generic-difficulty', 'Dificultad (*)', diffs, currentItem?.difficulty || 'Intermedio', false)}
                     </div>
@@ -628,20 +645,22 @@ class AdminManager {
                 break;
 
             case 'bulk-question':
-                title.textContent = 'Inyección Masiva de Preguntas (JSON)';
+                title.textContent = 'Importar Banco de Preguntas (Excel / CSV)';
                 fieldsHTML = `
                     <div class="admin-item-card" style="padding: 15px; text-align: left; background: var(--bg-surface); margin-bottom: 15px;">
                         <p style="margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">
-                            <strong>Instrucciones:</strong> Pega un array JSON con las preguntas a inyectar en la base de datos.<br>
-                            Usa GitHub+jsDelivr para las <code>image_url</code>. Ejemplo: <code>https://cdn.jsdelivr.net/gh/User/Repo@main/a.webp</code>
+                            <strong>¡Sube tu archivo Excel o CSV directamente de forma profesional!</strong><br><br>
+                            Asegúrate de respetar las 13 columnas del formato estricto oficial. Si no sabes cómo armarlo, descarga nuestra plantilla.
                         </p>
+                        <button type="button" class="btn-secondary" style="margin-top: 10px; padding: 5px 15px; font-size: 0.85rem;" onclick="window.adminManager.downloadExcelTemplate()">
+                            <i class="fas fa-file-excel" style="color:#22c55e;"></i> Descargar Plantilla Oficial
+                        </button>
                     </div>
-                    ${this.createFormGroup('textarea', 'generic-bulk-json', 'Carga Útil JSON (*)', '', true)}
+                    <div style="margin-bottom: 15px;">
+                        <label class="form-label" for="generic-bulk-file" style="font-weight: 600; font-size:0.9rem; margin-bottom: 5px; display:block;">Selecciona tu archivo (.xlsx, .xls, .csv) (*)</label>
+                        <input type="file" id="generic-bulk-file" accept=".xlsx, .xls, .csv" class="form-input" style="padding: 10px; background: var(--bg-secondary); border: 1px dashed var(--border-color); cursor:pointer;">
+                    </div>
                 `;
-                setTimeout(() => {
-                    const ta = document.getElementById('generic-bulk-json');
-                    if (ta) ta.rows = 15;
-                }, 0);
                 break;
             case 'ai-question':
                 title.textContent = 'Generador de Preguntas IA (RAG)';
@@ -650,11 +669,28 @@ class AdminManager {
                         <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 20 preguntas sin duplicarse con el banco existente.
                     </div>
                     <h4 style="margin-bottom:0.5rem;">Examen Objetivo</h4>
-                    <select id="ai-target" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
+                    <select id="ai-target" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);" onchange="
+                        const isSerums = this.value === 'SERUMS';
+                        const info = document.getElementById('ai-serums-info');
+                        const wrapper = document.getElementById('ai-career-wrapper');
+                        if(info) info.style.display = isSerums ? 'block' : 'none';
+                        if(wrapper) wrapper.style.display = isSerums ? 'block' : 'none';
+                    ">
                         <option value="ENAM">ENAM</option>
-                        <option value="PRE-INTERNADO">PRE-INTERNADO</option>
+                        <option value="SERUMS">SERUMS</option>
                         <option value="RESIDENTADO">RESIDENTADO</option>
                     </select>
+                    <div id="ai-serums-info" style="display:none; margin-top:-5px; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-muted); background: rgba(56, 189, 248, 0.05); padding: 10px; border-left: 3px solid #38bdf8; border-radius: 4px;">
+                        <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones de: medicina humana, enfermería y obstetricia.
+                    </div>
+                    <div id="ai-career-wrapper" style="display:none; margin-bottom: 15px;">
+                        <h4 style="margin-bottom:0.5rem;">Carrera Profesional</h4>
+                        <select id="ai-career" style="width:100%; padding:10px; border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
+                            <option value="Medicina Humana">Medicina Humana</option>
+                            <option value="Enfermería">Enfermería</option>
+                            <option value="Obstetricia">Obstetricia</option>
+                        </select>
+                    </div>
                     <h4 style="margin-bottom:0.5rem;">Dificultad</h4>
                     <select id="ai-difficulty" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
                         <option value="Básico">Básico</option>
@@ -1243,8 +1279,6 @@ class AdminManager {
                     courseFormData.append('name', document.getElementById('generic-name').value);
                     // Append arrays as JSON strings or separate fields depending on backend expectation.
                     // For FormData usually we append multiple values with same key or a JSON string.
-                    // Assuming backend parses 'bookIds' and 'careerIds' from JSON string if sent as text in FormData, 
-                    // OR we can send them as regular fields if the backend supports it.
                     // Let's serialize to JSON for safety if backend expects JSON body usually.
                     // BUT since we are switching to FormData, standard is multiple keys. 
                     // Let's try appending JSON string for arrays which is robust for many backends.
@@ -1335,10 +1369,13 @@ class AdminManager {
                     body = formData; // Asignamos FormData en lugar de objeto JSON
                     break;
                 case 'question':
+                    const qTarget = document.getElementById('generic-target').value;
+                    const qCareerEl = document.getElementById('generic-career');
                     body = {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
-                        target: document.getElementById('generic-target').value,
+                        target: qTarget,
+                        career: (qTarget.toUpperCase() === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
                         difficulty: document.getElementById('generic-difficulty').value,
                         options: [
@@ -1364,8 +1401,13 @@ class AdminManager {
                             throw new Error("Por favor selecciona al menos una Área de Estudio/Especialidad.");
                         }
 
+                        const targetVal = document.getElementById('ai-target').value;
+                        const careerSelectEl = document.getElementById('ai-career');
+                        const careerVal = targetVal === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
+
                         const reqBody = {
-                            target: document.getElementById('ai-target').value,
+                            target: targetVal,
+                            career: careerVal,
                             difficulty: document.getElementById('ai-difficulty').value,
                             domain: selectedDomains.join(', ')
                         };
@@ -1388,16 +1430,60 @@ class AdminManager {
                         if (aiBtn) { aiBtn.innerHTML = originalText; aiBtn.disabled = false; }
                     }
                 }
-                case 'bulk-question':
-                    const jsonVal = document.getElementById('generic-bulk-json').value;
-                    let parsedData = [];
-                    try {
-                        parsedData = JSON.parse(jsonVal);
-                        if (!Array.isArray(parsedData)) throw new Error("Debe ser un array JSON");
-                    } catch (e) {
-                        throw new Error("Error de sintaxis JSON: " + e.message);
+                case 'bulk-question': {
+                    const fileInput = document.getElementById('generic-bulk-file');
+                    if (!fileInput || !fileInput.files.length) {
+                        throw new Error('Por favor selecciona un archivo Excel o CSV.');
                     }
-                    body = parsedData;
+                    const file = fileInput.files[0];
+
+                    body = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const data = new Uint8Array(e.target.result);
+                                if (typeof window.XLSX === 'undefined') throw new Error("La librería procesadora de Excel no ha cargado completamente. Intenta recargar la página.");
+
+                                const workbook = window.XLSX.read(data, { type: 'array' });
+                                const sheetName = workbook.SheetNames[0];
+                                const sheet = workbook.Sheets[sheetName];
+                                const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                                if (rows.length < 2) throw new Error("El archivo está vacío o solo contiene la fila de encabezados.");
+
+                                // Omitir la fila 0 (encabezados)
+                                const parsed = rows.slice(1).filter(row => row.length > 0 && row[0]).map((cols, i) => {
+                                    // Cols es un array extraído numéricamente basándose en la enumeración de XLSX
+                                    if (!cols[0]) return null;
+
+                                    return {
+                                        question_text: String(cols[0] || '').trim(),
+                                        domain: String(cols[1] || 'medicine').trim(),
+                                        target: cols[2] ? String(cols[2]).trim() : null,
+                                        career: cols[3] ? String(cols[3]).trim() : null,
+                                        topic: String(cols[4] || 'General').trim(),
+                                        difficulty: String(cols[5] || 'Intermedio').trim(),
+                                        options: [
+                                            String(cols[6] || 'Opción A').trim(),
+                                            String(cols[7] || 'Opción B').trim(),
+                                            String(cols[8] || 'Opción C').trim(),
+                                            String(cols[9] || 'Opción D').trim()
+                                        ],
+                                        correct_answer: parseInt(cols[10] || 0, 10),
+                                        explanation: cols[11] ? String(cols[11]).trim() : null,
+                                        image_url: cols[12] ? String(cols[12]).trim() : null
+                                    };
+                                }).filter(Boolean); // Remover nulos
+
+                                if (parsed.length === 0) throw new Error("No se encontraron preguntas válidas en el documento.");
+                                resolve(parsed);
+                            } catch (err) {
+                                reject(new Error("Error parseando Excel: " + err.message));
+                            }
+                        };
+                        reader.onerror = () => reject(new Error("Error leyendo el archivo desde el disco."));
+                        reader.readAsArrayBuffer(file);
+                    });
 
                     // Enviar petición Custom para inyección masiva
                     const _url = `${window.AppConfig.API_URL}/api/admin/questions/bulk`;
@@ -1413,6 +1499,7 @@ class AdminManager {
                     this.closeGenericModal();
                     await this.loadAllData();
                     return; // Retorno anticipado
+                }
 
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
@@ -1603,6 +1690,23 @@ class AdminManager {
                             </button>
                         </div>
                         `;
+    }
+
+    // ✅ NUEVO: Generador dinámico de Plantilla Excel para usuarios
+    downloadExcelTemplate() {
+        if (typeof window.XLSX !== 'undefined') {
+            const ws_data = [
+                ['PREGUNTA (*)', 'DOMINIO', 'TARGET', 'CARRERA', 'TEMA_SUBTEMA (*)', 'DIFICULTAD', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'INDEX_CORRECTA (*)', 'EXPLICACION', 'URL_IMAGEN'],
+                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Intermedio', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '']
+            ];
+            const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = window.XLSX.utils.book_new();
+            window.XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Preguntas");
+            window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Banco_Preguntas.xlsx");
+        } else {
+            console.error('SheetJS no detectado');
+            alert("No se cargaron los recursos para descargar el excel. Refresca la página.");
+        }
     }
 
 }

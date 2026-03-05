@@ -165,7 +165,7 @@ const SimulatorDash = (() => {
                 }
             </style>
             <i class="fas fa-lightbulb tip-icon"></i>
-            <strong>Tip:</strong> Personaliza tu examen eligiendo tipo (ENAM, Pre-Internado, Residentado), áreas clínicas y dificultad.
+            <strong>Tip:</strong> Personaliza tu examen eligiendo tipo (ENAM, SERUMS, Residentado), áreas clínicas y dificultad.
         `;
 
         btn.parentElement.style.position = 'relative';
@@ -190,6 +190,9 @@ const SimulatorDash = (() => {
         // Append Custom Config if active
         if (activeConfig) {
             baseParams = `?target=${encodeURIComponent(activeConfig.target)}&difficulty=${encodeURIComponent(activeConfig.difficulty)}&areas=${encodeURIComponent(activeConfig.areas.join(','))}&context=${currentContext}`;
+            if (activeConfig.target === 'SERUMS' && activeConfig.career) {
+                baseParams += `&career=${encodeURIComponent(activeConfig.career)}`;
+            }
         }
 
         // 1. Arcade/Quick (10 questions)
@@ -317,6 +320,17 @@ const SimulatorDash = (() => {
                     if (checkedEl) activeTarget = checkedEl.value;
                 }
 
+                const serumsInfo = document.getElementById('serums-info-alert');
+                if (serumsInfo) serumsInfo.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+
+                const careerBox = document.getElementById('serums-career-container');
+                if (careerBox) careerBox.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+
+                const careerSelect = document.getElementById('config-career');
+                if (activeConfig && activeConfig.career && careerSelect) {
+                    careerSelect.value = activeConfig.career;
+                }
+
                 renderAreas(activeTarget);
             };
         }
@@ -337,7 +351,37 @@ const SimulatorDash = (() => {
         // Change Target Event
         radioTargets.forEach(radio => {
             radio.addEventListener('change', (e) => {
-                if (e.target.checked) renderAreas(e.target.value);
+                if (e.target.checked) {
+                    const t = e.target.value;
+                    const serumsInfo = document.getElementById('serums-info-alert');
+                    if (serumsInfo) serumsInfo.style.display = t === 'SERUMS' ? 'block' : 'none';
+                    const careerBox = document.getElementById('serums-career-container');
+                    if (careerBox) careerBox.style.display = t === 'SERUMS' ? 'block' : 'none';
+
+                    // Lógica Automática de Selección
+                    let defaultAreas = [];
+                    if (t === 'ENAM') {
+                        // Grupos B, C, D
+                        defaultAreas = examAreasGrouped.filter(g => g.label !== 'Ciencias Básicas').flatMap(g => g.areas);
+                        document.getElementById('config-difficulty').value = 'Intermedio';
+                    } else if (t === 'SERUMS') {
+                        // Solo Grupo D
+                        defaultAreas = examAreasGrouped.find(g => g.label === 'Salud Pública y Gestión').areas;
+                        document.getElementById('config-difficulty').value = 'Básico'; // Sugerido
+                    } else if (t === 'RESIDENTADO') {
+                        // Todos (A, B, C, D)
+                        defaultAreas = examAreasGrouped.flatMap(g => g.areas);
+                        document.getElementById('config-difficulty').value = 'Avanzado';
+                    }
+
+                    if (activeConfig) {
+                        activeConfig.target = t;
+                        activeConfig.areas = defaultAreas;
+                    } else {
+                        activeConfig = { target: t, areas: defaultAreas };
+                    }
+                    renderAreas(t);
+                }
             });
         });
 
@@ -347,6 +391,8 @@ const SimulatorDash = (() => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
                 const difficulty = document.getElementById('config-difficulty').value;
                 const selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
+                const careerSelectEl = document.getElementById('config-career');
+                const career = target === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
 
                 if (selectedAreas.length === 0) {
                     alert('Debes seleccionar al menos un área de estudio.');
@@ -358,7 +404,7 @@ const SimulatorDash = (() => {
                 btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                 btnSave.disabled = true;
 
-                activeConfig = { target, difficulty, areas: selectedAreas };
+                activeConfig = { target, difficulty, areas: selectedAreas, career };
                 localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig)); // Persist locally
 
                 const token = localStorage.getItem('authToken');

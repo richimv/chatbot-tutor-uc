@@ -582,12 +582,37 @@ class MLService {
 
     /**
      * ✅ NUEVO: Generador RAG de Preguntas para el Banco (Admin)
+    /**
+     * Motor RAG con prevencion de duplicados
      */
-    static async generateRAGQuestions(target, difficulty, domain) {
+    static async generateRAGQuestions(target, difficulty, domain, career) {
         console.log(`🤖 MLService: Iniciando Generación RAG Administrativa -> Target: ${target}, Diff: ${difficulty}, Domain: ${domain}`);
         try {
             const RagService = require('./ragService');
-            // 1. Extraer contexto (5 chunks) de la BD nativa
+            // 0. Prevenir Duplicidad Escaneando la Base de Datos Histórica
+            let recentQuestionsText = "";
+            let careerParam = career || null;
+            try {
+                const db = require('../../infrastructure/database/db'); // Carga dinámica del Pool
+                // Extraer el historial más reciente según el grupo
+                const recentQ = await db.query(`
+                    SELECT topic, question_text 
+                    FROM question_bank 
+                    WHERE target = $1 
+                      AND domain = $2 
+                      AND (career = $3 OR $3 IS NULL)
+                    ORDER BY created_at DESC 
+                    LIMIT 200
+                `, [target, domain, careerParam]);
+
+                if (recentQ.rows.length > 0) {
+                    recentQuestionsText = "\\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\\nAquí tienes las últimas preguntas que YA existen en el sistema. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\\n" +
+                        recentQ.rows.map((r, idx) => `[Bloqueada ${idx + 1}] Tema: ${r.topic} | Muestra: "${r.question_text.substring(0, 150)}..."`).join('\\n') + "\\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\\n";
+                }
+            } catch (e) {
+                console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
+            }
+
             // 1. Extraer contexto (mayor densidad para abarcar libros y normas) de la BD nativa
             // Modificamos el query RAG para que fuerce la búsqueda en normas, libros y guías
             const queryVectorial = `Conceptos médicos, guías clínicas, normas técnicas, leyes y preguntas de ${domain} para ${target} dificultad ${difficulty}`;
@@ -607,8 +632,8 @@ class MLService {
             let targetRules = "";
             if (target === "ENAM") {
                 targetRules = "Enfoque: 'El Médico de Posta' para su SERUMS. Clínica general, fisiopatología, diagnóstico clásico. Debe incluir Normas Técnicas (NTS) básicas de Salud Pública (Vacunas, TB, Materno-Perinatal, MAIS-BFC) y Certificado de Defunción. OBLIGATORIO: Generar 4 opciones.";
-            } else if (target === "PRE-INTERNADO") {
-                targetRules = "Enfoque: 'Seguridad del Paciente'. Categorización de establecimientos (I-1 al III-2), triaje, Consentimiento Informado. Ciencias básicas aplicadas (ej. anatomía de fracturas). OBLIGATORIO: Generar 4 opciones.";
+            } else if (target === "SERUMS") {
+                targetRules = "Enfoque: Evaluación SERUMS (ENCAPS Minsa). Enfoque holístico para profesionales de la salud (Medicina Humana, Enfermería, Obstetricia). Priorizar Seguridad del Paciente, Medicina Preventiva, Categorización de establecimientos (I-1 al III-2), triaje comunitario, y ciencias básicas aplicadas a la salud pública. OBLIGATORIO: Generar 4 opciones.";
             } else if (target === "RESIDENTADO") {
                 targetRules = "Enfoque: 'El Médico Científico/Gerente'. Especialidad avanzada: diagnóstico diferencial exhaustivo, Gold Standard, tratamiento de 2da/3ra línea. Investigación: RR, OR, sesgos. Gestión: Ishikawa, FODA. 90% DEBEN SER CASOS CLÍNICOS. OBLIGATORIO: Generar 5 opciones.";
             }
@@ -624,9 +649,10 @@ class MLService {
 
             // 3. System Prompt Reforzado
             const prompt = `
-            Eres un experto catedrático creador de exámenes médicos de altísimo nivel para Perú. Genera exactamente 20 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
+            Eres un experto catedrático creador de exámenes profesionales de altísimo nivel para Perú. Genera exactamente 20 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
             
             - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
+            - Carrera o Profesión: ${career ? career : 'Aplica a todas las ramas'} (De ser especificada, orienta el léxico y los problemas al campo de acción de esta carrera).
             - Nivel de Dificultad: ${difficulty} -> EXIGENCIA COGNITIVA: ${diffRules}
             - Áreas/Especialidades Seleccionadas: ${domain} (Distribuye las 20 preguntas equilibradamente entre estas áreas, mezclando temas transversales si es posible).
 
@@ -635,7 +661,7 @@ class MLService {
             - DEBES extraer la información clínica de estos fragmentos para redactar las preguntas.
             - REQUISITO ANTI-DUPLICACIÓN: Crea casos clínicos únicos, cruza variables de edad, sexo y sintomatología clínica. Evita a toda costa preguntas genéricas (ej. "¿Cuál es la causa más frecuente de X?"). Elabora preguntas de nicho para garantizar que no existan duplicados en nuestra base de datos.
             - REQUISITO TRAMPAS EXÁMENES (DISTRACTORES): Las opciones incorrectas DEBEN ser sumamente plausibles (distractores y trampas comunes). No hagas que la respuesta correcta sea evidente pónsela muy difícil. El médico evaluado debe dudar y afilar su análisis. La explicación obligatoriamente debe detallar la respuesta correcta y por qué la trampa aparente es falsa.
-            
+            ${recentQuestionsText}
             CONTEXTO OFICIAL RECUPERADO DE LA BD RAG:
             ${ragContext || "No hay contexto alojado. Usa conocimiento médico general oficial del Perú (MINSA/EsSalud)."}
 
@@ -649,6 +675,7 @@ class MLService {
               "explanation": "Explicación académica fundamentada en libros o normas técnicas.",
               "domain": "ESPECIFICAR_EL_AREA_USADA_AQUI", // (Ej. Pediatría, o Cirugía General, debe pertenecer a las áreas solicitadas)
               "target": "${target}",
+              "career": "${career ? career : ""}", // Obligatorio incluir la carrera (o cadena vacía si no aplica)
               "topic": "Nombre del tema o subtema específico (Ej. Preeclampsia, Asma)",
               "difficulty": "${difficulty}",
               "image_url": ""

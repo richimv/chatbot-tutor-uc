@@ -367,7 +367,8 @@
     cursor: pointer;
 }
 
-#config-difficulty option {
+#config-difficulty option,
+#config-career option {
     background: #1f1f1f;
     color: white;
 }

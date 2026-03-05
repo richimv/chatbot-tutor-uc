@@ -71,10 +71,12 @@ class TrainingService {
         // 1. Parsear opciones
         let target = 'MEDICINA';
         let areas = ['Medicina General'];
+        let career = null;
 
         if (typeof categoryOptions === 'object') {
             target = categoryOptions.target || 'MEDICINA';
             areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : ['Medicina General'];
+            career = categoryOptions.career || null;
         } else {
             // Modo Legacy
             target = 'MEDICINA'; // We assumed domain was 'MEDICINA' for QuizController before
@@ -85,7 +87,7 @@ class TrainingService {
             areas = ['MEDICINA GENERAL'];
         }
 
-        // 🛠️ DB MAPPER FIX: 'target' holds the exam type (ENAM, PRE-INTERNADO, RESIDENTADO) or 'GENERAL_TRIVIA' from Arena.
+        // 🛠️ DB MAPPER FIX: 'target' holds the exam type (ENAM, SERUMS, RESIDENTADO) or 'GENERAL_TRIVIA' from Arena.
         const dbDomain = target === 'GENERAL_TRIVIA' ? 'GENERAL_TRIVIA' : 'medicine';
         const dbTarget = target === 'GENERAL_TRIVIA' ? null : target;
 
@@ -95,7 +97,7 @@ class TrainingService {
             if (target === 'RESIDENTADO') {
                 difficulty = 'Avanzado'; // Especialidad compleja
             } else {
-                difficulty = 'Intermedio'; // Nivel troncal ENAM/PRE-INTERNADO
+                difficulty = 'Intermedio'; // Nivel troncal ENAM/SERUMS
             }
         }
 
@@ -107,10 +109,10 @@ class TrainingService {
         }
 
         const areaString = areas.join(', ');
-        console.log(`🧠 TrainingService: Buscando Multi-Área: [${areaString}] Target: (${target}) Nivel Forzado: [${difficulty}]...`);
+        console.log(`🧠 TrainingService: Buscando Multi-Área: [${areaString}] Target: (${target}) Career: (${career || 'N/A'}) Nivel Forzado: [${difficulty}]...`);
 
         // 1. Intentar obtener del Banco (DB) con la nueva query (Batch)
-        let questions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, areas, difficulty, limit, userId);
+        let questions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, areas, difficulty, limit, userId, career);
 
         // 🔀 Shuffle de opciones para preguntas de DB
         questions = questions.map(q => this.shuffleOptions(q));
@@ -299,7 +301,7 @@ class TrainingService {
 
     // --- MÉTODOS LEGACY (Wrappers para compatibilidad) ---
 
-    // Usado por QuizController (ENAM/PRE-INTERNADO/RESIDENTADO)
+    // Usado por QuizController (ENAM/SERUMS/RESIDENTADO)
     async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5) {
         const result = await this.getQuestions(categoryOptions, difficulty, limit, userId);
         return { questions: result.questions, topic: result.topic };

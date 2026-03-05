@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     question_hash TEXT,
     image_url TEXT,
     target CHARACTER VARYING(255),
+    career CHARACTER VARYING(100),
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)
 );
 
@@ -136,6 +137,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_history (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     area_stats JSONB DEFAULT '{}'::jsonb,
     target CHARACTER VARYING(50),
+    career CHARACTER VARYING(100),
     CONSTRAINT quiz_history_pkey PRIMARY KEY (id)
 );
 

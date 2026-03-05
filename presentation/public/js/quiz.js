@@ -55,6 +55,7 @@ async function init() {
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'ENAM');
     state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig ? savedConfig.difficulty : 'Intermedio');
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
+    state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
 
     const areasParam = urlParams.get('areas');
     if (areasParam) {
@@ -144,6 +145,7 @@ async function startQuiz() {
             target: state.targetExam,
             areas: state.areas,
             difficulty: state.difficulty,
+            career: state.career,
             limit: Math.min(5, state.maxQuestions) // Batching optimizations
         })
     });
@@ -247,6 +249,7 @@ async function fetchNextBatch() {
                 target: state.targetExam,
                 areas: state.areas,
                 difficulty: state.difficulty,
+                career: state.career,
                 seenIds: seenIds
             })
         });
@@ -499,6 +502,7 @@ async function finishQuiz() {
                 areas: state.areas, // Extra metadata
                 target: state.targetExam,
                 difficulty: state.difficulty,
+                career: state.career,
                 score: state.score,
                 total_questions: state.currentQuestionIndex, // Send actual total answered
                 questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
