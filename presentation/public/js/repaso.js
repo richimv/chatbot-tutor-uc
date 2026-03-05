@@ -137,6 +137,14 @@ class RepasoManager {
     bindEvents() {
         document.getElementById('create-deck-form').addEventListener('submit', (e) => this.handleCreateDeck(e));
         document.getElementById('card-form').addEventListener('submit', (e) => this.handleSaveCard(e));
+
+        // Force refresh when returning from flashcard study via browser back button
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted && this.currentDeck) {
+                // If loaded from back-forward cache, refresh stats silently
+                this.loadFolder(this.currentDeck.id);
+            }
+        });
     }
 
     // --- Views ---
@@ -189,7 +197,8 @@ class RepasoManager {
     renderDeckHeader(deck, cards) {
         const container = document.getElementById('folder-header');
         const total = cards.length;
-        const mastered = 0; // Placeholder until backend support
+        // Calculate mastered properly based on intervals (SM-2 standard > 21 days)
+        const mastered = cards.filter(c => c.interval_days > 21).length;
         const pending = deck.due_cards || 0;
 
         // Premium Header with Inline Actions
@@ -419,14 +428,44 @@ class RepasoManager {
         }
 
         cards.forEach((c, index) => {
+            // Evaluamos la métrica SRS de la tarjeta para pintarla en UI principal
+            let colorClass = '';
+            if (c.last_quality === 1) {
+                colorClass = 'srs-status-forgot';
+            } else if (c.last_quality === 2) {
+                colorClass = 'srs-status-hard';
+            } else if (c.last_quality === 3) {
+                colorClass = 'srs-status-good';
+            } else if (c.last_quality === 4) {
+                colorClass = 'srs-status-easy';
+            } else {
+                // Fallback heurístico
+                if (c.repetition_number === 0) {
+                    colorClass = '';
+                } else if (c.interval_days === 0 && c.repetition_number > 0) {
+                    colorClass = 'srs-status-forgot';
+                } else if (c.ease_factor < 2.0 && c.interval_days > 0) {
+                    colorClass = 'srs-status-hard';
+                } else if (c.ease_factor >= 2.0 && c.interval_days <= 10) {
+                    colorClass = 'srs-status-good';
+                } else if (c.interval_days > 10) {
+                    colorClass = 'srs-status-easy';
+                }
+            }
+
+            const isDue = new Date(c.next_review_at) <= new Date();
+            const dueClass = isDue ? 'is-due-glow' : '';
+
             const row = document.createElement('div');
-            row.className = 'card-row-item';
+            row.className = `card-row-item ${colorClass} ${dueClass}`;
             row.dataset.id = c.id;
             row.dataset.index = index;
             row.draggable = true;
-            row.style.cssText = 'display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;';
-            row.onmouseover = () => row.style.background = 'rgba(255,255,255,0.03)';
-            row.onmouseout = () => row.style.background = 'transparent';
+            row.style.cssText = `display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:${colorClass ? '' : 'transparent'}; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; border-radius: 8px; margin-bottom: 4px; border-left-width: 4px; border-left-style: solid; ${!colorClass ? 'border-left-color: transparent;' : ''}`;
+
+            // Efecto Hover solo si no tiene color base, de lo contrario oscurecer levemente el color srs
+            row.onmouseover = () => row.style.filter = 'brightness(1.5)';
+            row.onmouseout = () => row.style.filter = '';
 
             // Drag Events
             row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
@@ -623,15 +662,26 @@ class RepasoManager {
         document.getElementById('delete-deck-name').textContent = `${checked.length} tarjetas seleccionadas`;
         document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Múltiples Tarjetas';
 
-        document.getElementById('btn-confirm-delete').onclick = async () => {
+        const closeModal = () => {
             modal.classList.remove('active');
+            if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+                window.uiManager.popModalState('delete-confirm-modal');
+            }
+        };
+
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            closeModal();
             await this.deleteBulkCards(checked);
         };
         document.getElementById('btn-cancel-delete').onclick = () => {
-            modal.classList.remove('active');
+            closeModal();
             document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Mazo'; // Reset
         };
+
         modal.classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('delete-confirm-modal');
+        }
     }
 
     async deleteBulkCards(cardIds) {
@@ -769,10 +819,8 @@ class RepasoManager {
     }
 
     async startStudy(deckId) {
-        // Verificar límite de vidas antes de iniciar sesión de estudio
-        const allowed = await this._checkUsageLimit();
-        if (!allowed) return;
-
+        // Ya no verificamos el límite de IA/vidas al estudiar,
+        // ya que el repaso del conocimiento almacenado es libre y no consume tokens.
         const deckName = this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || '';
         window.location.href = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
     }
@@ -1011,18 +1059,23 @@ class RepasoManager {
     _showLimitModal(msg) {
         if (document.getElementById('custom-limit-modal')) return;
         const modalHtml = `
-            <div class="modal-overlay" id="custom-limit-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; justify-content:center; align-items:center; background:rgba(15,23,42,0.85); z-index:9999; opacity:1 !important; visibility:visible !important;">
-                <div class="modal-content" style="background:#1e293b; padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+            <div class="modal-overlay active" id="custom-limit-modal" style="z-index:9999; backdrop-filter:blur(8px);">
+                <div class="modal-content" style="background:var(--bg-card, #1f1f1f); padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
                     <div style="margin-bottom:1.5rem;">
-                        <i class="fas fa-exclamation-circle" style="font-size:3rem; color:#f87171;"></i>
+                        <i class="fas fa-crown" style="font-size:3.5rem; color:#ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                     </div>
-                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main);">Límite Alcanzado</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
-                    <button class="btn-action" style="background:#3b82f6; color:white; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="document.getElementById('custom-limit-modal').remove()">Entendido</button>
+                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main, #f8fafc);">Límite Alcanzado</h2>
+                    <p style="color:var(--text-muted, #94a3b8); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
+                    <button class="btn-action" style="background:linear-gradient(90deg, #f59e0b, #d97706); color:white; font-weight:bold; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="const m = document.getElementById('custom-limit-modal'); if(m){ m.classList.remove('active'); } if(window.uiManager && window.uiManager.popModalState) window.uiManager.popModalState('custom-limit-modal');">Entendido</button>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Registrar en historial para que el botón "Atrás" solo cierre el modal y no retroceda de página
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('custom-limit-modal');
+        }
     }
 
     /**
@@ -1070,14 +1123,26 @@ class RepasoManager {
         // Show custom delete modal
         const modal = document.getElementById('delete-confirm-modal');
         document.getElementById('delete-deck-name').textContent = deckName;
-        document.getElementById('btn-confirm-delete').onclick = async () => {
+
+        const closeModal = () => {
             modal.classList.remove('active');
+            if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+                window.uiManager.popModalState('delete-confirm-modal');
+            }
+        };
+
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            closeModal();
             await this.deleteDeck(deckId);
         };
         document.getElementById('btn-cancel-delete').onclick = () => {
-            modal.classList.remove('active');
+            closeModal();
         };
+
         modal.classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('delete-confirm-modal');
+        }
     }
 
     async deleteDeck(deckId) {
@@ -1113,16 +1178,28 @@ class RepasoManager {
         const preview = frontContent.length > 40 ? frontContent.substring(0, 40) + '…' : frontContent;
         document.getElementById('delete-deck-name').textContent = preview;
         document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Tarjeta';
-        document.getElementById('btn-confirm-delete').onclick = async () => {
+
+        const closeModal = () => {
             modal.classList.remove('active');
+            if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+                window.uiManager.popModalState('delete-confirm-modal');
+            }
+        };
+
+        document.getElementById('btn-confirm-delete').onclick = async () => {
+            closeModal();
             await this.deleteCard(cardId);
         };
         document.getElementById('btn-cancel-delete').onclick = () => {
-            modal.classList.remove('active');
+            closeModal();
             // Reset title for next use
             document.querySelector('#delete-confirm-modal h2').textContent = 'Eliminar Mazo';
         };
+
         modal.classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('delete-confirm-modal');
+        }
     }
 
     async deleteCard(cardId) {

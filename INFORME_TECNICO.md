@@ -575,7 +575,7 @@ Como evolución lógica a la inyección masiva, se desarrolló una suite complet
 
 ### 17.5. Especialización Profiláctica (Careers Mapping para SERUMS)
 Ante la necesidad legal de adaptar el examen SERUMS (ENCAPS) a múltiples carreras de ciencias de la salud, el modelo de datos PostgreSQL de `question_bank` y de `quiz_history` fue alterado para alojar la columna `career`.
-*   **Comportamiento Dinámico UI:** Tanto en el Dashboard del Alumno como en el portal Admin, seleccionar "SERUMS" como Target despliega reactivamente un menú secundario bloqueando o revelando 11 carreras (Medicina Humana, Enfermería, Odontología, etc.).
+*   **Comportamiento Dinámico UI:** Tanto en el Dashboard del Alumno como en el portal Admin, seleccionar "SERUMS" como Target despliega reactivamente un menú secundario bloqueando o revelando 3 carreras (Medicina Humana, Enfermería).
 *   **RAG Profiláctico:** Al generar preguntas con IA para SERUMS, la variable `career` viaja hacia el Cerebro LLM, el cual adapta su léxico, prioridades y escenarios clínicos en exclusiva sintonía a las competencias legales de la carrera elegida.
 
 ---
@@ -744,3 +744,10 @@ Para reducir la carga cognitiva del usuario al abrir el chat, se simplificó el 
 Con la implementación del tema **Manta Black**, ciertos iconos heredados (Editar y Eliminar) que carecían de color definido se volvieron invisibles al mostrarse como negro sobre negro.
 - **Corrección Croma Global:** Se inyectó `color: var(--text-main, #ffffff)` en los selectores `.edit-btn-small` y `.delete-btn-small` de `admin.css`.
 - **Refinamiento en Chat:** Los controles de gestión de conversaciones en `chat.css` fueron ajustados a un blanco translúcido (`rgba(255, 255, 255, 0.7)`), garantizando legibilidad sin romper la estética minimalista del sidebar.
+
+### 23.8. Exactitud Matemática e Interfaz del Algoritmo Anki (SM-2)
+Se identificó y resolvió una desconexión crítica profunda entre la persistencia de datos visuales y los cálculos matemáticos estructurales del motor Spaced Repetition (SM-2) embebido en la plataforma.
+- **Traductor de Métricas (Mapper Visual-Algorítmico):** El motor SM-2 exige matemáticamente los valores de calidad `0, 3, 4, 5` para originar su curva del olvido. Sin embargo, el Frontend esperaba la indexación estándar `1 (Rojo), 2 (Naranja), 3 (Azul), 4 (Verde)` para renderizar el coloreado CSS `srs-status`. Se programó una capa middleware de traducción directa antes de la inyección PostgreSQL, permitiendo a la UI usar índices ordenados inalterando el coeficiente EF de SuperMemo.
+- **Sincronización de Semilla Inicial (First-Rep UI Bind):** El SM-2 original castigaba toda tarjeta nueva/fallada (`reps = 0`) agendándola a 24 horas (1 día) como bloque inicial de hielo, ignorando pasivamente los marcadores de `3 días` (Bien) o `7 días` (Fácil) descritos por el front. Se reescribió el escalón base del algoritmo algorítmico para forzar la adopción milimétrica del indicador textual de los botones HTML para el primer intervalo. Las repeticiones subsecuentes mantienen inalterada la rigurosidad multiplicativa.
+- **Condicionamiento Analítico (Mastery > 21):** Para purificar las métricas del "Mastered Cards" (Dominadas), se purgaron los atajos falsos (ej. `last_quality = 4`). Hoy, el Dashboard General y el Backend SQL filtran como Masterizadas estrictamente solo aquellas tarjetas que empíricamente han sobrevivido la barrera del "Intervalo Maduro (> 21 días al futuro sin fallar)".
+- **Indicador Focus Glow:** Se implementó visualmente la clase CSS `.is-due-glow` combinada con `@keyframes duePulseGlow`. Suscitada condicionalmente desde el DOM javascript (`repaso.js` y `deck-details.js`), inyecta un suave campo de fuerza resplandeciente pulsante alrededor del borde azul-neón de toda aquella tarjeta puntual cuya fecha `next_review_at` ha caducado y solicita estudio inmediato el día de hoy.

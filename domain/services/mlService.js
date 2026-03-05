@@ -585,8 +585,8 @@ class MLService {
     /**
      * Motor RAG con prevencion de duplicados
      */
-    static async generateRAGQuestions(target, difficulty, domain, career) {
-        console.log(`🤖 MLService: Iniciando Generación RAG Administrativa -> Target: ${target}, Diff: ${difficulty}, Domain: ${domain}`);
+    static async generateRAGQuestions(target, difficulty, studyAreas, career, domain = 'medicine') {
+        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Domain: ${domain}`);
         try {
             const RagService = require('./ragService');
             // 0. Prevenir Duplicidad Escaneando la Base de Datos Histórica
@@ -594,29 +594,34 @@ class MLService {
             let careerParam = career || null;
             try {
                 const db = require('../../infrastructure/database/db'); // Carga dinámica del Pool
-                // Extraer el historial más reciente según el grupo
+                const areasArray = String(studyAreas || '').split(',').map(a => a.trim()).filter(a => a);
+
+                // 🎯 REFINAMIENTO: Historial Exacto
+                // Filtramos por target (ENAM/SERUMS), domain (medicina), career (Médico/Enfermero)
+                // y lo más importante: por los TOPICS (áreas de estudio) seleccionados.
                 const recentQ = await db.query(`
                     SELECT topic, question_text 
                     FROM question_bank 
                     WHERE target = $1 
                       AND domain = $2 
                       AND (career = $3 OR $3 IS NULL)
+                      AND (topic = ANY($4) OR $4 IS NULL)
                     ORDER BY created_at DESC 
                     LIMIT 200
-                `, [target, domain, careerParam]);
+                `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null]);
 
                 if (recentQ.rows.length > 0) {
-                    recentQuestionsText = "\\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\\nAquí tienes las últimas preguntas que YA existen en el sistema. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\\n" +
-                        recentQ.rows.map((r, idx) => `[Bloqueada ${idx + 1}] Tema: ${r.topic} | Muestra: "${r.question_text.substring(0, 150)}..."`).join('\\n') + "\\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\\n";
+                    recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\nAquí tienes las últimas preguntas que YA existen en el sistema para este Target/Área. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\n" +
+                        recentQ.rows.map((r, idx) => `[Bloqueada ${idx + 1}] Tema: ${r.topic} | Muestra: "${r.question_text.substring(0, 150)}..."`).join('\n') + "\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
             }
 
-            // 1. Extraer contexto (mayor densidad para abarcar libros y normas) de la BD nativa
-            // Modificamos el query RAG para que fuerce la búsqueda en normas, libros y guías
-            const queryVectorial = `Conceptos médicos, guías clínicas, normas técnicas, leyes y preguntas de ${domain} para ${target} dificultad ${difficulty}`;
-            const ragContext = await RagService.searchContext(queryVectorial, 12); // Subimos de 5 a 12 fragmentos para obtener más variedad
+            // 1. Búsqueda vectorial usando las Áreas de Estudio seleccionadas (no el domain global).
+            // 'studyAreas' contiene las áreas médicas concretas: 'Pediatría, Cardiología...'
+            const queryVectorial = `Conceptos médicos, guías clínicas, normas técnicas, leyes y preguntas de ${studyAreas} para ${target} dificultad ${difficulty}`;
+            const ragContext = await RagService.searchContext(queryVectorial, 12); // 12 fragmentos para mayor variedad
 
             // 2. Instanciar Gemini forzando salida JSON y subiendo la temperatura para mayor variedad
             const jsonModel = vertex_ai.preview.getGenerativeModel({
@@ -640,53 +645,87 @@ class MLService {
 
             let diffRules = "";
             if (difficulty === "Básico") {
-                diffRules = "Evalúa memoria pura: etiologías, definiciones, mecanismos. Ejemplo: '¿Cuál es el agente causal de la sífilis?'";
+                diffRules = "Evalúa memoria pura: etiologías, definiciones, mecanismos. Ejemplo: '¿Cuál es el agente causal de la sífilis?'. REGLA DE LONGITUD: Preguntas directas y cortas (máx 20-25 palabras). Explicación concisa y al grano (máx 45 palabras).";
             } else if (difficulty === "Intermedio") {
-                diffRules = "Evalúa análisis clínico: viñetas diagnósticas. Ejemplo: 'Caso con fiebre + manchas → pedir diagnóstico'.";
+                diffRules = "Evalúa análisis clínico: viñetas diagnósticas de dificultad media. Ejemplo: 'Caso con fiebre + manchas → pedir diagnóstico'. REGLA DE LONGITUD: Casos clínicos de extensión moderada. Explicación fundamentada y pedagógica (máx 90 palabras).";
             } else if (difficulty === "Avanzado") {
-                diffRules = "Evalúa toma de decisiones: manejo terapéutico, excepciones. Ejemplo: 'Tratamiento alternativo en alérgico a 1ra línea'.";
+                diffRules = "Evalúa toma de decisiones crítica: manejo terapéutico avanzado, excepciones y Gold Standard. Ejemplo: 'Tratamiento alternativo en alérgico a 1ra línea'. REGLA DE LONGITUD: Casos clínicos complejos, detallados y realistas. Explicación profunda y diferencial (sin límite estricto, pero muy sustanciosa).";
             }
 
-            // 3. System Prompt Reforzado
+            // 3. System Prompt Reforzado — Separación explícita de domain / topic / subtopic
             const prompt = `
-            Eres un experto catedrático creador de exámenes profesionales de altísimo nivel para Perú. Genera exactamente 20 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
+            Eres un experto catedrático creador de exámenes profesionales de altísimo nivel para Perú. Genera EXACTAMENTE 10 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
             
             - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
-            - Carrera o Profesión: ${career ? career : 'Aplica a todas las ramas'} (De ser especificada, orienta el léxico y los problemas al campo de acción de esta carrera).
+            - Carrera o Profesión: ${career ? career : 'Aplica a todas las ramas'}
             - Nivel de Dificultad: ${difficulty} -> EXIGENCIA COGNITIVA: ${diffRules}
-            - Áreas/Especialidades Seleccionadas: ${domain} (Distribuye las 20 preguntas equilibradamente entre estas áreas, mezclando temas transversales si es posible).
+            - Áreas de Estudio Seleccionadas: ${studyAreas}. Distribuye las 10 preguntas de manera equilibrada entre estas áreas.
 
             INSTRUCCIONES CRÍTICAS SOBRE EL CONTEXTO:
-            - Abajo recibirás fragmentos mixtos de la BD Documental. Estos incluyen: Exámenes Pasados, Libros Base (Harrison, Washington), Manuales de Resumen (CTO, AMIR), Normas Técnicas del MINSA, Guías de Práctica Clínica y Leyes Peruanas en Salud.
+            - Abajo recibirás fragmentos mixtos de la BD Documental (libros, normas, guías clínicas).
             - DEBES extraer la información clínica de estos fragmentos para redactar las preguntas.
-            - REQUISITO ANTI-DUPLICACIÓN: Crea casos clínicos únicos, cruza variables de edad, sexo y sintomatología clínica. Evita a toda costa preguntas genéricas (ej. "¿Cuál es la causa más frecuente de X?"). Elabora preguntas de nicho para garantizar que no existan duplicados en nuestra base de datos.
-            - REQUISITO TRAMPAS EXÁMENES (DISTRACTORES): Las opciones incorrectas DEBEN ser sumamente plausibles (distractores y trampas comunes). No hagas que la respuesta correcta sea evidente pónsela muy difícil. El médico evaluado debe dudar y afilar su análisis. La explicación obligatoriamente debe detallar la respuesta correcta y por qué la trampa aparente es falsa.
+            - REQUISITO ANTI-DUPLICACIÓN: Crea casos clínicos únicos, cruza variables de edad, sexo y sintomatología clínica.
+            - REQUISITO TRAMPAS EXÁMENES (DISTRACTORES): Las opciones incorrectas DEBEN ser sumamente plausibles (distractores y trampas comunes).
             ${recentQuestionsText}
             CONTEXTO OFICIAL RECUPERADO DE LA BD RAG:
-            ${ragContext || "No hay contexto alojado. Usa conocimiento médico general oficial del Perú (MINSA/EsSalud)."}
+            ${ragContext || 'No hay contexto alojado. Usa conocimiento médico oficial (MINSA/EsSalud).'}
 
-            REGLAS ESTRICTAS DEL JSON:
-            Devuelve un ARRAY DE OBJETOS JSON puros. NO incluyas markdown, solo el array [ {...}, {...} ].
-            Estructura EXACTA de cada objeto:
+            REGLAS ESTRICTAS DEL JSON — ESQUEMA EXACTO DE CAMPOS (NO USES MARKDOWN):
+            Devuelve un ARRAY DE OBJETOS JSON puros. Cada objeto tiene EXACTAMENTE esta estructura:
             {
               "question_text": "Texto completo del caso clínico o pregunta.",
-              "options": ["Opción A", "Opción B", "Opción C", "Opción D"], // Genera 4 o 5 opciones dependiendo del PERFIL DEL EXAMEN (Target).
-              "correct_option_index": 0, // Índice de la respuesta correcta (obliga que sea de 0 a (N-1) )
-              "explanation": "Explicación académica fundamentada en libros o normas técnicas.",
-              "domain": "ESPECIFICAR_EL_AREA_USADA_AQUI", // (Ej. Pediatría, o Cirugía General, debe pertenecer a las áreas solicitadas)
+              "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
+              "correct_option_index": 0,
+              "explanation": "Explicación académica fundamentada en fuentes oficiales.",
+              "domain": "${domain}",
+              "topic": "El nombre exacto del Área de Estudio usada para esta pregunta (ej: Pediatría). Debe ser una de: ${studyAreas}",
+              "subtopic": "El subtema clínico específico de esta pregunta (ej: Deshidratación pediátrica, Triaje Comunitario)",
               "target": "${target}",
-              "career": "${career ? career : ""}", // Obligatorio incluir la carrera (o cadena vacía si no aplica)
-              "topic": "Nombre del tema o subtema específico (Ej. Preeclampsia, Asma)",
+              "career": "${career ? career : ''}",
               "difficulty": "${difficulty}",
               "image_url": ""
             }
+
+            REGLAS CRÍTICAS DE CAMPOS — LEE CON ATENCIÓN:
+            - Campo "domain": SIEMPRE el valor exacto "${domain}". Nunca pongas un área médica en este campo.
+            - Campo "topic": El ÁREA DE ESTUDIO de la pregunta. Usa exactamente los nombres de la lista arriba.
+            - Campo "subtopic": El SUBTEMA CLÍNICO específico. Debe ser más específico que "topic" (ej: topic="Pediatría" → subtopic="Deshidratación pediátrica grave").
             `;
 
             const result = await jsonModel.generateContent(prompt);
             const responseText = result.response.candidates[0].content.parts[0].text;
 
-            const questions = JSON.parse(responseText);
-            console.log(`✅ MLService: Lote RAG generado con éxito (${questions.length} preguntas)`);
+            let questions = [];
+
+            try {
+                // Intento primario
+                questions = JSON.parse(responseText);
+            } catch (err) {
+                console.warn(`⚠️ Error parseando RAG JSON (posible truncamiento o caracteres de control): ${err.message}`);
+
+                // 1. Limpiar literal newlines/tabs \n que rompen el parser JSON
+                let cleanText = responseText.replace(/[\n\r\t]/g, " ");
+
+                try {
+                    questions = JSON.parse(cleanText);
+                } catch (err2) {
+                    console.warn(`⚠️ Falló parseo limpio. Intentando rescate estructural...`);
+                    // 2. Rescate de Array Truncado (Token Limit Exceeded)
+                    const lastBraceIndex = cleanText.lastIndexOf('}');
+                    if (lastBraceIndex !== -1) {
+                        let rescuedText = cleanText.substring(0, lastBraceIndex + 1);
+                        if (!rescuedText.trim().startsWith('[')) rescuedText = '[' + rescuedText;
+                        rescuedText += ']';
+
+                        questions = JSON.parse(rescuedText);
+                        console.log(`✅ Rescate Exitoso: Se recuperaron ${questions.length} preguntas válidas ignorando el final corrupto.`);
+                    } else {
+                        throw new Error("Formato devuelto completamente irrecuperable no es JSON.");
+                    }
+                }
+            }
+
+            console.log(`✅ MLService: Lote RAG validado con éxito (${questions.length} preguntas)`);
             return questions;
 
         } catch (error) {

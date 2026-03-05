@@ -615,7 +615,10 @@ class AdminManager {
                         </select>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        ${this.createFormGroup('text', 'generic-topic', 'Tema / Subtema (*)', currentItem?.topic || '', true)}
+                        ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', currentItem?.topic || '', true)}
+                        ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', currentItem?.subtopic || '', false)}
+                    </div>
+                    <div style="margin-top: 0;">
                         ${this.createSelect('generic-difficulty', 'Dificultad (*)', diffs, currentItem?.difficulty || 'Intermedio', false)}
                     </div>
                     <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -666,8 +669,14 @@ class AdminManager {
                 title.textContent = 'Generador de Preguntas IA (RAG)';
                 fieldsHTML = `
                     <div style="margin-bottom:15px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.1); padding: 10px; border-radius: 8px;">
-                        <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 20 preguntas sin duplicarse con el banco existente.
+                        <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 10 preguntas sin duplicarse con el banco existente.
                     </div>
+                    <h4 style="margin-bottom:0.5rem;">Dominio</h4>
+                    <select id="ai-domain-select" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
+                        <option value="medicine" selected>Medicina</option>
+                        <option value="english">Inglés</option>
+                        <option value="general_trivia">Cultura General</option>
+                    </select>
                     <h4 style="margin-bottom:0.5rem;">Examen Objetivo</h4>
                     <select id="ai-target" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);" onchange="
                         const isSerums = this.value === 'SERUMS';
@@ -1377,6 +1386,7 @@ class AdminManager {
                         target: qTarget,
                         career: (qTarget.toUpperCase() === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
+                        subtopic: document.getElementById('generic-subtopic')?.value || null, // Subtema clínico específico
                         difficulty: document.getElementById('generic-difficulty').value,
                         options: [
                             document.getElementById('generic-opt0').value,
@@ -1396,8 +1406,9 @@ class AdminManager {
                         aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Lote (2-3 min)... por favor no cierre.';
                         aiBtn.disabled = true;
 
-                        const selectedDomains = Array.from(document.querySelectorAll('.ai-domain-cb:checked')).map(cb => cb.value);
-                        if (selectedDomains.length === 0) {
+                        // Áreas de Estudio seleccionadas (checkboxes) → van al campo `studyAreas`
+                        const selectedStudyAreas = Array.from(document.querySelectorAll('.ai-domain-cb:checked')).map(cb => cb.value);
+                        if (selectedStudyAreas.length === 0) {
                             throw new Error("Por favor selecciona al menos una Área de Estudio/Especialidad.");
                         }
 
@@ -1405,11 +1416,15 @@ class AdminManager {
                         const careerSelectEl = document.getElementById('ai-career');
                         const careerVal = targetVal === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
 
+                        // Dominio global del banco (medicine | english | general_trivia) — campo separado
+                        const domainVal = document.getElementById('ai-domain-select')?.value || 'medicine';
+
                         const reqBody = {
                             target: targetVal,
                             career: careerVal,
                             difficulty: document.getElementById('ai-difficulty').value,
-                            domain: selectedDomains.join(', ')
+                            domain: domainVal,                       // Dominio global de la BD
+                            studyAreas: selectedStudyAreas.join(', ') // Áreas de estudio para el prompt de la IA
                         };
                         const aiUrl = `${window.AppConfig.API_URL}/api/admin/questions/generate-ai`;
                         const resAi = await fetch(aiUrl, {
@@ -1471,7 +1486,8 @@ class AdminManager {
                                         ],
                                         correct_answer: parseInt(cols[10] || 0, 10),
                                         explanation: cols[11] ? String(cols[11]).trim() : null,
-                                        image_url: cols[12] ? String(cols[12]).trim() : null
+                                        image_url: cols[12] ? String(cols[12]).trim() : null,
+                                        subtopic: cols[13] ? String(cols[13]).trim() : null // Nueva columna sub-tema
                                     };
                                 }).filter(Boolean); // Remover nulos
 
@@ -1696,8 +1712,8 @@ class AdminManager {
     downloadExcelTemplate() {
         if (typeof window.XLSX !== 'undefined') {
             const ws_data = [
-                ['PREGUNTA (*)', 'DOMINIO', 'TARGET', 'CARRERA', 'TEMA_SUBTEMA (*)', 'DIFICULTAD', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'INDEX_CORRECTA (*)', 'EXPLICACION', 'URL_IMAGEN'],
-                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Intermedio', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '']
+                ['PREGUNTA (*)', 'DOMINIO', 'TARGET', 'CARRERA', 'AREA_ESTUDIO (*)', 'DIFICULTAD', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'INDEX_CORRECTA (*)', 'EXPLICACION', 'URL_IMAGEN', 'SUBTEMA (OPCIONAL)'],
+                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Intermedio', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '', 'Emergencias Endocrinas']
             ];
             const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
             const wb = window.XLSX.utils.book_new();

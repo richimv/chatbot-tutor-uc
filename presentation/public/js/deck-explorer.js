@@ -259,10 +259,16 @@ class DeckExplorer {
         DeckExplorer.renderIconPicker('fas fa-layer-group');
 
         document.getElementById('create-deck-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('create-deck-modal');
+        }
     }
 
     static closeCreateModal() {
         document.getElementById('create-deck-modal').classList.remove('active');
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('create-deck-modal');
+        }
     }
 }
 

@@ -79,7 +79,7 @@ const DeckDetails = (() => {
             // Update stats client side just in case
             document.getElementById('total-cards').textContent = allCards.length;
             // update mastered count?
-            const mastered = allCards.filter(c => c.repetition_number > 3 || c.interval_days > 21).length;
+            const mastered = allCards.filter(c => c.interval_days > 21).length;
             document.getElementById('mastered-cards').textContent = mastered;
 
         } catch (error) {
@@ -100,8 +100,41 @@ const DeckDetails = (() => {
         document.getElementById('cards-empty').style.display = 'none';
 
         cards.forEach(card => {
+            // Evaluamos la métrica SRS de la tarjeta para pintarla en UI
+            let colorClass = '';
+            if (card.last_quality === 1) {
+                colorClass = 'srs-status-forgot'; // Olvidé
+            } else if (card.last_quality === 2) {
+                colorClass = 'srs-status-hard';   // Difícil
+            } else if (card.last_quality === 3) {
+                colorClass = 'srs-status-good';   // Bien
+            } else if (card.last_quality === 4) {
+                colorClass = 'srs-status-easy';   // Fácil
+            } else {
+                // Fallback heurístico para tarjetas antiguas pre-actualización
+                if (card.repetition_number === 0) {
+                    colorClass = '';
+                } else if (card.interval_days === 0 && card.repetition_number > 0) {
+                    colorClass = 'srs-status-forgot';
+                } else if (card.ease_factor < 2.0 && card.interval_days > 0) {
+                    colorClass = 'srs-status-hard';
+                } else if (card.ease_factor >= 2.0 && card.interval_days <= 10) {
+                    colorClass = 'srs-status-good';
+                } else if (card.interval_days > 10) {
+                    colorClass = 'srs-status-easy';
+                }
+            }
+
+            const isDue = new Date(card.next_review_at) <= new Date();
+            const dueClass = isDue ? 'is-due-glow' : '';
+
             const row = document.createElement('div');
-            row.className = 'flashcard-row';
+            row.className = `flashcard-row base-card ${colorClass} ${dueClass}`;
+            row.style.marginBottom = '8px'; // Add slight margin for block visual separation
+            row.style.padding = '0.75rem';
+            row.style.borderRadius = '8px';
+            row.style.background = colorClass ? '' : 'rgba(255,255,255,0.02)'; // Base bg if no color
+
             row.innerHTML = `
                 <div class="card-front" title="${escapeHtml(card.front_content)}">${escapeHtml(card.front_content)}</div>
                 <div class="card-back" title="${escapeHtml(card.back_content)}">${escapeHtml(card.back_content)}</div>
@@ -234,10 +267,19 @@ const DeckDetails = (() => {
     // Hook events
     document.getElementById('card-form').addEventListener('submit', handleSave);
 
+    // Force refresh when returning from flashcard study via browser back button
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted && currentDeckId) {
+            // If loaded from back-forward cache, refresh stats and list silently
+            loadDeckInfo();
+            loadCards();
+        }
+    });
+
     function showStats() {
         // Calculate fresh stats from local cards array
         const total = allCards.length;
-        const mastered = allCards.filter(c => c.repetition_number > 3 || c.interval_days > 21).length;
+        const mastered = allCards.filter(c => c.interval_days > 21).length;
 
         document.getElementById('modal-total').textContent = total;
         document.getElementById('modal-mastered').textContent = mastered;
@@ -361,18 +403,22 @@ const DeckDetails = (() => {
     function showLimitModal(msg) {
         if (document.getElementById('custom-limit-modal')) return;
         const modalHtml = `
-            <div class="modal-overlay" id="custom-limit-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; justify-content:center; align-items:center; background:rgba(15,23,42,0.85); z-index:9999; opacity:1 !important; visibility:visible !important;">
-                <div class="modal-content" style="background:#1e293b; padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+            <div class="modal-overlay active" id="custom-limit-modal" style="z-index:9999; backdrop-filter:blur(8px);">
+                <div class="modal-content" style="background:var(--bg-card, #1f1f1f); padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
                     <div style="margin-bottom:1.5rem;">
-                        <i class="fas fa-exclamation-circle" style="font-size:3rem; color:#f87171;"></i>
+                        <i class="fas fa-crown" style="font-size:3.5rem; color:#ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                     </div>
-                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main);">Límite Alcanzado</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
-                    <button class="btn-action" style="background:#3b82f6; color:white; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="document.getElementById('custom-limit-modal').remove()">Entendido</button>
+                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main, #f8fafc);">Límite Alcanzado</h2>
+                    <p style="color:var(--text-muted, #94a3b8); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
+                    <button class="btn-action" style="background:linear-gradient(90deg, #f59e0b, #d97706); color:white; font-weight:bold; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="const m = document.getElementById('custom-limit-modal'); if(m){ m.classList.remove('active'); } if(window.uiManager && window.uiManager.popModalState) window.uiManager.popModalState('custom-limit-modal');">Entendido</button>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('custom-limit-modal');
+        }
     }
 
     return {

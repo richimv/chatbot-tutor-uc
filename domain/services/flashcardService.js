@@ -29,12 +29,15 @@ class FlashcardService {
         let nextReviewDate = new Date();
 
         if (quality >= 3) {
-            // Respuesta Correcta (SM-2 Standard)
+            // Respuesta Correcta
             if (reps === 0) {
-                interval = 1; // 1 día
-            } else if (reps === 1) {
-                interval = 6; // 6 días
+                // Adaptación Anki/UI: Respetar el intervalo inicial prometido en los botones
+                if (quality === 3) interval = 1;      // Difícil -> 1 día ("Mañana")
+                else if (quality === 4) interval = 3; // Bien -> 3 días
+                else if (quality === 5) interval = 7; // Fácil -> 7 días
+                else interval = 1;
             } else {
+                // Repasos subsecuentes: Multiplicador estándar SM-2
                 interval = Math.round(interval * ef);
             }
             reps++;
@@ -59,8 +62,15 @@ class FlashcardService {
         ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
         if (ef < 1.3) ef = 1.3;
 
+        // Mapear Quality algorítmico (0,3,4,5) a Índice Visual Estricto (1,2,3,4) para la UI y la BD
+        let visualQuality = 1;
+        if (quality === 0) visualQuality = 1; // Rojo: Olvidé
+        else if (quality === 3) visualQuality = 2; // Naranja: Difícil
+        else if (quality === 4) visualQuality = 3; // Azul: Bien
+        else if (quality === 5) visualQuality = 4; // Verde: Fácil
+
         // Guardar en BD
-        await trainingRepository.updateFlashcard(cardId, interval, ef, reps, nextReviewDate);
+        await trainingRepository.updateFlashcard(cardId, interval, ef, reps, nextReviewDate, visualQuality);
 
         return {
             success: true,

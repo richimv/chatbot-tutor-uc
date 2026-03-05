@@ -21,8 +21,16 @@ class UIManager {
             this.openModals.forEach(modalId => {
                 const modal = document.getElementById(modalId);
                 if (modal) {
-                    modal.style.display = 'none';
-                    modal.classList.remove('active');
+                    if (modal.classList.contains('active')) {
+                        modal.classList.remove('active');
+                        // Limpiar posible estilo inline residual para no romper futuras aperturas dependientes de la clase CSS
+                        if (modal.style.display === 'none' || modal.style.display === 'flex') {
+                            modal.style.display = '';
+                        }
+                    } else {
+                        // Comportamiento regular para modales inyectados (como auth o video)
+                        modal.style.display = 'none';
+                    }
                 }
             });
             this.openModals.clear();

@@ -11,7 +11,7 @@
 }
 
 .deck-card {
-    background: rgba(30, 41, 59, 0.7);
+    background: var(--bg-card, #1f1f1f);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 1.5rem;
@@ -207,4 +207,55 @@
 .crumb-separator {
     font-size: 0.8rem;
     color: #475569;
+}
+
+/* --- SRS Status Indicators for Card Rows --- */
+.flashcard-row {
+    border-left: 4px solid transparent;
+    /* Base border for color coding */
+    transition: all 0.2s ease;
+}
+
+.srs-status-forgot {
+    border-left-color: #ef4444;
+    /* Red - Forgot / New */
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.srs-status-hard {
+    border-left-color: #f59e0b;
+    /* Orange - Hard */
+    background: rgba(245, 158, 11, 0.03);
+}
+
+.srs-status-good {
+    border-left-color: #3b82f6;
+    /* Blue - Good */
+    background: rgba(59, 130, 246, 0.03);
+}
+
+.srs-status-easy {
+    border-left-color: #10b981;
+    /* Green - Easy / Mastered */
+    background: rgba(16, 185, 129, 0.03);
+}
+
+/* --- Efecto Pendiente (Due) --- */
+.is-due-glow {
+    animation: duePulseGlow 2.5s infinite;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+@keyframes duePulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
 }

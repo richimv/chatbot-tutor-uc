@@ -185,21 +185,28 @@ class AdminController {
      */
     async generateAiQuestions(req, res) {
         try {
-            const { target, difficulty, domain, career } = req.body;
-            if (!target || !difficulty || !domain) {
-                return res.status(400).json({ error: 'Faltan parámetros de configuración RAG.' });
+            /**
+             * domain:     Dominio global del banco (medicine | english | general_trivia).
+             *             Seleccionado por el admin en el dropdown "Dominio" del modal.
+             * studyAreas: Áreas de estudio médicas seleccionadas con checkboxes (Pediatría, Cardiología...).
+             *             Se pasan como string al prompt de la IA para indicar sobre qué generar.
+             */
+            const { target, difficulty, domain, studyAreas, career } = req.body;
+            if (!target || !difficulty || !studyAreas) {
+                return res.status(400).json({ error: 'Faltan parámetros: target, difficulty y studyAreas son requeridos.' });
             }
 
-            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, ${domain}, Carrera: ${career || 'N/A'}`);
+            const resolvedDomain = domain || 'medicine'; // Fallback seguro si el front no envía domain
+            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
-            // 1. Mandar a Gemini 2.5 a construir las preguntas leyendo de la Vectorial RAG
-            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, domain, career);
+            // 1. Generar preguntas con Gemini 2.5 — studyAreas para el contexto, domain para la BD
+            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, studyAreas, career, resolvedDomain);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
             }
 
-            // 2. Inyectar masivamente en base de datos como si fuera un JSON normal cargado por Admin
+            // 2. Inyectar masivamente en base de datos
             const result = await trainingRepository.saveBulkQuestionBankAdmin(generatedQuestions);
 
             if (result.success) {
@@ -221,7 +228,7 @@ class AdminController {
     async getAllQuestions(req, res) {
         try {
             const result = await db.query(`
-                SELECT id, question_text, domain, target, career, topic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
+                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
                 FROM question_bank 
                 ORDER BY created_at DESC 
                 LIMIT 500
@@ -252,8 +259,8 @@ class AdminController {
             const insertQuery = `
                 INSERT INTO question_bank (
                     question_text, options, correct_option_index, explanation, 
-                    domain, target, career, topic, difficulty, image_url, question_hash
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    domain, target, career, topic, subtopic, difficulty, image_url, question_hash
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING id;
             `;
             const values = [
@@ -265,6 +272,7 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
+                q.subtopic || null, // Subtema clínico específico (nullable)
                 q.difficulty || 'Intermedio',
                 q.image_url || null,
                 hash
@@ -298,8 +306,8 @@ class AdminController {
             const updateQuery = `
                 UPDATE question_bank 
                 SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4,
-                    domain = $5, target = $6, career = $7, topic = $8, difficulty = $9, image_url = $10, question_hash = $11
-                WHERE id = $12
+                    domain = $5, target = $6, career = $7, topic = $8, subtopic = $9, difficulty = $10, image_url = $11, question_hash = $12
+                WHERE id = $13
                 RETURNING id;
             `;
             const values = [
@@ -311,6 +319,7 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
+                q.subtopic || null, // Subtema clínico específico (nullable)
                 q.difficulty || 'Intermedio',
                 q.image_url || null,
                 hash,

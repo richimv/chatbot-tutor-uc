@@ -216,32 +216,65 @@ class TrainingRepository {
 
         const client = await db.pool().connect();
         try {
-            // Auto-curar BD si es una instancia vieja
-            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS image_url TEXT');
-            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS target VARCHAR(255)');
-            await client.query('ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS career VARCHAR(100)');
-
             await client.query('BEGIN');
             let insertedCount = 0;
             const crypto = require('crypto');
 
+            /**
+             * Sanitizador Canónico de Dificultad:
+             * La IA puede devolver valores verbose como "Básico - Memoria pura" o "Intermedio (Análisis Clínico)".
+             * Normalizamos al valor canónico estricto para evitar violaciones de VARCHAR en PostgreSQL.
+             */
+            const canonicalDifficulty = (val) => {
+                if (!val) return 'Básico';
+                const v = String(val).toLowerCase();
+                if (v.includes('ásico') || v.includes('asico') || v.includes('basic')) return 'Básico';
+                if (v.includes('edio') || v.includes('intermed')) return 'Intermedio';
+                if (v.includes('vanzado') || v.includes('advanc') || v.includes('expert')) return 'Avanzado';
+                return String(val).substring(0, 50); // Fallback: truncar a 50 chars
+            };
+
+            /**
+             * Sanitizador de Dominio:
+             * El dominio debe ser siempre un valor canónico de la lista permitida.
+             * La IA no debería alterar este valor (ya lo recibe fijado en el prompt),
+             * pero añadimos esta guarda de seguridad para garantizarlo.
+             */
+            const canonicalDomain = (val) => {
+                const allowed = ['medicine', 'english', 'general_trivia'];
+                const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
+                return allowed.includes(v) ? v : 'medicine'; // Fallback seguro a medicine
+            };
+
             const query = `
-                INSERT INTO question_bank (domain, target, topic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash, career)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash, career)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (question_hash) DO UPDATE SET 
                     target = EXCLUDED.target,
                     image_url = EXCLUDED.image_url,
                     explanation = EXCLUDED.explanation,
                     options = EXCLUDED.options,
-                    career = EXCLUDED.career
+                    career = EXCLUDED.career,
+                    subtopic = EXCLUDED.subtopic
                 RETURNING id;
             `;
 
             for (const q of questionsArray) {
-                const domain = q.domain || 'medicine';
+                /**
+                 * Mapeo definitivo Domain / Topic / Subtopic:
+                 * - domain:   Dominio global del banco (medicine | english | general_trivia).
+                 *             Se sanitiza para garantizar que siempre sea un valor canónico,
+                 *             incluso si la IA devuelve algo inesperado.
+                 * - topic:    Área de Estudio específica (Pediatría, Salud Pública, etc.).
+                 *             La IA la genera según las áreas seleccionadas en el modal Admin.
+                 * - subtopic: Subtema clínico preciso (Triaje Comunitario, Vacunación, etc.).
+                 *             La IA lo genera independientemente como campo separado.
+                 */
+                const domain = canonicalDomain(q.domain);          // Siempre canónico
                 const target = q.target || 'N/A';
-                const exactTopic = q.topic || q.areas || 'General';
-                const difficulty = q.difficulty || 'Básico';
+                const exactTopic = q.topic || 'General';            // Área de estudio
+                const exactSubtopic = q.subtopic || null;           // Subtema clínico (nullable)
+                const difficulty = canonicalDifficulty(q.difficulty);
                 const question_text = String(q.question_text || q.question);
                 const optionsStr = JSON.stringify(q.options || []);
                 const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correctAnswerIndex || 0);
@@ -249,12 +282,12 @@ class TrainingRepository {
                 const image_url = q.image_url || null;
                 const career = q.career || null;
 
-                // Hash único
+                // Hash único basado en topic + texto + opciones
                 const rawString = `${exactTopic}-${question_text}-${optionsStr}`;
                 const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
                 await client.query(query, [
-                    domain, target, exactTopic, difficulty, question_text, optionsStr,
+                    domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr,
                     correct_option_index, explanation, image_url, hash, career
                 ]);
                 insertedCount++;
@@ -345,7 +378,9 @@ class TrainingRepository {
 
     async getDecks(userId, parentId = null) {
         // Updated Query: Filter by parentId (Drill-down approach)
-        // If parentId is provided, fetch children. If null, fetch roots.
+        // Auto-curar BD
+        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
+
         let query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
@@ -365,7 +400,6 @@ class TrainingRepository {
             query += ` AND d.parent_id = $2`;
             params.push(parentId);
         } else {
-            // Fetch roots
             query += ` AND d.parent_id IS NULL`;
         }
 
@@ -376,6 +410,8 @@ class TrainingRepository {
     }
 
     async getDeckById(userId, deckId) {
+        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
+
         const query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
@@ -516,14 +552,17 @@ class TrainingRepository {
     /**
      * Actualizar Flashcard tras repaso (Algoritmo fuera, aquí solo update)
      */
-    async updateFlashcard(cardId, interval, ef, reps, nextDate) {
+    async updateFlashcard(cardId, interval, ef, reps, nextDate, lastQuality = 0) {
+        // Auto-heal DB column
+        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
+
         const query = `
             UPDATE user_flashcards
             SET interval_days = $2, easiness_factor = $3, repetition_number = $4, 
-                next_review_at = $5, last_reviewed_at = NOW()
+                next_review_at = $5, last_reviewed_at = NOW(), last_quality = $6
             WHERE id = $1
         `;
-        await db.query(query, [cardId, interval, ef, reps, nextDate]);
+        await db.query(query, [cardId, interval, ef, reps, nextDate, lastQuality]);
     }
 
     // --- CRUD CARDS (Anki-Style) ---
