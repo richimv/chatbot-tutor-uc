@@ -166,7 +166,12 @@
     color: #60A5FA;
 }
 
-/* Button (Slide 2) */
+/* Actions logic */
+.hero-actions {
+    margin-top: 1.5rem;
+    /* Reduced from 2rem default */
+}
+
 .btn-gamified {
     display: inline-flex;
     align-items: center;
@@ -342,6 +347,12 @@
         justify-content: center;
         gap: 0.5rem;
         margin-top: 0;
+    }
+
+    /* 🚨 SUBIR BOTÓN ESPECÍFICO EN MÓVILES 🚀 */
+    .slide:nth-child(2) .hero-actions {
+        margin-top: 0.8rem;
+        /* Sube el botón reduciendo el margen superior */
     }
 
     .hero-features li {

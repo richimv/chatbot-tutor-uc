@@ -5,10 +5,10 @@
 
 /* ─── Section Container ─────────────────────────────────────────── */
 #training-modules {
-    padding: 0.5rem 1rem;
-    /* Super compacto arriba y abajo */
-    max-width: 1100px;
+    padding: 0.5rem 0;
+    max-width: 100%;
     margin: 0 auto;
+    overflow-x: hidden;
     animation: fadeIn 0.8s ease-out;
 }
 
@@ -28,7 +28,7 @@
 .modules-header {
     text-align: center;
     margin-bottom: 0.2rem;
-    /* Eliminamos el espacio vacío debajo del título */
+    padding: 0 1rem;
 }
 
 .modules-title {
@@ -43,7 +43,6 @@
 
 .modules-subtitle {
     color: var(--text-muted, #94a3b8);
-    /* Fallback de color */
     font-size: 0.95rem;
     letter-spacing: 0.03em;
     margin-top: 0.2rem;
@@ -53,15 +52,15 @@
 .carousel-wrapper {
     position: relative;
     width: 100%;
-    height: 400px;
-    /* Súper ajustado a la tarjeta de 380px */
+    max-width: 100%;
+    height: 440px;
     overflow: hidden;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
     touch-action: pan-y;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
 }
 
 .carousel-wrapper:active {
@@ -77,13 +76,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Centrado vertical con Flexbox (mejor que márgenes negativos) */
 }
 
 /* ─── Cylinder (3D Container) ───────────────────────────────────── */
 .carousel-cylinder {
     position: relative;
-    /* El cilindro debe tener tamaño 0 para que sea un eje de rotación puro */
     width: 0;
     height: 0;
     transform-style: preserve-3d;
@@ -91,9 +88,7 @@
 
 /* ─── Cards (Glassmorphism Pro) ─────────────────────────────────── */
 .carousel-card {
-    /* FIX DE CENTRADO Y CORTE INFERIOR */
     box-sizing: border-box;
-
     position: absolute;
     width: 400px;
     height: 380px;
@@ -101,7 +96,6 @@
     top: 50%;
     margin-left: -200px;
     margin-top: -190px;
-
     border-radius: 24px;
     padding: 1.5rem 1.25rem;
     display: flex;
@@ -111,14 +105,10 @@
     color: inherit;
     transform-origin: center center;
 
-    /* FIX DE COLOR AZULADO: Ahora es totalmente transparente, solo se ve la imagen pura */
     background: transparent;
-
-    /* Mantenemos el desenfoque para las tarjetas adyacentes */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -132,8 +122,7 @@
     transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
-/* ── Card Background Images (DEGRADADOS NEUTROS) ── */
-/* Cambié los RGBA azules (15, 23, 42) por negros/neutros para que la imagen resalte con sus colores reales */
+/* ── Card Background Images ── */
 .card-sim {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-sim-bg.png');
     background-size: cover;
@@ -152,28 +141,19 @@
     background-position: center;
 }
 
-/* ── Active Card Glow (Cyan/Purple) ── */
+/* ── Active Card Glow ── */
 .carousel-card--active {
     border-color: rgba(96, 165, 250, 0.9) !important;
-
-    /* 🚨 AQUÍ ESTÁ LA MAGIA PARA QUITAR EL AZUL OPACO 🚨 */
     background-color: transparent !important;
 
-    /* Quitamos el desenfoque para que se vea nítida la imagen */
-    backdrop-filter: transparent !important;
+    /* 🚨 FIX: Esto estaba mal escrito en tu versión, debe ser 'none' */
+    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 
-    /* Sombra exterior para el brillo y sombra interior negra para que el texto resalte */
     box-shadow:
-        /* Sombra negra de profundidad (sin cambios mayores) */
         0 15px 40px rgba(0, 0, 0, 0.7),
-
-        /* 🚨 EL BRILLO CIAN: Bajamos la expansión de 45px a 20px, y la opacidad de 0.35 a 0.15 */
         0 0 20px rgba(96, 165, 250, 0.25),
-
-        /* Sombra interna oscura para contraste (ligeramente suavizada a 60px) */
         inset 0 0 60px rgba(0, 0, 0, 0.5) !important;
-
     image-rendering: auto;
 }
 
@@ -220,7 +200,6 @@ a.carousel-card * {
 .module-info h3 {
     color: var(--text-main, #ffffff);
     font-size: 1.5rem;
-    /* Aumentado de 1.25rem a 1.5rem */
     font-weight: 700;
     margin-bottom: 0.5rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -229,7 +208,6 @@ a.carousel-card * {
 .module-info p {
     color: var(--text-secondary, #94a3b8);
     font-size: 0.95rem;
-    /* Aumentado de 0.85rem a 0.95rem */
     line-height: 1.5;
     margin-bottom: 1.2rem;
 }
@@ -241,7 +219,6 @@ a.carousel-card * {
     gap: 0.5rem;
     font-weight: 600;
     font-size: 0.95rem;
-    /* Aumentado de 0.88rem a 0.95rem */
     padding: 0.5rem 0;
     transition: gap 0.25s ease;
 }
@@ -310,11 +287,11 @@ a.carousel-card * {
 }
 
 .carousel-prev {
-    left: 0.75rem;
+    left: 2rem;
 }
 
 .carousel-next {
-    right: 0.75rem;
+    right: 2rem;
 }
 
 .carousel-nav:hover {
@@ -330,7 +307,6 @@ a.carousel-card * {
     justify-content: center;
     gap: 0.5rem;
     padding-top: 0.5rem;
-    /* Reducido espacio superior */
     padding-bottom: 1rem;
 }
 
@@ -367,19 +343,19 @@ a.carousel-card * {
         font-size: 1.5rem;
     }
 
-    /* Ventana súper compacta en tablet/móvil grande */
     .carousel-wrapper {
-        height: 350px;
+        height: 380px;
     }
 
     .carousel-card {
-        height: 320px;
         padding: 1.25rem 1rem;
         margin-top: -160px;
-        /* Mitad de 320px */
+
+        /* 🚨 FIX MÓVIL: Apagamos el cristal para salvar batería, pero dejamos la imagen INTACTA */
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
 
-    /* En móvil devolvemos los textos a un tamaño estándar para que quepan */
     .module-info h3 {
         font-size: 1.15rem;
         margin-bottom: 0.3rem;
@@ -401,26 +377,21 @@ a.carousel-card * {
     }
 
     .carousel-prev {
-        left: 0.25rem;
+        left: 2%;
     }
 
     .carousel-next {
-        right: 0.25rem;
+        right: 2%;
     }
 }
 
 @media (max-width: 480px) {
-
-    /* Pantallas muy pequeñas (iPhone SE, etc) */
     .carousel-wrapper {
         height: 300px;
     }
 
-    /* Apretado al máximo */
-
     .carousel-card {
         height: 280px;
         margin-top: -140px;
-        /* Mitad de 280px */
     }
 }
