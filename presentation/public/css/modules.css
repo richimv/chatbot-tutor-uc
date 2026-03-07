@@ -1,181 +1,119 @@
 /* ══════════════════════════════════════════════════════════════════
-   CENTRO DE ENTRENAMIENTO — 3D Cylindrical Carousel
-   Hub Academia · Medical Tech Aesthetic
+   CENTRO DE ENTRENAMIENTO — Infinite 2D Slider (Bulletproof & Compact)
    ══════════════════════════════════════════════════════════════════ */
 
-/* ─── Section Container ─────────────────────────────────────────── */
 #training-modules {
-    padding: 0.5rem 0;
-    max-width: 100%;
+    /* 🚨 Reducimos el padding general en PC para quitar espacio vacío */
+    padding: 1rem 0;
+    width: 100%;
     margin: 0 auto;
     overflow-x: hidden;
-    animation: fadeIn 0.8s ease-out;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ─── Header ────────────────────────────────────────────────────── */
 .modules-header {
     text-align: center;
-    margin-bottom: 0.2rem;
-    padding: 0 1rem;
+    /* 🚨 Acercamos el título al carrusel */
+    margin-bottom: 1rem;
+    padding: 0 1.5rem;
 }
 
 .modules-title {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
     margin-bottom: 0.2rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .modules-subtitle {
-    color: var(--text-muted, #94a3b8);
-    font-size: 0.95rem;
-    letter-spacing: 0.03em;
-    margin-top: 0.2rem;
+    color: #94a3b8;
+    font-size: 1rem;
 }
 
-/* ─── Carousel Wrapper (Viewport / Clip Window) ─────────────────── */
+/* ─── Pista y Contenedor ────────────────────────────────────────── */
 .carousel-wrapper {
     position: relative;
     width: 100%;
-    max-width: 100%;
-    height: 440px;
+    max-width: 1400px;
+    /* 🚨 Reducido de 480px a 460px para compactar en PC */
+    height: 460px;
+    margin: 0 auto;
     overflow: hidden;
-    cursor: grab;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: pan-y;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
 }
 
-.carousel-wrapper:active {
-    cursor: grabbing;
-}
-
-/* ─── 3D Scene ──────────────────────────────────────────────────── */
 .carousel-scene {
     width: 100%;
     height: 100%;
     position: relative;
-    perspective: 1200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-/* ─── Cylinder (3D Container) ───────────────────────────────────── */
 .carousel-cylinder {
+    width: 100%;
+    height: 100%;
     position: relative;
-    width: 0;
-    height: 0;
-    transform-style: preserve-3d;
 }
 
-/* ─── Cards (Glassmorphism Pro) ─────────────────────────────────── */
+/* ─── Tarjetas (Posicionamiento Absoluto Infalible) ─────────────── */
 .carousel-card {
-    box-sizing: border-box;
     position: absolute;
-    width: 400px;
-    height: 380px;
-    left: 50%;
     top: 50%;
-    margin-left: -200px;
-    margin-top: -190px;
+    left: 50%;
+
+    width: 400px;
+    height: 420px;
     border-radius: 24px;
-    padding: 1.5rem 1.25rem;
+    padding: 2rem 1.8rem;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     text-decoration: none !important;
     color: inherit;
-    transform-origin: center center;
 
-    background: transparent;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.5s ease,
+        box-shadow 0.5s ease;
 
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ── Card Background Images ── */
+/* ── Card Backgrounds ── */
 .card-sim {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-sim-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.9)), url('../assets/custom-sim-bg.png');
     background-size: cover;
     background-position: center;
 }
 
 .card-repaso {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-repaso-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.9)), url('../assets/custom-repaso-bg.png');
     background-size: cover;
     background-position: center;
 }
 
 .card-arena {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-arena-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.9)), url('../assets/custom-arena-bg.png');
     background-size: cover;
     background-position: center;
 }
 
-/* ── Active Card Glow ── */
+/* ── ESTADO ACTIVO (La del centro) ── */
 .carousel-card--active {
-    border-color: rgba(96, 165, 250, 0.9) !important;
-    background-color: transparent !important;
-
-    /* 🚨 FIX: Esto estaba mal escrito en tu versión, debe ser 'none' */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-
-    box-shadow:
-        0 15px 40px rgba(0, 0, 0, 0.7),
-        0 0 20px rgba(96, 165, 250, 0.25),
-        inset 0 0 60px rgba(0, 0, 0, 0.5) !important;
-    image-rendering: auto;
+    border-color: rgba(96, 165, 250, 0.6);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(96, 165, 250, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5);
 }
 
-/* ─── Card Content ──────────────────────────────────────────────── */
-a.carousel-card,
-a.carousel-card:hover,
-a.carousel-card:focus,
-a.carousel-card * {
-    text-decoration: none !important;
-    border-bottom: none !important;
-}
-
+/* ─── Contenido ─────────────────────────────────────────────────── */
 .module-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
-    margin-bottom: 0.75rem;
-    transition: transform 0.3s ease;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    transition: transform 0.4s ease;
 }
 
 .carousel-card--active .module-icon {
@@ -198,18 +136,17 @@ a.carousel-card * {
 }
 
 .module-info h3 {
-    color: var(--text-main, #ffffff);
-    font-size: 1.5rem;
+    color: #ffffff;
+    font-size: 1.6rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 0.6rem;
 }
 
 .module-info p {
-    color: var(--text-secondary, #94a3b8);
+    color: #94a3b8;
     font-size: 0.95rem;
-    line-height: 1.5;
-    margin-bottom: 1.2rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
 }
 
 .module-action {
@@ -218,9 +155,8 @@ a.carousel-card * {
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1rem;
     padding: 0.5rem 0;
-    transition: gap 0.25s ease;
 }
 
 .carousel-card--active .module-action {
@@ -241,15 +177,13 @@ a.carousel-card * {
 
 .module-badge {
     position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-    padding: 0.2rem 0.7rem;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 50px;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    z-index: 2;
 }
 
 .badge-new {
@@ -264,26 +198,24 @@ a.carousel-card * {
     border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
-/* ─── Navigation Arrows ────────────────────────────────────────── */
+/* ─── Navegación ────────────────────────────────────────────────── */
 .carousel-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 50;
-    width: 48px;
-    height: 48px;
+    z-index: 999;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--text-main, #ffffff);
-    font-size: 1.1rem;
+    background: rgba(30, 41, 59, 0.8);
+    color: #ffffff;
+    font-size: 1.2rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
+    transition: all 0.3s ease;
 }
 
 .carousel-prev {
@@ -295,52 +227,52 @@ a.carousel-card * {
 }
 
 .carousel-nav:hover {
-    background: rgba(96, 165, 250, 0.2);
-    border-color: rgba(96, 165, 250, 0.4);
-    box-shadow: 0 0 20px rgba(96, 165, 250, 0.25);
+    background: #1e293b;
+    border-color: #60a5fa;
+    color: #60a5fa;
     transform: translateY(-50%) scale(1.1);
 }
 
-/* ─── Indicators (Dots) ─────────────────────────────────────────── */
 .carousel-indicators {
     display: flex;
     justify-content: center;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
-    padding-bottom: 1rem;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
 }
 
 .carousel-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    padding: 0;
 }
 
 .carousel-dot:hover {
-    background: rgba(96, 165, 250, 0.3);
-    border-color: rgba(96, 165, 250, 0.5);
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .carousel-dot.active {
+    width: 24px;
+    border-radius: 5px;
     background: #60a5fa;
-    border-color: #60a5fa;
     box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
-    transform: scale(1.3);
 }
 
-/* ─── Responsive (Solución para Móviles) ─────────────────────────── */
+/* ─── Responsive Móvil (Minimalista y Ultra Compacto) ───────────── */
 @media (max-width: 768px) {
-    #training-modules {
-        padding: 0.5rem;
+
+    /* Títulos más discretos en tablets */
+    .modules-title {
+        font-size: 1.7rem;
+        margin-bottom: 0;
     }
 
-    .modules-title {
-        font-size: 1.5rem;
+    .modules-subtitle {
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
     }
 
     .carousel-wrapper {
@@ -348,50 +280,77 @@ a.carousel-card * {
     }
 
     .carousel-card {
-        padding: 1.25rem 1rem;
-        margin-top: -160px;
-
-        /* 🚨 FIX MÓVIL: Apagamos el cristal para salvar batería, pero dejamos la imagen INTACTA */
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-    }
-
-    .module-info h3 {
-        font-size: 1.15rem;
-        margin-bottom: 0.3rem;
-    }
-
-    .module-info p {
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .module-action {
-        font-size: 0.85rem;
+        width: 300px;
+        height: 340px;
+        padding: 1.5rem;
     }
 
     .carousel-nav {
         width: 40px;
         height: 40px;
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
 
     .carousel-prev {
-        left: 2%;
+        left: 0.5rem;
     }
 
     .carousel-next {
-        right: 2%;
+        right: 0.5rem;
     }
 }
 
 @media (max-width: 480px) {
+
+    /* Títulos minimalistas en celulares */
+    .modules-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .modules-subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* Ventana y Tarjetas ultra compactas para eliminar espacios muertos */
     .carousel-wrapper {
-        height: 300px;
+        height: 330px;
     }
 
     .carousel-card {
-        height: 280px;
-        margin-top: -140px;
+        width: 260px;
+        height: 290px;
+        padding: 1.25rem;
+    }
+
+    /* Ajustes interiores para que todo quepa en la tarjeta pequeña */
+    .module-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .module-info h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .module-info p {
+        font-size: 0.8rem;
+        margin-bottom: 0.8rem;
+        line-height: 1.3;
+    }
+
+    .module-action {
+        font-size: 0.85rem;
+        padding: 0.2rem 0;
+    }
+
+    .module-badge {
+        top: 1rem;
+        right: 1rem;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.65rem;
     }
 }
