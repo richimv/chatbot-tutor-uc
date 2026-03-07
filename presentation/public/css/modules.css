@@ -1,22 +1,40 @@
-/* MODULES HUB (Training Center) */
+/* ══════════════════════════════════════════════════════════════════
+   CENTRO DE ENTRENAMIENTO — 3D Cylindrical Carousel
+   Hub Academia · Medical Tech Aesthetic
+   ══════════════════════════════════════════════════════════════════ */
 
+/* ─── Section Container ─────────────────────────────────────────── */
 #training-modules {
-    padding: 1.5rem 1rem 4rem 1rem;
-    /* ✅ Balanced: Space for floating search bar */
-    max-width: 1200px;
+    padding: 0.5rem 1rem;
+    /* Super compacto arriba y abajo */
+    max-width: 1100px;
     margin: 0 auto;
     animation: fadeIn 0.8s ease-out;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Header ────────────────────────────────────────────────────── */
 .modules-header {
     text-align: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.2rem;
+    /* Eliminamos el espacio vacío debajo del título */
 }
 
 .modules-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
     background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -24,180 +42,212 @@
 }
 
 .modules-subtitle {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+    color: var(--text-muted, #94a3b8);
+    /* Fallback de color */
+    font-size: 0.95rem;
     letter-spacing: 0.03em;
     margin-top: 0.2rem;
 }
 
-/* Grid Layout */
-.modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    padding: 0 1rem;
+/* ─── Carousel Wrapper (Viewport / Clip Window) ─────────────────── */
+.carousel-wrapper {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    /* Súper ajustado a la tarjeta de 380px */
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
 
-/* Glassmorphism Card */
-.module-card {
-    background: rgba(30, 41, 59, 0.4);
-    /* Semi-transparent Slate 800 */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 24px;
-    padding: 2.5rem;
+.carousel-wrapper:active {
+    cursor: grabbing;
+}
+
+/* ─── 3D Scene ──────────────────────────────────────────────────── */
+.carousel-scene {
+    width: 100%;
+    height: 100%;
     position: relative;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(12px);
+    perspective: 1200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Centrado vertical con Flexbox (mejor que márgenes negativos) */
+}
+
+/* ─── Cylinder (3D Container) ───────────────────────────────────── */
+.carousel-cylinder {
+    position: relative;
+    /* El cilindro debe tener tamaño 0 para que sea un eje de rotación puro */
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+}
+
+/* ─── Cards (Glassmorphism Pro) ─────────────────────────────────── */
+.carousel-card {
+    /* FIX DE CENTRADO Y CORTE INFERIOR */
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 400px;
+    height: 380px;
+    left: 50%;
+    top: 50%;
+    margin-left: -200px;
+    margin-top: -190px;
+
+    border-radius: 24px;
+    padding: 1.5rem 1.25rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    text-decoration: none;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.module-card:hover {
-    transform: translateY(-8px);
-    border-color: rgba(96, 165, 250, 0.5);
-    /* Blue border on hover */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-}
-
-/* Ensure background image persists on hover with a darker overlay */
-.module-card:hover.card-sim {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.85)),
-        url('../assets/custom-sim-bg.png');
-    background-size: cover;
-    background-position: center;
-}
-
-
-.module-card:hover.card-repaso {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8)),
-        url('../assets/custom-repaso-bg.png');
-    background-size: cover;
-    background-position: center;
-}
-
-.module-card:hover.card-arena {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.75)),
-        url('../assets/custom-arena-bg.png');
-    background-size: cover;
-    background-position: center;
-}
-
-/* 🚫 FORCE REMOVE TEXT UNDERLINE */
-a.module-card,
-a.module-card:hover,
-a.module-card:focus,
-a.module-card * {
     text-decoration: none !important;
-    border-bottom: none !important;
+    color: inherit;
+    transform-origin: center center;
+
+    /* FIX DE COLOR AZULADO: Ahora es totalmente transparente, solo se ve la imagen pura */
+    background: transparent;
+
+    /* Mantenemos el desenfoque para las tarjetas adyacentes */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
-.module-info h3,
-.module-info p,
-.module-action {
-    text-decoration: none !important;
-}
-
-/* ✅ NEW: Background Images for Cards (Custom Local Assets) */
+/* ── Card Background Images (DEGRADADOS NEUTROS) ── */
+/* Cambié los RGBA azules (15, 23, 42) por negros/neutros para que la imagen resalte con sus colores reales */
 .card-sim {
-    /* Custom Sim Dashboard */
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.8)),
-        url('../assets/custom-sim-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-sim-bg.png');
     background-size: cover;
     background-position: center;
 }
 
 .card-repaso {
-    /* Custom Flashcards & Notes */
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.85)),
-        url('../assets/custom-repaso-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-repaso-bg.png');
     background-size: cover;
     background-position: center;
 }
 
 .card-arena {
-    /* Custom Gaming Arena */
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.8)),
-        url('../assets/custom-arena-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.85)), url('../assets/custom-arena-bg.png');
     background-size: cover;
     background-position: center;
 }
 
-/* Enhancing text readability on images */
-.card-sim .module-info h3,
-.card-repaso .module-info h3,
-.card-arena .module-info h3 {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+/* ── Active Card Glow (Cyan/Purple) ── */
+.carousel-card--active {
+    border-color: rgba(96, 165, 250, 0.9) !important;
+
+    /* 🚨 AQUÍ ESTÁ LA MAGIA PARA QUITAR EL AZUL OPACO 🚨 */
+    background-color: transparent !important;
+
+    /* Quitamos el desenfoque para que se vea nítida la imagen */
+    backdrop-filter: transparent !important;
+    -webkit-backdrop-filter: none !important;
+
+    /* Sombra exterior para el brillo y sombra interior negra para que el texto resalte */
+    box-shadow:
+        /* Sombra negra de profundidad (sin cambios mayores) */
+        0 15px 40px rgba(0, 0, 0, 0.7),
+
+        /* 🚨 EL BRILLO CIAN: Bajamos la expansión de 45px a 20px, y la opacidad de 0.35 a 0.15 */
+        0 0 20px rgba(96, 165, 250, 0.25),
+
+        /* Sombra interna oscura para contraste (ligeramente suavizada a 60px) */
+        inset 0 0 60px rgba(0, 0, 0, 0.5) !important;
+
+    image-rendering: auto;
 }
 
-/* Icon Styling */
+/* ─── Card Content ──────────────────────────────────────────────── */
+a.carousel-card,
+a.carousel-card:hover,
+a.carousel-card:focus,
+a.carousel-card * {
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+
 .module-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
-    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
     transition: transform 0.3s ease;
 }
 
-.module-card:hover .module-icon {
+.carousel-card--active .module-icon {
     transform: scale(1.1) rotate(5deg);
 }
 
-/* Specific Colors per Module */
 .icon-med {
     background: rgba(59, 130, 246, 0.15);
-    /* Blue bg */
     color: #60a5fa;
-    /* Blue text */
 }
 
 .icon-flash {
     background: rgba(234, 179, 8, 0.15);
-    /* Amber/Yellow bg */
     color: #facc15;
-    /* Yellow text */
 }
 
 .icon-battle {
     background: rgba(168, 85, 247, 0.15);
-    /* Purple bg */
     color: #c084fc;
-    /* Purple text */
 }
 
-/* Text Content */
 .module-info h3 {
-    color: var(--text-main);
+    color: var(--text-main, #ffffff);
     font-size: 1.5rem;
+    /* Aumentado de 1.25rem a 1.5rem */
     font-weight: 700;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .module-info p {
-    color: var(--text-secondary);
+    color: var(--text-secondary, #94a3b8);
     font-size: 0.95rem;
-    line-height: 1.6;
-    margin-bottom: 2rem;
+    /* Aumentado de 0.85rem a 0.95rem */
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
 }
 
-/* Action Button (Fake button visual) */
 .module-action {
     margin-top: auto;
-    /* Push to bottom */
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    /* Aumentado de 0.88rem a 0.95rem */
     padding: 0.5rem 0;
-    transition: gap 0.2s ease;
+    transition: gap 0.25s ease;
+}
+
+.carousel-card--active .module-action {
+    gap: 0.8rem;
 }
 
 .action-med {
@@ -212,21 +262,17 @@ a.module-card * {
     color: #c084fc;
 }
 
-.module-card:hover .module-action {
-    gap: 0.8rem;
-}
-
-/* Badge */
 .module-badge {
     position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    padding: 0.25rem 0.75rem;
+    top: 1.25rem;
+    right: 1.25rem;
+    padding: 0.2rem 0.7rem;
     border-radius: 50px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    z-index: 2;
 }
 
 .badge-new {
@@ -241,18 +287,140 @@ a.module-card * {
     border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
-/* Responsive */
+/* ─── Navigation Arrows ────────────────────────────────────────── */
+.carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 50;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-main, #ffffff);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.carousel-prev {
+    left: 0.75rem;
+}
+
+.carousel-next {
+    right: 0.75rem;
+}
+
+.carousel-nav:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.4);
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.25);
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* ─── Indicators (Dots) ─────────────────────────────────────────── */
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    /* Reducido espacio superior */
+    padding-bottom: 1rem;
+}
+
+.carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.carousel-dot:hover {
+    background: rgba(96, 165, 250, 0.3);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.carousel-dot.active {
+    background: #60a5fa;
+    border-color: #60a5fa;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+    transform: scale(1.3);
+}
+
+/* ─── Responsive (Solución para Móviles) ─────────────────────────── */
 @media (max-width: 768px) {
     #training-modules {
-        padding: 2rem 1rem;
+        padding: 0.5rem;
     }
 
     .modules-title {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
-    .modules-grid {
-        grid-template-columns: 1fr;
-        /* Single column on mobile */
+    /* Ventana súper compacta en tablet/móvil grande */
+    .carousel-wrapper {
+        height: 350px;
+    }
+
+    .carousel-card {
+        height: 320px;
+        padding: 1.25rem 1rem;
+        margin-top: -160px;
+        /* Mitad de 320px */
+    }
+
+    /* En móvil devolvemos los textos a un tamaño estándar para que quepan */
+    .module-info h3 {
+        font-size: 1.15rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .module-info p {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .module-action {
+        font-size: 0.85rem;
+    }
+
+    .carousel-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 0.95rem;
+    }
+
+    .carousel-prev {
+        left: 0.25rem;
+    }
+
+    .carousel-next {
+        right: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* Pantallas muy pequeñas (iPhone SE, etc) */
+    .carousel-wrapper {
+        height: 300px;
+    }
+
+    /* Apretado al máximo */
+
+    .carousel-card {
+        height: 280px;
+        margin-top: -140px;
+        /* Mitad de 280px */
     }
 }

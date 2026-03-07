@@ -110,10 +110,8 @@ class RepasoManager {
     }
 
     async init() {
-        if (!this.token) {
-            window.location.href = '/login';
-            return;
-        }
+        // No longer enforcing redirect here.
+        // Component will handle missing token by showing restricted views.
 
         // Init Components
         await this.explorer.init();
@@ -135,7 +133,14 @@ class RepasoManager {
     }
 
     bindEvents() {
-        document.getElementById('create-deck-form').addEventListener('submit', (e) => this.handleCreateDeck(e));
+        document.getElementById('create-deck-form').addEventListener('submit', (e) => {
+            if (!this.token && window.uiManager) {
+                e.preventDefault();
+                window.uiManager.showAuthPromptModal();
+                return;
+            }
+            this.handleCreateDeck(e);
+        });
         document.getElementById('card-form').addEventListener('submit', (e) => this.handleSaveCard(e));
 
         // Force refresh when returning from flashcard study via browser back button
@@ -235,24 +240,34 @@ class RepasoManager {
                         <div class="action-bar" style="display:flex; gap:0.8rem; align-items:center;">
                             
                             <!-- 1. Study (Primary - Standard Size) -->
-                            ${total > 0 ? `
+                            ${total > 0 && this.token ? `
                             <button class="btn-action" style="background:#3b82f6; color:white; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s; white-space:nowrap;" onclick="window.repasoManager.startStudy('${deck.id}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
 
+                            ${!this.token ? `
+                            <button class="btn-action" style="background:#fbbf24; color:#000; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:700; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer;" onclick="window.location.href='/login'">
+                                <i class="fas fa-user-plus"></i> <span class="btn-text">Regístrate para Estudiar</span>
+                            </button>
+                            ` : ''}
+
                             <!-- 2. Add Card -->
+                            ${this.token ? `
                             <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAddCardModal()" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
+                            ` : ''}
 
                             <!-- 3. AI -->
+                            ${this.token ? `
                             <button class="btn-action" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:#d8b4fe; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAiModal()" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
                                 <i class="fas fa-magic"></i> <span class="btn-text">Generar con IA</span>
                             </button>
+                            ` : ''}
                             
                             <!-- 4. Stats -->
-                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openStatsModal(${total}, ${mastered})" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
+                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered})` : 'window.uiManager.showAuthPromptModal()'}" onmouseover="this.style.background='rgba(51, 65, 12, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
                         </div>
@@ -276,37 +291,39 @@ class RepasoManager {
         container.style.gap = '1rem';
         container.innerHTML = ''; // Clear previous content
 
-        // --- 1. NEW: Add "Create Deck" Card ---
-        const addCard = document.createElement('div');
-        addCard.className = 'deck-card';
-        addCard.style.padding = '1rem';
-        addCard.style.minHeight = '80px';
-        addCard.style.border = '2px dashed rgba(255, 255, 255, 0.1)';
-        addCard.style.background = 'transparent';
-        addCard.style.display = 'flex';
-        addCard.style.flexDirection = 'column';
-        addCard.style.alignItems = 'center';
-        addCard.style.justifyContent = 'center';
-        addCard.style.cursor = 'pointer';
-        addCard.style.transition = 'all 0.2s';
-
-        addCard.onmouseover = () => {
-            addCard.style.borderColor = '#3b82f6';
-            addCard.style.background = 'rgba(59, 130, 246, 0.05)';
-        };
-        addCard.onmouseout = () => {
-            addCard.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users) ---
+        if (this.token) {
+            const addCard = document.createElement('div');
+            addCard.className = 'deck-card';
+            addCard.style.padding = '1rem';
+            addCard.style.minHeight = '80px';
+            addCard.style.border = '2px dashed rgba(255, 255, 255, 0.1)';
             addCard.style.background = 'transparent';
-        };
-        addCard.onclick = () => DeckExplorer.openCreateModal(parentId);
+            addCard.style.display = 'flex';
+            addCard.style.flexDirection = 'column';
+            addCard.style.alignItems = 'center';
+            addCard.style.justifyContent = 'center';
+            addCard.style.cursor = 'pointer';
+            addCard.style.transition = 'all 0.2s';
 
-        addCard.innerHTML = `
-            <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.5rem;">
-                <i class="fas fa-plus"></i>
-            </div>
-            <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8;">Crear Mazo</div>
-        `;
-        container.appendChild(addCard);
+            addCard.onmouseover = () => {
+                addCard.style.borderColor = '#3b82f6';
+                addCard.style.background = 'rgba(59, 130, 246, 0.05)';
+            };
+            addCard.onmouseout = () => {
+                addCard.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                addCard.style.background = 'transparent';
+            };
+            addCard.onclick = () => DeckExplorer.openCreateModal(parentId);
+
+            addCard.innerHTML = `
+                <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.5rem;">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8;">Crear Mazo</div>
+            `;
+            container.appendChild(addCard);
+        }
 
         // --- 2. Render Decks ---
         decks.forEach(deck => {
@@ -325,11 +342,11 @@ class RepasoManager {
             // Edit/Delete buttons HTML (only for user decks)
             const editDeleteBtns = !isSystem ? `
                 <div style="display:flex; gap:0.3rem;">
-                    <button class="deck-action-btn" onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')" 
+                    <button class="deck-action-btn" onclick="event.stopPropagation(); ${this.token ? `window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')` : 'window.uiManager.showAuthPromptModal()'}" 
                         title="Editar">
                         <i class="fas fa-pen"></i>
                     </button>
-                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); ${this.token ? `window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')` : 'window.uiManager.showAuthPromptModal()'}" 
                         title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -412,7 +429,7 @@ class RepasoManager {
                     <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer;">
                     <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
                 </label>
-                <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="window.repasoManager.confirmBulkDelete()">
+                <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
                     <i class="fas fa-trash"></i> Eliminar Selección
                 </button>
             </div>
@@ -505,14 +522,28 @@ class RepasoManager {
             editBtn.title = 'Editar';
             editBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
             editBtn.innerHTML = '<i class="fas fa-pen"></i>';
-            editBtn.onclick = (e) => { e.stopPropagation(); window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content); };
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (this.token) {
+                    window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content);
+                } else {
+                    window.uiManager.showAuthPromptModal();
+                }
+            };
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'deck-action-btn deck-action-btn--delete';
             deleteBtn.title = 'Eliminar';
             deleteBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.onclick = (e) => { e.stopPropagation(); window.repasoManager.confirmDeleteCard(c.id, c.front_content); };
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (this.token) {
+                    window.repasoManager.confirmDeleteCard(c.id, c.front_content);
+                } else {
+                    window.uiManager.showAuthPromptModal();
+                }
+            };
 
             actionsDiv.appendChild(editBtn);
             actionsDiv.appendChild(deleteBtn);

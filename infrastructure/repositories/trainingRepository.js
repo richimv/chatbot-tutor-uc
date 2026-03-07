@@ -135,21 +135,37 @@ class TrainingRepository {
      * @param {number} limit Cuántas preguntas de contexto traer (ej: 15)
      * @returns {Promise<string[]>} Array de strings con el texto de la pregunta original.
      */
-    async getRandomQuestionsContext(domain, target, topics, limit = 15) {
+    async getRandomQuestionsContext(domain, target, topics, limit = 15, difficulty = null, career = null) {
         try {
-            const query = `
+            let query = `
                 SELECT question_text 
                 FROM question_bank 
                 WHERE domain = $1 
                 AND ($2::text IS NULL OR target = $2)
                 AND topic = ANY($3::text[])
-                ORDER BY RANDOM() 
-                LIMIT $4
             `;
-            const res = await db.query(query, [domain, target, topics, limit]);
+            const params = [domain, target, topics];
+            let paramIdx = 4;
+
+            if (difficulty) {
+                query += ` AND difficulty = $${paramIdx} `;
+                params.push(difficulty);
+                paramIdx++;
+            }
+
+            if (career) {
+                query += ` AND (career IS NULL OR career = $${paramIdx}) `;
+                params.push(career);
+                paramIdx++;
+            }
+
+            query += ` ORDER BY RANDOM() LIMIT $${paramIdx} `;
+            params.push(limit);
+
+            const res = await db.query(query, params);
 
             if (res.rows.length > 0) {
-                console.log(`🧠 [Deduplication] Extraídas ${res.rows.length} preguntas aleatorias del banco para contexto IA.`);
+                console.log(`🧠 [Deduplication] Extraídas ${res.rows.length} preguntas aleatorias para contexto (Filtro: ${target} - ${difficulty} - ${career}).`);
                 return res.rows.map(r => r.question_text);
             }
             return [];
@@ -377,17 +393,32 @@ class TrainingRepository {
     // --- DECKS MANAGEMENT ---
 
     async getDecks(userId, parentId = null) {
-        // Updated Query: Filter by parentId (Drill-down approach)
-        // Auto-curar BD
+        // Auto-heal DB
         await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
 
+        if (userId === 'GUEST') {
+            // Guest mode: return unique system decks by name
+            const query = `
+                SELECT DISTINCT ON (d.name)
+                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
+                    0 as total_cards, 0 as due_cards, 
+                    (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
+                    0 as mastery_percentage
+                FROM decks d
+                WHERE d.type = 'SYSTEM' AND (d.parent_id = $1 OR ($1 IS NULL AND d.parent_id IS NULL))
+                ORDER BY d.name, d.created_at DESC
+            `;
+            const result = await db.query(query, [parentId]);
+            return result.rows;
+        }
+
+        // Standard user query
         let query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
                 (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
-                 -- Mastery: Percentage of cards with interval > 21 days (Mature)
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
@@ -395,7 +426,6 @@ class TrainingRepository {
         `;
 
         const params = [userId];
-
         if (parentId) {
             query += ` AND d.parent_id = $2`;
             params.push(parentId);
@@ -404,7 +434,6 @@ class TrainingRepository {
         }
 
         query += ` GROUP BY d.id ORDER BY d.created_at DESC`;
-
         const result = await db.query(query, params);
         return result.rows;
     }
@@ -421,10 +450,11 @@ class TrainingRepository {
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
-            WHERE d.user_id = $1 AND d.id = $2
+            WHERE ${userId === 'GUEST' ? "d.type = 'SYSTEM'" : "d.user_id = $1"} AND d.id = ${userId === 'GUEST' ? '$1' : '$2'}
             GROUP BY d.id
         `;
-        const result = await db.query(query, [userId, deckId]);
+        const params = userId === 'GUEST' ? [deckId] : [userId, deckId];
+        const result = await db.query(query, params);
         return result.rows[0];
     }
 

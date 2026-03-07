@@ -85,7 +85,7 @@ class ChatController {
             try {
                 const loadedKBSet = await this.knowledgeBaseRepo.load();
 
-                console.log(`🤖 Intentando generar respuesta con LLM. Cuota Thinking Activa: ${hasThinkingQuota}`);
+                console.log(`🤖 Intentando generar respuesta con LLM. Cuota Thinking Activa: ${hasThinkingQuota}. Tier: ${req.userTier}.`);
                 // Se pasa el historial obtenido de la base de datos.
                 classification = await this.mlService.classifyIntent(message, conversationHistory, {
                     knowledgeBaseRepo: this.knowledgeBaseRepo,
@@ -96,7 +96,12 @@ class ChatController {
                     userTier: req.userTier || 'free',
                     disableRAG: !hasThinkingQuota // Bloquea silenciosamente RAG si no hay cuota, degradando la IA
                 });
-                console.log('✅ Respuesta de LLM recibida:', classification);
+
+                if (classification.usedRAG) {
+                    console.log(`📚 RAG EXITOSO: La IA utilizó fragmentos de la base documental.`);
+                } else if (!hasThinkingQuota) {
+                    console.log(`🚫 RAG SKIPPED: Usuario no tiene cuota 'Thinking' (Tier: ${req.userTier}).`);
+                }
             } catch (mlError) {
                 console.error('❌ ERROR CRÍTICO llamando a mlService:', mlError);
                 return res.status(500).json({ error: 'El servicio de IA no está disponible' });

@@ -97,7 +97,7 @@ class RagService {
         const query = `
             SELECT content, metadata, 1 - (embedding <=> $1) as similarity
             FROM documents
-            WHERE 1 - (embedding <=> $1) > 0.55 -- Umbral mínimo ligeramente más estricto
+            WHERE 1 - (embedding <=> $1) > 0.50 -- Umbral ajustado para asegurar captura de leyes y manuales técnicos
             ${filterClause}
             ORDER BY embedding <=> $1
             LIMIT $2;

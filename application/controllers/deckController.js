@@ -7,7 +7,7 @@ class DeckController {
      */
     async listDecks(req, res) {
         try {
-            const userId = req.user.id;
+            const userId = req.user ? req.user.id : 'GUEST'; // Use GUEST marker
             const { parentId } = req.query; // Supports null or undefined for Roots
             const decks = await DeckService.getUserDecks(userId, parentId || null);
             res.json({ success: true, decks });
@@ -22,11 +22,16 @@ class DeckController {
      */
     async getDeckById(req, res) {
         try {
-            const userId = req.user.id;
+            const userId = req.user ? req.user.id : 'GUEST';
             const { deckId } = req.params;
             const deck = await DeckService.getDeckById(userId, deckId);
 
             if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
+
+            // Security: If Guest, ensure it's a SYSTEM deck
+            if (!req.user && deck.type !== 'SYSTEM') {
+                return res.status(403).json({ error: 'Acceso denegado' });
+            }
 
             res.json({ success: true, deck });
         } catch (error) {
@@ -93,6 +98,15 @@ class DeckController {
     async listCards(req, res) {
         try {
             const { deckId } = req.params;
+
+            // Security: If Guest, ensure it's a SYSTEM deck
+            if (!req.user) {
+                const deck = await DeckService.getDeckById('GUEST', deckId);
+                if (!deck || deck.type !== 'SYSTEM') {
+                    return res.status(403).json({ error: 'Acceso denegado' });
+                }
+            }
+
             const cards = await DeckService.getDeckCards(deckId);
             res.json({ success: true, cards });
         } catch (error) {

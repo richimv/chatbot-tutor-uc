@@ -648,28 +648,43 @@ class AdminManager {
                 break;
 
             case 'bulk-question':
-                title.textContent = 'Importar Banco de Preguntas (Excel / CSV)';
+                title.textContent = 'Importar Banco de Preguntas (JSON / Excel / CSV)';
                 fieldsHTML = `
                     <div class="admin-item-card" style="padding: 15px; text-align: left; background: var(--bg-surface); margin-bottom: 15px;">
                         <p style="margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">
-                            <strong>¡Sube tu archivo Excel o CSV directamente de forma profesional!</strong><br><br>
-                            Asegúrate de respetar las 13 columnas del formato estricto oficial. Si no sabes cómo armarlo, descarga nuestra plantilla.
+                            <strong>Opción 1: Pegar JSON directamente</strong><br>
+                            Copia y pega el array JSON generado por la IA en el cuadro de abajo. Es la forma más rápida si estás generando preguntas aquí mismo.
+                        </p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label class="form-label" for="generic-bulk-json" style="font-weight: 600; font-size:0.9rem; margin-bottom: 5px; display:block;">Pegar JSON de preguntas (*)</label>
+                        <textarea id="generic-bulk-json" class="form-input" placeholder='[{"question_text": "...", "options": [...], ...}]' style="min-height: 150px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
+                    </div>
+
+                    <div class="admin-item-card" style="padding: 15px; text-align: left; background: var(--bg-surface); margin-bottom: 15px;">
+                        <p style="margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">
+                            <strong>Opción 2: Subir Excel o CSV</strong><br>
+                            Asegúrate de respetar las 14 columnas del formato estricto oficial. Si no sabes cómo armarlo, descarga nuestra plantilla.
                         </p>
                         <button type="button" class="btn-secondary" style="margin-top: 10px; padding: 5px 15px; font-size: 0.85rem;" onclick="window.adminManager.downloadExcelTemplate()">
                             <i class="fas fa-file-excel" style="color:#22c55e;"></i> Descargar Plantilla Oficial
                         </button>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label class="form-label" for="generic-bulk-file" style="font-weight: 600; font-size:0.9rem; margin-bottom: 5px; display:block;">Selecciona tu archivo (.xlsx, .xls, .csv) (*)</label>
+                        <label class="form-label" for="generic-bulk-file" style="font-weight: 600; font-size:0.9rem; margin-bottom: 5px; display:block;">O selecciona tu archivo (.xlsx, .xls, .csv)</label>
                         <input type="file" id="generic-bulk-file" accept=".xlsx, .xls, .csv" class="form-input" style="padding: 10px; background: var(--bg-secondary); border: 1px dashed var(--border-color); cursor:pointer;">
                     </div>
                 `;
+                setTimeout(() => {
+                    const btn = document.getElementById('generic-save-btn');
+                    if (btn) btn.innerHTML = '<i class="fas fa-file-import"></i> Importar Lote';
+                }, 0);
                 break;
             case 'ai-question':
                 title.textContent = 'Generador de Preguntas IA (RAG)';
                 fieldsHTML = `
                     <div style="margin-bottom:15px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.1); padding: 10px; border-radius: 8px;">
-                        <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 10 preguntas sin duplicarse con el banco existente.
+                        <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 5 preguntas sin duplicarse con el banco existente.
                     </div>
                     <h4 style="margin-bottom:0.5rem;">Dominio</h4>
                     <select id="ai-domain-select" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
@@ -1446,60 +1461,70 @@ class AdminManager {
                     }
                 }
                 case 'bulk-question': {
+                    const jsonInput = document.getElementById('generic-bulk-json');
                     const fileInput = document.getElementById('generic-bulk-file');
-                    if (!fileInput || !fileInput.files.length) {
-                        throw new Error('Por favor selecciona un archivo Excel o CSV.');
+
+                    // Prioridad 1: JSON pegado directamente
+                    if (jsonInput && jsonInput.value.trim()) {
+                        try {
+                            body = JSON.parse(jsonInput.value.trim());
+                            if (!Array.isArray(body)) throw new Error("El JSON debe ser un array de objetos.");
+                        } catch (err) {
+                            throw new Error("Error en formato JSON: " + err.message);
+                        }
                     }
-                    const file = fileInput.files[0];
+                    // Prioridad 2: Archivo subido
+                    else if (fileInput && fileInput.files.length) {
+                        const file = fileInput.files[0];
+                        body = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                try {
+                                    const data = new Uint8Array(e.target.result);
+                                    if (typeof window.XLSX === 'undefined') throw new Error("La librería procesadora de Excel no ha cargado completamente. Intenta recargar la página.");
 
-                    body = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            try {
-                                const data = new Uint8Array(e.target.result);
-                                if (typeof window.XLSX === 'undefined') throw new Error("La librería procesadora de Excel no ha cargado completamente. Intenta recargar la página.");
+                                    const workbook = window.XLSX.read(data, { type: 'array' });
+                                    const sheetName = workbook.SheetNames[0];
+                                    const sheet = workbook.Sheets[sheetName];
+                                    const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                                const workbook = window.XLSX.read(data, { type: 'array' });
-                                const sheetName = workbook.SheetNames[0];
-                                const sheet = workbook.Sheets[sheetName];
-                                const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                                    if (rows.length < 2) throw new Error("El archivo está vacío o solo contiene la fila de encabezados.");
 
-                                if (rows.length < 2) throw new Error("El archivo está vacío o solo contiene la fila de encabezados.");
+                                    // Omitir la fila 0 (encabezados)
+                                    const parsed = rows.slice(1).filter(row => row.length > 0 && row[0]).map((cols, i) => {
+                                        if (!cols[0]) return null;
+                                        return {
+                                            question_text: String(cols[0] || '').trim(),
+                                            domain: String(cols[1] || 'medicine').trim(),
+                                            target: cols[2] ? String(cols[2]).trim() : null,
+                                            career: cols[3] ? String(cols[3]).trim() : null,
+                                            topic: String(cols[4] || 'General').trim(),
+                                            difficulty: String(cols[5] || 'Intermedio').trim(),
+                                            options: [
+                                                String(cols[6] || 'Opción A').trim(),
+                                                String(cols[7] || 'Opción B').trim(),
+                                                String(cols[8] || 'Opción C').trim(),
+                                                String(cols[9] || 'Opción D').trim()
+                                            ],
+                                            correct_answer: parseInt(cols[10] || 0, 10),
+                                            explanation: cols[11] ? String(cols[11]).trim() : null,
+                                            image_url: cols[12] ? String(cols[12]).trim() : null,
+                                            subtopic: cols[13] ? String(cols[13]).trim() : null
+                                        };
+                                    }).filter(Boolean);
 
-                                // Omitir la fila 0 (encabezados)
-                                const parsed = rows.slice(1).filter(row => row.length > 0 && row[0]).map((cols, i) => {
-                                    // Cols es un array extraído numéricamente basándose en la enumeración de XLSX
-                                    if (!cols[0]) return null;
-
-                                    return {
-                                        question_text: String(cols[0] || '').trim(),
-                                        domain: String(cols[1] || 'medicine').trim(),
-                                        target: cols[2] ? String(cols[2]).trim() : null,
-                                        career: cols[3] ? String(cols[3]).trim() : null,
-                                        topic: String(cols[4] || 'General').trim(),
-                                        difficulty: String(cols[5] || 'Intermedio').trim(),
-                                        options: [
-                                            String(cols[6] || 'Opción A').trim(),
-                                            String(cols[7] || 'Opción B').trim(),
-                                            String(cols[8] || 'Opción C').trim(),
-                                            String(cols[9] || 'Opción D').trim()
-                                        ],
-                                        correct_answer: parseInt(cols[10] || 0, 10),
-                                        explanation: cols[11] ? String(cols[11]).trim() : null,
-                                        image_url: cols[12] ? String(cols[12]).trim() : null,
-                                        subtopic: cols[13] ? String(cols[13]).trim() : null // Nueva columna sub-tema
-                                    };
-                                }).filter(Boolean); // Remover nulos
-
-                                if (parsed.length === 0) throw new Error("No se encontraron preguntas válidas en el documento.");
-                                resolve(parsed);
-                            } catch (err) {
-                                reject(new Error("Error parseando Excel: " + err.message));
-                            }
-                        };
-                        reader.onerror = () => reject(new Error("Error leyendo el archivo desde el disco."));
-                        reader.readAsArrayBuffer(file);
-                    });
+                                    if (parsed.length === 0) throw new Error("No se encontraron preguntas válidas en el documento.");
+                                    resolve(parsed);
+                                } catch (err) {
+                                    reject(new Error("Error parseando archivo: " + err.message));
+                                }
+                            };
+                            reader.onerror = () => reject(new Error("Error leyendo el archivo desde el disco."));
+                            reader.readAsArrayBuffer(file);
+                        });
+                    } else {
+                        throw new Error('Por favor pega el JSON o selecciona un archivo Excel/CSV.');
+                    }
 
                     // Enviar petición Custom para inyección masiva
                     const _url = `${window.AppConfig.API_URL}/api/admin/questions/bulk`;

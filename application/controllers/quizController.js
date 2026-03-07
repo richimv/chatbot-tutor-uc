@@ -172,8 +172,32 @@ class QuizController {
      */
     async getStats(req, res) {
         try {
-            const userId = req.user.id;
             const { context, target } = req.query; // 'MEDICINA', etc.
+
+            // ✅ GUEST MODE: Return example stats if not logged in
+            if (!req.user) {
+                const exampleKpis = {
+                    avg_score: "14.5",
+                    accuracy: 72,
+                    total_correct: 145,
+                    total_incorrect: 55,
+                    mastered_cards: 12,
+                    strongest_topic: "Cardiología",
+                    weakest_topic: "Nefrología",
+                    radar_data: [
+                        { subject: "Cardiología", accuracy: 85, correct: 40, total: 47 },
+                        { subject: "Pediatría", accuracy: 70, correct: 35, total: 50 },
+                        { subject: "Ginecología", accuracy: 65, correct: 30, total: 46 },
+                        { subject: "Cirugía", accuracy: 60, correct: 25, total: 41 },
+                        { subject: "Nefrología", accuracy: 40, correct: 15, total: 37 }
+                    ],
+                    system_deck_id: "example-deck",
+                    isGuest: true
+                };
+                return res.json({ success: true, kpis: exampleKpis });
+            }
+
+            const userId = req.user.id;
 
             const db = require('../../infrastructure/database/db');
 
@@ -345,8 +369,18 @@ class QuizController {
      */
     async getEvolution(req, res) {
         try {
-            const userId = req.user.id;
             const { context, target } = req.query;
+
+            // ✅ GUEST MODE: Return example chart data
+            if (!req.user) {
+                const exampleChart = {
+                    labels: ["1 Mar", "2 Mar", "3 Mar", "4 Mar", "5 Mar"],
+                    scores: ["12.0", "13.5", "12.8", "15.0", "14.5"]
+                };
+                return res.json({ success: true, chart: exampleChart });
+            }
+
+            const userId = req.user.id;
             const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
 
             const data = await TrainingRepository.getQuizEvolution(userId, context, target);

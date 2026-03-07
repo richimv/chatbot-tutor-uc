@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Académico - Búsqueda de Cursos</title>
+    <title>Hub Académico</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
@@ -65,8 +65,8 @@
                     <div class="hero-content">
                         <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
                         <p class="hero-subtitle">
-                            Optimiza tú aprendizaje con nuestros módulos de estudio.<br>
-                            Y acelera tu aprendizaje profesional.
+                            Optimiza tú aprendizaje con nuestros módulos de estudio. Y acelera tu aprendizaje
+                            profesional.
                         </p>
                         <ul class="hero-features">
                             <li><i class="fas fa-user-md"></i> Simulacros Médicos</li>
@@ -130,63 +130,77 @@
 
     <div class="main-container">
 
-        <!-- ✅ NUEVO: Centro de Entrenamiento (Hub Principal) -->
+        <!-- ✅ Centro de Entrenamiento — 3D Cylindrical Carousel -->
         <section id="training-modules">
             <div class="modules-header">
                 <h2 class="modules-title">Centro de Entrenamiento</h2>
                 <p class="modules-subtitle">Domina tu carrera con herramientas avanzadas</p>
             </div>
 
-            <div class="modules-grid">
+            <div class="carousel-wrapper">
+                <div class="carousel-scene">
+                    <div class="carousel-cylinder">
 
-                <!-- Card 1: Simuladores -->
-                <a href="/simulators" class="module-card card-sim">
-                    <span class="module-badge badge-popular">Más Usado</span>
-                    <div class="module-icon icon-med">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <div class="module-info">
-                        <h3>Centro de Simulación</h3>
-                        <p>Plataforma integral de entrenamiento: Exámenes médicos, escenarios clínicos y simuladores
-                            especializados.</p>
-                    </div>
-                    <div class="module-action action-med">
-                        Entrar al Simulador <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
+                        <!-- Card 1: Simuladores -->
+                        <a href="/simulators" class="carousel-card card-sim">
+                            <span class="module-badge badge-popular">Más Usado</span>
+                            <div class="module-icon icon-med">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="module-info">
+                                <h3>Centro de Simulación</h3>
+                                <p>Plataforma integral de entrenamiento: Exámenes médicos, escenarios clínicos y
+                                    simuladores especializados.</p>
+                            </div>
+                            <div class="module-action action-med">
+                                Entrar al Simulador <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-                <!-- Card 2: Flashcards (Repaso) -->
-                <a href="/repaso" class="module-card card-repaso">
-                    <div class="module-icon icon-flash">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <div class="module-info">
-                        <h3>Repaso Inteligente</h3>
-                        <p>Crea tus propias Flashcards y repasa las que el sistema genera automáticamente de tus
-                            errores. Optimiza tu retención con Repetición Espaciada (SM-2).</p>
-                    </div>
-                    <div class="module-action action-flash">
-                        Comenzar Repaso <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
+                        <!-- Card 2: Flashcards (Repaso) -->
+                        <a href="/repaso" class="carousel-card card-repaso">
+                            <div class="module-icon icon-flash">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="module-info">
+                                <h3>Repaso Inteligente</h3>
+                                <p>Crea tus propias Flashcards y repasa las que el sistema genera automáticamente de tus
+                                    errores. Optimiza tu retención con Repetición Espaciada (SM-2).</p>
+                            </div>
+                            <div class="module-action action-flash">
+                                Comenzar Repaso <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-                <!-- Card 3: Quiz Battle (Arena) -->
-                <a href="/arena" class="module-card card-arena">
-                    <span class="module-badge badge-new">Nuevo</span>
-                    <div class="module-icon icon-battle">
-                        <i class="fas fa-gamepad"></i>
+                        <!-- Card 3: Quiz Battle (Arena) -->
+                        <a href="/arena" class="carousel-card card-arena">
+                            <span class="module-badge badge-new">Nuevo</span>
+                            <div class="module-icon icon-battle">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <div class="module-info">
+                                <h3>Quiz Battle Arena</h3>
+                                <p>Desafía a otros estudiantes en tiempo real. Responde rápido, gana puntos y sube en el
+                                    ranking global.</p>
+                            </div>
+                            <div class="module-action action-battle">
+                                Jugar Ahora <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
+
                     </div>
-                    <div class="module-info">
-                        <h3>Quiz Battle Arena</h3>
-                        <p>Desafía a otros estudiantes en tiempo real. Responde rápido, gana puntos y sube en el ranking
-                            global.</p>
-                    </div>
-                    <div class="module-action action-battle">
-                        Jugar Ahora <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
+                </div>
+
+                <!-- Navigation Arrows -->
+                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i
+                        class="fas fa-chevron-left"></i></button>
+                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i
+                        class="fas fa-chevron-right"></i></button>
 
             </div>
+
+            <!-- Dot Indicators (outside wrapper to avoid mask clipping) -->
+            <div class="carousel-indicators"></div>
         </section>
 
         <div id="content-container">
@@ -307,6 +321,7 @@
     <script src="js/ui/libraryUI.js"></script> <!-- ✅ NUEVO: UI Binder -->
     <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
     <script src="js/hero-slider.js"></script> <!-- ✅ NUEVO: Lógica del Slider -->
+    <script src="js/training-carousel.js"></script> <!-- ✅ NUEVO: Carrusel 3D Centro de Entrenamiento -->
     <script src="js/app.js"></script> <!-- Archivo principal de inicialización, al final -->
 
 </body>

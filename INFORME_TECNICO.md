@@ -340,22 +340,40 @@ El sistema maneja diferentes estados de usuario para ofrecer una experiencia esc
 *   **Restricciones:** Bloqueo total al Chatbot, Biblioteca y Quiz Arena.
 *   **Objetivo:** Conversión a registro mediante CTAs (Call to Actions) claros.
 
-### 9. Usuario Free (Registrado)
+### 10.1. Usuario Free (Registrado)
 *   **Registro Estándar vs. Corporativo:**
-    *   **Usuarios Generales (@gmail, etc.):** Requieren validación de correo electrónico obligatoria para activar la cuenta.
+    *   **Usuarios Generales (@gmail, etc.):** Requieren validación de correo electrónico obligatoria para activar la cuenta (o intervención manual vía Admin).
     *   **Usuarios Hub Academia (@hubacademia.com):** Proceso de **Auto-Verificación** mediante Admin API. Sus cuentas se activan inmediatamente al registrarse, eliminando fricción.
-*   **Límites (Freemium):**
-    *   **Consultas al Tutor:** Limitadas a **3 interacciones diarias**. Controlado por `UsageService`.
-    *   **Biblioteca:** Acceso de lectura, pero restricción en descargas o funcionalidades avanzadas.
-*   **Interacción:** Al alcanzar el límite, se muestra un *Paywall Modal* ("Soft Block") invitando a suscribirse. El control de este bloqueo se realiza tanto en frontend (`chat.js`) como en backend (Middleware).
+*   **Límites (Versión 2.0):**
+    *   **Consultas al Tutor:** Limitadas a **3 interacciones diarias**.
+    *   **Quiz Arena:** Hasta **3 partidas diarias**.
+    *   **Flashcards:** Límite de **1 bloque de generación (5 tarjetas)** al mes.
+*   **Interacción:** Al alcanzar el límite, se muestra un *Paywall Modal* ("Soft Block") invitando a suscribirse. El control de este bloqueo se realiza tanto en frontend (`chat.js`) como en backend (`checkLimitsMiddleware.js`).
 
-### 9.2. Usuario Premium
-*   **Conversión:** Se logra mediante pago procesado por MercadoPago. El webhook actualiza el estado `subscription_status` a `active` en tiempo real.
-*   **Beneficios:**
-    *   **Consultas Ilimitadas:** El `UsageService` omite el conteo de tokens/interacciones.
-    *   **Soporte Prioritario:** (Roadmap)
-    *   **Acceso anticipado:** Nuevas características (como el futuro modo voz).
-*   **Gestión:** Panel de perfil para ver estado de suscripción y facturación.
+### 10.2. Usuario Premium (Basic y Advanced)
+El sistema ofrece dos niveles de pago procesados por MercadoPago, con beneficios escalonados:
+
+| Característica | **Plan Básico (Entry)** | **Plan Avanzado (Pro/Premium)** |
+| :--- | :--- | :--- |
+| **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
+| **Tutor IA (Chat)** | Estándar (15 mensajes/día) | Pro (Thinking) (40 stnd + 5 Thinking/mes) |
+| **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
+| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico Thinking (1 / mes) |
+| **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
+| **Simulador Médico** | Banco Local (ILIMITADO) | Banco Local + Generación RAG (ILIMITADO) |
+
+*   **Conversión:** Se activa mediante Webhook de MercadoPago. El servidor actualiza `subscription_tier` ('basic' o 'advanced') y establece `subscription_expires_at = NOW() + INTERVAL 'X months'`.
+*   **Reseteo Híbrido:** Al activarse un plan, todos los contadores de uso se reinician a cero para garantizar el acceso inmediato.
+
+### 10.3. Arquitectura Técnica de Cuotas (Middleware Cerbero)
+La protección de rentabilidad del sistema se basa en un guardián central: `checkLimitsMiddleware.js`.
+
+1.  **Validación en Cascada:**
+    *   **Vencimiento:** Compara `Date.now() > subscription_expires_at`. Si venció, rebaja automáticamente al usuario a `'free'`.
+    *   **Ciclo de Día:** Utiliza `last_usage_reset` para determinar si es un nuevo día y resetear contadores diarios (`daily_ai_usage`, `daily_arena_usage`).
+    *   **Ciclo de Mes:** Resetea los consumos mensuales (`monthly_thinking_usage`, `monthly_flashcards_usage`) cuando cambia el mes calendario o se renueva la suscripción.
+2.  **Degradación Elegante:** Cuando un usuario Advanced agota sus 5 tokens de *Thinking*, el sistema no bloquea el acceso, sino que degrada el servicio a *Chat Estándar*, manteniendo la operatividad sin frustrar al usuario.
+3.  **Protección de Base de Datos:** Las peticiones al simulador que requieren RAG (IA costosa) están restringidas en el backend para usuarios de Plan Básico, obligando al sistema a servir únicamente desde el `question_bank` estático, asegurando un margen de utilidad del 100% en ese módulo.
 
 ---
 

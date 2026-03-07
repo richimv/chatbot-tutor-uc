@@ -154,8 +154,8 @@ router.get('/internal/ml-data', coursesController.getDataForML);
 router.post('/quiz/start', auth, quizController.startQuiz);
 router.post('/quiz/next-batch', auth, quizController.getNextBatch); // ✅ NUEVO
 router.post('/quiz/submit', auth, quizController.submitScore); // Updated logic
-router.get('/quiz/stats', auth, quizController.getStats);
-router.get('/quiz/evolution', auth, quizController.getEvolution); // ✅ NEW endpoint
+router.get('/quiz/stats', optionalAuth, quizController.getStats);
+router.get('/quiz/evolution', optionalAuth, quizController.getEvolution); // ✅ NEW endpoint
 router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
 
 // --- DECKS & FLASHCARDS ---
@@ -164,11 +164,11 @@ const DeckController = require('../../application/controllers/deckController');
 // This `QuizController` import is specifically for legacy/review routes.
 // const QuizController = require('../../application/controllers/quizController'); // Legacy for review
 
-router.get('/decks', auth, DeckController.listDecks);
-router.get('/decks/:deckId', auth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
+router.get('/decks', optionalAuth, DeckController.listDecks);
+router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
 router.post('/decks', auth, DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
-router.get('/decks/:deckId/cards', auth, DeckController.listCards); // ✅ NUEVO
+router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); // ✅ NUEVO
 router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
 router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
 router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
@@ -187,7 +187,7 @@ const quizGameController = require('../../application/controllers/quizGameContro
 router.post('/arena/start', auth, checkAILimits('quiz_arena'), quizGameController.startGame);
 router.post('/arena/questions', auth, quizGameController.getQuestions); // ✅ NUEVO: Fetch Background
 router.post('/arena/submit', auth, quizGameController.submitScore);
-router.get('/arena/ranking', auth, quizGameController.getRanking);
+router.get('/arena/ranking', optionalAuth, quizGameController.getRanking);
 router.get('/arena/stats', auth, quizGameController.getUserStats);
 
 // --- Rutas de Analytics Personalizados (Heatmap, etc) ---

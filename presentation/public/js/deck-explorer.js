@@ -45,7 +45,10 @@ class DeckExplorer {
         // If NOT provided -> filter IS NULL (Root).
         // So default call is OK for root.
 
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${this.token}` } });
+        const headers = {};
+        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+        const res = await fetch(url, { headers });
         const data = await res.json();
         return data.decks || [];
     }
@@ -125,7 +128,7 @@ class DeckExplorer {
 
         content.appendChild(toggle);
         content.appendChild(label);
-        if (!isRootLink && deck.type !== 'SYSTEM') content.appendChild(addBtn);
+        if (this.token && !isRootLink && deck.type !== 'SYSTEM') content.appendChild(addBtn);
 
         container.appendChild(content);
 

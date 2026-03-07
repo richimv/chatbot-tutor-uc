@@ -606,9 +606,10 @@ class MLService {
                       AND domain = $2 
                       AND (career = $3 OR $3 IS NULL)
                       AND (topic = ANY($4) OR $4 IS NULL)
+                      AND difficulty = $5
                     ORDER BY created_at DESC 
                     LIMIT 200
-                `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null]);
+                `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null, difficulty]);
 
                 if (recentQ.rows.length > 0) {
                     recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\nAquí tienes las últimas preguntas que YA existen en el sistema para este Target/Área. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\n" +
@@ -618,10 +619,11 @@ class MLService {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
             }
 
-            // 1. Búsqueda vectorial usando las Áreas de Estudio seleccionadas (no el domain global).
-            // 'studyAreas' contiene las áreas médicas concretas: 'Pediatría, Cardiología...'
-            const queryVectorial = `Conceptos médicos, guías clínicas, normas técnicas, leyes y preguntas de ${studyAreas} para ${target} dificultad ${difficulty}`;
-            const ragContext = await RagService.searchContext(queryVectorial, 12); // 12 fragmentos para mayor variedad
+            // 1. Búsqueda vectorial con PRIORIDAD INTEGRAL (Leyes, NTS, GPC, Manuales)
+            // Optimizamos la consulta para capturar la diversidad de tu base de datos (Leyes, Reglamentos, Libros, Manuales).
+            const queryVectorial = `Leyes peruanas, Reglamentos de Salud, Código de Ética CMP, Normas Técnicas de Salud (NTS), Resoluciones Ministeriales (RM), Guías de Práctica Clínica (GPC), Libros de referencia (Harrison, Washington) y Manuales (AMIR, CTO) sobre: ${studyAreas} para ${target}. 
+            Búsqueda exhaustiva para fundamentar preguntas de alta calidad técnica y legal.`;
+            const ragContext = await RagService.searchContext(queryVectorial, 20); // Aumentamos a 20 fragmentos para máxima cobertura de fuentes diversas
 
             // 2. Instanciar Gemini forzando salida JSON y subiendo la temperatura para mayor variedad
             const jsonModel = vertex_ai.preview.getGenerativeModel({
@@ -636,50 +638,70 @@ class MLService {
             // 2.5. Definir reglas específicas del target y la dificultad
             let targetRules = "";
             if (target === "ENAM") {
-                targetRules = "Enfoque: 'El Médico de Posta' para su SERUMS. Clínica general, fisiopatología, diagnóstico clásico. Debe incluir Normas Técnicas (NTS) básicas de Salud Pública (Vacunas, TB, Materno-Perinatal, MAIS-BFC) y Certificado de Defunción. OBLIGATORIO: Generar 4 opciones.";
+                targetRules = `Enfoque: Médico General (SERUMISTA). 
+                JERARQUÍA DE FUENTES:
+                1. MANDATORIO: Normas Técnicas (NTS) y Resoluciones Minsa (Vacunas NTS 196, TBC NTS 079, etc).
+                2. OFICIAL: Guías de Práctica Clínica (GPC).
+                3. SOPORTE: Manuales y Libros solo para fisiopatología básica.
+                OBLIGATORIO: Generar 4 opciones.`;
             } else if (target === "SERUMS") {
-                targetRules = "Enfoque: Evaluación SERUMS (ENCAPS Minsa). Enfoque holístico para profesionales de la salud (Medicina Humana, Enfermería, Obstetricia). Priorizar Seguridad del Paciente, Medicina Preventiva, Categorización de establecimientos (I-1 al III-2), triaje comunitario, y ciencias básicas aplicadas a la salud pública. OBLIGATORIO: Generar 4 opciones.";
+                targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). 
+                JERARQUÍA DE FUENTES (ESTRICTA):
+                1. NIVEL 1 (LEY): NTS y RM (NTS 242 Cadena de Frío, NTS 211 Dengue, NTS 204 VIH, NTS 169 Adulto Mayor, NTS 159 Cáncer, etc). USAR OBLIGATORIAMENTE SI EXISTEN EN EL RAG.
+                2. NIVEL 2 (OFICIAL): GPC del Minsa (GPC Sepsis obstétrica, GPC Diabetes, GPC ERC, etc).
+                3. NIVEL 3 (SOPORTE): Libros y Manuales solo si la norma técnica es insuficiente.
+                OBLIGATORIO: Generar 4 opciones.`;
             } else if (target === "RESIDENTADO") {
-                targetRules = "Enfoque: 'El Médico Científico/Gerente'. Especialidad avanzada: diagnóstico diferencial exhaustivo, Gold Standard, tratamiento de 2da/3ra línea. Investigación: RR, OR, sesgos. Gestión: Ishikawa, FODA. 90% DEBEN SER CASOS CLÍNICOS. OBLIGATORIO: Generar 5 opciones.";
+                targetRules = `Enfoque: Especialista Clínico. 
+                JERARQUÍA DE FUENTES (Mismo valor para la parte clínica):
+                1. CO-PRIORIDAD: Libros de referencia (Harrison, Washington), Manuales (AMIR, CTO) y GPC Internacionales/Nacionales (Gold Standard).
+                2. RESPALDO: Normas Técnicas y Leyes si el tema es administrativo o de salud pública específica.
+                90% DEBEN SER CASOS CLÍNICOS COMPLEJOS. OBLIGATORIO: Generar 5 opciones.`;
             }
 
             let diffRules = "";
             if (difficulty === "Básico") {
-                diffRules = "Evalúa memoria pura: etiologías, definiciones, mecanismos. Ejemplo: '¿Cuál es el agente causal de la sífilis?'. REGLA DE LONGITUD: Preguntas directas y cortas (máx 20-25 palabras). Explicación concisa y al grano (máx 45 palabras).";
+                diffRules = "Evalúa memoria directa. REGLA DE ORO: Máximo 30 palabras en la pregunta. EXPLICACIÓN: Mínimo 1-3 párrafos, citando obligatoriamente FUENTE OFICIAL (NTS/RM/GPC) y académica (Harrison/Washington/Manuales).";
             } else if (difficulty === "Intermedio") {
-                diffRules = "Evalúa análisis clínico: viñetas diagnósticas de dificultad media. Ejemplo: 'Caso con fiebre + manchas → pedir diagnóstico'. REGLA DE LONGITUD: Casos clínicos de extensión moderada. Explicación fundamentada y pedagógica (máx 90 palabras).";
+                diffRules = "Evalúa razonamiento clínico. REGLA DE ORO: Máximo 80 palabras en la pregunta. No rellenes con texto innecesario. EXPLICACIÓN: Mínimo 2-3 párrafos. Discutir distractores fusionando NTS/RM/GPC con manuales (AMIR/CTO) y libros (Harrison/Washington).";
             } else if (difficulty === "Avanzado") {
-                diffRules = "Evalúa toma de decisiones crítica: manejo terapéutico avanzado, excepciones y Gold Standard. Ejemplo: 'Tratamiento alternativo en alérgico a 1ra línea'. REGLA DE LONGITUD: Casos clínicos complejos, detallados y realistas. Explicación profunda y diferencial (sin límite estricto, pero muy sustanciosa).";
+                diffRules = "Evalúa pericia y casos complejos. REGLA DE ORO: Máximo 120 palabras en la pregunta. Caso clínico detallado. EXPLICACIÓN: Mínimo 3-4 párrafos. Análisis diferencial profundo citando jerarquía oficial y académica (Harrison/Washington/Manuales/GPC).";
             }
 
-            // 3. System Prompt Reforzado — Separación explícita de domain / topic / subtopic
+            // 3. System Prompt Reforzado
             const prompt = `
-            Eres un experto catedrático creador de exámenes profesionales de altísimo nivel para Perú. Genera EXACTAMENTE 10 preguntas de opción múltiple INÉDITAS, variadas y sumamente creativas.
-            
+            Eres un experto catedrático de la ASPEFAM y el MINSA. Genera EXACTAMENTE 5 preguntas INÉDITAS.
+
+            REGLAS DE FORMULACIÓN (MANDATORIO):
+            1. ESTILO DE PREGUNTA: La pregunta debe ser fluida y profesional. NO incluyas códigos de normas (ej: "Según la NTS 242...") DENTRO del enunciado de la pregunta, si no es necesario. La NTS se menciona en la EXPLICACIÓN.
+            2. NO EXCEDER LÍMITES (REGLA DE ORO): 
+               - NIVEL BÁSICO: Máximo 30 palabras.
+               - NIVEL INTERMEDIO: Máximo 80 palabras.
+               - NIVEL AVANZADO: Máximo 120 palabras.
+               Estos son límites MÁXIMOS. Si la pregunta es pertinente con menos palabras, úsalas. No rellenes con texto innecesario.
+            3. JERARQUÍA DE FUENTES:
+               - SERUMS/ENAM: NTS/RM/GPC (Ley) + Manuales (AMIR/CTO/otros).
+            4. EXPLICACIÓN ENRIQUECIDA (FUSIÓN MÁXIMA): Debes sintetizar e integrar TODA la información relevante del contexto. 
+               - Si existen LEYES o REGLAMENTOS en el contexto, úsalos como base legal.
+               - Integra conceptos de LIBROS (Harrison/Washington) y MANUALES (AMIR/CTO) para el sustento clínico.
+               - El objetivo es una fundamentación técnica-legal robusta que no se limite a una sola fuente.
+            5. EXTENSIÓN DE EXPLICACIÓN (MANDATORIA): Respeta los párrafos mínimos por nivel (Básico: 1-3, Intermedio: 2-3, Avanzado: 3-4). No seas breve si el contexto permite una explicación profunda.
+
             - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
-            - Carrera o Profesión: ${career ? career : 'Aplica a todas las ramas'}
-            - Nivel de Dificultad: ${difficulty} -> EXIGENCIA COGNITIVA: ${diffRules}
-            - Áreas de Estudio Seleccionadas: ${studyAreas}. Distribuye las 10 preguntas de manera equilibrada entre estas áreas.
-
-            INSTRUCCIONES CRÍTICAS SOBRE EL CONTEXTO:
-            - Abajo recibirás fragmentos mixtos de la BD Documental (libros, normas, guías clínicas).
-            - DEBES extraer la información clínica de estos fragmentos para redactar las preguntas.
-            - REQUISITO ANTI-DUPLICACIÓN: Crea casos clínicos únicos, cruza variables de edad, sexo y sintomatología clínica.
-            - REQUISITO TRAMPAS EXÁMENES (DISTRACTORES): Las opciones incorrectas DEBEN ser sumamente plausibles (distractores y trampas comunes).
+            - Áreas de Estudio: ${studyAreas}.
             ${recentQuestionsText}
-            CONTEXTO OFICIAL RECUPERADO DE LA BD RAG:
-            ${ragContext || 'No hay contexto alojado. Usa conocimiento médico oficial (MINSA/EsSalud).'}
+            CONTEXTO OFICIAL DEL RAG:
+            ${ragContext || 'No hay contexto. Usa conocimiento médico oficial Minsa/EsSalud.'}
 
-            REGLAS ESTRICTAS DEL JSON — ESQUEMA EXACTO DE CAMPOS (NO USES MARKDOWN):
-            Devuelve un ARRAY DE OBJETOS JSON puros. Cada objeto tiene EXACTAMENTE esta estructura:
+            REGLAS DEL JSON:
             {
-              "question_text": "Texto completo del caso clínico o pregunta.",
-              "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
+              "question_text": "Texto (Básico: máx 30 palabras, Intermedio: máx 80, Avanzado: máx 120). No pongas códigos de NTS aquí.",
+              "options": ["A", "B", "C", "D"],
               "correct_option_index": 0,
-              "explanation": "Explicación académica fundamentada en fuentes oficiales.",
+              "explanation": "Explicación robusta. SINTETIZA TODAS LAS FUENTES (Leyes, NTS, Harrison, AMIR, etc.) presentes en el contexto. Sustenta el porqué de la opción correcta y discutiendo distractores si es pertinente.",
               "domain": "${domain}",
-              "topic": "El nombre exacto del Área de Estudio usada para esta pregunta (ej: Pediatría). Debe ser una de: ${studyAreas}",
-              "subtopic": "El subtema clínico específico de esta pregunta (ej: Deshidratación pediátrica, Triaje Comunitario)",
+              "topic": "${studyAreas}",
+              "subtopic": "Subtema clínico",
               "target": "${target}",
               "career": "${career ? career : ''}",
               "difficulty": "${difficulty}",

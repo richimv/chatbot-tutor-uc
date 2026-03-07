@@ -474,7 +474,7 @@ class UIManager {
                     </div>
                     
                     <div class="modal-body">
-                        <div class="auth-prompt-icon" style="margin-bottom: 15px;">
+                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
                             <div style="
                                 width: 50px; height: 50px; 
                                 background: rgba(59, 130, 246, 0.1); 
@@ -482,40 +482,13 @@ class UIManager {
                                 display: flex; align-items: center; justify-content: center; 
                                 margin: 0 auto;
                                 border: 1px solid rgba(59, 130, 246, 0.2);
-                                box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
                             ">
-                                <img src="/assets/logo.png" alt="Hub Academia Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 4px; border-radius: 50%;">
+                                <img src="/assets/logo.png" alt="Hub Academia" style="width: 100%; height: 100%; object-fit: contain; padding: 5px; border-radius: 50%;">
                             </div>
                         </div>
 
-                        <div class="auth-prompt-main-text" style="font-size: 0.95rem; color: #e2e8f0; margin-bottom: 20px; line-height: 1.5;">
-                            Regístrate gratis para acceder al potencial completo del <span style="color: #60a5fa; font-weight: 700;">Tutor IA</span> y el <span style="color: #fbbf24; font-weight: 700;">Centro de Entrenamiento</span>.
-                        </div>
-
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; text-align: left;">
-                            <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #94a3b8; font-weight: 600;">Beneficios de tu cuenta:</p>
-                            <ul style="list-style: none; padding: 0; margin: 0; color: #cbd5e1; font-size: 0.85rem;">
-                                <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Simulacros médicos ilimitados</span>
-                                </li>
-                                <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Chatear con el Tutor IA 24/7</span>
-                                </li>
-                                <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Flashcards con repaso espaciado inteligente</span>
-                                </li>
-                                <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80;"></i>
-                                    <span>Analítica de rendimiento y diagnóstico IA</span>
-                                </li>
-                                <li style="margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-gamepad" style="color: #f472b6;"></i>
-                                    <span style="color: #f1f5f9; font-weight:600;">Compite en Quiz Battle Arena</span>
-                                </li>
-                            </ul>
+                        <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 5px; line-height: 1.5;">
+                            Regístrate gratis para acceder a simulacros médicos, flashcards inteligentes y analítica avanzada con IA.
                         </div>
                     </div>
 
@@ -526,9 +499,9 @@ class UIManager {
                             color: #fff; 
                             font-weight: 700; 
                             border: none;
-                            padding: 12px; 
-                            font-size: 0.95rem;
-                            border-radius: 10px;
+                            padding: 14px; 
+                            font-size: 1rem;
+                            border-radius: 12px;
                             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
                             cursor: pointer;
                         ">
@@ -539,9 +512,9 @@ class UIManager {
                             background: transparent; 
                             border: 1px solid rgba(255,255,255,0.1); 
                             color: #94a3b8;
-                            padding: 10px; 
-                            font-size: 0.9rem;
-                            border-radius: 10px;
+                            padding: 12px; 
+                            font-size: 0.95rem;
+                            border-radius: 12px;
                             cursor: pointer;
                         ">
                              Ya tengo cuenta

@@ -7,13 +7,25 @@ class SessionManager {
     }
 
     async initialize() {
+        // ✅ Pre-check: Clean malformed tokens to avoid server spam
+        const rawToken = localStorage.getItem('authToken');
+        if (rawToken && rawToken.split('.').length !== 3) {
+            console.warn("🧹 Removing malformed token from localStorage.");
+            localStorage.removeItem('authToken');
+        }
+
         try {
             // 1. Intentar obtener usuario del backend
-            try {
-                this.currentUser = await AuthApiService.getMe();
-            } catch (err) {
-                console.warn("Backend no reconoce sesión (401/404), verificando Supabase...", err);
+            const token = localStorage.getItem('authToken');
+            if (!token) {
                 this.currentUser = null;
+            } else {
+                try {
+                    this.currentUser = await AuthApiService.getMe();
+                } catch (err) {
+                    console.warn("Backend no reconoce sesión (401/404), verificando Supabase...", err);
+                    this.currentUser = null;
+                }
             }
 
             // 2. Lógica de Sincronización (Si el backend falló, pero Supabase tiene sesión)

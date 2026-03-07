@@ -92,11 +92,14 @@ const SimulatorDash = (() => {
         updateModeLinks(ctxConfig);
         bindModeClicks();
 
-        // Flashcard link will be dynamic based on System Deck ID
-
-        // 4. Fetch Stats
-        await loadStats();
-        await loadEvolution();
+        // 4. Fetch Stats or Demo Data
+        if (token) {
+            await loadStats();
+            await loadEvolution();
+        } else {
+            console.log("👤 Modo Invitado: Usando datos de demostración estáticos.");
+            renderGuestDemoData();
+        }
 
         // 5. Tooltip para usuarios nuevos sin configuración
         if (!activeConfig) showFirstVisitTip();
@@ -226,7 +229,17 @@ const SimulatorDash = (() => {
             const btn = document.getElementById(id);
             if (btn) {
                 btn.addEventListener('click', (e) => {
-                    // Block disabled modes
+                    const token = localStorage.getItem('authToken');
+
+                    // 1. Visitante check (Redirección Únete)
+                    if (!token && window.uiManager) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.uiManager.showAuthPromptModal();
+                        return;
+                    }
+
+                    // 2. Block disabled modes
                     if (btn.classList.contains('mode-card--disabled')) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -289,6 +302,12 @@ const SimulatorDash = (() => {
         // Open Modal
         if (btnOpen) {
             btnOpen.onclick = (e) => {
+                const token = localStorage.getItem('authToken');
+                if (!token && window.uiManager) {
+                    window.uiManager.showAuthPromptModal();
+                    return;
+                }
+
                 e.preventDefault();
                 console.log("Abriendo modal de configuración...");
                 modal.classList.add('active'); // Mantiene consistencia con el dashboard.css si aplica
@@ -460,8 +479,11 @@ const SimulatorDash = (() => {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
 
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
             const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/evolution${qs}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers
             });
             const data = await res.json();
 
@@ -528,15 +550,17 @@ const SimulatorDash = (() => {
 
     async function loadStats() {
         const token = localStorage.getItem('authToken');
-        if (!token) return;
 
         try {
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
 
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
             const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/stats${qs}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers
             });
             const data = await res.json();
             cachedStats = data.kpis; // Store for AI Analysis
@@ -622,6 +646,11 @@ const SimulatorDash = (() => {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'block';
 
+            // ✅ GUEST BANNER: If logged as guest, show a call to action
+            if (kpis.isGuest) {
+                renderGuestBanner();
+            }
+
         } catch (error) {
             console.error(error);
             // Even on error, reveal dashboard to not block user interactions
@@ -650,7 +679,25 @@ const SimulatorDash = (() => {
             stateLoading.style.display = 'flex';
 
             const token = localStorage.getItem('authToken');
-            if (!token) return;
+
+            // ✅ MOCK ANALYSIS FOR GUESTS: No call to API
+            if (!token) {
+                setTimeout(() => {
+                    stateLoading.style.display = 'none';
+                    stateResults.style.display = 'block';
+
+                    document.getElementById('ai-strengths').innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #22c55e;"></i> 
+                        <strong>Inmunología y Vacunas (Mock):</strong> Tienes un alto dominio en los esquemas de vacunación pediátrica. <i>¡Prueba el simulador real para ver tu perfil!</i>
+                    `;
+                    document.getElementById('ai-weaknesses').innerHTML = `
+                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> 
+                        <strong>Ginecología y Obstetricia (Mock):</strong> Necesitas repasar las complicaciones del tercer trimestre y el partograma. 
+                        <a href="#" onclick="window.uiManager.showAuthPromptModal(); return false;" style="color:#60a5fa; font-weight:700;">Regístrate</a> para un análisis real.
+                    `;
+                }, 1500);
+                return;
+            }
 
             try {
                 // LLAMADA REAL A LA IA DE DIAGNÓSTICO PROFUNDO
@@ -718,6 +765,100 @@ const SimulatorDash = (() => {
     init = async function () {
         await originalInit.apply(this, arguments); // Call original items (loadStats, loadEvolution)
         setupAIAnalysis(); // Setup handlers
+    }
+
+    function renderGuestBanner() {
+        const container = document.getElementById('dashboard-content');
+        if (!container) return; // Guard
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background: linear-gradient(90deg, #1e293b, #0f172a); border: 1px solid #3b82f6; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1); animation: fadeIn 0.8s ease-out;';
+        banner.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 50px; height: 50px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 1.5rem;">
+                    <i class="fas fa-user-astronaut"></i>
+                </div>
+                <div>
+                    <h3 style="color: #f8fafc; margin: 0; font-size: 1.1rem;">Estás en Modo Invitado</h3>
+                    <p style="color: #94a3b8; margin: 0.2rem 0 0 0; font-size: 0.9rem;">Regístrate para guardar tu progreso real y acceder a todas las funciones.</p>
+                </div>
+            </div>
+            <button class="btn-action" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer;" onclick="window.uiManager.showAuthPromptModal()">
+                Crear Cuenta Gratis
+            </button>
+        `;
+        container.prepend(banner);
+    }
+
+    function renderGuestDemoData() {
+        renderGuestBanner();
+
+        // 1. KPI Demo values
+        document.getElementById('stat-score').textContent = '14.5';
+        document.getElementById('stat-accuracy').textContent = '72%';
+        document.getElementById('stat-counts-text').textContent = '120 correctas / 45 incorrectas';
+        document.getElementById('stat-mastery').textContent = '12';
+
+        // 2. Evolution Chart Demo
+        const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+        lineChartInst = new Chart(evolutionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+                datasets: [{
+                    label: 'Puntaje (Demo)',
+                    data: [11, 13, 12, 15, 14.5],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 3. Radar Chart Demo
+        const radarCanvas = document.getElementById('radarChart');
+        document.getElementById('radar-empty-state').style.display = 'none';
+        radarCanvas.style.display = 'block';
+        radarChartInst = new Chart(radarCanvas.getContext('2d'), {
+            type: 'radar',
+            data: {
+                labels: ['Medicina', 'Cirugía', 'Pediatría', 'Gineco', 'Salud Pública'],
+                datasets: [{
+                    label: 'Dominio % (Demo)',
+                    data: [85, 60, 75, 90, 65],
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: '#60a5fa',
+                    pointBackgroundColor: '#60a5fa',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#60a5fa'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { display: false, stepSize: 20 },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { color: '#cbd5e1', font: { size: 11 } },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // 4. Ocultar Loading
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('dashboard-content');
+        if (loading) loading.style.display = 'none';
+        if (content) content.style.display = 'block';
     }
 
     return { init };
