@@ -1,6 +1,6 @@
 /**
  * @fileoverview training-carousel.js (Infinite 2D Hardware-Accelerated Slider)
- * @description Diseño a prueba de balas. Cero lag, bucle infinito real.
+ * @description Diseño a prueba de balas. Cero lag, bucle infinito real. Sin dots.
  */
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
@@ -12,9 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevBtn = wrapper.querySelector('.carousel-prev');
     const nextBtn = wrapper.querySelector('.carousel-next');
 
-    const parentSection = wrapper.closest('section');
-    const indicatorsContainer = parentSection ? parentSection.querySelector('.carousel-indicators') : null;
-
     if (cards.length === 0) return;
 
     let activeIndex = 0; // Empezamos en la primera tarjeta
@@ -23,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDragging = false;
 
     function init() {
-        buildIndicators();
         updateVisuals();
         attachEvents();
         startAutoPlay();
@@ -66,8 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.style.pointerEvents = 'none';
             }
         });
-
-        syncIndicators();
     }
 
     // ─── NAVEGACIÓN ───
@@ -81,30 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         activeIndex = (activeIndex - 1 + cards.length) % cards.length;
         updateVisuals();
         resetAutoPlay();
-    }
-
-    function goToIndex(i) {
-        activeIndex = i;
-        updateVisuals();
-        resetAutoPlay();
-    }
-
-    // ─── INDICADORES ───
-    function buildIndicators() {
-        if (!indicatorsContainer) return;
-        indicatorsContainer.innerHTML = '';
-        cards.forEach((_, i) => {
-            const dot = document.createElement('button');
-            dot.className = 'carousel-dot';
-            dot.addEventListener('click', () => goToIndex(i));
-            indicatorsContainer.appendChild(dot);
-        });
-    }
-
-    function syncIndicators() {
-        if (!indicatorsContainer) return;
-        const dots = indicatorsContainer.querySelectorAll('.carousel-dot');
-        dots.forEach((dot, i) => dot.classList.toggle('active', i === activeIndex));
     }
 
     // ─── EVENTOS (Táctil, Mouse, Teclado) ───

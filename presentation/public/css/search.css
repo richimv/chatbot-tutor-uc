@@ -421,7 +421,8 @@ body.hero-hidden .search-subtitle {
     gap: 1.5rem;
     padding: 0;
     margin-top: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    /* 🚨 Sin línea divisoria superior */
+    border-bottom: none;
 }
 
 .manta-tab {

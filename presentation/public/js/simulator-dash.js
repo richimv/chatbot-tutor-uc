@@ -8,7 +8,7 @@ const SimulatorDash = (() => {
     // Config
     const contexts = {
         'MEDICINA': {
-            title: 'Medicina Humana',
+            title: 'Ciencias de la Salud',
             icon: '<i class="fas fa-heartbeat"></i>',
             quizParams: '?topic=Medicina%20General'
         },
