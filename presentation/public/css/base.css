@@ -125,9 +125,17 @@ a {
     transition: color 0.2s;
 }
 
+/* 🚨 BLINDAJE GLOBAL: Ningún enlace se subraya bajo ninguna circunstancia */
+a,
+a:hover,
+a:focus,
+a:active,
+a:visited {
+    text-decoration: none !important;
+}
+
 a:hover {
     color: var(--primary);
-    text-decoration: underline;
 }
 
 button {

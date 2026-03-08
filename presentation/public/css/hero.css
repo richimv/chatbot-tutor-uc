@@ -166,39 +166,80 @@
     color: #60A5FA;
 }
 
-/* Actions logic */
-.hero-actions {
-    margin-top: 1.5rem;
-    /* Reduced from 2rem default */
-}
-
-.btn-gamified {
+/* Button (Slide 2) - BLINDADO CONTRA ESTILOS GLOBALES */
+.btn-gamified,
+.btn-gamified:visited,
+.btn-gamified:focus,
+.btn-gamified:active {
     display: inline-flex;
     align-items: center;
     gap: 12px;
     padding: 1rem 2.5rem;
-    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-    color: white;
+
+    /* 🚨 BLINDAJE: Forzamos texto blanco y cero subrayado en TODOS los estados */
+    color: #ffffff !important;
+    text-decoration: none !important;
+
     font-weight: 600;
     font-size: 1rem;
     border: none;
     border-radius: 50px;
     cursor: pointer;
-    text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+
+    /* Cambiamos la sombra morada por una sombra azul que combina con tu botón */
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4) !important;
+
     position: relative;
     overflow: hidden;
+
+    /* Matamos cualquier contorno azul o sombreado nativo de los navegadores */
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
-.btn-gamified:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6);
+/* Manejo del Hover SOLO para PC (evita que se quede pegado en celulares) */
+@media (hover: hover) and (pointer: fine) {
+    .btn-gamified:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.6) !important;
+        color: #ffffff !important;
+        text-decoration: none !important;
+    }
+}
+
+/* Efecto "Pulsado" rápido y limpio */
+.btn-gamified:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4) !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
 }
 
 .btn-gamified i {
     font-size: 1.2rem;
 }
+
+/* 🚨 SOLUCIÓN 3: El hover SOLO se aplica si el dispositivo tiene Mouse (PC). 
+   Así evitamos que se quede "pegado" en el celular. */
+@media (hover: hover) and (pointer: fine) {
+    .btn-gamified:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6);
+    }
+}
+
+/* 🚨 SOLUCIÓN 4: Efecto "Pulsado" táctil. 
+   Esto hace que el botón se hunda un poquito al tocarlo y regrese a la normalidad al soltarlo. */
+.btn-gamified:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4);
+}
+
+.btn-gamified i {
+    font-size: 1.2rem;
+}
+
 
 /* Navigation Arrows */
 .slider-nav button {
@@ -286,22 +327,19 @@
 }
 
 /* Responsive Logic (Mobile Art Direction) */
-/* Responsive Logic (Mobile Art Direction) */
 @media (max-width: 768px) {
     #hero-slider {
-        /* Strategy: Shorter aspect ratio to allow peeking of content below */
         height: auto;
-        min-height: auto;
+        /* 🚨 FIX: Le damos una altura mínima segura para que no se aplaste en pantallas chicas */
+        min-height: 480px;
         max-height: none;
-        aspect-ratio: 1/1;
-        /* Was 4/5 (Tall). Now Square. */
+        /* 🚨 FIX: Lo hacemos un poco más rectangular (4/5) para que quepan los textos, botones, puntos y buscador */
+        aspect-ratio: 4/5;
     }
 
     .slide {
-        /* CENTER content on mobile for better balance */
         justify-content: center;
         align-items: center;
-        /* Changed from flex-end to center */
         height: 100%;
     }
 
@@ -318,10 +356,15 @@
     }
 
     .hero-content {
+        /* 🚨 FIX: box-sizing asegura que el padding empuje hacia adentro y no rompa el contenedor */
+        box-sizing: border-box;
         max-width: 100%;
         margin-left: 0;
-        /* Reduced bottom padding slightly to match new height */
-        padding: 0 20px 60px 20px;
+
+        /* 🚨 FIX CRÍTICO: 130px de padding abajo. Esto crea un "campo de fuerza" para que 
+           el contenido central NUNCA toque los puntos que están a 95px */
+        padding: 20px 20px 130px 20px;
+
         text-align: center;
         align-items: center;
         justify-content: center;
@@ -331,13 +374,11 @@
 
     .hero-title {
         font-size: 1.75rem;
-        /* Slight reduction for "minimalism" */
         margin-bottom: 0.5rem;
     }
 
     .hero-subtitle {
         font-size: 0.95rem;
-        /* Slight reduction */
         margin-bottom: 1.5rem;
     }
 
@@ -347,12 +388,6 @@
         justify-content: center;
         gap: 0.5rem;
         margin-top: 0;
-    }
-
-    /* 🚨 SUBIR BOTÓN ESPECÍFICO EN MÓVILES 🚀 */
-    .slide:nth-child(2) .hero-actions {
-        margin-top: 0.8rem;
-        /* Sube el botón reduciendo el margen superior */
     }
 
     .hero-features li {
@@ -367,7 +402,7 @@
 
     /* Dots adjusted for new height */
     .slider-dots {
+        /* Se mantienen a 95px para no tapar la barra de búsqueda */
         bottom: 95px;
-        /* ✅ MOVED UP further to fully clear Search Bar */
     }
 }

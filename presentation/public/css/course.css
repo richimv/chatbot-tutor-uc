@@ -18,10 +18,9 @@
     /* ✅ NEW: Center input vertically */
 }
 
-/* ✅ UI POLISH: Spacing matched to career.css strictness */
+/* 🚨 COMPACTO: Hero mínimo, sin desperdiciar espacio vertical */
 .hero-banner {
-    padding: 0.5rem 0 0.5rem 0;
-    /* Reduced top padding heavily */
+    padding: 0.25rem 0;
     background-color: var(--bg-main);
 }
 
@@ -39,7 +38,8 @@
 
 .course-view,
 .detail-view-container {
-    padding: 1.5rem 0 4rem 0;
+    /* 🚨 COMPACTO: Mínimo padding superior para aprovechar el espacio */
+    padding: 0.5rem 0 2rem 0;
     max-width: 100%;
     margin: 0;
 }
@@ -55,23 +55,21 @@
 }
 
 .overlap-container {
-    padding-top: 0.5rem;
+    padding-top: 0.25rem;
     position: relative;
     z-index: 2;
 }
 
-/* Sections */
+/* Sections — 🚨 COMPACTO: Márgenes mínimos entre bloques */
 .section-block {
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
 }
 
 .section-header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
     border-bottom: 1px solid var(--border-color);
-    /* ✅ FIXED: Visible color */
     display: flex;
-    /* ✅ NEW: Flex layout for buttons */
     justify-content: space-between;
     align-items: center;
     width: 100%;
@@ -153,26 +151,31 @@
 }
 
 /* =========================================
-   🎥 Video Grid & Cards (Minimalist & Compact)
+   🎥 Video Grid — 🚨 Unificado al estándar global (6 cols PC / 3 cols Móvil)
    ========================================= */
 .video-grid {
     display: grid;
-    /* ✅ UPDATE: Celdas más pequeñas para que "encajen" mejor y no ocupen todo */
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
+    /* 🚨 Móvil primero: 3 columnas iguales como el resto de grids */
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* 💻 Desktop: 6 columnas para videos, igual que .books-grid */
+@media (min-width: 768px) {
+    .video-grid {
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 1rem;
+    }
 }
 
 .video-card {
     background: transparent;
-    /* Minimalist: Fondo transparente hasta hover */
     border-radius: 8px;
     overflow: hidden;
-    /* ✅ UPDATE: Borde invisible por defecto */
     border: 1px solid transparent;
     transition: all 0.2s ease;
-    max-width: 450px;
-    /* Limit max width so single videos don't stretch */
+    /* 🚨 Sin max-width: el grid controla el tamaño */
 }
 
 .video-card:hover {
@@ -265,7 +268,7 @@
     top: 2rem;
 }
 
-/* 🔥 Mobile Spacing Overrides (Consolidated) */
+/* 🔥 Mobile Spacing Overrides (Consolidated — Ultra Compacto) */
 @media (max-width: 768px) {
 
     .books-grid,
@@ -276,21 +279,37 @@
     }
 
     .hero-banner {
-        padding-top: 1rem;
+        padding-top: 0.25rem;
         padding-bottom: 0;
+    }
+
+    .hero-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .section-header {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.15rem;
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+        gap: 0.3rem;
+    }
+
+    .section-block {
+        margin-bottom: 0.5rem;
     }
 
     .course-main-header {
         margin-bottom: 0.25rem;
         padding-bottom: 0.25rem;
-        /* Reduced from 0.5rem */
         border-bottom: none;
-        /* Optional: Remove border to make it feel closer if needed, but keeping for separation */
     }
 
     .course-header-icon {
         width: 40px;
-        /* Slightly smaller */
         height: 40px;
         font-size: 1.1rem;
     }
@@ -303,6 +322,24 @@
     .course-badge {
         margin-top: 0.25rem !important;
         font-size: 0.75rem;
+    }
+
+    .video-card {
+        max-width: none;
+    }
+
+    .video-title {
+        font-size: 0.75rem;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+    }
+
+    .video-author {
+        font-size: 0.65rem;
+    }
+
+    .video-info {
+        padding: 0.25rem 0.15rem;
     }
 }
 

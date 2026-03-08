@@ -88,7 +88,7 @@ function renderCourse(course, container) {
                 <div class="books-grid">
                     ${officialDocs.map(doc => createUnifiedResourceCardHTML(doc)).join('')}
                 </div>
-                <div class="section-spacer" style="height: 2.5rem;"></div>
+                <div class="section-spacer" style="height: 0.75rem;"></div>
             `;
         }
 
@@ -101,7 +101,7 @@ function renderCourse(course, container) {
                 <div class="books-grid">
                     ${papers.map(p => createUnifiedResourceCardHTML(p)).join('')}
                 </div>
-                <div class="section-spacer" style="height: 2.5rem;"></div>
+                <div class="section-spacer" style="height: 0.75rem;"></div>
             `;
         }
 
@@ -114,7 +114,7 @@ function renderCourse(course, container) {
                 <div class="video-grid">
                     ${videos.map(v => createVideoCardHTML(v)).join('')}
                 </div>
-                <div class="section-spacer" style="height: 2.5rem;"></div>
+                <div class="section-spacer" style="height: 0.75rem;"></div>
             `;
         }
 

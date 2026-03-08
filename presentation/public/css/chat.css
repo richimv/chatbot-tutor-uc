@@ -374,7 +374,7 @@
 }
 
 .redirect-btn:hover {
-    text-decoration: underline;
+    color: var(--chat-primary);
 }
 
 .feedback-container {
