@@ -39,21 +39,58 @@ const FlashcardManager = (() => {
 
     // --- Initialization ---
     async function init() {
+        if (typeof window.uiManager === 'undefined') {
+            console.warn("uiManager not found, features might be limited.");
+        }
         setView('loading');
 
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            window.location.href = '/login';
-            return;
-        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('demo') === 'true';
 
-        try {
-            await loadCards(token);
-        } catch (error) {
-            console.error("Critical Error:", error);
-            // Fallback: mostrar empty o error
-            setView('empty');
+        if (!isDemo) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                await loadCards(token);
+            } catch (error) {
+                console.error("Critical Error:", error);
+                setView('empty');
+            }
+        } else {
+            // --- GUEST DEMO MODE ---
+            console.log("🌟 MODO DEMO: Cargando tarjetas de ejemplo...");
+            loadDemoCards();
         }
+    }
+
+    function loadDemoCards() {
+        queue = [
+            {
+                id: 'demo-fc-1',
+                front_content: "¿Cuál es la tríada de Charcot para la Colangitis Aguda?",
+                back_content: "1. Fiebre\n2. Ictericia\n3. Dolor en hipocondrio derecho",
+                topic: "Gastroenterología"
+            },
+            {
+                id: 'demo-fc-2',
+                front_content: "Mujer de 30 años con exoftalmos, bocio y taquicardia. TSH disminuida y T4 libre elevada. Diagnóstico más probable.",
+                back_content: "Enfermedad de Graves-Basedow",
+                topic: "Endocrinología"
+            },
+            {
+                id: 'demo-fc-3',
+                front_content: "¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?",
+                back_content: "Signo de Rovsing",
+                topic: "Cirugía General"
+            }
+        ];
+        updatePendingCount();
+        renderCard(queue[0]);
+        setView('card');
     }
 
     // --- Logic ---
@@ -179,14 +216,38 @@ const FlashcardManager = (() => {
     async function rate(quality) {
         if (!currentCard) return;
 
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('demo') === 'true';
 
         // 1. Remove card from local queue
         const processedCard = queue.shift();
         updatePendingCount();
 
-        // 2. Submit review to server FIRST (required before checking for more due cards)
+        if (isDemo) {
+            console.log(`Demo card ${processedCard.id} rated with ${quality}`);
+            // Show toast if possible
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast('¡Buen progreso! Los usuarios registrados guardan esto en su curva de aprendizaje.', 'info');
+            }
+
+            if (queue.length > 0) {
+                renderCard(queue[0]);
+            } else {
+                // End of demo — prompt to join
+                if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                    window.uiManager.showAuthPromptModal("¡Demo Finalizada! Únete gratis para crear tus propios mazos y dominar miles de tarjetas.");
+                } else {
+                    alert("¡Has completado la demo! Regístrate para continuar.");
+                    window.location.href = '/register';
+                }
+            }
+            return;
+        }
+
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        // 2. Submit review to server FIRST
         try {
             await fetch(`${API_URL}/review`, {
                 method: 'POST',
@@ -210,7 +271,6 @@ const FlashcardManager = (() => {
         if (queue.length > 0) {
             renderCard(queue[0]);
         } else {
-            // Queue empty — server now has the updated review, safe to check
             await loadCards(token);
         }
     }

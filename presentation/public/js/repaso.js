@@ -14,20 +14,12 @@ class RepasoManager {
     }
 
     /**
-     * Renders a deck icon correctly: emojis as text, FA classes as <i>, HTML as-is.
-     * @param {string|null} icon - The icon value from DB
-     * @param {string} fallbackFA - Fallback FontAwesome class (e.g. 'fas fa-folder')
-     * @returns {string} Safe HTML string
-     */
-    /**
      * Renders a deck icon correctly: maps emojis → FontAwesome, includes vibrant color.
-     * @param {string|null} icon - The icon value from DB
-     * @param {string} fallbackFA - Fallback FontAwesome class
-     * @returns {string} Safe HTML string
      */
-    static renderIcon(icon, fallbackFA = 'fas fa-folder') {
-        const { faClass } = RepasoManager._resolveIcon(icon, fallbackFA);
-        return `<i class="${faClass}"></i>`;
+    static renderColoredIcon(icon, fallbackFA = 'fas fa-folder') {
+        const { faClass, color, html } = RepasoManager._resolveIcon(icon, fallbackFA);
+        if (html) return `<span style="color:${color}">${html}</span>`;
+        return `<i class="${faClass}" style="color:${color}"></i>`;
     }
 
     /**
@@ -247,8 +239,8 @@ class RepasoManager {
                             ` : ''}
 
                             ${!this.token ? `
-                            <button class="btn-action" style="background:#fbbf24; color:#000; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:700; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer;" onclick="window.location.href='/login'">
-                                <i class="fas fa-user-plus"></i> <span class="btn-text">Regístrate para Estudiar</span>
+                            <button class="btn-action" style="background:#3b82f6; color:white; height:46px; padding:0 2rem; border-radius:14px; font-weight:800; font-size:1.05rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.8rem; cursor:pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" onclick="window.repasoManager.startStudyDemo('${deck.id}')">
+                                <i class="fas fa-play-circle" style="font-size:1.2rem;"></i> <span class="btn-text">¡PROBAR DEMO AHORA!</span>
                             </button>
                             ` : ''}
 
@@ -342,11 +334,11 @@ class RepasoManager {
             // Edit/Delete buttons HTML (only for user decks)
             const editDeleteBtns = !isSystem ? `
                 <div style="display:flex; gap:0.3rem;">
-                    <button class="deck-action-btn" onclick="event.stopPropagation(); ${this.token ? `window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')` : 'window.uiManager.showAuthPromptModal()'}" 
-                        title="Editar">
-                        <i class="fas fa-pen"></i>
+                    <button class="deck-action-btn" style="background:rgba(59,130,246,0.1); color:#60a5fa;" onclick="event.stopPropagation(); window.repasoManager.startStudyDemo('${deck.id}')" 
+                        title="Probar Demo">
+                        <i class="fas fa-play"></i>
                     </button>
-                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); ${this.token ? `window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')` : 'window.uiManager.showAuthPromptModal()'}" 
+                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
                         title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -604,11 +596,13 @@ class RepasoManager {
                     }
                 }
             });
+
+            listContainer.appendChild(row);
         });
 
         // Ensure input holds focus if it had it
         const searchInput = document.getElementById('card-search-input');
-        if (this._lastSearchQuery) {
+        if (this._lastSearchQuery && searchInput) {
             searchInput.value = this._lastSearchQuery;
             searchInput.focus();
         }
@@ -1255,6 +1249,18 @@ class RepasoManager {
     escapeHtml(text) {
         if (!text) return '';
         return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    /**
+     * Entry point for Visitors to see the study UI.
+     * Uses dummy data and triggers the Join Modal at the end.
+     */
+    startStudyDemo(deckId) {
+        if (typeof window.uiManager !== 'undefined' && window.uiManager.showToast) {
+            window.uiManager.showToast('Iniciando modo demostración...', 'info');
+        }
+        // Redirect to flashcards study page with demo flag
+        window.location.href = `flashcards?deckId=${deckId}&demo=true`;
     }
 }
 

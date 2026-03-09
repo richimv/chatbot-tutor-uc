@@ -21,7 +21,6 @@ if (!project || !location) {
 const vertex_ai = new VertexAI({ project: project, location: location });
 
 // ✅ OPTIMIZACIÓN: Inicializar el modelo una sola vez (Singleton) para mejorar la latencia.
-// ✅ OPTIMIZACIÓN: Inicializar el modelo una sola vez (Singleton) para mejorar la latencia.
 const systemInstruction = {
     role: 'system',
     parts: [{
@@ -35,12 +34,11 @@ const systemInstruction = {
     --- DIRECTRICES DE COMPORTAMIENTO ---
 
     A) AL RESPONDER SOBRE TEMAS/CONCEPTOS MÉDICOS:
-    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza el contexto inyectado "[BIBLIOTECA...]", "[CONTEXTO MÉDICO RAG...]" o datos provenientes de la base RAG para fundamentar tu respuesta. Si recibes un bloque "[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]", ÚSALO OBLIGATORIAMENTE como base de tu respuesta y cita la fuente (ej. "Según Harrison, Capítulo X..." o "De acuerdo con la NTS N° XXX del MINSA...").
-    2.  **RAG (Recuperación) y Referencias:** 
-        * **Si hay Guías/Normas en contexto:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
-        * **Si hay Videos/Webs en contexto:** "Te recomiendo complementar con: [Título](URL)."
-        * **Si hay contexto RAG médico:** Fundamenta tu explicación en los fragmentos provistos. Estos provienen de libros de texto verificados (Harrison, Washington, Nelson, CTO, AMIR) y normas oficiales (NTS, RM, Leyes) cargados en la plataforma.
-    3.  **Si NO hay recursos en BD:** Explica el concepto general médicamente e invita a buscar en repositorios oficiales o a practicar en el "Quiz Arena".
+    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza tu conocimiento interno de las Normas Técnicas, Guías de Práctica Clínica (GPC) y libros de referencia (Harrison, Washington, Nelson, CTO, AMIR).
+    2.  **Referencias:** 
+        * **Si mencionas Guías/Normas:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
+        * **Fuentes Oficiales:** Fundamenta tu explicación en los libros de texto médicos verificados y normas oficiales peruanas (NTS, RM, Leyes) que forman parte de tu base de conocimiento experto.
+    3.  **Si no estás seguro:** Explica el concepto general médicamente e invita a buscar en repositorios oficiales o a practicar en el "Quiz Arena".
 
     B) AL RESPONDER SOBRE ESTRUCTURA (CARRERAS/CURSOS):
     Si el usuario pregunta "¿Qué carreras hay?" o "¿Qué cursos tiene Medicina?", revisa el contexto inyectado "[ESTRUCTURA...]".
@@ -69,6 +67,7 @@ const systemInstruction = {
 
 const model = vertex_ai.preview.getGenerativeModel({
     model: 'gemini-2.5-flash',
+    thinking: { disable: true },
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.3, // ✅ Reducido para ser más preciso como bibliotecario
@@ -260,38 +259,23 @@ class MLService {
                 }
             }
 
+            // 5. BÚSQUEDA RAG LOCAL (Cero Costo - Palabras Clave)
+            const RagService = require('./ragService');
+            // Intentamos detectar el target si está en el historial o es general
+            const localContext = await RagService.searchContext(message, 4, { target: 'SERUMS' }); // Por defecto SERUMS para máxima cobertura normativa en chat
+            if (localContext) {
+                contextInjection += `\n[CONTEXTO MÉDICO RAG LOCAL - DOCUMENTOS VERIFICADOS]\n${localContext}\n[FIN CONTEXTO RAG]\n`;
+                console.log("🚀 RAG Local: Fragmentos inyectados exitosamente.");
+            }
+
         } catch (e) {
-            console.warn("⚠️ Error en pre-fetching (continuando sin contexto extra):", e);
+            console.warn("⚠️ Error en pre-fetching/RAG Local (continuando sin contexto extra):", e);
         }
 
-        // 📚 RAG VECTORIAL: Búsqueda semántica en documentos médicos vectorizados
-        // (Harrison, NTS, RM, Leyes, CTO, AMIR, Washington, etc.)
-        const isAdvanced = userTier === 'advanced' || userTier === 'elite' || userTier === 'admin';
-        let usedRAG = false;
-
-        if (isAdvanced && !dependencies.disableRAG) {
-            try {
-                const RagService = require('./ragService');
-                const ragResults = await RagService.searchContext(message, 4);
-                if (ragResults && ragResults.trim().length > 0) {
-                    contextInjection += `\n[CONTEXTO MÉDICO RAG - DOCUMENTOS VERIFICADOS]\n${ragResults}\n[FIN CONTEXTO RAG]\n`;
-                    console.log(`📚 RAG Chat: Inyectados ${ragResults.length} caracteres de contexto médico vectorial.`);
-                    usedRAG = true; // Flag Activa para cobrar Token Pesado al usuario
-                }
-            } catch (ragError) {
-                console.warn("⚠️ RAG vectorial no disponible para Chat (continuando sin él):", ragError.message);
-            }
-        } else {
-            if (dependencies.disableRAG) {
-                console.log(`🚫 RAG Vectorial Omitido: Usuario Nivel '${userTier}' excedió la cuota mensual de Thinking/RAG.`);
-            } else {
-                console.log(`🚫 RAG Vectorial Bloqueado: Usuario nivel '${userTier}' no tiene acceso a RAG.`);
-            }
-        }
+        const usedRAG = contextInjection.includes('[CONTEXTO MÉDICO RAG LOCAL]');
+        console.log(`🤖 MLService: RAG Local Status: ${usedRAG ? 'ACTIVO' : 'INACTIVO'}`);
 
         try {
-            // El modelo ya está inicializado arriba.
-
             const historyForAPI = conversationHistory.map(msg => ({
                 role: msg.role === 'bot' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
@@ -330,8 +314,6 @@ class MLService {
 
                         const books = (course.bookIds || []).map(id => allBooks.find(b => b.id === id)).filter(b => b && b.title && b.url);
 
-                        // Legacy 'sections' logic removed as per cleanup task.
-
                         courseDetailsResponse = {
                             ...course,
                             topics,
@@ -361,7 +343,6 @@ class MLService {
 
                     if (career) {
                         // Obtener los cursos de esta carrera
-                        // ✅ CORRECCIÓN: Usar 'findByCareerCategory' que sí existe en el repositorio
                         const courses = await courseRepo.findByCareerCategory(career.name);
                         const courseList = courses.map(c => ({ id: c.id, name: c.name }));
 
@@ -400,12 +381,11 @@ class MLService {
                     response = result.response;
 
                 } else if (call.name === 'getCoursesForCareer') {
-                    // ✅ CORRECCIÓN: Usar 'findByCareerCategory'
                     const courses = await courseRepo.findByCareerCategory(call.args.careerName);
                     console.log(`🔍 Resultado de la herramienta (cursos por carrera): ${courses.length} cursos encontrados.`);
 
                     // Devolvemos solo id y nombre para ser concisos
-                    const courseList = courses.map(c => ({ id: c.id, name: c.name })); // ✅ CORRECCIÓN: Usar el 'id' numérico
+                    const courseList = courses.map(c => ({ id: c.id, name: c.name }));
 
                     result = await chat.sendMessage([{
                         functionResponse: {
@@ -417,7 +397,6 @@ class MLService {
 
                 } else {
                     console.warn(`⚠️ Herramienta solicitada no encontrada o eliminada: ${call.name}`);
-                    // Fallback seguro: responder que la herramienta no está disponible
                     result = await chat.sendMessage([{
                         functionResponse: {
                             name: call.name,
@@ -436,12 +415,10 @@ class MLService {
                 // ✅ MEJORA: Extracción robusta de JSON
                 let jsonString = responseText;
 
-                // 1. Intentar extraer de bloque de código markdown (con o sin etiqueta 'json')
                 const codeBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
                 if (codeBlockMatch) {
                     jsonString = codeBlockMatch[1];
                 } else {
-                    // 2. Búsqueda manual del objeto JSON
                     const jsonStartIndex = responseText.search(/\{\s*"intencion"/);
                     const jsonEndIndex = responseText.lastIndexOf('}');
 
@@ -450,18 +427,11 @@ class MLService {
                     }
                 }
 
-                // 3. Limpieza preventiva de caracteres problemáticos
-                // Reemplazar saltos de línea reales por \n si existen (error común de LLMs)
-                // jsonString = jsonString.replace(/\n/g, "\\n"); // Cuidado: esto puede romper el JSON si ya está bien formateado.
-                // Mejor confiamos en el prompt reforzado.
-
                 parsedResult = JSON.parse(jsonString);
             } catch (jsonError) {
                 console.warn(`⚠️ Error al parsear JSON del LLM: ${jsonError.message}`);
                 console.warn(`Texto recibido: ${responseText}`);
 
-                // Fallback Robusto: Extracción manual por Regex
-                // Si el JSON es inválido (ej. saltos de línea sin escapar), intentamos rescatar los campos.
                 try {
                     const intencionMatch = responseText.match(/"intencion":\s*"([^"]+)"/);
                     const respuestaMatch = responseText.match(/"respuesta":\s*"((?:[^"\\]|\\.)*)"/);
@@ -469,14 +439,11 @@ class MLService {
 
                     if (respuestaMatch) {
                         let cleanRespuesta = respuestaMatch[1];
-                        // Convertir literal \n a salto de línea real
                         cleanRespuesta = cleanRespuesta.replace(/\\n/g, '\n');
-                        // Des-escapar comillas dobles \" -> "
                         cleanRespuesta = cleanRespuesta.replace(/\\"/g, '"');
 
                         let cleanSugerencias = [];
                         if (sugerenciasMatch) {
-                            // Extraer strings del array de sugerencias
                             const suggestionsRaw = sugerenciasMatch[1];
                             const suggestionRegex = /"([^"]+)"/g;
                             let match;
@@ -487,7 +454,7 @@ class MLService {
 
                         parsedResult = {
                             intencion: intencionMatch ? intencionMatch[1] : 'respuesta_directa',
-                            confianza: 0.8, // Confianza media por ser fallback
+                            confianza: 0.8,
                             respuesta: cleanRespuesta,
                             sugerencias: cleanSugerencias
                         };
@@ -497,7 +464,6 @@ class MLService {
                     }
                 } catch (fallbackError) {
                     console.error("❌ Fallback falló:", fallbackError);
-                    // Último recurso: devolver todo el texto plano
                     parsedResult = {
                         intencion: 'respuesta_directa',
                         confianza: 0.5,
@@ -556,7 +522,8 @@ class MLService {
         try {
             // ✅ 4. Esta es la sintaxis correcta para 'generateContent' en Vertex
             const model = vertex_ai.preview.getGenerativeModel({
-                model: 'gemini-2.5-flash'
+                model: 'gemini-2.5-flash',
+                thinking: { disable: true }
             });
 
             const prompt = `Como un experto académico y redactor de planes de estudio, crea una descripción atractiva y concisa (aproximadamente 3 a 4 frases) para el curso universitario llamado "${courseName}". La descripción debe explicar de qué trata el curso, sus objetivos principales y qué aprenderán los estudiantes. El tono debe ser profesional pero accesible.`;
@@ -583,13 +550,49 @@ class MLService {
     /**
      * ✅ NUEVO: Generador RAG de Preguntas para el Banco (Admin)
     /**
-     * Motor RAG con prevencion de duplicados
+     * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)
+     * Genera un total de 10 preguntas fragmentadas en lotes pequeños (3, 3, 3, 1) para evitar truncamiento por token limit.
      */
-    static async generateRAGQuestions(target, difficulty, studyAreas, career, domain = 'medicine') {
-        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Domain: ${domain}`);
+    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, domain = 'medicine') {
+        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount}`);
         try {
-            const RagService = require('./ragService');
-            // 0. Prevenir Duplicidad Escaneando la Base de Datos Histórica
+            const requestedAmount = amount;
+            const BATCH_SIZE_BASE = 3;
+            const currentBatchLimit = (target === 'RESIDENTADO' || target === 'ENAM') ? 1 : BATCH_SIZE_BASE;
+
+            let allQuestions = [];
+
+            for (let i = 0; i < requestedAmount; i += currentBatchLimit) {
+                const currentBatchSize = Math.min(currentBatchLimit, requestedAmount - i);
+                const batchNum = Math.floor(i / currentBatchLimit) + 1;
+                console.log(`🤖 MLService: Generando lote ${batchNum} (${currentBatchSize} preguntas)...`);
+
+                const batchQuestions = await this._generateBatchInternal(target, difficulty, studyAreas, career, allQuestions, currentBatchSize);
+
+                if (batchQuestions && batchQuestions.length > 0) {
+                    allQuestions = allQuestions.concat(batchQuestions);
+                }
+
+                if (allQuestions.length >= requestedAmount) break;
+            }
+
+            console.log(`✅ MLService: Generación RAG completada (${allQuestions.length} preguntas)`);
+            return allQuestions.slice(0, requestedAmount);
+
+        } catch (error) {
+            console.error('❌ Error crítico en Generación RAG Orquestada:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * @private Lógica de generación atómica para un lote pequeño (Prompt Maestro)
+     */
+    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions, amount) {
+        try {
+            const domain = 'medicine';
+
+            // 1. Prevenir Duplicidad Escaneando la Base de Datos Histórica
             let recentQuestionsText = "";
             let careerParam = career || null;
             try {
@@ -597,8 +600,6 @@ class MLService {
                 const areasArray = String(studyAreas || '').split(',').map(a => a.trim()).filter(a => a);
 
                 // 🎯 REFINAMIENTO: Historial Exacto
-                // Filtramos por target (ENAM/SERUMS), domain (medicina), career (Médico/Enfermero)
-                // y lo más importante: por los TOPICS (áreas de estudio) seleccionados.
                 const recentQ = await db.query(`
                     SELECT topic, question_text 
                     FROM question_bank 
@@ -611,107 +612,131 @@ class MLService {
                     LIMIT 200
                 `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null, difficulty]);
 
-                if (recentQ.rows.length > 0) {
+                const allPreviousTexts = [
+                    ...recentQ.rows.map(r => r.topic + ": " + r.question_text),
+                    ...previousBatchQuestions.map(q => q.topic + ": " + q.question_text)
+                ];
+
+                if (allPreviousTexts.length > 0) {
                     recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\nAquí tienes las últimas preguntas que YA existen en el sistema para este Target/Área. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\n" +
-                        recentQ.rows.map((r, idx) => `[Bloqueada ${idx + 1}] Tema: ${r.topic} | Muestra: "${r.question_text.substring(0, 150)}..."`).join('\n') + "\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\n";
+                        allPreviousTexts.slice(-20).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') + "\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
             }
 
-            // 1. Búsqueda vectorial con PRIORIDAD INTEGRAL (Leyes, NTS, GPC, Manuales)
-            // Optimizamos la consulta para capturar la diversidad de tu base de datos (Leyes, Reglamentos, Libros, Manuales).
-            const queryVectorial = `Leyes peruanas, Reglamentos de Salud, Código de Ética CMP, Normas Técnicas de Salud (NTS), Resoluciones Ministeriales (RM), Guías de Práctica Clínica (GPC), Libros de referencia (Harrison, Washington) y Manuales (AMIR, CTO) sobre: ${studyAreas} para ${target}. 
-            Búsqueda exhaustiva para fundamentar preguntas de alta calidad técnica y legal.`;
-            const ragContext = await RagService.searchContext(queryVectorial, 20); // Aumentamos a 20 fragmentos para máxima cobertura de fuentes diversas
+            // 2. BÚSQUEDA RAG LOCAL (ELIKE - Gratuito)
+            const RagService = require('./ragService');
+            const ragContext = await RagService.searchContext(studyAreas, 8, { target }); // Pasamos el target para inyectar NTS/RM/GPC
+            if (ragContext) {
+                console.log(`🚀 RAG Local (Generador): Contexto inyectado para ${studyAreas}`);
+            }
 
-            // 2. Instanciar Gemini forzando salida JSON y subiendo la temperatura para mayor variedad
+            // 3. Instanciar Gemini (1.5 Flash para evitar Thinking Costs)
             const jsonModel = vertex_ai.preview.getGenerativeModel({
                 model: 'gemini-2.5-flash',
+                thinking: { disable: true },
                 generationConfig: {
                     maxOutputTokens: 8192,
-                    temperature: 0.7, // 0.7 para asegurar alta variedad y evitar duplicados genéricos
-                    responseMimeType: "application/json" // Fuerza salida JSON estricta
+                    temperature: 0.7,
+                    responseMimeType: "application/json"
                 }
             });
 
-            // 2.5. Definir reglas específicas del target y la dificultad
+            // 4. Definir reglas dinámicas por Target y Dificultad
             let targetRules = "";
+            let levelInstruction = "";
+
             if (target === "ENAM") {
-                targetRules = `Enfoque: Médico General (SERUMISTA). 
-                JERARQUÍA DE FUENTES:
-                1. MANDATORIO: Normas Técnicas (NTS) y Resoluciones Minsa (Vacunas NTS 196, TBC NTS 079, etc).
-                2. OFICIAL: Guías de Práctica Clínica (GPC).
-                3. SOPORTE: Manuales y Libros solo para fisiopatología básica.
-                OBLIGATORIO: Generar 4 opciones.`;
+                targetRules = `PERFIL ENAM: Médico General - Enfoque Clínico y Diagnóstico.
+                ENFOQUE: Clínica general, diagnóstico diferencial y manejo inicial basado en evidencia.
+                JERARQUÍA DE FUENTES (DATA INTERNA): 1. GPC Oficiales (Minsa/EsSalud) > 2. Libros Clínicos (Harrison/Nelson/Williams) > 3. Manuales de Especialidad (AMIR/CTO) > 4. NTS/RM/Leyes.
+                REGLA DE ORO: Mínimo 2 fuentes distintas en la explicación.`;
+                if (difficulty === "Básico") levelInstruction = "Evalúa MEMORIA DIRECTA (Definiciones, Triadas). Explicación: 2 párrafos.";
+                else if (difficulty === "Intermedio") levelInstruction = "Evalúa RAZONAMIENTO CLÍNICO SIMPLE. Explicación: 2 párrafos detallados.";
+                else if (difficulty === "Avanzado") levelInstruction = "Evalúa MANEJO INICIAL Y REFERENCIAS. Explicación: 3 párrafos analíticos.";
             } else if (target === "SERUMS") {
-                targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). 
+                targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). CONTEXTO: Establecimientos del primer nivel de atención (I-1 al I-4).
                 JERARQUÍA DE FUENTES (ESTRICTA):
-                1. NIVEL 1 (LEY): NTS y RM (NTS 242 Cadena de Frío, NTS 211 Dengue, NTS 204 VIH, NTS 169 Adulto Mayor, NTS 159 Cáncer, etc). USAR OBLIGATORIAMENTE SI EXISTEN EN EL RAG.
-                2. NIVEL 2 (OFICIAL): GPC del Minsa (GPC Sepsis obstétrica, GPC Diabetes, GPC ERC, etc).
-                3. NIVEL 3 (SOPORTE): Libros y Manuales solo si la norma técnica es insuficiente.
-                OBLIGATORIO: Generar 4 opciones.`;
+                1. LEY: NTS y RM (Cadena de Frío, Dengue, VIH, TB/TBC, Malaria, Inmunizaciones (PAI), NTS 169 Adulto Mayor, Cáncer, etc).
+                2. OFICIAL: GPC del Minsa (GPC Sepsis obstétrica, GPC Diabetes, GPC ERC, etc). 
+                3. SOPORTE: Libros y Manuales (AMIR/CTO/otros) de la data. USARLOS SI EXISTEN EN EL RAG DE CONTEXTO.
+                REGLA DE ORO: Mínimo 2 fuentes (NTS + GPC/Manuales).`;
+                if (difficulty === "Básico") levelInstruction = "Evalúa DATOS NORMATIVOS (Plazos, Cadenas de frío, Dosis PAI). Explicación: 2 párrafos.";
+                else if (difficulty === "Intermedio") levelInstruction = "Evalúa APLICACIÓN DE NORMAS EN COMUNIDAD (I-1 al I-4). Explicación: 2 párrafos detallados.";
+                else if (difficulty === "Avanzado") levelInstruction = "Evalúa GESTIÓN DE BROTES Y SITUACIONES LEGALES. Explicación: 3 párrafos profundos.";
             } else if (target === "RESIDENTADO") {
-                targetRules = `Enfoque: Especialista Clínico. 
-                JERARQUÍA DE FUENTES (Mismo valor para la parte clínica):
-                1. CO-PRIORIDAD: Libros de referencia (Harrison, Washington), Manuales (AMIR, CTO) y GPC Internacionales/Nacionales (Gold Standard).
-                2. RESPALDO: Normas Técnicas y Leyes si el tema es administrativo o de salud pública específica.
-                90% DEBEN SER CASOS CLÍNICOS COMPLEJOS. OBLIGATORIO: Generar 5 opciones.`;
+                targetRules = `PERFIL RESIDENTADO (ESPECIALIDAD): ENFOQUE EN LIBROS Y EVIDENCIA CLÍNICA.
+                JERARQUÍA ESTRICTA (DATOS INTERNOS): 
+                1. LIBROS DE REFERENCIA (Harrison, Washington, Nelson, Williams, etc.) y GPC Clínicas.
+                2. MANUALES DE ESPECIALIDAD (AMIR, CTO).
+                3. NORMAS (NTS) Y LEYES - Imprescindibles si el tema es Salud Pública, Gestión o Medicina Legal.
+                REGLA DE ORO: La fundamentación DEBE priorizar el sustento clínico/fisiopatológico de los LIBROS en temas médicos. Si el contexto RAG interno es insuficiente para cumplir la extensión pedida, ENRIQUECE con fuentes externas oficiales.`;
+                if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Enunciado < 30 palabras. Explicación 2 párrafos.";
+                else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Enunciado < 80 palabras. Explicación 2 párrafos.";
+                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Enunciado < 120 palabras. Explicación 3 párrafos analíticos.";
             }
-
-            let diffRules = "";
-            if (difficulty === "Básico") {
-                diffRules = "Evalúa memoria directa. REGLA DE ORO: Máximo 30 palabras en la pregunta. EXPLICACIÓN: Mínimo 1-3 párrafos, citando obligatoriamente FUENTE OFICIAL (NTS/RM/GPC) y académica (Harrison/Washington/Manuales).";
-            } else if (difficulty === "Intermedio") {
-                diffRules = "Evalúa razonamiento clínico. REGLA DE ORO: Máximo 80 palabras en la pregunta. No rellenes con texto innecesario. EXPLICACIÓN: Mínimo 2-3 párrafos. Discutir distractores fusionando NTS/RM/GPC con manuales (AMIR/CTO) y libros (Harrison/Washington).";
-            } else if (difficulty === "Avanzado") {
-                diffRules = "Evalúa pericia y casos complejos. REGLA DE ORO: Máximo 120 palabras en la pregunta. Caso clínico detallado. EXPLICACIÓN: Mínimo 3-4 párrafos. Análisis diferencial profundo citando jerarquía oficial y académica (Harrison/Washington/Manuales/GPC).";
-            }
-
-            // 3. System Prompt Reforzado
+            // 5. Prompt Maestro (Preservando todas las reglas complejas)
             const prompt = `
-            Eres un experto catedrático de la ASPEFAM y el MINSA. Genera EXACTAMENTE 5 preguntas INÉDITAS.
+            Eres un experto catedrático médico de alto nivel. Genera EXACTAMENTE ${amount} preguntas INÉDITAS de nivel ${difficulty}.
+
+            🎯 PERFIL DEL EXAMEN: ${targetRules}
 
             REGLAS DE FORMULACIÓN (MANDATORIO):
-            1. ESTILO DE PREGUNTA: La pregunta debe ser fluida y profesional. NO incluyas códigos de normas (ej: "Según la NTS 242...") DENTRO del enunciado de la pregunta, si no es necesario. La NTS se menciona en la EXPLICACIÓN.
-            2. NO EXCEDER LÍMITES (REGLA DE ORO): 
-               - NIVEL BÁSICO: Máximo 30 palabras.
-               - NIVEL INTERMEDIO: Máximo 80 palabras.
-               - NIVEL AVANZADO: Máximo 120 palabras.
-               Estos son límites MÁXIMOS. Si la pregunta es pertinente con menos palabras, úsalas. No rellenes con texto innecesario.
-            3. JERARQUÍA DE FUENTES:
-               - SERUMS/ENAM: NTS/RM/GPC (Ley) + Manuales (AMIR/CTO/otros).
-            4. EXPLICACIÓN ENRIQUECIDA (FUSIÓN MÁXIMA): Debes sintetizar e integrar TODA la información relevante del contexto. 
-               - Si existen LEYES o REGLAMENTOS en el contexto, úsalos como base legal.
-               - Integra conceptos de LIBROS (Harrison/Washington) y MANUALES (AMIR/CTO) para el sustento clínico.
-               - El objetivo es una fundamentación técnica-legal robusta que no se limite a una sola fuente.
-            5. EXTENSIÓN DE EXPLICACIÓN (MANDATORIA): Respeta los párrafos mínimos por nivel (Básico: 1-3, Intermedio: 2-3, Avanzado: 3-4). No seas breve si el contexto permite una explicación profunda.
+            1. FUNDAMENTACIÓN MULTI-FUENTE: Cada explicación DEBE integrar y citar explícitamente al menos DOS (2) fuentes médicas oficiales basándote en tu conocimiento experto, cumpliendo la "Regla de Oro" del perfil.
+            2. JERARQUÍA Y CITACIÓN (ESTRICTO): Obedece RIGUROSAMENTE la "JERARQUÍA DE FUENTES" definida arriba en el PERFIL DEL EXAMEN. Puedes enriquecer con información de la OMS/OPS, CDC o UpToDate solo si no contradice la jerarquía principal.
+            3. LÍMITES CUANTITATIVOS (CONTROL DE CALIDAD):
+               - ENUNCIADO: [Nivel Básico: <30 palabras] | [Nivel Intermedio: <80 palabras] | [Nivel Avanzado: <120 palabras]. PROHIBIDO EXCEDER.
+               - EXPLICACIÓN: [Nivel Básico: 2 párrafos] | [Nivel Intermedio: 2 párrafos] | [Nivel Avanzado: 3 párrafos]. NO RECORTAR.
+               - SI NO HAY FUENTES INTERNAS: Usa tu conocimiento experto para alcanzar la extensión y profundidad requerida, citando siempre las fuentes oficiales correspondientes.
+            4. EQUILIBRIO Y SIMETRÍA: Respuesta correcta y distractores DEBEN tener longitud similar. No des pistas por extensión de texto.
+            5. CANTIDAD DE OPCIONES: SERUMS y ENAM = 4 opciones | RESIDENTADO = 5 opciones.
+            6. DISTRACTORES: Deben ser plausibles y basados en errores de razonamiento clínico o normativo.
+            7. SIN LETRAS: No incluyas letras (A, B, C...) en el array "options".
 
             - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
             - Áreas de Estudio: ${studyAreas}.
+            - Dificultad Target: ${difficulty} (${levelInstruction})
             ${recentQuestionsText}
-            CONTEXTO OFICIAL DEL RAG:
-            ${ragContext || 'No hay contexto. Usa conocimiento médico oficial Minsa/EsSalud.'}
+            
+            [DATOS DE APOYO RAG LOCAL - BIBLIOGRAFÍA VERIFICADA]:
+            ${ragContext || "No se encontraron fragmentos específicos. Usa tu base de datos experta respetando estrictamente la jerarquía del examen."}
 
-            REGLAS DEL JSON:
-            {
-              "question_text": "Texto (Básico: máx 30 palabras, Intermedio: máx 80, Avanzado: máx 120). No pongas códigos de NTS aquí.",
-              "options": ["A", "B", "C", "D"],
-              "correct_option_index": 0,
-              "explanation": "Explicación robusta. SINTETIZA TODAS LAS FUENTES (Leyes, NTS, Harrison, AMIR, etc.) presentes en el contexto. Sustenta el porqué de la opción correcta y discutiendo distractores si es pertinente.",
-              "domain": "${domain}",
-              "topic": "${studyAreas}",
-              "subtopic": "Subtema clínico",
-              "target": "${target}",
-              "career": "${career ? career : ''}",
-              "difficulty": "${difficulty}",
-              "image_url": ""
-            }
+            REGLA DE REDACCIÓN RAG (CRÍTICA):
+            1. No inventes datos que contradigan los [DATOS DE APOYO RAG LOCAL].
+            2. Si el fragmento menciona un autor o norma específica, ÚSALO para la CITACIÓN en la explicación.
+            3. Si no hay fragmentos, usa tu conocimiento pero mantén la jerarquía del perfil.
+            4. Evita repetir los temas mencionados en las restricciones de duplicidad.
 
-            REGLAS CRÍTICAS DE CAMPOS — LEE CON ATENCIÓN:
-            - Campo "domain": SIEMPRE el valor exacto "${domain}". Nunca pongas un área médica en este campo.
-            - Campo "topic": El ÁREA DE ESTUDIO de la pregunta. Usa exactamente los nombres de la lista arriba.
-            - Campo "subtopic": El SUBTEMA CLÍNICO específico. Debe ser más específico que "topic" (ej: topic="Pediatría" → subtopic="Deshidratación pediátrica grave").
+            REGLAS DEL JSON (DEBE SER UN ARRAY DE OBJETOS):
+            [
+              {
+                "topic": "Usa uno de estos: ${studyAreas}",
+                "difficulty": "${difficulty}",
+                "question_text": "Texto (según nivel). No pongas códigos de NTS aquí.",
+                "options": ${target === 'SERUMS' ? '["Opción1", "Opción2", "Opción3", "Opción4"]' : '["Opción1", "Opción2", "Opción3", "Opción4", "Opción5"]'},
+                "correct_option_index": 0,
+                "explanation": "Explicación robusta de ${levelInstruction}. SINTETIZA TODAS LAS FUENTES citando explícitamente autores o NTS.",
+                "domain": "${domain}",
+                "target": "${target}",
+                "career": "${(() => {
+                    const c = (career || '').toLowerCase();
+                    if (c.includes('medicina')) return 'Medicina Humana';
+                    if (c.includes('enfermería') || c.includes('enfermeria')) return 'Enfermería';
+                    if (c.includes('obstetricia')) return 'Obstetricia';
+                    return career || 'Medicina Humana';
+                })()}",
+                "subtopic": "Subtema clínico específico",
+                "image_url": ""
+              }
+            ]
+
+            REGLAS CRÍTICAS DE CAMPOS:
+            - Campo "domain": SIEMPRE "${domain}".
+            - Campo "target": SIEMPRE "${target}".
+            - Campo "career": SIEMPRE la carrera seleccionada.
+            - Campo "topic": El ÁREA DE ESTUDIO (Salud Pública, Gestión, etc.).
+            - Campo "subtopic": El SUBTEMA CLÍNICO (ej: CRED, PAI, Triadas).
             `;
 
             const result = await jsonModel.generateContent(prompt);
@@ -720,39 +745,36 @@ class MLService {
             let questions = [];
 
             try {
-                // Intento primario
                 questions = JSON.parse(responseText);
             } catch (err) {
-                console.warn(`⚠️ Error parseando RAG JSON (posible truncamiento o caracteres de control): ${err.message}`);
-
-                // 1. Limpiar literal newlines/tabs \n que rompen el parser JSON
-                let cleanText = responseText.replace(/[\n\r\t]/g, " ");
-
+                console.warn(`⚠️ Error parseando RAG JSON en lote: ${err.message}`);
+                let cleanText = responseText.replace(/[\n\r\t]/g, " ").trim();
                 try {
                     questions = JSON.parse(cleanText);
                 } catch (err2) {
-                    console.warn(`⚠️ Falló parseo limpio. Intentando rescate estructural...`);
-                    // 2. Rescate de Array Truncado (Token Limit Exceeded)
                     const lastBraceIndex = cleanText.lastIndexOf('}');
                     if (lastBraceIndex !== -1) {
-                        let rescuedText = cleanText.substring(0, lastBraceIndex + 1);
-                        if (!rescuedText.trim().startsWith('[')) rescuedText = '[' + rescuedText;
-                        rescuedText += ']';
-
-                        questions = JSON.parse(rescuedText);
-                        console.log(`✅ Rescate Exitoso: Se recuperaron ${questions.length} preguntas válidas ignorando el final corrupto.`);
-                    } else {
-                        throw new Error("Formato devuelto completamente irrecuperable no es JSON.");
-                    }
+                        let rescuedText = cleanText.substring(0, lastBraceIndex + 1).trim();
+                        if (rescuedText.endsWith(',')) rescuedText = rescuedText.slice(0, -1);
+                        if (!rescuedText.startsWith('[')) rescuedText = '[' + rescuedText;
+                        if (!rescuedText.endsWith(']')) rescuedText += ']';
+                        try {
+                            questions = JSON.parse(rescuedText);
+                            console.log(`✅ Rescate Lote Exitoso: ${questions.length} preguntas.`);
+                        } catch (err3) {
+                            throw new Error("Lote irrecuperable.");
+                        }
+                    } else { throw new Error("JSON no encontrado en el lote."); }
                 }
             }
 
-            console.log(`✅ MLService: Lote RAG validado con éxito (${questions.length} preguntas)`);
+            if (!Array.isArray(questions)) questions = [questions];
+            console.log(`✅ Lote validado: ${questions.length} preguntas.`);
             return questions;
 
         } catch (error) {
-            console.error('❌ Error crítico en Generación RAG Administrativa:', error);
-            throw error;
+            console.error('❌ Error en generacion de lote RAG:', error.message);
+            return [];
         }
     }
 

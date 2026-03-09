@@ -22,8 +22,8 @@ async function extract() {
         console.log(results);
         console.log("=======================================================");
         console.log(`\"Utiliza este contexto para generar 10 preguntas profesionales de nivel [Elegir: Básico/Intermedio/Avanzado]. 
-REQUISITO: Sustenta la explicación basándote en la fuente donde se mencione el tema (NTS, RM, GPC, Harrison, AMIR, CTO, Manuales, etc.). Si falta fundamento, refuerza con data externa oficial. 
-LÍMITES: Preguntas de hasta [30/80/120] palabras según nivel. Las explicaciones deben ser detalladas y citar las fuentes pertinentes. Básico: Mínimo 1-3 párrafos, Intermedio: Mínimo 2-3 párrafos, Avanzado: Mínimo 3-4 párrafos\"`);
+                    REQUISITO: Sustenta la explicación basándote en la fuente donde se mencione el tema (NTS, RM, GPC, Harrison, Washington, AMIR, CTO, Manuales, otros autores, etc.). Si falta fundamento, refuerza con data externa oficial. 
+                    LÍMITES: Preguntas de hasta [30/80/120] palabras según nivel. Las explicaciones deben ser detalladas y citar las fuentes pertinentes. Básico: Mínimo 2-3 párrafos, Intermedio: Mínimo 2-3 párrafos, Avanzado: Mínimo 3-4 párrafos\"`);
     } else {
         console.log("❌ No se encontró información relevante. Intenta con palabras clave más específicas.");
     }

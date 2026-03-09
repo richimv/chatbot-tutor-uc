@@ -3,7 +3,8 @@ const router = express.Router();
 
 // --- Importar Controladores ---
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController } = require('../../application/controllers');
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController
+} = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
@@ -69,6 +70,9 @@ router.post('/chat/train-model', auth, adminOnly, chatController.trainModel);
 router.get('/buscar', optionalAuth, coursesController.searchCourses);
 router.get('/careers', coursesController.getCareers);
 router.get('/courses', coursesController.getCourses);
+
+// --- Rutas de Demostración (Públicas) ---
+
 
 router.get('/topics', coursesController.getTopics);
 router.get('/books', coursesController.getBooks);

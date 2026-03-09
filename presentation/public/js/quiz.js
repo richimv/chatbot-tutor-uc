@@ -24,16 +24,17 @@ const elements = {
     loadingSubtitle: document.getElementById('loadingSubtitle'),
     questionText: document.getElementById('questionText'),
     optionsGrid: document.getElementById('optionsGrid'),
+    // Header Progress
     currentQ: document.getElementById('currentQ'),
     maxQ: document.getElementById('maxQ'),
     progressBar: document.getElementById('progressBar'),
-    timerDisplay: document.getElementById('timer'),
+    timer: document.getElementById('timer'),
     feedbackBox: document.getElementById('feedbackBox'),
     explanationText: document.getElementById('explanationText'),
     nextBtn: document.getElementById('nextBtn'),
     resultsOverlay: document.getElementById('resultsOverlay'),
-    finalScore: document.getElementById('finalScore'),
-    scoreCircle: document.getElementById('scoreCircle')
+    scoreCircle: document.getElementById('scoreCircle'),
+    finalScore: document.getElementById('finalScore')
 };
 
 // Configuración
@@ -127,42 +128,123 @@ async function startQuiz() {
     // Mostrar Loading
     elements.loadingOverlay.classList.remove('hidden');
 
-    const token = await getValidToken();
-    if (!token) {
-        alert("Debes iniciar sesión para realizar simulacros.");
-        window.location.href = '/login';
-        return;
-    }
+    let data; // ✅ Declare here so it's available in both branches
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = urlParams.get('demo') === 'true';
 
-    const response = await fetch(`${API_URL}/start`, {
+    let fetchUrl = `${API_URL}/start`;
+    let fetchOptions = {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            topic: state.topic, // Legacy compatibility
+            topic: state.topic,
             target: state.targetExam,
             areas: state.areas,
             difficulty: state.difficulty,
             career: state.career,
-            limit: Math.min(5, state.maxQuestions) // Batching optimizations
+            limit: Math.min(5, state.maxQuestions)
         })
-    });
+    };
 
-    const data = await response.json();
+    if (isDemo) {
+        // --- 🌟 RAG DEMO ENGINE (Scalable) ---
+        // Prioritize current target, fallback to SERUMS if empty, then fallback to anything available
+        let target = state.targetExam || 'SERUMS';
+        if (!window.DemoBank[target] || window.DemoBank[target].length === 0) {
+            target = 'SERUMS';
+        }
 
-    // ⛔ Freemium: Límite de vidas o bloqueo premium
-    if (response.status === 403) {
-        elements.loadingOverlay.classList.add('hidden');
-        if (data.limitReached || data.premiumLock) {
-            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal();
+        let questions = window.DemoBank[target] || [];
+        if (questions.length === 0) {
+            // Last resort: find any non-empty category
+            const categories = Object.keys(window.DemoBank);
+            for (const cat of categories) {
+                if (window.DemoBank[cat].length > 0) {
+                    questions = window.DemoBank[cat];
+                    target = cat;
+                    break;
+                }
+            }
+        }
+
+        // --- 📊 DEMO ANTI-REPETITION & LIMITS ---
+        const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+        const seenIds = JSON.parse(localStorage.getItem('guest_seen_ids') || '[]');
+
+        // Filter out questions already seen by this guest
+        const availableQuestions = questions.filter(q => {
+            // Use question_text as hash since demo data might not have unique IDs
+            const qHash = btoa(q.question_text.substring(0, 50));
+            return !seenIds.includes(qHash);
+        });
+
+        if (sessionsSent >= 3 || availableQuestions.length < state.maxQuestions) {
+            elements.loadingOverlay.classList.add('hidden');
+            if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                window.uiManager.showAuthPromptModal();
             } else {
-                alert(data.error || 'Has alcanzado tu límite de acciones gratuitas.');
-                window.location.href = '/pricing';
+                window.location.href = '/register';
             }
             return;
+        }
+
+        // Shuffle available and Slice
+        const shuffled = [...availableQuestions].sort(() => 0.5 - Math.random());
+        let sliced = shuffled.slice(0, state.maxQuestions);
+
+        // Save seen IDs to prevent repetition
+        const currentBatchHashes = sliced.map(q => btoa(q.question_text.substring(0, 50)));
+        localStorage.setItem('guest_seen_ids', JSON.stringify([...new Set([...seenIds, ...currentBatchHashes])]));
+
+        // Increment session count
+        localStorage.setItem('demo_sessions_count', (sessionsSent + 1).toString());
+
+        // 🎲 Shuffle Options (Fisher-Yates) like the Backend does (QuizService.js:142)
+        sliced = sliced.map(q => {
+            const correctAnswerText = q.options[q.correct_option_index];
+            const shuffledOptions = [...q.options];
+            for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+            }
+            return {
+                ...q,
+                options: shuffledOptions,
+                correct_option_index: shuffledOptions.indexOf(correctAnswerText)
+            };
+        });
+
+        // Simular retardo de Red para feedback UI
+        await new Promise(r => setTimeout(r, 800));
+
+        data = {
+            success: true,
+            questions: sliced,
+            topic: `DEMO: ${target}`
+        };
+    } else {
+        const token = await getValidToken();
+        if (!token) {
+            alert("Debes iniciar sesión para realizar simulacros.");
+            window.location.href = '/login';
+            return;
+        }
+        fetchOptions.headers['Authorization'] = `Bearer ${token}`;
+        const response = await fetch(fetchUrl, fetchOptions);
+        data = await response.json();
+
+        // ⛔ Freemium: Límite de vidas o bloqueo premium
+        if (response.status === 403) {
+            elements.loadingOverlay.classList.add('hidden');
+            if (data.limitReached || data.premiumLock) {
+                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    window.uiManager.showPaywallModal();
+                } else {
+                    alert(data.error || 'Has alcanzado tu límite de acciones gratuitas.');
+                    window.location.href = '/pricing';
+                }
+                return;
+            }
         }
     }
 
@@ -231,6 +313,11 @@ async function startQuiz() {
 // 2.5 Fetch Next Batch (Background)
 async function fetchNextBatch() {
     if (state.isLoadingBatch) return;
+
+    // NO BATCHING IN DEMO MODE (Static Content)
+    const urlParamsNext = new URLSearchParams(window.location.search);
+    if (urlParamsNext.get('demo') === 'true') return;
+
     state.isLoadingBatch = true;
     console.log("🔄 Fetching next batch...");
 
@@ -364,7 +451,7 @@ function renderQuestion() {
     }
 
     // Texto Pregunta
-    elements.questionText.textContent = q.question;
+    elements.questionText.textContent = q.question_text;
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';
@@ -382,9 +469,15 @@ function renderQuestion() {
 }
 
 function updateProgressUI() {
-    // Bar reflects progress towards Max Questions (20)
-    const progressPct = ((state.currentQuestionIndex + 1) / state.maxQuestions) * 100;
-    elements.progressBar.style.width = `${progressPct}%`;
+    // Update Progress
+    const current = state.currentQuestionIndex + 1;
+    const total = state.maxQuestions; // 🎯 Denominador Fijo: Refleja el objetivo del simulacro
+
+    if (elements.currentQ) elements.currentQ.textContent = current;
+    if (elements.maxQ) elements.maxQ.textContent = total;
+    if (elements.progressBar) {
+        elements.progressBar.style.width = `${(current / total) * 100}%`;
+    }
 }
 
 // 4. Manejar Respuesta
@@ -395,7 +488,7 @@ function handleAnswer(selectedIndex, btnElement) {
     const allBtns = elements.optionsGrid.querySelectorAll('button');
     allBtns.forEach(b => b.disabled = true);
 
-    const isCorrect = selectedIndex === q.correctAnswerIndex;
+    const isCorrect = selectedIndex === q.correct_option_index;
 
     // Guardar respuesta silenciosamente
     state.answers.push({
@@ -426,7 +519,7 @@ function handleAnswer(selectedIndex, btnElement) {
     } else {
         btnElement.classList.add('wrong');
         // Mostrar cuál era la correcta
-        allBtns[q.correctAnswerIndex].classList.add('correct');
+        allBtns[q.correct_option_index].classList.add('correct');
         elements.feedbackBox.classList.add('error');
     }
 
@@ -436,8 +529,12 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // Configurar Botón Siguiente
     elements.nextBtn.onclick = () => {
-        state.currentQuestionIndex++;
-        renderQuestion();
+        if (state.currentQuestionIndex >= state.questions.length - 1) {
+            finishQuiz();
+        } else {
+            state.currentQuestionIndex++;
+            renderQuestion();
+        }
     };
 }
 
@@ -479,16 +576,56 @@ async function finishQuiz() {
     clearInterval(timerInterval);
 
     // Calcular Score Visual
-    elements.finalScore.textContent = `${state.score}/${state.currentQuestionIndex}`; // Show total answered
+    const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
+    const denominator = state.maxQuestions; // 🎯 Siempre sobre el total configurado (10, 20, 100)
+    elements.finalScore.textContent = `${state.score}/${denominator}`;
 
     // Calcular porcentaje para el círculo (CSS Conic Gradient)
-    const actualTotal = state.currentQuestionIndex || 1;
+    const actualTotal = denominator || 1;
     const pct = (state.score / actualTotal) * 100;
     elements.scoreCircle.style.backgroundImage = `conic-gradient(#22c55e ${pct}%, transparent ${pct}%)`;
 
     elements.resultsOverlay.classList.add('active');
 
-    // Enviar Resultados al Backend
+    // 📊 LOCAL STATS SAVING (Guest Demo Persistence)
+    const urlParamsFinish = new URLSearchParams(window.location.search);
+    if (urlParamsFinish.get('demo') === 'true') {
+        const correct = state.answers.filter(a => a.isCorrect).length;
+        const total = state.answers.length; // Use answered questions
+        const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+        // Calculate Area Stats for Radar Chart
+        const areaStats = {};
+        state.answers.forEach((ans, idx) => {
+            const q = state.questions[idx];
+            const topic = q.topic || 'Otros';
+            if (!areaStats[topic]) areaStats[topic] = { correct: 0, total: 0 };
+            areaStats[topic].total++;
+            if (ans.isCorrect) areaStats[topic].correct++;
+        });
+
+        const currentStats = {
+            lastRun: new Date().toISOString(),
+            correct: correct,
+            incorrect: total - correct,
+            accuracy: accuracy,
+            avgScore: total > 0 ? (correct * 20 / total).toFixed(1) : '0',
+            areaStats: areaStats // { Topic: {correct, total} }
+        };
+
+        localStorage.setItem('guest_demo_stats', JSON.stringify(currentStats));
+        console.log("💾 Estadísticas demo guardadas localmente con desglose por área.");
+
+        // No return early here, let it show the results overlay
+    }
+
+    // Enviar Resultados al Backend (SALTAR EN DEMO)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === 'true') {
+        console.log("🏁 Demo finalizada. Resultados no guardados en base de datos.");
+        return;
+    }
+
     const token = await getValidToken();
     try {
         await fetch(`${API_URL}/submit`, {
@@ -547,7 +684,7 @@ window.showExamReview = function () {
         // Título/Pregunta
         const qText = document.createElement('div');
         qText.className = 'review-q-text';
-        qText.innerHTML = `<span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${i + 1}</span> ${q.question}`;
+        qText.innerHTML = `<span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${i + 1}</span> ${q.question_text}`;
         card.appendChild(qText);
 
         // Imagen (si existe)
@@ -573,7 +710,7 @@ window.showExamReview = function () {
             optDiv.textContent = optText;
 
             // Logica de colores
-            if (optIdx === q.correctAnswerIndex) {
+            if (optIdx === q.correct_option_index) {
                 optDiv.classList.add('r-correct');
                 optDiv.innerHTML += ' <i class="fas fa-check-circle" style="float:right"></i>';
             } else if (optIdx === ans.userAnswer) {

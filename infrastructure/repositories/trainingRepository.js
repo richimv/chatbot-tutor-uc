@@ -49,9 +49,9 @@ class TrainingRepository {
         // Mapear al formato frontend
         return res.rows.map(row => ({
             id: row.id, // Guardamos ID para registrar historial
-            question: row.question_text,
+            question_text: row.question_text,
             options: row.options,
-            correctAnswerIndex: row.correct_option_index,
+            correct_option_index: row.correct_option_index,
             explanation: row.explanation,
             topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
         }));
@@ -120,9 +120,9 @@ class TrainingRepository {
 
         return res.rows.map(row => ({
             id: row.id,
-            question: row.question_text,
+            question_text: row.question_text,
             options: row.options,
-            correctAnswerIndex: row.correct_option_index,
+            correct_option_index: row.correct_option_index,
             explanation: row.explanation,
             topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
         }));
@@ -198,7 +198,7 @@ class TrainingRepository {
             const exactTopic = q.topic || defaultTopic;
             // Generar Hash ÚNICO basado en Topic + Pregunta + Opciones (para diferenciar mismas preguntas con mismas opciones)
             // Usamos un hash MD5 o SHA256 corto para indexación eficiente
-            const rawString = `${exactTopic}-${q.question}-${JSON.stringify(q.options)}`;
+            const rawString = `${exactTopic}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             try {
@@ -207,9 +207,9 @@ class TrainingRepository {
                     domain,
                     target,
                     difficulty,
-                    q.question,
+                    q.question_text,
                     JSON.stringify(q.options),
-                    q.correctAnswerIndex,
+                    q.correct_option_index,
                     q.explanation,
                     hash
                 ]);
@@ -524,7 +524,7 @@ class TrainingRepository {
         let insertCount = 0;
 
         questions.forEach((q) => {
-            const front = q.question.trim();
+            const front = q.question_text.trim();
 
             // Si la flashcard ya existe en este mazo, la saltamos para evitar duplicados
             if (existingFronts.has(front)) {
@@ -532,7 +532,7 @@ class TrainingRepository {
             }
 
             // Back: La respuesta correcta + explicación
-            const correctOption = q.options[q.correctAnswerIndex];
+            const correctOption = q.options[q.correct_option_index];
             const back = `${correctOption}\n\n💡 ${q.explanation || ''}`;
 
             // ($1, $2, $3, $4, $5, $6) ...

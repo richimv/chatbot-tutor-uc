@@ -50,8 +50,11 @@ const SimulatorDash = (() => {
 
         // 1. Setup UI Context
         const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
-        document.getElementById('ctx-title').textContent = ctxConfig.title;
-        document.getElementById('ctx-icon').innerHTML = ctxConfig.icon;
+        const titleEl = document.getElementById('ctx-title');
+        const iconEl = document.getElementById('ctx-icon');
+
+        if (titleEl) titleEl.textContent = ctxConfig.title;
+        if (iconEl) iconEl.innerHTML = ctxConfig.icon;
 
         // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();
@@ -188,6 +191,7 @@ const SimulatorDash = (() => {
     }
 
     function updateModeLinks(ctxConfig) {
+        const token = localStorage.getItem('authToken');
         let baseParams = `${ctxConfig.quizParams}&context=${currentContext}`;
 
         // Append Custom Config if active
@@ -202,14 +206,16 @@ const SimulatorDash = (() => {
         const btnArcade = document.getElementById('btn-mode-arcade');
         if (btnArcade) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnArcade.href = `quiz${baseParams}${separator}limit=10`;
+            const demoFlag = !token ? '&demo=true' : '';
+            btnArcade.href = `quiz${baseParams}${separator}limit=10${demoFlag}`;
         }
 
         // 2. Study Mode (20 questions)
         const btnStudy = document.getElementById('btn-mode-study');
         if (btnStudy) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnStudy.href = `quiz${baseParams}${separator}limit=20`;
+            const demoFlag = !token ? '&demo=true' : '';
+            btnStudy.href = `quiz${baseParams}${separator}limit=20${demoFlag}`;
         }
 
         // 3. Real Mock (100 questions - STRICTLY DB ONLY)
@@ -233,10 +239,24 @@ const SimulatorDash = (() => {
 
                     // 1. Visitante check (Redirección Únete)
                     if (!token && window.uiManager) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.uiManager.showAuthPromptModal();
-                        return;
+                        // EXCEPCIÓN: Permitir Modo Rápido (Arcade) para Invitados con LÍMITE
+                        const isArcade = id === 'btn-mode-arcade';
+
+                        if (isArcade) {
+                            const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+                            if (sessionsSent >= 3) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.uiManager.showAuthPromptModal();
+                                return;
+                            }
+                        } else {
+                            // Para cualquier otro modo (Estudio, Real, Flashcards) - Bloquear directo
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.uiManager.showAuthPromptModal();
+                            return;
+                        }
                     }
 
                     // 2. Block disabled modes
@@ -263,6 +283,8 @@ const SimulatorDash = (() => {
         const radioTargets = document.querySelectorAll('.exam-target-option input');
         const areasGrid = document.getElementById('config-areas-grid');
         const summaryBox = document.getElementById('active-config-summary');
+
+        if (!modal || !btnOpen || !areasGrid) return; // Guard for non-dashboard pages
 
         // Render grouped checkboxes with sub-headers
         const renderAreas = (target) => {
@@ -489,9 +511,12 @@ const SimulatorDash = (() => {
 
             if (lineChartInst) lineChartInst.destroy();
 
-            if (data.success && data.chart.labels.length > 0) {
-                const ctx = document.getElementById('evolutionChart').getContext('2d');
-                lineChartInst = new Chart(ctx, {
+            if (data.success && data.chart && data.chart.labels && data.chart.labels.length > 0) {
+                const evoCanvas = document.getElementById('evolutionChart');
+                if (!evoCanvas) return; // Guard for non-dashboard pages
+
+                const evolutionCtx = evoCanvas.getContext('2d');
+                lineChartInst = new Chart(evolutionCtx, {
                     type: 'line',
                     data: {
                         labels: data.chart.labels,
@@ -567,10 +592,15 @@ const SimulatorDash = (() => {
 
             // Render Stats
             const kpis = data.kpis;
-            document.getElementById('stat-score').textContent = kpis.avg_score || '0.0';
-            document.getElementById('stat-accuracy').textContent = `${Math.round(kpis.accuracy || 0)}%`;
-            document.getElementById('stat-counts-text').textContent = `${kpis.total_correct || 0} correctas / ${kpis.total_incorrect || 0} incorrectas`;
-            document.getElementById('stat-mastery').textContent = kpis.mastered_cards || 0;
+            const scoreEl = document.getElementById('stat-score');
+            const accuracyEl = document.getElementById('stat-accuracy');
+            const countsEl = document.getElementById('stat-counts-text');
+            const masteryEl = document.getElementById('stat-mastery');
+
+            if (scoreEl) scoreEl.textContent = kpis.avg_score || '0.0';
+            if (accuracyEl) accuracyEl.textContent = `${Math.round(kpis.accuracy || 0)}%`;
+            if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} correctas / ${kpis.total_incorrect || 0} incorrectas`;
+            if (masteryEl) masteryEl.textContent = kpis.mastered_cards || 0;
 
             // Setup Flashcard Link
             if (kpis.system_deck_id) {
@@ -582,69 +612,75 @@ const SimulatorDash = (() => {
             if (radarChartInst) radarChartInst.destroy();
 
             if (kpis.radar_data && kpis.radar_data.length > 0) {
-                document.getElementById('radar-empty-state').style.display = 'none';
+                const emptyState = document.getElementById('radar-empty-state');
                 const radarCanvas = document.getElementById('radarChart');
-                radarCanvas.style.display = 'block';
 
-                // 🧹 Sanitizar y agrupar historial viejo corrupto
-                const cleanRadarMap = {};
-                kpis.radar_data.forEach(d => {
-                    let cleanSubject = d.subject || 'General';
-                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                if (emptyState) emptyState.style.display = 'none';
+                if (radarCanvas) {
+                    radarCanvas.style.display = 'block';
 
-                    if (!cleanRadarMap[cleanSubject]) {
-                        cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
-                    }
+                    // 🧹 Sanitizar y agrupar historial viejo corrupto
+                    const cleanRadarMap = {};
+                    kpis.radar_data.forEach(d => {
+                        let cleanSubject = d.subject || 'General';
+                        if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
 
-                    const safeTotal = parseInt(d.total || 0, 10);
-                    const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
-                    cleanRadarMap[cleanSubject].correct += rawCorrect;
-                    cleanRadarMap[cleanSubject].total += safeTotal;
-                });
-
-                const radarLabels = Object.keys(cleanRadarMap);
-                const radarDataPts = radarLabels.map(subject =>
-                    Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0
-                );
-
-                radarChartInst = new Chart(radarCanvas.getContext('2d'), {
-                    type: 'radar',
-                    data: {
-                        labels: radarLabels,
-                        datasets: [{
-                            label: 'Precisión %',
-                            data: radarDataPts,
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            borderColor: '#3b82f6',
-                            pointBackgroundColor: '#60a5fa',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: '#3b82f6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            r: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: { display: false, stepSize: 20 },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                pointLabels: { color: '#cbd5e1', font: { size: 11 } },
-                                angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false }
+                        if (!cleanRadarMap[cleanSubject]) {
+                            cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
                         }
-                    }
-                });
+
+                        const safeTotal = parseInt(d.total || 0, 10);
+                        const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
+                        cleanRadarMap[cleanSubject].correct += rawCorrect;
+                        cleanRadarMap[cleanSubject].total += safeTotal;
+                    });
+
+                    const radarLabels = Object.keys(cleanRadarMap);
+                    const radarDataPts = radarLabels.map(subject =>
+                        Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0
+                    );
+
+                    radarChartInst = new Chart(radarCanvas.getContext('2d'), {
+                        type: 'radar',
+                        data: {
+                            labels: radarLabels,
+                            datasets: [{
+                                label: 'Precisión %',
+                                data: radarDataPts,
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                borderColor: '#3b82f6',
+                                pointBackgroundColor: '#60a5fa',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: '#3b82f6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { display: false, stepSize: 20 },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                    pointLabels: { color: '#cbd5e1', font: { size: 11 } },
+                                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        }
+                    });
+                }
             }
 
             // Ocultar Loading
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
+            const loadingEl = document.getElementById('loading');
+            const contentEl = document.getElementById('dashboard-content');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'block';
 
             // ✅ GUEST BANNER: If logged as guest, show a call to action
             if (kpis.isGuest) {
@@ -654,8 +690,10 @@ const SimulatorDash = (() => {
         } catch (error) {
             console.error(error);
             // Even on error, reveal dashboard to not block user interactions
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
+            const loadingEl = document.getElementById('loading');
+            const contentEl = document.getElementById('dashboard-content');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'block';
         }
     }
 
@@ -666,6 +704,8 @@ const SimulatorDash = (() => {
         const stateInitial = document.getElementById('ai-initial-state');
         const stateLoading = document.getElementById('ai-loading-state');
         const stateResults = document.getElementById('ai-results-state');
+
+        if (!btnAnalyze || !stateInitial) return; // Guard for non-dashboard pages
 
         const runAnalysis = async (e) => {
             // ✅ Interceptar con Paywall si no tiene vidas
@@ -683,17 +723,35 @@ const SimulatorDash = (() => {
             // ✅ MOCK ANALYSIS FOR GUESTS: No call to API
             if (!token) {
                 setTimeout(() => {
+                    const localStats = JSON.parse(localStorage.getItem('guest_demo_stats') || '{}');
                     stateLoading.style.display = 'none';
                     stateResults.style.display = 'block';
 
+                    let mockStrengths = "<strong>Cuidado Integral:</strong> Tus respuestas muestran una base sólida en salud preventiva.";
+                    let mockWeaknesses = "<strong>Ética y Gestión:</strong> Necesitas profundizar en la normativa de NTS y derechos del paciente.";
+
+                    // Try to be more specific if areaStats exist
+                    if (localStats.areaStats) {
+                        const sorted = Object.entries(localStats.areaStats)
+                            .map(([topic, data]) => ({ topic, ratio: data.correct / data.total }))
+                            .sort((a, b) => b.ratio - a.ratio);
+
+                        if (sorted.length > 0) {
+                            const best = sorted[0];
+                            const worst = sorted[sorted.length - 1];
+                            mockStrengths = `<strong>${best.topic}:</strong> Tienes un excelente dominio en esta área con un ${Math.round(best.ratio * 100)}% de aciertos.`;
+                            mockWeaknesses = `<strong>${worst.topic}:</strong> Es tu área de mayor oportunidad. Repasa los fundamentos de este bloque para mejorar tu perfil.`;
+                        }
+                    }
+
                     document.getElementById('ai-strengths').innerHTML = `
-                        <i class="fas fa-check-circle" style="color: #22c55e;"></i> 
-                        <strong>Inmunología y Vacunas (Mock):</strong> Tienes un alto dominio en los esquemas de vacunación pediátrica. <i>¡Prueba el simulador real para ver tu perfil!</i>
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i> 
+                        ${mockStrengths}
                     `;
                     document.getElementById('ai-weaknesses').innerHTML = `
                         <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> 
-                        <strong>Ginecología y Obstetricia (Mock):</strong> Necesitas repasar las complicaciones del tercer trimestre y el partograma. 
-                        <a href="#" onclick="window.uiManager.showAuthPromptModal(); return false;" style="color:#60a5fa; font-weight:700;">Regístrate</a> para un análisis real.
+                        ${mockWeaknesses} 
+                        <a href="#" onclick="window.uiManager.showAuthPromptModal(); return false;" style="color:#60a5fa; font-weight:700;">Regístrate</a> para un análisis profundo por IA.
                     `;
                 }, 1500);
                 return;
@@ -782,7 +840,7 @@ const SimulatorDash = (() => {
                     <p style="color: #94a3b8; margin: 0.2rem 0 0 0; font-size: 0.9rem;">Regístrate para guardar tu progreso real y acceder a todas las funciones.</p>
                 </div>
             </div>
-            <button class="btn-action" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer;" onclick="window.uiManager.showAuthPromptModal()">
+            <button class="btn-action" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer;" onclick="window.location.href='/register'">
                 Crear Cuenta Gratis
             </button>
         `;
@@ -792,69 +850,164 @@ const SimulatorDash = (() => {
     function renderGuestDemoData() {
         renderGuestBanner();
 
+        // --- 🌈 Arcade Mode Glow for Guests ---
+        const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+        const arcadeBtn = document.getElementById('btn-mode-arcade');
+
+        if (sessionsSent < 3 && arcadeBtn) {
+            const arcadeCard = arcadeBtn.closest('.mode-card');
+            if (arcadeCard) {
+                // Inject styles for the glow
+                if (!document.getElementById('arcade-glow-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'arcade-glow-style';
+                    style.textContent = `
+                        @keyframes arcade-glow {
+                            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.3); }
+                            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 10px rgba(34, 197, 94, 0.4); border-color: rgba(96, 165, 250, 0.8); }
+                            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.3); }
+                        }
+                        .arcade-highlight {
+                            animation: arcade-glow 2s infinite ease-in-out;
+                            position: relative;
+                            z-index: 10;
+                            overflow: visible !important; /* Prevent clipping */
+                        }
+                        .arcade-highlight::after {
+                            content: '¡Pruébalo ahora!';
+                            position: absolute;
+                            top: 15px; /* Centered slightly better for the larger size */
+                            right: 15px;
+                            background: linear-gradient(90deg, #bfd025ff, #10b981);
+                            color: white;
+                            font-size: 0.7rem; /* Increased font-size */
+                            padding: 6px 14px; /* Increased padding */
+                            border-radius: 20px;
+                            font-weight: 800;
+                            text-transform: uppercase;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+                            z-index: 20;
+                            border: 1px solid rgba(255,255,255,0.2);
+                        }
+                        @media (max-width: 768px) {
+                            .arcade-highlight::after {
+                                font-size: 0.8rem; /* Increased font-size for mobile */
+                                padding: 4px 10px; /* Increased padding for mobile */
+                                top: 15px;
+                                right: 15px;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                arcadeCard.classList.add('arcade-highlight');
+            }
+        }
+
         // 1. KPI Demo values
-        document.getElementById('stat-score').textContent = '14.5';
-        document.getElementById('stat-accuracy').textContent = '72%';
-        document.getElementById('stat-counts-text').textContent = '120 correctas / 45 incorrectas';
-        document.getElementById('stat-mastery').textContent = '12';
+        const scoreEl = document.getElementById('stat-score');
+        const accuracyEl = document.getElementById('stat-accuracy');
+        const countsEl = document.getElementById('stat-counts-text');
+        const masteryEl = document.getElementById('stat-mastery');
+
+        if (scoreEl) scoreEl.textContent = '14.5';
+        if (accuracyEl) accuracyEl.textContent = '72%';
+        if (countsEl) countsEl.textContent = '120 correctas / 45 incorrectas';
+        if (masteryEl) masteryEl.textContent = '12';
 
         // 2. Evolution Chart Demo
-        const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
-        lineChartInst = new Chart(evolutionCtx, {
-            type: 'line',
-            data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
-                datasets: [{
-                    label: 'Puntaje (Demo)',
-                    data: [11, 13, 12, 15, 14.5],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
+        const evoCanvas = document.getElementById('evolutionChart');
+        if (evoCanvas) {
+            const evolutionCtx = evoCanvas.getContext('2d');
+            lineChartInst = new Chart(evolutionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+                    datasets: [{
+                        label: 'Puntaje (Demo)',
+                        data: [11, 13, 12, 15, 14.5],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
 
         // 3. Radar Chart Demo
         const radarCanvas = document.getElementById('radarChart');
-        document.getElementById('radar-empty-state').style.display = 'none';
-        radarCanvas.style.display = 'block';
-        radarChartInst = new Chart(radarCanvas.getContext('2d'), {
-            type: 'radar',
-            data: {
-                labels: ['Medicina', 'Cirugía', 'Pediatría', 'Gineco', 'Salud Pública'],
-                datasets: [{
-                    label: 'Dominio % (Demo)',
-                    data: [85, 60, 75, 90, 65],
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderColor: '#60a5fa',
-                    pointBackgroundColor: '#60a5fa',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#60a5fa'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: { display: false, stepSize: 20 },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        pointLabels: { color: '#cbd5e1', font: { size: 11 } },
-                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
-                    }
+        const radarEmpty = document.getElementById('radar-empty-state');
+        if (radarCanvas) {
+            if (radarEmpty) radarEmpty.style.display = 'none';
+            radarCanvas.style.display = 'block';
+            radarChartInst = new Chart(radarCanvas.getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: ['Medicina', 'Cirugía', 'Pediatría', 'Gineco', 'Salud Pública'],
+                    datasets: [{
+                        label: 'Dominio % (Demo)',
+                        data: [85, 60, 75, 90, 65],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#60a5fa',
+                        pointBackgroundColor: '#60a5fa',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#60a5fa'
+                    }]
                 },
-                plugins: {
-                    legend: { display: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { display: false, stepSize: 20 },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#cbd5e1', font: { size: 11 } },
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
                 }
-            }
-        });
+            });
+        }
 
-        // 4. Ocultar Loading
+        // 4. Persistence: Check for local demo stats
+        const localStatsStr = localStorage.getItem('guest_demo_stats');
+        if (localStatsStr) {
+            try {
+                const stats = JSON.parse(localStatsStr);
+                if (scoreEl) scoreEl.textContent = stats.avgScore || '0';
+                if (accuracyEl) accuracyEl.textContent = `${stats.accuracy || 0}%`;
+                if (countsEl) countsEl.textContent = `${stats.correct || 0} correctas / ${stats.incorrect || 0} incorrectas`;
+
+                // Update Radar Chart if areaStats exists
+                if (stats.areaStats && radarChartInst) {
+                    const sortedLabels = Object.keys(stats.areaStats);
+                    const masteryData = sortedLabels.map(topic => {
+                        const area = stats.areaStats[topic];
+                        return Math.round((area.correct / area.total) * 100);
+                    });
+
+                    radarChartInst.data.labels = sortedLabels;
+                    radarChartInst.data.datasets[0].data = masteryData;
+                    radarChartInst.data.datasets[0].label = 'Tu Dominio %';
+                    radarChartInst.update();
+
+                    // Update mastery count (areas with > 70% accuracy)
+                    const masteryCount = masteryData.filter(val => val >= 70).length;
+                    const masteryEl = document.getElementById('stat-mastery');
+                    if (masteryEl) masteryEl.textContent = masteryCount;
+                }
+            } catch (e) { console.error("Error parsing local stats", e); }
+        }
+
+        // 5. Ocultar Loading
         const loading = document.getElementById('loading');
         const content = document.getElementById('dashboard-content');
         if (loading) loading.style.display = 'none';

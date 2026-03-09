@@ -45,7 +45,7 @@ class TrainingService {
         // Crear array de objetos {text, originalIndex}
         const mappedOptions = originalOptions.map((opt, index) => ({
             text: opt,
-            isCorrect: index === question.correctAnswerIndex
+            isCorrect: index === question.correct_option_index
         }));
 
         // Shuffle (Fisher-Yates)
@@ -56,7 +56,7 @@ class TrainingService {
 
         // Reconstruir
         question.options = mappedOptions.map(o => o.text);
-        question.correctAnswerIndex = mappedOptions.findIndex(o => o.isCorrect);
+        question.correct_option_index = mappedOptions.findIndex(o => o.isCorrect);
 
         return question;
     }
@@ -221,7 +221,7 @@ class TrainingService {
             Genera ${count} preguntas de trivia interesantes y NO repetitivas.
             
             JSON ESTRICTO:
-            [{"question":"¿Cuál es...?","options":["Texto crudo", "Respuesta directa", "Concepto limpio", "Opción final sin letras"],"correctAnswerIndex":0,"explanation":"...", "topic": "${areas[0]}"}]
+            [{"question_text":"¿Cuál es...?","options":["Texto crudo", "Respuesta directa", "Concepto limpio", "Opción final sin letras"],"correct_option_index":0,"explanation":"...", "topic": "${areas[0]}"}]
             
             ⚠️ REGLA DE FORMATO:
             Bajo ninguna circunstancia uses letras ("A)", "B.", "C.-", etc.) al inicio de las opciones.
@@ -246,9 +246,9 @@ class TrainingService {
                 // Si tiene más de 4, cortamos (asegurando que la correcta esté dentro)
                 if (q.options.length > 4) {
                     // Si la correcta es índice 4 o mayor (5ta opción+), la movemos al 3
-                    if (q.correctAnswerIndex >= 4) {
-                        q.options[3] = q.options[q.correctAnswerIndex]; // Mover correcta a pos 3
-                        q.correctAnswerIndex = 3;
+                    if (q.correct_option_index >= 4) {
+                        q.options[3] = q.options[q.correct_option_index]; // Mover correcta a pos 3
+                        q.correct_option_index = 3;
                     }
                     q.options = q.options.slice(0, 4); // Cortar exceso
                 }
@@ -334,7 +334,7 @@ class TrainingService {
         if (quizData.questions && Array.isArray(quizData.questions)) {
             quizData.questions.forEach(q => {
                 let topic = q.topic || quizData.topic || 'General';
-                const isCorrect = q.userAnswer === q.correctAnswerIndex;
+                const isCorrect = q.userAnswer === q.correct_option_index;
 
                 // 🧹 SANITIZACIÓN MEJORADA: 
                 // Si el topic de la pregunta es genérico (ej: "MEDICINA") o está vacío, 
@@ -372,7 +372,7 @@ class TrainingService {
 
         // 🟢 MODULARIDAD: Crear flashcards con topics individuales
         if (options.createFlashcards) {
-            const errors = quizData.questions.filter(q => q.userAnswer !== q.correctAnswerIndex);
+            const errors = quizData.questions.filter(q => q.userAnswer !== q.correct_option_index);
 
             if (errors.length > 0) {
                 // Pasamos quizData.topic como fallback, pero el repo ahora usará q.topic

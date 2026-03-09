@@ -16,6 +16,10 @@ const ChatController = require('./chatController');
 const AnalyticsController = require('./analyticsController');
 const CoursesController = require('./coursesController');
 const UsageController = require('./usageController'); // ✅ NUEVO
+const AdminController = require('./adminController'); // Importar la CLASE del controlador
+const QuizController = require('./quizController'); // Importar la CLASE del controlador
+const UserPreferencesController = require('./userPreferencesController'); // Importar la CLASE del controlador
+const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar la CLASE del controlador
 
 // --- 2. Crear una ÚNICA instancia de cada SERVICIO ---
 const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instancia del repositorio.

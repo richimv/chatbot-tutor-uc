@@ -1,127 +1,81 @@
 const db = require('../../infrastructure/database/db');
-const { GoogleAuth } = require('google-auth-library');
-const axios = require('axios');
 
-// CONFIGURACIÓN VERTEX AI (REST API)
-const project = process.env.GOOGLE_CLOUD_PROJECT;
-const location = process.env.GOOGLE_CLOUD_LOCATION;
-const modelId = 'text-embedding-004';
-const apiEndpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
+/**
+ * 🛠️ RAG SERVICE (LOCAL - CERO COSTO):
+ * Este servicio realiza búsquedas en la biblioteca de documentos (libros, manuales, leyes)
+ * de forma 100% LOCAL usando SQL ILIKE.
+ * ✅ NO USA EMbeddings de Google Cloud (Costo $0).
+ * ✅ NO USA IA para la búsqueda (Costo $0).
+ */
 class RagService {
     constructor() {
-        this.auth = new GoogleAuth({
-            scopes: 'https://www.googleapis.com/auth/cloud-platform'
-        });
-        this.client = null;
-    }
-
-    async getAccessToken() {
-        if (!this.client) {
-            this.client = await this.auth.getClient();
-        }
-        const accessToken = await this.client.getAccessToken();
-        return accessToken.token;
+        console.log("✅ RagService: Inicializado en modo RAG Local (ILIKE). Búsqueda gratuita activa.");
     }
 
     /**
-     * Genera el embedding para un texto dado usando REST API directo.
+     * Extrae palabras clave de un texto para optimizar la búsqueda SQL.
      */
-    async generateEmbedding(text) {
-        try {
-            const token = await this.getAccessToken();
-
-            const response = await axios.post(
-                apiEndpoint,
-                {
-                    instances: [
-                        { content: text, task_type: 'RETRIEVAL_QUERY' }
-                    ]
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            // La respuesta de predict tiene formato: { predictions: [ { embeddings: { values: [...] } } ] }
-            // O a veces: { predictions: [ [0.1, 0.2...] ] } dependiendo del modelo.
-            // Para text-embedding-004 suele ser: values
-
-            if (response.data.predictions && response.data.predictions.length > 0) {
-                const prediction = response.data.predictions[0];
-                // Manejar variaciones de respuesta
-                if (prediction.embeddings && prediction.embeddings.values) {
-                    return prediction.embeddings.values;
-                } else if (Array.isArray(prediction)) {
-                    return prediction; // Formato antiguo
-                } else if (prediction.values) {
-                    return prediction.values;
-                }
-            }
-
-            console.warn("⚠️ Respuesta inesperada de Vertex AI:", JSON.stringify(response.data));
-            return null;
-
-        } catch (error) {
-            console.error("❌ Error generando embedding (REST):", error.response?.data || error.message);
-            return null;
-        }
+    _extractKeywords(text) {
+        if (!text) return [];
+        return text.toLowerCase()
+            .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "")
+            .split(/\s+/)
+            .filter(word => word.length > 3) // Solo palabras significativas
+            .slice(0, 5); // Máximo 5 palabras clave para no saturar la DB
     }
 
     /**
-     * Busca documentos relevantes en Supabase (pgvector) con soporte de filtros (Hybrid Search).
-     * @param {string} queryText - Pregunta o tema a buscar.
-     * @param {number} limit - Cantidad de fragmentos a recuperar (default 3).
-     * @param {object} filters - Filtros de metadatos opcionales (ej: { type: 'Norma Técnica' }).
+     * Busca fragmentos de texto relevantes en la base de datos local usando coincidencia de palabras.
+     * @param {string} queryText - Términos de búsqueda (ej: "Tratamiento Bronquiolitis").
+     * @param {number} limit - Cantidad de fragmentos a recuperar.
+     * @param {object} filters - Filtros por metadatos o contexto (ej: { target: 'SERUMS' }).
      */
-    async searchContext(queryText, limit = 3, filters = {}) {
-        const embedding = await this.generateEmbedding(queryText);
-        if (!embedding) return "";
+    async searchContext(queryText, limit = 6, filters = {}) {
+        let keywords = this._extractKeywords(queryText);
 
-        // Convertimos el array JS a formato vector pg
-        const vectorStr = `[${embedding.join(',')}]`;
-        const params = [vectorStr, limit];
-
-        let filterClause = "";
-
-        // Construcción dinámica de filtros JSONB
-        // Si filters = { type: 'Norma Técnica' }, agregamos: AND metadata @> '{"type": "Norma Técnica"}'
-        if (filters && Object.keys(filters).length > 0) {
-            params.push(JSON.stringify(filters)); // $3
-            filterClause = `AND metadata @> $3`;
+        // 🎯 OPTIMIZACIÓN POR TARGET: Inyectar términos normativos si es SERUMS o ENAM
+        const target = (filters.target || "").toUpperCase();
+        if (target === "SERUMS") {
+            keywords = [...new Set([...keywords, "nts", "norma", "ley", "resolución", "rm"])];
+        } else if (target === "ENAM") {
+            keywords = [...new Set([...keywords, "gpc", "guía", "clínica", "nts"])];
         }
 
-        const query = `
-            SELECT content, metadata, 1 - (embedding <=> $1) as similarity
+        if (keywords.length === 0) return "";
+
+        console.log(`🔍 RAG Local (${target}): Buscando palabras clave: [${keywords.join(', ')}]`);
+
+        // Construir cláusula LIKE con OR para maximizar la recuperación (Libros + Normas)
+        let searchClause = keywords.map((_, i) => `(content ILIKE $${i + 1} OR metadata::text ILIKE $${i + 1})`).join(' OR ');
+        const params = keywords.map(kw => `%${kw}%`);
+
+        const limitIndex = params.length + 1;
+        params.push(limit);
+
+        let query = `
+            SELECT content, metadata
             FROM documents
-            WHERE 1 - (embedding <=> $1) > 0.50 -- Umbral ajustado para asegurar captura de leyes y manuales técnicos
-            ${filterClause}
-            ORDER BY embedding <=> $1
-            LIMIT $2;
+            WHERE ${searchClause}
+            ORDER BY id DESC 
+            LIMIT $${limitIndex};
         `;
 
         try {
             const res = await db.query(query, params);
-
-            if (res.rows.length === 0) {
-                console.log("ℹ️ RAG: Sin coincidencias relevantes (>0.55) o filtros muy estrictos.");
-                return "";
-            }
-
-            // Concatenar el contenido encontrado para el prompt
-            return res.rows.map(row => {
-                const meta = row.metadata || {};
-                const sourceInfo = `${meta.type || 'Documento'} - ${meta.title || meta.source || 'Desconocido'} (${meta.year || 'S/F'})`;
-                return `--- CONTEXTO OFICIAL (${sourceInfo}) ---\n${row.content}`;
-            }).join('\n\n');
+            return this._formatResults(res.rows);
 
         } catch (error) {
-            console.warn("⚠️ RAG Search Falló:", error.message);
+            console.error("❌ Error en RAG Local (ILIKE):", error.message);
             return "";
         }
+    }
+
+    _formatResults(rows) {
+        return rows.map(row => {
+            const meta = row.metadata || {};
+            const source = meta.title || meta.source || "Documento Local";
+            return `--- FUENTE LOCAL: ${source} ---\n${row.content}`;
+        }).join('\n\n');
     }
 }
 
