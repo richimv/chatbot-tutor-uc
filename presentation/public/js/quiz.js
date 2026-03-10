@@ -656,7 +656,7 @@ async function finishQuiz() {
 }
 
 // 7. Revisión Post-Examen (Exam Review)
-window.showExamReview = function () {
+window.showExamReview = async function () {
     // Esconder resultados y grilla principal
     document.getElementById('resultsOverlay').classList.remove('active');
     document.querySelector('.question-header').style.display = 'none';
@@ -669,10 +669,36 @@ window.showExamReview = function () {
     reviewContainer.classList.remove('hidden');
 
     const feed = document.getElementById('reviewFeed');
-    feed.innerHTML = ''; // Limpiar
+    feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
 
     // Iterar solo por las preguntas que realmente contestó
     const totalAnswered = state.currentQuestionIndex;
+    const answeredQuestions = state.questions.slice(0, totalAnswered);
+    
+    // Check which ones are already saved as flashcards
+    let savedFronts = new Set();
+    const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
+    if (!isDemo && answeredQuestions.length > 0) {
+        try {
+            const token = await getValidToken();
+            const res = await fetch(`${API_URL}/../training/flashcards/check-saved`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ 
+                    questions: answeredQuestions, 
+                    moduleName: state.context || 'MEDICINA' 
+                })
+            });
+            const data = await res.json();
+            if (data.success && data.savedFronts) {
+                savedFronts = new Set(data.savedFronts);
+            }
+        } catch (e) {
+            console.error('Error checking saved flashcards', e);
+        }
+    }
+
+    feed.innerHTML = ''; // Limpiar indicator
 
     for (let i = 0; i < totalAnswered; i++) {
         const q = state.questions[i];
@@ -681,11 +707,88 @@ window.showExamReview = function () {
         const card = document.createElement('div');
         card.className = 'review-card';
 
+        // Contenedor flexible para Título/Pregunta y Botón
+        const headerDiv = document.createElement('div');
+        headerDiv.style.display = 'flex';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.alignItems = 'flex-start';
+        headerDiv.style.marginBottom = '1.25rem';
+        headerDiv.style.gap = '1rem';
+
         // Título/Pregunta
         const qText = document.createElement('div');
         qText.className = 'review-q-text';
+        qText.style.flex = '1';
+        qText.style.margin = '0';
         qText.innerHTML = `<span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${i + 1}</span> ${q.question_text}`;
-        card.appendChild(qText);
+        headerDiv.appendChild(qText);
+
+        // Flashcard Button
+        if (!isDemo) {
+            const saveBtnContainer = document.createElement('div');
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn-neon';
+            saveBtn.style.padding = '0.5rem 1rem';
+            saveBtn.style.fontSize = '0.75rem';
+            saveBtn.style.whiteSpace = 'nowrap';
+            saveBtn.style.borderRadius = '20px'; // Mas redondeado
+            
+            const isSaved = savedFronts.has(q.question_text.trim());
+            if (isSaved) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.style.cursor = 'not-allowed';
+                saveBtn.style.background = 'rgba(16, 185, 129, 0.2)'; // Verde apagado
+                saveBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                saveBtn.style.color = '#10b981';
+                saveBtn.style.boxShadow = 'none';
+            } else {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Flashcard';
+                // Añadir un color de acento azul/purpura para distinción
+                
+                saveBtn.onclick = async () => {
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+                    saveBtn.disabled = true;
+                    try {
+                        const token = await getValidToken();
+                        const res = await fetch(`${API_URL}/../training/flashcards/save-from-question`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({
+                                question: q,
+                                topic: q.topic || state.topic,
+                                moduleName: state.context || 'MEDICINA'
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            saveBtn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
+                            saveBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+                            saveBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                            saveBtn.style.color = '#10b981';
+                            saveBtn.style.boxShadow = 'none';
+                            saveBtn.style.opacity = '0.5';
+                            saveBtn.style.cursor = 'not-allowed';
+                        } else {
+                            saveBtn.innerHTML = originalText;
+                            saveBtn.disabled = false;
+                            alert('No se pudo guardar la flashcard: ' + (data.error || 'Error desconocido'));
+                        }
+                    } catch(e) {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.disabled = false;
+                        console.error('Error saving flashcard', e);
+                        alert('Error de conexión al guardar la flashcard');
+                    }
+                };
+            }
+            saveBtnContainer.appendChild(saveBtn);
+            headerDiv.appendChild(saveBtnContainer);
+        }
+
+        card.appendChild(headerDiv);
 
         // Imagen (si existe)
         if (q.image_url) {
@@ -713,7 +816,7 @@ window.showExamReview = function () {
             if (optIdx === q.correct_option_index) {
                 optDiv.classList.add('r-correct');
                 optDiv.innerHTML += ' <i class="fas fa-check-circle" style="float:right"></i>';
-            } else if (optIdx === ans.userAnswer) {
+            } else if (ans && optIdx === ans.userAnswer) {
                 // El usuario marcó esta y era incorrecta
                 optDiv.classList.add('r-wrong');
                 optDiv.innerHTML += ' <i class="fas fa-times-circle" style="float:right"></i>';
@@ -726,7 +829,7 @@ window.showExamReview = function () {
         // Explicación
         const expDiv = document.createElement('div');
         expDiv.className = 'review-explanation';
-        expDiv.innerHTML = `<strong><i class="fas fa-lightbulb"></i> Explicación:</strong><br><br>${q.explanation || 'Respuesta correcta basada en actas médicas oficiales.'}`;
+        expDiv.innerHTML = `<strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
         card.appendChild(expDiv);
 
         feed.appendChild(card);

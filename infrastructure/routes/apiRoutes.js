@@ -185,6 +185,8 @@ router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
 // Legacy/Direct Review Routes (Mantenidos por compatibilidad, pero redirigidos a lógica de mazos si es necesario)
 router.get('/training/flashcards/due', auth, quizController.getDueFlashcards); // Global due
 router.post('/training/flashcards/review', auth, quizController.reviewFlashcard);
+router.post('/training/flashcards/check-saved', auth, quizController.checkSavedFlashcards); // ✅ NUEVO
+router.post('/training/flashcards/save-from-question', auth, quizController.saveFlashcardFromQuestion); // ✅ NUEVO
 
 // --- Rutas de Quiz Battle (Arena / Arcade) ---
 const quizGameController = require('../../application/controllers/quizGameController');

@@ -557,6 +557,20 @@ class TrainingRepository {
     }
 
     /**
+     * Comprueba qué flashcards (por front_content) ya existen para un usuario en un mazo.
+     */
+    async checkExistingFlashcards(userId, deckId, fronts = []) {
+        if (!fronts || fronts.length === 0) return [];
+        
+        const query = `
+            SELECT front_content FROM user_flashcards
+            WHERE user_id = $1 AND deck_id = $2 AND front_content = ANY($3::text[])
+        `;
+        const result = await db.query(query, [userId, deckId, fronts]);
+        return result.rows.map(r => r.front_content);
+    }
+
+    /**
      * Obtener Flashcards pendientes de repaso (Due)
      */
     async getDueFlashcards(userId, deckId = null) {

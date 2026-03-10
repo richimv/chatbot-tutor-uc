@@ -95,7 +95,7 @@ class QuizController {
             }
 
             // Llamar al servicio de Entrenamiento para guardar historial y crear flashcards
-            // ✅ CONFIGURACIÓN EXPLÍCITA: "Simulacro Médico" SIEMPRE genera flashcards.
+            // ✅ CONFIGURACIÓN MODIFICADA: "Simulacro Médico" ya NO genera flashcards automáticamente.
             const result = await TrainingService.submitQuizResult(userId, {
                 topic,
                 areas, // Pasamos al servicio
@@ -105,7 +105,7 @@ class QuizController {
                 score,
                 totalQuestions: total_questions || 10,
                 questions: questions || []
-            }, { createFlashcards: true });
+            }, { createFlashcards: false });
 
             res.json({
                 success: true,
@@ -154,6 +154,58 @@ class QuizController {
         } catch (error) {
             console.error('Error reviewing flashcard:', error);
             res.status(500).json({ error: 'Error procesando repaso.' });
+        }
+    }
+
+    /**
+     * POST /api/training/flashcards/check-saved
+     * Comprueba si ciertas preguntas ya están guardadas como flashcards.
+     */
+    async checkSavedFlashcards(req, res) {
+        try {
+            const { questions, moduleName = 'MEDICINA' } = req.body;
+            const userId = req.user.id;
+
+            if (!questions || !Array.isArray(questions) || questions.length === 0) {
+                return res.json({ success: true, savedFronts: [] });
+            }
+
+            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
+            const deckId = await TrainingRepository.ensureSystemDeck(userId, moduleName);
+
+            const fronts = questions.map(q => q.question_text ? q.question_text.trim() : typeof q === 'string' ? q.trim() : '');
+            
+            const savedFronts = await TrainingRepository.checkExistingFlashcards(userId, deckId, fronts);
+            
+            res.json({ success: true, savedFronts });
+        } catch (error) {
+            console.error('Error checking saved flashcards:', error);
+            res.status(500).json({ error: 'Error comprobando flashcards guardadas.' });
+        }
+    }
+
+    /**
+     * POST /api/training/flashcards/save-from-question
+     * Guarda una o varias preguntas manualmente como flashcards.
+     */
+    async saveFlashcardFromQuestion(req, res) {
+        try {
+            const { question, topic, attemptId, moduleName = 'MEDICINA' } = req.body;
+            const userId = req.user.id;
+
+            if (!question) {
+                return res.status(400).json({ error: 'Faltan datos de la pregunta.' });
+            }
+
+            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
+            
+            // Reutilizamos el batch method enviando un array de 1 elemento
+            await TrainingRepository.createFlashcardsBatch(userId, Array.isArray(question) ? question : [question], topic || 'General', attemptId || null, moduleName);
+
+            res.json({ success: true, message: 'Flashcard guardada exitosamente.' });
+        } catch (error) {
+            console.error('Error saving flashcard from question:', error);
+            res.status(500).json({ error: 'Error guardando flashcard.' });
         }
     }
 
