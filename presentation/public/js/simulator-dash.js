@@ -28,21 +28,140 @@ const SimulatorDash = (() => {
     const examAreasGrouped = [
         {
             label: 'Ciencias Básicas',
-            areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología']
+            areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'],
+            bg: 'rgba(234, 179, 8, 0.7)',
+            border: '#eab308'
         },
         {
             label: 'Las 4 Grandes',
-            areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General']
+            areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'],
+            bg: 'rgba(59, 130, 246, 0.7)',
+            border: '#3b82f6'
         },
         {
             label: 'Especialidades Clínicas',
-            areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología']
+            areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología'],
+            bg: 'rgba(99, 102, 241, 0.7)',
+            border: '#6366f1'
         },
         {
             label: 'Salud Pública y Gestión',
-            areas: ['Salud Pública y Epidemiología', 'Gestión de Servicios de Salud', 'Ética Deontología e Interculturalidad', 'Medicina Legal', 'Investigación y Bioestadística', 'Cuidado Integral']
+            areas: ['Salud Pública y Epidemiología', 'Gestión de Servicios de Salud', 'Ética Deontología e Interculturalidad', 'Medicina Legal', 'Investigación y Bioestadística', 'Cuidado Integral'],
+            bg: 'rgba(16, 185, 129, 0.7)',
+            border: '#10b981'
         }
     ];
+
+    // Build lookup map for O(1) mapping of areas back to their parent group configuration
+    const areaToGroupMap = {};
+    examAreasGrouped.forEach((g, gIndex) => {
+        g.areas.forEach(a => {
+            areaToGroupMap[a] = {
+                groupLabel: g.label,
+                bg: g.bg,
+                border: g.border,
+                order: gIndex
+            };
+        });
+    });
+
+    /**
+     * Reusable Grouped Bar Chart Renderer
+     * @param {Object} cleanRadarMap - Key-Value map: { "AreaName": { correct: X, total: Y } }
+     */
+    function renderBarChart(cleanRadarMap) {
+        if (radarChartInst) radarChartInst.destroy();
+        const emptyState = document.getElementById('radar-empty-state');
+        const radarCanvas = document.getElementById('areasBarChart');
+        if (!radarCanvas) return;
+
+        // Flatten mapping to list of active items
+        const activeSubjects = Object.keys(cleanRadarMap)
+            .filter(subject => cleanRadarMap[subject].total > 0)
+            .map(subject => {
+                const acc = Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0;
+                // Find group info (fallback to 'Otros' if subject not found in predefined map)
+                const gInfo = areaToGroupMap[subject] || {
+                    groupLabel: 'Otros',
+                    bg: 'rgba(148, 163, 184, 0.7)', // Slate
+                    border: '#94a3b8',
+                    order: 99
+                };
+                return { name: subject, acc, ...gInfo };
+            });
+
+        if (activeSubjects.length === 0) {
+            if (emptyState) emptyState.style.display = 'flex';
+            radarCanvas.style.display = 'none';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        radarCanvas.style.display = 'block';
+
+        // Sort: First by Group Order (Categories clump together), then by Accuracy Descending
+        activeSubjects.sort((a, b) => {
+            if (a.order !== b.order) return a.order - b.order;
+            return b.acc - a.acc;
+        });
+
+        // Dynamic height adjustment based on bars
+        const container = document.getElementById('bar-chart-container');
+        if (container) {
+            const minHeight = Math.max(300, activeSubjects.length * 45); // Give each bar ample breathing room
+            container.style.height = `${minHeight}px`;
+        }
+
+        radarChartInst = new Chart(radarCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                // Return a 2D array for the label to visually split Area Name and Group Name onto separate lines on the tooltip/axis
+                labels: activeSubjects.map(a => [a.name, `(${a.groupLabel})`]),
+                datasets: [{
+                    label: 'Precisión %',
+                    data: activeSubjects.map(a => a.acc),
+                    backgroundColor: activeSubjects.map(a => a.bg),
+                    borderColor: activeSubjects.map(a => a.border),
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bars
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: 'Precisión (%)', color: '#64748b' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: '#cbd5e1',
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (ctx) => {
+                                // Extract the string label logic handling 2D array formatting
+                                const lines = ctx[0].label.split(',');
+                                return `${lines[0]} ${lines[1]}`;
+                            },
+                            label: (ctx) => `  Precisión: ${ctx.raw}%`
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -293,7 +412,11 @@ const SimulatorDash = (() => {
             areasGrid.style.flexDirection = 'column';
             areasGrid.style.gap = '1rem';
 
-            examAreasGrouped.forEach(group => {
+            const groupsToRender = target === 'SERUMS' 
+                ? examAreasGrouped.filter(g => g.label === 'Salud Pública y Gestión')
+                : examAreasGrouped;
+
+            groupsToRender.forEach(group => {
                 // Group header
                 const header = document.createElement('div');
                 header.style.cssText = 'font-size:0.75rem; color:#60a5fa; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid rgba(96,165,250,0.15);';
@@ -599,7 +722,7 @@ const SimulatorDash = (() => {
 
             if (scoreEl) scoreEl.textContent = kpis.avg_score || '0.0';
             if (accuracyEl) accuracyEl.textContent = `${Math.round(kpis.accuracy || 0)}%`;
-            if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} correctas / ${kpis.total_incorrect || 0} incorrectas`;
+            if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} / ${kpis.total_incorrect || 0}`;
             if (masteryEl) masteryEl.textContent = kpis.mastered_cards || 0;
 
             // Setup Flashcard Link
@@ -608,72 +731,28 @@ const SimulatorDash = (() => {
                 if (btnFlash) btnFlash.href = `repaso?deckId=${kpis.system_deck_id}`;
             }
 
-            // --- Render Radar Chart (Áreas) ---
-            if (radarChartInst) radarChartInst.destroy();
-
+            // --- Render Bar Chart (Áreas) ---
+            // --- Render Bar Chart (Áreas) ---
             if (kpis.radar_data && kpis.radar_data.length > 0) {
-                const emptyState = document.getElementById('radar-empty-state');
-                const radarCanvas = document.getElementById('radarChart');
+                // 🧹 Sanitizar y agrupar historial viejo corrupto
+                const cleanRadarMap = {};
+                kpis.radar_data.forEach(d => {
+                    let cleanSubject = d.subject || 'General';
+                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
 
-                if (emptyState) emptyState.style.display = 'none';
-                if (radarCanvas) {
-                    radarCanvas.style.display = 'block';
+                    if (!cleanRadarMap[cleanSubject]) {
+                        cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
+                    }
 
-                    // 🧹 Sanitizar y agrupar historial viejo corrupto
-                    const cleanRadarMap = {};
-                    kpis.radar_data.forEach(d => {
-                        let cleanSubject = d.subject || 'General';
-                        if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                    const safeTotal = parseInt(d.total || 0, 10);
+                    const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
+                    cleanRadarMap[cleanSubject].correct += rawCorrect;
+                    cleanRadarMap[cleanSubject].total += safeTotal;
+                });
 
-                        if (!cleanRadarMap[cleanSubject]) {
-                            cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
-                        }
-
-                        const safeTotal = parseInt(d.total || 0, 10);
-                        const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
-                        cleanRadarMap[cleanSubject].correct += rawCorrect;
-                        cleanRadarMap[cleanSubject].total += safeTotal;
-                    });
-
-                    const radarLabels = Object.keys(cleanRadarMap);
-                    const radarDataPts = radarLabels.map(subject =>
-                        Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0
-                    );
-
-                    radarChartInst = new Chart(radarCanvas.getContext('2d'), {
-                        type: 'radar',
-                        data: {
-                            labels: radarLabels,
-                            datasets: [{
-                                label: 'Precisión %',
-                                data: radarDataPts,
-                                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                                borderColor: '#3b82f6',
-                                pointBackgroundColor: '#60a5fa',
-                                pointBorderColor: '#fff',
-                                pointHoverBackgroundColor: '#fff',
-                                pointHoverBorderColor: '#3b82f6'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                r: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    ticks: { display: false, stepSize: 20 },
-                                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                    pointLabels: { color: '#cbd5e1', font: { size: 11 } },
-                                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
-                                }
-                            },
-                            plugins: {
-                                legend: { display: false }
-                            }
-                        }
-                    });
-                }
+                renderBarChart(cleanRadarMap);
+            } else {
+                renderBarChart({}); // Empty state handler
             }
 
             // Ocultar Loading
@@ -936,46 +1015,17 @@ const SimulatorDash = (() => {
             });
         }
 
-        // 3. Radar Chart Demo
-        const radarCanvas = document.getElementById('radarChart');
-        const radarEmpty = document.getElementById('radar-empty-state');
-        if (radarCanvas) {
-            if (radarEmpty) radarEmpty.style.display = 'none';
-            radarCanvas.style.display = 'block';
-            radarChartInst = new Chart(radarCanvas.getContext('2d'), {
-                type: 'radar',
-                data: {
-                    labels: ['Medicina', 'Cirugía', 'Pediatría', 'Gineco', 'Salud Pública'],
-                    datasets: [{
-                        label: 'Dominio % (Demo)',
-                        data: [85, 60, 75, 90, 65],
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderColor: '#60a5fa',
-                        pointBackgroundColor: '#60a5fa',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#60a5fa'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { display: false, stepSize: 20 },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            pointLabels: { color: '#cbd5e1', font: { size: 11 } },
-                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-        }
+        // 3. Bar Chart Demo
+        // 3. Bar Chart Demo
+        const demoAreasMap = {
+            'Ginecología y Obstetricia': { correct: 90, total: 100 },
+            'Medicina Interna': { correct: 85, total: 100 },
+            'Pediatría': { correct: 75, total: 100 },
+            'Salud Pública y Epidemiología': { correct: 65, total: 100 },
+            'Fisiología': { correct: 60, total: 100 },
+            'Cardiología': { correct: 50, total: 100 }
+        };
+        renderBarChart(demoAreasMap);
 
         // 4. Persistence: Check for local demo stats
         const localStatsStr = localStorage.getItem('guest_demo_stats');
@@ -984,24 +1034,20 @@ const SimulatorDash = (() => {
                 const stats = JSON.parse(localStatsStr);
                 if (scoreEl) scoreEl.textContent = stats.avgScore || '0';
                 if (accuracyEl) accuracyEl.textContent = `${stats.accuracy || 0}%`;
-                if (countsEl) countsEl.textContent = `${stats.correct || 0} correctas / ${stats.incorrect || 0} incorrectas`;
+                if (countsEl) countsEl.textContent = `${stats.correct || 0} / ${stats.incorrect || 0}`;
 
-                // Update Radar Chart if areaStats exists
-                if (stats.areaStats && radarChartInst) {
-                    const sortedLabels = Object.keys(stats.areaStats);
-                    const masteryData = sortedLabels.map(topic => {
+                // Update Bar Chart if areaStats exists
+                if (stats.areaStats) {
+                    renderBarChart(stats.areaStats);
+
+                    // Update mastery count (areas with >= 70% accuracy)
+                    let masteryCount = 0;
+                    Object.keys(stats.areaStats).forEach(topic => {
                         const area = stats.areaStats[topic];
-                        return Math.round((area.correct / area.total) * 100);
+                        if (area.total > 0 && (area.correct / area.total) >= 0.70) {
+                            masteryCount++;
+                        }
                     });
-
-                    radarChartInst.data.labels = sortedLabels;
-                    radarChartInst.data.datasets[0].data = masteryData;
-                    radarChartInst.data.datasets[0].label = 'Tu Dominio %';
-                    radarChartInst.update();
-
-                    // Update mastery count (areas with > 70% accuracy)
-                    const masteryCount = masteryData.filter(val => val >= 70).length;
-                    const masteryEl = document.getElementById('stat-mastery');
                     if (masteryEl) masteryEl.textContent = masteryCount;
                 }
             } catch (e) { console.error("Error parsing local stats", e); }

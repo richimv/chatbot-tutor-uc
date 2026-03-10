@@ -135,7 +135,14 @@
                     <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
                     <div class="stat-label">Precisión Global</div>
                     <div class="stat-value" id="stat-accuracy">--%</div>
-                    <div class="stat-sub" id="stat-counts-text">-- correctas / -- incorrectas</div>
+                    <div class="stat-sub">De todas tus respuestas</div>
+                </div>
+                <!-- Volume -->
+                <div class="stat-box" style="background: rgba(236, 72, 153, 0.05); border-color: rgba(236, 72, 153, 0.2);">
+                    <div class="stat-icon" style="color: #ec4899; background: rgba(236, 72, 153, 0.15);"><i class="fas fa-tasks"></i></div>
+                    <div class="stat-label" style="color: #fbcfe8; font-size: 0.8rem; letter-spacing: -0.5px;">Preguntas Activas</div>
+                    <div class="stat-value" id="stat-counts-text" style="color: #ec4899; font-size: 1.8rem;">-- / --</div>
+                    <div class="stat-sub" style="font-size: 0.75rem;">Correctas / Incorrectas</div>
                 </div>
                 <!-- Mastery -->
                 <div class="stat-box stat-box--mastery">
@@ -149,31 +156,18 @@
             <!-- 3. Analytics Section (Chart + Insights) -->
             <h3 class="section-heading"><i class="fas fa-stethoscope" style="color:#f472b6;"></i> Diagnóstico de
                 Rendimiento</h3>
+            
+            <!-- Row 1: Evolution & AI Insights -->
             <div class="detailed-row">
                 <!-- Evolution Chart -->
                 <div class="detail-card">
                     <h4 style="margin: 0 0 1rem 0; color: #fff;">Tendencia Histórica</h4>
-                    <div style="height: 250px; width: 100%;">
+                    <div style="height: 300px; width: 100%;">
                         <canvas id="evolutionChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Radar Chart (Áreas) -->
-                <div class="detail-card">
-                    <h4 style="margin: 0 0 1rem 0; color: #fff;">Dominio por Áreas</h4>
-                    <div style="height: 250px; width: 100%; position: relative;">
-                        <!-- Fallback State -->
-                        <div id="radar-empty-state"
-                            style="display: flex; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center;">
-                            Completa simulacros variados para ver tu rendimiento por área.
-                        </div>
-                        <canvas id="radarChart" style="display: none;"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Insights Card (Manual Trigger) -->
-            <div class="detailed-row" style="margin-top: 1.5rem;">
+                <!-- AI Insights Card (Manual Trigger) -->
                 <div class="detail-card"
                     style="position: relative; overflow: hidden; justify-content: flex-start; flex: 1;">
 
@@ -229,25 +223,20 @@
                             Actualizar Diagnóstico
                         </button>
                     </div>
-
                 </div>
             </div>
 
-            <!-- 4. Learning Path -->
-            <h3 class="section-heading"><i class="fas fa-rocket" style="color:#fbbf24;"></i> Seguir Aprendiendo</h3>
-            <div class="learning-grid">
-                <div class="action-card" style="cursor: default; opacity: 0.7;">
-                    <div class="action-icon" style="color: #a78bfa;"><i class="fas fa-book-open"></i></div>
-                    <div>
-                        <div style="font-weight: 600; color: #fff;">Guía de Estudio (IA)</div>
-                        <div style="font-size: 0.85rem; color: #94a3b8;">Generar resumen de temas fallados</div>
-                    </div>
-                </div>
-                <div class="action-card" style="cursor: default; opacity: 0.7;">
-                    <div class="action-icon" style="color: #fbbf24;"><i class="fas fa-video"></i></div>
-                    <div>
-                        <div style="font-weight: 600; color: #fff;">Recursos Recomendados</div>
-                        <div style="font-size: 0.85rem; color: #94a3b8;">Videos y lecturas curadas</div>
+            <!-- Row 2: Bar Chart (Áreas) Full-width -->
+            <div class="detailed-row" style="margin-top: 1.5rem; grid-template-columns: 1fr;">
+                <div class="detail-card">
+                    <h4 style="margin: 0 0 1rem 0; color: #fff;">Dominio por Áreas (Ranking)</h4>
+                    <div id="bar-chart-container" style="min-height: 300px; width: 100%; position: relative;">
+                        <!-- Fallback State -->
+                        <div id="radar-empty-state"
+                            style="display: flex; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center;">
+                            Completa simulacros variados para ver tu rendimiento por área.
+                        </div>
+                        <canvas id="areasBarChart" style="display: none;"></canvas>
                     </div>
                 </div>
             </div>

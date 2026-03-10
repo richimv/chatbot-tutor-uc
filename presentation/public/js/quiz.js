@@ -459,10 +459,22 @@ function renderQuestion() {
     elements.feedbackBox.classList.remove('error');
 
     // Render Opciones
+    const letters = ['A', 'B', 'C', 'D', 'E'];
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = opt;
+        
+        const letterSpan = document.createElement('span');
+        letterSpan.className = 'option-letter';
+        letterSpan.textContent = letters[index] || '';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'option-text';
+        textSpan.textContent = opt;
+
+        btn.appendChild(letterSpan);
+        btn.appendChild(textSpan);
+
         btn.onclick = () => handleAnswer(index, btn);
         elements.optionsGrid.appendChild(btn);
     });
@@ -709,11 +721,7 @@ window.showExamReview = async function () {
 
         // Contenedor flexible para Título/Pregunta y Botón
         const headerDiv = document.createElement('div');
-        headerDiv.style.display = 'flex';
-        headerDiv.style.justifyContent = 'space-between';
-        headerDiv.style.alignItems = 'flex-start';
-        headerDiv.style.marginBottom = '1.25rem';
-        headerDiv.style.gap = '1rem';
+        headerDiv.className = 'review-card-header';
 
         // Título/Pregunta
         const qText = document.createElement('div');
@@ -810,18 +818,35 @@ window.showExamReview = async function () {
         q.options.forEach((optText, optIdx) => {
             const optDiv = document.createElement('div');
             optDiv.className = 'review-opt';
-            optDiv.textContent = optText;
+            
+            // Icon Placeholder
+            const iconSpan = document.createElement('span');
+            iconSpan.style.width = '24px';
+            iconSpan.style.display = 'inline-block';
+            iconSpan.style.textAlign = 'center';
+
+            // Text content
+            const textSpan = document.createElement('span');
+            textSpan.style.flex = '1';
+            textSpan.textContent = optText;
 
             // Logica de colores
             if (optIdx === q.correct_option_index) {
                 optDiv.classList.add('r-correct');
-                optDiv.innerHTML += ' <i class="fas fa-check-circle" style="float:right"></i>';
+                iconSpan.innerHTML = '<i class="fas fa-check-circle" style="color: #34d399;"></i>';
+                textSpan.innerHTML = `<strong>${optText}</strong>`;
             } else if (ans && optIdx === ans.userAnswer) {
                 // El usuario marcó esta y era incorrecta
                 optDiv.classList.add('r-wrong');
-                optDiv.innerHTML += ' <i class="fas fa-times-circle" style="float:right"></i>';
+                iconSpan.innerHTML = '<i class="fas fa-times-circle" style="color: #f87171;"></i>';
+                textSpan.innerHTML = `<strong>${optText}</strong>`;
+            } else {
+                // Neutral option
+                iconSpan.innerHTML = '<i class="far fa-circle" style="color: #64748b;"></i>';
             }
 
+            optDiv.appendChild(iconSpan);
+            optDiv.appendChild(textSpan);
             optionsContainer.appendChild(optDiv);
         });
         card.appendChild(optionsContainer);
