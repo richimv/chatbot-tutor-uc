@@ -853,6 +853,30 @@ class RepasoManager {
     // --- API Helpers ---
 
     async fetchDeck(id) {
+        if (!this.token) {
+            // Mock System Folder for Guest
+            if (id === 'demo-system-1') {
+                return {
+                    id: 'demo-system-1',
+                    name: 'Repaso Medicina',
+                    icon: '🩺',
+                    type: 'SYSTEM',
+                    total_cards: 5,
+                    due_cards: 5
+                };
+            }
+            if (id === 'demo-user-1') {
+                return {
+                    id: 'demo-user-1',
+                    name: 'Mis Tarjetas',
+                    icon: '👶',
+                    type: 'USER',
+                    total_cards: 1,
+                    due_cards: 1
+                };
+            }
+        }
+
         const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${id}`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
@@ -862,6 +886,15 @@ class RepasoManager {
     }
 
     async fetchDecks(parentId) {
+        if (!this.token) {
+            if (parentId) return []; // No subdecks for demo root yet
+            // Return root guest decks
+            return [
+                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 5, due_cards: 5, mastery_percentage: 10 },
+                { id: 'demo-user-1', name: 'Mis Tarjetas', icon: '👶', type: 'USER', total_cards: 1, due_cards: 1, mastery_percentage: 0 }
+            ];
+        }
+
         let url = `${window.AppConfig.API_URL}/api/decks`;
         if (parentId) url += `?parentId=${parentId}`;
         const res = await fetch(url, {
@@ -873,6 +906,26 @@ class RepasoManager {
     }
 
     async fetchCards(deckId) {
+        if (!this.token) {
+            // Mock fallback cards for Guests viewing their fake UI folders
+            const demoDeck = [
+                { id: 'demo-fc-1', front_content: '¿Cuál es la tríada de Charcot para la Colangitis Aguda?', back_content: '1. Fiebre\n2. Ictericia\n3. Dolor en hipocondrio derecho', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Gastroenterología' },
+                { id: 'demo-fc-2', front_content: 'Mujer de 30 años con exoftalmos, bocio y taquicardia. TSH disminuida y T4 libre elevada. Diagnóstico más probable.', back_content: 'Enfermedad de Graves-Basedow', next_review_at: new Date(Date.now() + 86400000).toISOString(), interval_days: 5, last_quality: 3, topic: 'Endocrinología' },
+                { id: 'demo-fc-3', front_content: '¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?', back_content: 'Signo de Rovsing', next_review_at: new Date(Date.now() - 50000).toISOString(), interval_days: 1, last_quality: 1, topic: 'Cirugía General' }
+            ];
+
+            if (deckId === 'demo-system-1' || deckId === 'demo-system-fallback' || !deckId) {
+                 return demoDeck;
+            }
+            if (deckId === 'demo-user-1') {
+                 return [
+                    { id: 'd-6', front_content: 'Signo de Koplik indica', back_content: 'Sarampión.', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: 2 }
+                 ];
+            }
+            // Retornamos las tarjetas de demo-system-1 por defecto si el ID no cuadra para salvar la UI del Invitado
+            return demoDeck;
+        }
+
         const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'

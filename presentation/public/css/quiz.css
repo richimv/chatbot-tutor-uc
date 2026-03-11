@@ -89,7 +89,7 @@ body.quiz-body {
 }
 
 .question-text {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     line-height: 1.6;
     margin-bottom: 2.5rem;
     font-weight: 500;
@@ -112,7 +112,7 @@ body.quiz-body {
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     display: flex;
     align-items: center;
     gap: 1.25rem;
@@ -400,7 +400,7 @@ body.quiz-body {
 .review-card {
     background: rgba(20, 20, 20, 0.5); /* Lighter, cleaner */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Very subtle border */
-    padding: 2rem;
+    padding: 1.25rem;
     border-radius: 12px; /* Sharper */
     text-align: left;
     position: relative;
@@ -434,21 +434,21 @@ body.quiz-body {
 /* .review-card::before was deleted */
 
 .review-q-text {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     color: #f8fafc;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     line-height: 1.6;
     font-weight: 500;
 }
 
 .review-opt {
-    padding: 1rem 1.25rem;
-    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: #cbd5e1;
-    font-size: 1rem;
+    font-size: 1.1rem;
     transition: all 0.2s;
     display: flex;
     align-items: flex-start;
@@ -470,13 +470,13 @@ body.quiz-body {
 .r-wrong strong { color: #f87171; text-decoration: line-through; }
 
 .review-explanation {
-    margin-top: 2rem;
-    padding: 1.5rem;
+    margin-top: 1.25rem;
+    padding: 1rem;
     background: rgba(59, 130, 246, 0.05); /* Faint blue */
     border: 1px solid rgba(59, 130, 246, 0.1); /* Very subtle border */
     border-radius: 8px; /* Sharp corners */
     color: #e2e8f0;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     line-height: 1.6;
     /* Removed heavy left border for a flatter look */
 }
