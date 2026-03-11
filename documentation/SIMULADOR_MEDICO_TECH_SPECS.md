@@ -8,10 +8,10 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 ## 2. Arquitectura de Archivos
 
 ### 🖥️ Frontend (Presentation)
-- **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas.
-- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz).
-- **`js/simulator-dash.js`**: Lógica del dashboard: inicialización de charts, manejo de configuración y stats local/API.
-- **`js/quiz.js`**: Motor de interacción: manejo de estados (pregunta actual, respuestas), cronómetros, y batch loading.
+- **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas. Presenta un diseño de interfaz de usuario limpia (*Clean UI/Flat Design*) y utiliza gráficas renderizadas de forma nativa (HTML/CSS) sin pesadas librerías externas para visualización en móviles.
+- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz). Minimiza la fatiga visual al omitir bordes 3D o sombras redundantes. Además, la puntuación obtenida al finalizar se renderiza usando gráficos **SVG** nativos vectoriales, proporcionando animaciones `stroke-dashoffset` muy fluidas e interactivas.
+- **`js/simulator-dash.js`**: Lógica del dashboard: inicialización de charts, manejo de configuración y stats local/API. Contiene visualización *Empty State* para los usuarios sin historial (Demo).
+- **`js/quiz.js`**: Motor de interacción: manejo de estados (pregunta actual, respuestas), cronómetros, y batch loading. Permite la **creación manual e interactiva de Flashcards** desde el panel de revisión de desempeño.
 
 ### ⚙️ Backend (Application & Domain)
 - **`QuizController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites.
@@ -45,14 +45,14 @@ El usuario puede cruzar 3 variables fundamentales:
 ### 📊 Real-Feel Analytics (JSONB Intelligence)
 - Al finalizar, el sistema calcula el desempeño por cada una de las 23 áreas.
 - Estos datos se inyectan en una columna **JSONB** (`area_stats`).
-- El dashboard lee esta estructura para renderizar el **Carta de Radar (Radar Chart)**, permitiendo identificar fortalezas y debilidades subatómicas.
+- El dashboard lee esta estructura para renderizar un diagrama semántico ultra-rápido en barras HTML/CSS, permitiendo identificar fortalezas y debilidades subatómicas. A su vez, el **Motor IA Fallback** simula la presencia de Inteligencia Artificial para cuentas "Guest/Demo" imprimiendo evaluaciones y diagnósticos extendidos de la casuística particular de cada alumno.
 
 ---
 
 ## 4. Modos de Ejecución
-- ⚡ **Simulacro Rápido (10 q)**: Feedback instantáneo + Justificación Médica.
+- ⚡ **Simulacro Rápido (10 q)**: Feedback instantáneo + Justificación Médica. *(Modo accesible también para cuentas Invitadas/Demo con contadores de uso estricto para incentivar registro)*.
 - 📚 **Modo Estudio (20 q)**: Enfoque formativo sin presión de tiempo.
-- 🎯 **Simulacro Real (100 q)**: "Modo Ciego" (sin feedback), cronómetro de 120min y revisión diferida al final.
+- 🎯 **Simulacro Real (100 q)**: "Modo Ciego" (sin feedback), cronómetro de 120min y revisión diferida al final con generación de Flashcards selectivas.
 
 ---
 

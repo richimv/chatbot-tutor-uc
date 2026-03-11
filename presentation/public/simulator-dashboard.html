@@ -157,71 +157,17 @@
             <h3 class="section-heading"><i class="fas fa-stethoscope" style="color:#f472b6;"></i> Diagnóstico de
                 Rendimiento</h3>
             
-            <!-- Row 1: Evolution & AI Insights -->
-            <div class="detailed-row">
+            <!-- Row 1: Evolution -->
+            <div class="detailed-row" style="grid-template-columns: 1fr;">
                 <!-- Evolution Chart -->
                 <div class="detail-card">
                     <h4 style="margin: 0 0 1rem 0; color: #fff;">Tendencia Histórica</h4>
-                    <div style="height: 300px; width: 100%;">
+                    <div style="height: 300px; width: 100%; position: relative;">
+                        <!-- Empty State Fallback -->
+                        <div id="evolution-empty-state" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center; background: rgba(30, 41, 59, 0.5); z-index: 10;">
+                            Aún no hay datos de tendencia. ¡Completa simulacros para ver tu evolución gráfica!
+                        </div>
                         <canvas id="evolutionChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- AI Insights Card (Manual Trigger) -->
-                <div class="detail-card"
-                    style="position: relative; overflow: hidden; justify-content: flex-start; flex: 1;">
-
-                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
-                        <div
-                            style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 10px; color: #a78bfa;">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div>
-                            <h4 style="margin: 0; color: #fff;">Análisis de Patrones de Error</h4>
-                            <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Motor de Inteligencia Artificial
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- State 1: Ready to Analyze -->
-                    <div id="ai-initial-state"
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; padding: 1rem;">
-                        <p style="color: #94a3b8; font-size: 0.9rem;">
-                            Utiliza nuestra IA para identificar tus fortalezas y debilidades basándote en tu historial
-                            reciente.
-                        </p>
-                        <button id="btn-analyze-ai" class="btn-primary"
-                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; padding: 0.8rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
-                            <i class="fas fa-magic"></i> Generar Análisis
-                        </button>
-                    </div>
-
-                    <!-- State 2: Loading -->
-                    <div id="ai-loading-state"
-                        style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
-                        <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a78bfa; margin-bottom: 1rem;"></i>
-                        <p style="color: #cbd5e1;">Analizando tus respuestas...</p>
-                    </div>
-
-                    <!-- State 3: Results -->
-                    <div id="ai-results-state"
-                        style="display: none; color: #cbd5e1; font-size: 0.95rem; overflow-y: auto;">
-                        <div style="margin-bottom: 1rem;">
-                            <strong style="color: #22c55e; display: block; margin-bottom: 0.25rem;"><i
-                                    class="fas fa-check-circle"></i> Puntos Fuertes</strong>
-                            <p id="ai-strengths"
-                                style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
-                        </div>
-                        <div>
-                            <strong style="color: #f59e0b; display: block; margin-bottom: 0.25rem;"><i
-                                    class="fas fa-exclamation-triangle"></i> Áreas de Mejora</strong>
-                            <p id="ai-weaknesses"
-                                style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
-                        </div>
-                        <button id="btn-analyze-again"
-                            style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid #475569; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; width: 100%; transition: all 0.2s;">
-                            Actualizar Diagnóstico
-                        </button>
                     </div>
                 </div>
             </div>
@@ -229,14 +175,61 @@
             <!-- Row 2: Bar Chart (Áreas) Full-width -->
             <div class="detailed-row" style="margin-top: 1.5rem; grid-template-columns: 1fr;">
                 <div class="detail-card">
-                    <h4 style="margin: 0 0 1rem 0; color: #fff;">Dominio por Áreas (Ranking)</h4>
-                    <div id="bar-chart-container" style="min-height: 300px; width: 100%; position: relative;">
+                    <h4 style="margin: 0 0 1.5rem 0; color: #fff;">Dominio por Áreas (Ranking)</h4>
+                    <div id="bar-chart-container" style="min-height: 200px; width: 100%; position: relative;">
                         <!-- Fallback State -->
                         <div id="radar-empty-state"
-                            style="display: flex; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center;">
+                            style="display: flex; height: 100%; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center; min-height: 200px;">
                             Completa simulacros variados para ver tu rendimiento por área.
                         </div>
-                        <canvas id="areasBarChart" style="display: none;"></canvas>
+                        <!-- Native HTML Bars Container -->
+                        <div id="native-bars-container" style="display: none; display: flex; flex-direction: column; gap: 1.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: AI Insights -->
+            <div class="detailed-row" style="margin-top: 1.5rem; grid-template-columns: 1fr;">
+                <div class="detail-card" style="position: relative; overflow: hidden; justify-content: flex-start; flex: 1;">
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                        <div style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 10px; color: #a78bfa;">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #fff;">Análisis de Patrones de Error</h4>
+                            <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Motor de Inteligencia Artificial</p>
+                        </div>
+                    </div>
+
+                    <!-- State 1: Ready to Analyze -->
+                    <div id="ai-initial-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; padding: 1rem;">
+                        <p style="color: #94a3b8; font-size: 0.9rem;">
+                            Utiliza nuestra IA para identificar tus fortalezas y debilidades basándote en tu historial reciente.
+                        </p>
+                        <button id="btn-analyze-ai" class="btn-primary" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; padding: 0.8rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
+                            <i class="fas fa-magic"></i> Generar Análisis
+                        </button>
+                    </div>
+
+                    <!-- State 2: Loading -->
+                    <div id="ai-loading-state" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                        <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a78bfa; margin-bottom: 1rem;"></i>
+                        <p style="color: #cbd5e1;">Analizando tus respuestas...</p>
+                    </div>
+
+                    <!-- State 3: Results -->
+                    <div id="ai-results-state" style="display: none; color: #cbd5e1; font-size: 0.95rem; overflow-y: auto;">
+                        <div style="margin-bottom: 1rem;">
+                            <strong style="color: #22c55e; display: block; margin-bottom: 0.25rem;"><i class="fas fa-check-circle"></i> Puntos Fuertes</strong>
+                            <p id="ai-strengths" style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
+                        </div>
+                        <div>
+                            <strong style="color: #f59e0b; display: block; margin-bottom: 0.25rem;"><i class="fas fa-exclamation-triangle"></i> Áreas de Mejora</strong>
+                            <p id="ai-weaknesses" style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;">--</p>
+                        </div>
+                        <button id="btn-analyze-again" style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid #475569; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; width: 100%; transition: all 0.2s;">
+                            Actualizar Diagnóstico
+                        </button>
                     </div>
                 </div>
             </div>

@@ -34,6 +34,7 @@ const elements = {
     nextBtn: document.getElementById('nextBtn'),
     resultsOverlay: document.getElementById('resultsOverlay'),
     scoreCircle: document.getElementById('scoreCircle'),
+    svgScoreProgress: document.getElementById('svgScoreProgress'),
     finalScore: document.getElementById('finalScore')
 };
 
@@ -592,10 +593,20 @@ async function finishQuiz() {
     const denominator = state.maxQuestions; // 🎯 Siempre sobre el total configurado (10, 20, 100)
     elements.finalScore.textContent = `${state.score}/${denominator}`;
 
-    // Calcular porcentaje para el círculo (CSS Conic Gradient)
+    // Calcular porcentaje para el círculo (SVG dashoffset)
     const actualTotal = denominator || 1;
     const pct = (state.score / actualTotal) * 100;
-    elements.scoreCircle.style.backgroundImage = `conic-gradient(#22c55e ${pct}%, transparent ${pct}%)`;
+    
+    // Circunferencia = 2 * PI * r(45) = 282.74
+    const circumference = 283; 
+    const dashoffset = circumference - (pct / 100) * circumference;
+    
+    if (elements.svgScoreProgress) {
+        // Trigger fluid animation slightly after modal opens
+        setTimeout(() => {
+            elements.svgScoreProgress.style.strokeDashoffset = dashoffset;
+        }, 200);
+    }
 
     elements.resultsOverlay.classList.add('active');
 
@@ -819,12 +830,6 @@ window.showExamReview = async function () {
             const optDiv = document.createElement('div');
             optDiv.className = 'review-opt';
             
-            // Icon Placeholder
-            const iconSpan = document.createElement('span');
-            iconSpan.style.width = '24px';
-            iconSpan.style.display = 'inline-block';
-            iconSpan.style.textAlign = 'center';
-
             // Text content
             const textSpan = document.createElement('span');
             textSpan.style.flex = '1';
@@ -833,19 +838,13 @@ window.showExamReview = async function () {
             // Logica de colores
             if (optIdx === q.correct_option_index) {
                 optDiv.classList.add('r-correct');
-                iconSpan.innerHTML = '<i class="fas fa-check-circle" style="color: #34d399;"></i>';
                 textSpan.innerHTML = `<strong>${optText}</strong>`;
             } else if (ans && optIdx === ans.userAnswer) {
                 // El usuario marcó esta y era incorrecta
                 optDiv.classList.add('r-wrong');
-                iconSpan.innerHTML = '<i class="fas fa-times-circle" style="color: #f87171;"></i>';
                 textSpan.innerHTML = `<strong>${optText}</strong>`;
-            } else {
-                // Neutral option
-                iconSpan.innerHTML = '<i class="far fa-circle" style="color: #64748b;"></i>';
             }
 
-            optDiv.appendChild(iconSpan);
             optDiv.appendChild(textSpan);
             optionsContainer.appendChild(optDiv);
         });

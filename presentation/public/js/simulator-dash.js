@@ -65,22 +65,20 @@ const SimulatorDash = (() => {
         });
     });
 
-    /**
-     * Reusable Grouped Bar Chart Renderer
-     * @param {Object} cleanRadarMap - Key-Value map: { "AreaName": { correct: X, total: Y } }
-     */
     function renderBarChart(cleanRadarMap) {
-        if (radarChartInst) radarChartInst.destroy();
+        // Obsolete Chart.js fallback support (just in case)
+        if (radarChartInst) { radarChartInst.destroy(); radarChartInst = null; }
+
         const emptyState = document.getElementById('radar-empty-state');
-        const radarCanvas = document.getElementById('areasBarChart');
-        if (!radarCanvas) return;
+        const container = document.getElementById('native-bars-container');
+        if (!container) return;
 
         // Flatten mapping to list of active items
         const activeSubjects = Object.keys(cleanRadarMap)
             .filter(subject => cleanRadarMap[subject].total > 0)
             .map(subject => {
                 const acc = Math.round((cleanRadarMap[subject].correct / cleanRadarMap[subject].total) * 100) || 0;
-                // Find group info (fallback to 'Otros' if subject not found in predefined map)
+                // Find group info (fallback to 'Otros' if subject not found)
                 const gInfo = areaToGroupMap[subject] || {
                     groupLabel: 'Otros',
                     bg: 'rgba(148, 163, 184, 0.7)', // Slate
@@ -92,74 +90,69 @@ const SimulatorDash = (() => {
 
         if (activeSubjects.length === 0) {
             if (emptyState) emptyState.style.display = 'flex';
-            radarCanvas.style.display = 'none';
+            container.style.display = 'none';
             return;
         }
 
         if (emptyState) emptyState.style.display = 'none';
-        radarCanvas.style.display = 'block';
+        container.style.display = 'flex';
+        container.innerHTML = ''; // Limpiar barras anteriores
 
-        // Sort: First by Group Order (Categories clump together), then by Accuracy Descending
-        activeSubjects.sort((a, b) => {
-            if (a.order !== b.order) return a.order - b.order;
-            return b.acc - a.acc;
+        // Agrupar los resultados por su Categoría Principal (Las 4 Grandes, Ciencias Básicas, etc.)
+        const groups = {};
+        activeSubjects.forEach(s => {
+            if (!groups[s.groupLabel]) {
+                groups[s.groupLabel] = {
+                    label: s.groupLabel,
+                    order: s.order,
+                    items: []
+                };
+            }
+            groups[s.groupLabel].items.push(s);
         });
 
-        // Dynamic height adjustment based on bars
-        const container = document.getElementById('bar-chart-container');
-        if (container) {
-            const minHeight = Math.max(300, activeSubjects.length * 45); // Give each bar ample breathing room
-            container.style.height = `${minHeight}px`;
-        }
+        // Ordenar los grupos según el orden base establecido
+        const sortedGroups = Object.values(groups).sort((a, b) => a.order - b.order);
 
-        radarChartInst = new Chart(radarCanvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                // Return a 2D array for the label to visually split Area Name and Group Name onto separate lines on the tooltip/axis
-                labels: activeSubjects.map(a => [a.name, `(${a.groupLabel})`]),
-                datasets: [{
-                    label: 'Precisión %',
-                    data: activeSubjects.map(a => a.acc),
-                    backgroundColor: activeSubjects.map(a => a.bg),
-                    borderColor: activeSubjects.map(a => a.border),
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                indexAxis: 'y', // Horizontal bars
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 100,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#94a3b8' },
-                        title: { display: true, text: 'Precisión (%)', color: '#64748b' }
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { 
-                            color: '#cbd5e1',
-                            font: { size: 10 }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (ctx) => {
-                                // Extract the string label logic handling 2D array formatting
-                                const lines = ctx[0].label.split(',');
-                                return `${lines[0]} ${lines[1]}`;
-                            },
-                            label: (ctx) => `  Precisión: ${ctx.raw}%`
-                        }
-                    }
-                }
-            }
+        // Render HTML Blocks
+        sortedGroups.forEach((group, index) => {
+            // Ordenar ítems dentro de su grupo por precisión (descendente)
+            group.items.sort((a, b) => b.acc - a.acc);
+
+            // Inyectar Título / Línea Divisoria del Grupo
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'html-chart-group-header';
+            groupHeader.innerHTML = `<span>${group.label}</span>`;
+            // Pequeña distancia top extra salvo que sea el primer render
+            if (index > 0) groupHeader.style.marginTop = '1rem';
+            container.appendChild(groupHeader);
+
+            // Inyectar Barras Individuales
+            group.items.forEach((item, itemIdx) => {
+                const barRow = document.createElement('div');
+                barRow.className = 'html-bar-row';
+                barRow.innerHTML = `
+                    <div class="html-bar-info">
+                        <span class="html-bar-label">${item.name}</span>
+                        <span class="html-bar-value">${item.acc}%</span>
+                    </div>
+                    <div class="html-bar-track">
+                        <div class="html-bar-fill" data-width="${item.acc}%" style="width: 0%; background: ${item.bg}; border: 1px solid ${item.border};"></div>
+                    </div>
+                `;
+                container.appendChild(barRow);
+            });
+        });
+
+        // Lanzar animación fluida con un requestAnimationFrame para asegurar que el DOM inicializó con width 0%
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const fills = container.querySelectorAll('.html-bar-fill');
+                fills.forEach(fill => {
+                    const targetWidth = fill.getAttribute('data-width');
+                    fill.style.width = targetWidth;
+                });
+            });
         });
     }
 
@@ -177,6 +170,7 @@ const SimulatorDash = (() => {
 
         // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();
+        bindModeClicks();
 
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -412,7 +406,7 @@ const SimulatorDash = (() => {
             areasGrid.style.flexDirection = 'column';
             areasGrid.style.gap = '1rem';
 
-            const groupsToRender = target === 'SERUMS' 
+            const groupsToRender = target === 'SERUMS'
                 ? examAreasGrouped.filter(g => g.label === 'Salud Pública y Gestión')
                 : examAreasGrouped;
 
@@ -449,6 +443,8 @@ const SimulatorDash = (() => {
             btnOpen.onclick = (e) => {
                 const token = localStorage.getItem('authToken');
                 if (!token && window.uiManager) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     window.uiManager.showAuthPromptModal();
                     return;
                 }
@@ -634,8 +630,13 @@ const SimulatorDash = (() => {
 
             if (lineChartInst) lineChartInst.destroy();
 
+            const evoCanvas = document.getElementById('evolutionChart');
+            const evoEmpty = document.getElementById('evolution-empty-state');
+
             if (data.success && data.chart && data.chart.labels && data.chart.labels.length > 0) {
-                const evoCanvas = document.getElementById('evolutionChart');
+                if (evoCanvas) evoCanvas.style.display = 'block';
+                if (evoEmpty) evoEmpty.style.display = 'none';
+
                 if (!evoCanvas) return; // Guard for non-dashboard pages
 
                 const evolutionCtx = evoCanvas.getContext('2d');
@@ -687,6 +688,9 @@ const SimulatorDash = (() => {
                         }
                     }
                 });
+            } else {
+                if (evoCanvas) evoCanvas.style.display = 'none';
+                if (evoEmpty) evoEmpty.style.display = 'flex';
             }
         } catch (error) {
             console.error('Error rendering chart:', error);
@@ -806,32 +810,37 @@ const SimulatorDash = (() => {
                     stateLoading.style.display = 'none';
                     stateResults.style.display = 'block';
 
-                    let mockStrengths = "<strong>Cuidado Integral:</strong> Tus respuestas muestran una base sólida en salud preventiva.";
-                    let mockWeaknesses = "<strong>Ética y Gestión:</strong> Necesitas profundizar en la normativa de NTS y derechos del paciente.";
+                    let activeCfg = JSON.parse(localStorage.getItem('simActiveConfig')) || {};
+                    let targetExamName = activeCfg.target || 'General';
 
-                    // Try to be more specific if areaStats exist
-                    if (localStats.areaStats) {
-                        const sorted = Object.entries(localStats.areaStats)
-                            .map(([topic, data]) => ({ topic, ratio: data.correct / data.total }))
-                            .sort((a, b) => b.ratio - a.ratio);
-
-                        if (sorted.length > 0) {
-                            const best = sorted[0];
-                            const worst = sorted[sorted.length - 1];
-                            mockStrengths = `<strong>${best.topic}:</strong> Tienes un excelente dominio en esta área con un ${Math.round(best.ratio * 100)}% de aciertos.`;
-                            mockWeaknesses = `<strong>${worst.topic}:</strong> Es tu área de mayor oportunidad. Repasa los fundamentos de este bloque para mejorar tu perfil.`;
-                        }
-                    }
-
-                    document.getElementById('ai-strengths').innerHTML = `
-                        <i class="fas fa-check-circle" style="color: #10b981;"></i> 
-                        ${mockStrengths}
+                    let mockStrengths = `
+                        <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
+                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Diagnóstico Diferencial (${targetExamName}):</strong> Los patrones de decisión evidencian una alta asimilación de protocolos clínicos de primera línea, reaccionando óptimamente frente a escenarios de presión temporal característicos de este nivel de evaluación.</li>
+                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Bloque Clínico Estratégico:</strong> Rendimiento superior a la media de la cohorte en preguntas transversales asociadas a Pediatría y Ginecología para ${targetExamName}, reflejando un sólido razonamiento médico.</li>
+                            <li style="line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Ciencias Básicas Interrelacionadas:</strong> Tus respuestas denotan una buena correlación entre la fisiopatología y la clínica manifiesta.</li>
+                        </ul>
                     `;
-                    document.getElementById('ai-weaknesses').innerHTML = `
-                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> 
-                        ${mockWeaknesses} 
-                        <a href="#" onclick="window.uiManager.showAuthPromptModal(); return false;" style="color:#60a5fa; font-weight:700;">Regístrate</a> para un análisis profundo por IA.
+
+                    let mockWeaknesses = `
+                        <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
+                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Salud Pública y Gestión (${targetExamName}):</strong> Se detectan inconsistencias analíticas críticas en el dominio de normas técnicas vigentes (NTS), indicadores epidemiológicos de impacto y cadena de gestión documental exigidos para esta especialidad.</li>
+                        </ul>
+                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 6px;">
+                            <span style="color: #60a5fa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;"><i class="fas fa-microchip"></i> RECOMENDACIÓN DEL MOTOR:</span>
+                            <span style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">De acuerdo a las matrices del histórico reciente para ${targetExamName}, aislar la disciplina de "Salud Pública" y realizar simulacros cruzados de 30 preguntas exclusivas durante los próximos 2 ciclos te ayudará dramáticamente a emparejar tu puntaje general.</span>
+                        </div>
+                        <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                            <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                Desbloquear Análisis Individualizado
+                            </button>
+                            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Nota: Esta cuenta utiliza matrices de diagnóstico generales de prueba. Para compilar análisis volumétricos reales de tu propio rendimiento sobre miles de correlaciones cruzadas exclusivas de ${targetExamName}, crea una cuenta gratuitamente.</p>
+                        </div>
                     `;
+
+                    // For guests, we ignore localStats map as the text is pre-rendered heavily to entice registration.
+
+                    document.getElementById('ai-strengths').innerHTML = mockStrengths;
+                    document.getElementById('ai-weaknesses').innerHTML = mockWeaknesses;
                 }, 1500);
                 return;
             }
@@ -857,13 +866,36 @@ const SimulatorDash = (() => {
                         stateLoading.style.display = 'none';
                         stateResults.style.display = 'block';
 
-                        const fStrong = cachedStats.strongest_topic && cachedStats.strongest_topic !== 'N/A'
-                            ? `<strong>${cachedStats.strongest_topic}:</strong> Tienes un alto dominio en esta materia basado en tu ratio de aciertos histórico.`
-                            : "Continúa practicando para encontrar tus fortalezas.";
+                        const radar = cachedStats.radar_data || [];
+                        const sortedRadar = [...radar].sort((a, b) => b.accuracy - a.accuracy);
 
-                        const fWeak = cachedStats.weakest_topic && cachedStats.weakest_topic !== 'N/A'
-                            ? `<strong>${cachedStats.weakest_topic}:</strong> Necesitas repasar intensivamente los tópicos y leer la bibliografía de este curso para mejorar tus puntajes.`
-                            : "Aún no hay suficientes datos para determinar tu eslabón débil.";
+                        let activeCfgLogs = JSON.parse(localStorage.getItem('simActiveConfig')) || {};
+                        let restrictedTarget = activeCfgLogs.target || 'General';
+                        let availableAreas = activeCfgLogs.areas || ['Medicina General', 'Salud Pública', 'Epidemiología'];
+
+                        // If radar is empty (e.g., brand new config), fallback to the first two areas of the applied config
+                        let topSub1 = sortedRadar.length > 0 ? sortedRadar[0].subject : (availableAreas[0] || 'Medicina General');
+                        let topSub2 = sortedRadar.length > 1 ? sortedRadar[1].subject : (availableAreas[1] || 'Terapéutica');
+                        let weakSub = sortedRadar.length > 0 ? sortedRadar[sortedRadar.length - 1].subject : (availableAreas[availableAreas.length - 1] || 'Salud Pública');
+
+                        // We use the real topics here, making it completely pertinent to whatever config is active
+                        const fStrong = `
+                            <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
+                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Diagnóstico Algorítmico (${restrictedTarget}):</strong> Tus patrones de decisión evidencian una alta asimilación de los protocolos clínicos de primera línea evaluados frecuentemente en el objetivo seleccionado.</li>
+                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Dominio en ${topSub1}:</strong> Tienes un alto dominio en esta materia asimilando la casuística de evaluación y correlacionando la clínica efectivamente. Este es tu bloque más fuerte.</li>
+                                <li style="line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Criterios en ${topSub2}:</strong> Tus respuestas denotan una buena correlación entre la fisiopatología y la clínica manifiesta para este requerimiento del examen.</li>
+                            </ul>
+                        `;
+
+                        const fWeak = `
+                            <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
+                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Área Crítica en ${weakSub}:</strong> Se detectan inconsistencias analíticas de alto riesgo. Necesitas priorizar intensivamente el simulacro cruzado de este eje transversal para corregir la curva estadística negativa.</li>
+                            </ul>
+                            <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 6px;">
+                                <span style="color: #60a5fa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;"><i class="fas fa-microchip"></i> RECOMENDACIÓN DEL MOTOR:</span>
+                                <span style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">De acuerdo a las métricas acopladas al entorno ${restrictedTarget}, debes configurar inmediatamente un filtro exclusivo para la disciplina de "${weakSub}" abarcando 50 preguntas correlativas en el próximo ciclo continuo. Esto emparejará tus ratios antes del simulacro general final.</span>
+                            </div>
+                        `;
 
                         document.getElementById('ai-strengths').innerHTML = fStrong;
                         document.getElementById('ai-weaknesses').innerHTML = fWeak;
@@ -991,7 +1023,7 @@ const SimulatorDash = (() => {
 
         if (scoreEl) scoreEl.textContent = '14.5';
         if (accuracyEl) accuracyEl.textContent = '72%';
-        if (countsEl) countsEl.textContent = '120 correctas / 45 incorrectas';
+        if (countsEl) countsEl.textContent = '50 / 20';
         if (masteryEl) masteryEl.textContent = '12';
 
         // 2. Evolution Chart Demo

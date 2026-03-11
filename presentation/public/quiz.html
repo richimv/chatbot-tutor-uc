@@ -87,7 +87,13 @@
     <div id="resultsOverlay" class="results-overlay">
         <div class="results-card">
             <h2 style="margin-bottom: 1rem;">¡Simulacro Finalizado!</h2>
-            <div class="score-circle" id="scoreCircle" style="background: conic-gradient(#22c55e 0%, #1f1f1f 0%);">
+            <div class="score-circle-svg-container" id="scoreCircle">
+                <svg viewBox="0 0 100 100" class="svg-score-chart">
+                    <!-- Aro estático de fondo -->
+                    <circle class="svg-circle-bg" cx="50" cy="50" r="45"></circle>
+                    <!-- Aro animado de progreso -->
+                    <circle class="svg-circle-progress" id="svgScoreProgress" cx="50" cy="50" r="45"></circle>
+                </svg>
                 <span class="score-value" id="finalScore">0/10</span>
             </div>
             <p style="color: #94a3b8; margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
