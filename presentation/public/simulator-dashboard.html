@@ -261,9 +261,14 @@
                     <input type="radio" name="examTarget" value="SERUMS">
                     <div class="target-card">SERUMS</div>
                 </label>
-                <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="RESIDENTADO">
-                    <div class="target-card">RESIDENTADO</div>
+                <!-- [DESACTIVADO TEMPORALMENTE] Residentado requiere mayor volumen de preguntas. 
+                     Para reactivar: quitar 'disabled' del input y retirar la clase '--disabled' del label. -->
+                <label class="exam-target-option exam-target-option--disabled" title="Estamos ampliando el banco de preguntas para Residentado.">
+                    <input type="radio" name="examTarget" value="RESIDENTADO" disabled>
+                    <div class="target-card">
+                        RESIDENTADO 
+                        <span style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Trabajando)</span>
+                    </div>
                 </label>
             </div>
             <div id="serums-info-alert"

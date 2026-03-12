@@ -529,7 +529,8 @@ const SimulatorDash = (() => {
                         defaultAreas = examAreasGrouped.find(g => g.label === 'Salud Pública y Gestión').areas;
                         document.getElementById('config-difficulty').value = 'Básico'; // Sugerido
                     } else if (t === 'RESIDENTADO') {
-                        // Todos (A, B, C, D)
+                        // [NOTA] Residentado actualmente desactivado en HTML/CSS por falta de stock.
+                        // Cuando se reactive, este bloque asegurará la configuración correcta.
                         defaultAreas = examAreasGrouped.flatMap(g => g.areas);
                         document.getElementById('config-difficulty').value = 'Avanzado';
                     }
