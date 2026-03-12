@@ -2,256 +2,261 @@ const DeckService = require('../../domain/services/deckService');
 
 class DeckController {
     /**
+     * Helper to get common user context.
+     */
+    _getUserContext = (req) => {
+        return {
+            userId: req.user ? req.user.id : 'GUEST',
+            isGuest: !req.user
+        };
+    }
+
+    /**
      * GET /api/decks
      * Query Params: ?parentId=uuid (optional)
      */
-    async listDecks(req, res) {
+    listDecks = async (req, res) => {
         try {
-            const userId = req.user ? req.user.id : 'GUEST'; // Use GUEST marker
-            const { parentId } = req.query; // Supports null or undefined for Roots
+            const { userId } = this._getUserContext(req);
+            const { parentId } = req.query;
             const decks = await DeckService.getUserDecks(userId, parentId || null);
             res.json({ success: true, decks });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error fetching decks' });
+            console.error('[listDecks] Error:', error);
+            res.status(500).json({ error: 'Error al obtener los mazos' });
         }
     }
 
     /**
      * GET /api/decks/:deckId
      */
-    async getDeckById(req, res) {
+    getDeckById = async (req, res) => {
         try {
-            const userId = req.user ? req.user.id : 'GUEST';
+            const { userId, isGuest } = this._getUserContext(req);
             const { deckId } = req.params;
             const deck = await DeckService.getDeckById(userId, deckId);
 
             if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
 
-            // Security: If Guest, ensure it's a SYSTEM deck
-            if (!req.user && deck.type !== 'SYSTEM') {
-                return res.status(403).json({ error: 'Acceso denegado' });
+            // Security: Guests only for SYSTEM decks
+            if (isGuest && deck.type !== 'SYSTEM') {
+                return res.status(403).json({ error: 'Acceso denegado: Inicia sesión para ver este mazo' });
             }
 
             res.json({ success: true, deck });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error fetching deck' });
+            console.error('[getDeckById] Error:', error);
+            res.status(500).json({ error: 'Error al obtener el mazo' });
         }
     }
 
     /**
      * POST /api/decks
      */
-    async createDeck(req, res) {
+    createDeck = async (req, res) => {
         try {
             const { name, icon, parentId } = req.body;
-            const userId = req.user.id;
+            const { userId, isGuest } = this._getUserContext(req);
 
-            if (!name) return res.status(400).json({ error: 'Name is required' });
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
+            if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
             const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null);
             res.json({ success: true, deck });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error creating deck' });
+            console.error('[createDeck] Error:', error);
+            res.status(500).json({ error: 'Error al crear el mazo' });
         }
     }
 
     /**
      * PUT /api/decks/:deckId
      */
-    async updateDeck(req, res) {
+    updateDeck = async (req, res) => {
         try {
             const { deckId } = req.params;
             const { name, icon } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
-            if (!name) return res.status(400).json({ error: 'Name is required' });
+            if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
             const deck = await DeckService.updateDeck(userId, deckId, name, icon);
             res.json({ success: true, deck });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error updating deck' });
+            console.error('[updateDeck] Error:', error);
+            res.status(500).json({ error: 'Error al actualizar el mazo' });
         }
     }
 
     /**
      * GET /api/decks/:deckId/cards/due
      */
-    async getDueCards(req, res) {
+    getDueCards = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
             const cards = await DeckService.getDueCards(userId, deckId);
             res.json({ success: true, cards });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error fetching cards' });
+            console.error('[getDueCards] Error:', error);
+            res.status(500).json({ error: 'Error al obtener tarjetas pendientes' });
         }
     }
 
     /**
      * GET /api/decks/:deckId/cards
      */
-    async listCards(req, res) {
+    listCards = async (req, res) => {
         try {
             const { deckId } = req.params;
+            const { userId, isGuest } = this._getUserContext(req);
 
             // Security: If Guest, ensure it's a SYSTEM deck
-            if (!req.user) {
+            if (isGuest) {
                 const deck = await DeckService.getDeckById('GUEST', deckId);
                 if (!deck || deck.type !== 'SYSTEM') {
-                    return res.status(403).json({ error: 'Acceso denegado' });
+                    return res.status(403).json({ error: 'Acceso denegado: No puedes ver estas tarjetas' });
                 }
             }
 
             const cards = await DeckService.getDeckCards(deckId);
             res.json({ success: true, cards });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error listing cards' });
+            console.error('[listCards] Error:', error);
+            res.status(500).json({ error: 'Error al listar tarjetas' });
         }
     }
 
     /**
      * POST /api/decks/:deckId/cards
      */
-    async addCard(req, res) {
+    addCard = async (req, res) => {
         try {
             const { deckId } = req.params;
             const { front, back } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
-            if (!front || !back) return res.status(400).json({ error: 'Data missing' });
+            if (!front || !back) return res.status(400).json({ error: 'Faltan datos de la tarjeta' });
 
             const card = await DeckService.addCard(userId, deckId, front, back);
             res.json({ success: true, card });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error adding card' });
+            console.error('[addCard] Error:', error);
+            res.status(500).json({ error: 'Error al añadir tarjeta' });
         }
     }
 
     /**
      * PUT /api/decks/:deckId/cards/reorder
-     * Body: { sortedIds: [uuid1, uuid2, ...] }
      */
-    async reorderCards(req, res) {
+    reorderCards = async (req, res) => {
         try {
             const { deckId } = req.params;
             const { sortedIds } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
             if (!sortedIds || !Array.isArray(sortedIds)) {
-                return res.status(400).json({ error: 'Array of sortedIds is required' });
+                return res.status(400).json({ error: 'Se requiere una lista de IDs para reordenar' });
             }
 
             await DeckService.updateCardsOrder(userId, deckId, sortedIds);
             res.json({ success: true });
         } catch (error) {
-            console.error("Error reordering cards:", error);
-            res.status(500).json({ error: 'Error reordering cards' });
+            console.error('[reorderCards] Error:', error);
+            res.status(500).json({ error: 'Error al reordenar tarjetas' });
         }
     }
 
     /**
      * DELETE /api/cards/batch
-     * Body: { cardIds: [uuid1, uuid2, ...] }
      */
-    async deleteBulkCards(req, res) {
+    deleteBulkCards = async (req, res) => {
         try {
             const { cardIds } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
             if (!cardIds || !Array.isArray(cardIds) || cardIds.length === 0) {
-                return res.status(400).json({ error: 'Array of cardIds is required' });
+                return res.status(400).json({ error: 'Se requieren IDs de tarjetas' });
             }
 
             await DeckService.deleteBulkCards(userId, cardIds);
             res.json({ success: true, deletedCount: cardIds.length });
         } catch (error) {
-            console.error("Error batch deleting cards:", error);
-            res.status(500).json({ error: 'Error batch deleting cards' });
+            console.error('[deleteBulkCards] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar tarjetas masivamente' });
         }
     }
 
     /**
      * PUT /api/cards/:cardId
      */
-    async updateCard(req, res) {
+    updateCard = async (req, res) => {
         try {
             const { cardId } = req.params;
             const { front, back } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
-            if (!front || !back) return res.status(400).json({ error: 'Data missing' });
+            if (!front || !back) return res.status(400).json({ error: 'Faltan datos de la tarjeta' });
 
             const card = await DeckService.updateCard(userId, cardId, front, back);
             res.json({ success: true, card });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error updating card' });
+            console.error('[updateCard] Error:', error);
+            res.status(500).json({ error: 'Error al actualizar tarjeta' });
         }
     }
 
     /**
      * DELETE /api/cards/:cardId
      */
-    async deleteCard(req, res) {
+    deleteCard = async (req, res) => {
         try {
             const { cardId } = req.params;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
             await DeckService.deleteCard(userId, cardId);
             res.json({ success: true });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error deleting card' });
+            console.error('[deleteCard] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar tarjeta' });
         }
     }
 
     /**
      * DELETE /api/decks/:deckId
      */
-    async deleteDeck(req, res) {
+    deleteDeck = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
             await DeckService.deleteDeck(userId, deckId);
             res.json({ success: true });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Error deleting deck' });
+            console.error('[deleteDeck] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar el mazo' });
         }
     }
 
     /**
      * POST /api/decks/:deckId/generate
-     * Genera tarjetas con IA y las añade al mazo.
      */
-    async generateCards(req, res) {
+    generateCards = async (req, res) => {
         try {
             const { deckId } = req.params;
             const { topic } = req.body;
-            const userId = req.user.id;
+            const { userId } = this._getUserContext(req);
 
-            if (!topic) return res.status(400).json({ error: 'Topic is required' });
+            if (!topic) return res.status(400).json({ error: 'El tema es obligatorio' });
 
             const TrainingService = require('../../domain/services/trainingService');
-
-            // 1. Generar con IA
             const cards = await TrainingService.generateFlashcardsFromTopic(topic, 5);
 
-            // 2. Guardar en Base de Datos
             const savedCards = [];
             for (const card of cards) {
-                // Reutilizamos addCard del servicio de Decks
                 const saved = await DeckService.addCard(userId, deckId, card.front, card.back);
                 savedCards.push(saved);
             }
 
-            // 3. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
+            // Sync Usage Limits
             try {
                 const db = require('../../infrastructure/database/db');
                 if (req.usageType) {
@@ -259,17 +264,15 @@ class DeckController {
                         `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
                         [userId]
                     );
-                    console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
                 }
             } catch (limitErr) {
-                console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
+                console.warn("Could not sync AI limits, continuing...", limitErr.message);
             }
 
             res.json({ success: true, count: savedCards.length, cards: savedCards });
-
         } catch (error) {
-            console.error('Error in generateCards:', error);
-            res.status(500).json({ error: 'Error generando tarjetas con IA.' });
+            console.error('[generateCards] Error:', error);
+            res.status(500).json({ error: 'Error al generar tarjetas con IA' });
         }
     }
 }

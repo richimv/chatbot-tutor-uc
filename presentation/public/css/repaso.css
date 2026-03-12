@@ -8,6 +8,43 @@
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 1rem;
     margin-top: 1.5rem;
+    transition: all 0.3s ease; /* Smooth toggle */
+}
+
+.decks-grid.collapsed {
+    display: none !important;
+}
+
+/* Collapsible Sub-decks Header */
+.subdecks-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+.subdecks-header:hover {
+    opacity: 0.8;
+}
+
+.subdecks-header h3 {
+    white-space: nowrap;
+}
+
+.subdecks-header .toggle-icon {
+    font-size: 0.8rem;
+    color: #3b82f6;
+    transition: transform 0.2s ease;
+}
+
+.subdecks-line {
+    flex-grow: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
 }
 
 .deck-card {
@@ -209,34 +246,30 @@
 }
 
 /* --- SRS Status Indicators for Card Rows --- */
-.flashcard-row {
-    border-left: 4px solid transparent;
-    /* Base border for color coding */
-    transition: all 0.2s ease;
+.card-row-item {
+    border-left: 6px solid transparent; /* Increased from 4px */
+    transition: all 0.25s ease;
+    border-radius: 8px; /* Added rounded corners for a more modern look */
 }
 
 .srs-status-forgot {
-    border-left-color: #ef4444;
-    /* Red - Forgot / New */
-    background: rgba(239, 68, 68, 0.03);
+    border-left-color: #f87171; /* Brighter Red */
+    background: linear-gradient(90deg, rgba(248, 113, 113, 0.1) 0%, transparent 100%);
 }
 
 .srs-status-hard {
-    border-left-color: #f59e0b;
-    /* Orange - Hard */
-    background: rgba(245, 158, 11, 0.03);
+    border-left-color: #fb923c; /* Brighter Orange */
+    background: linear-gradient(90deg, rgba(251, 146, 60, 0.1) 0%, transparent 100%);
 }
 
 .srs-status-good {
-    border-left-color: #3b82f6;
-    /* Blue - Good */
-    background: rgba(59, 130, 246, 0.03);
+    border-left-color: #60a5fa; /* Brighter Blue */
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, transparent 100%);
 }
 
 .srs-status-easy {
-    border-left-color: #10b981;
-    /* Green - Easy / Mastered */
-    background: rgba(16, 185, 129, 0.03);
+    border-left-color: #34d399; /* Brighter Green */
+    background: linear-gradient(90deg, rgba(52, 211, 153, 0.1) 0%, transparent 100%);
 }
 
 /* --- Efecto Pendiente (Due) --- */
@@ -258,3 +291,137 @@
         box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
     }
 }
+
+/* --- Optimized UI Components (Added during Refactor) --- */
+.action-bar {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-premium {
+    height: 42px;
+    padding: 0 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-premium-primary {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.btn-premium-primary:hover {
+    transform: translateY(-2px);
+    background: #2563eb;
+}
+
+.btn-premium-secondary {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.btn-premium-secondary:hover {
+    background: rgba(51, 65, 85, 0.8);
+}
+
+.btn-premium-ia {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #d8b4fe;
+}
+
+.btn-premium-ia:hover {
+    background: rgba(139, 92, 246, 0.25);
+}
+
+.card-row-item {
+    display: grid;
+    grid-template-columns: 45px 1fr 1fr 80px;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+    transition: all 0.2s;
+    cursor: grab;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    border-left: 4px solid transparent;
+    user-select: none;
+}
+
+.card-row-item:hover {
+    filter: brightness(1.3);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.card-row-front {
+    color: #cbd5e1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-row-back {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-row-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.deck-icon-large {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    flex-shrink: 0;
+}
+
+.card-checkbox {
+    accent-color: #3b82f6;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.drag-handle {
+    cursor: grab;
+    font-size: 1rem;
+    padding: 10px;
+    color: #64748b;
+}
+
+@media (max-width: 640px) {
+    .card-row-item {
+        grid-template-columns: 40px 1fr 80px;
+    }
+    .card-row-back {
+        display: none;
+    }
+}

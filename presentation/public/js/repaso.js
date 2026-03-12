@@ -11,15 +11,18 @@ class RepasoManager {
         // Callback para interceptar el botón Atrás del móvil cuando hay tarjetas seleccionadas
         this.handlePopState = this.handlePopState.bind(this);
         window.addEventListener('popstate', this.handlePopState);
+
+        this.subDecksCollapsed = localStorage.getItem('subDecksCollapsed') === 'true';
     }
 
     /**
-     * Renders a deck icon correctly: maps emojis → FontAwesome, includes vibrant color.
+     * Renders icon with its vibrant color applied. Used for card icons and headers.
      */
     static renderColoredIcon(icon, fallbackFA = 'fas fa-folder') {
-        const { faClass, color, html } = RepasoManager._resolveIcon(icon, fallbackFA);
-        if (html) return `<span style="color:${color}">${html}</span>`;
-        return `<i class="${faClass}" style="color:${color}"></i>`;
+        const resolved = RepasoManager._resolveIcon(icon, fallbackFA);
+        const color = resolved.color;
+        if (resolved.html) return `<span style="color:${color}">${resolved.html}</span>`;
+        return `<i class="${resolved.faClass}" style="color:${color}"></i>`;
     }
 
     /**
@@ -91,15 +94,6 @@ class RepasoManager {
         return colorMap[faClass] || '#60a5fa';
     }
 
-    /**
-     * Renders icon with its vibrant color applied. Used for card icons and headers.
-     */
-    static renderColoredIcon(icon, fallbackFA = 'fas fa-folder') {
-        const resolved = RepasoManager._resolveIcon(icon, fallbackFA);
-        const color = resolved.color;
-        if (resolved.html) return `<span style="color:${color}">${resolved.html}</span>`;
-        return `<i class="${resolved.faClass}" style="color:${color}"></i>`;
-    }
 
     async init() {
         // No longer enforcing redirect here.
@@ -173,7 +167,7 @@ class RepasoManager {
                 window.history.pushState({ view: 'folder', deckId }, `Mazo ${deckId}`, url.toString());
             }
         }
-        
+
         // Show loading state in the content area if possible
         const container = document.getElementById('folder-header');
         if (container) container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
@@ -230,29 +224,20 @@ class RepasoManager {
 
         const container = document.getElementById('folder-header');
         const total = cards?.length || 0;
-        // Calculate mastered properly based on intervals (SM-2 standard > 21 days)
         const mastered = cards?.filter(c => c.interval_days > 21).length || 0;
         const pending = deck.due_cards || 0;
 
-        // Premium Header with Inline Actions
-        // Reduced inline padding/margin to allow CSS control on mobile
         container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem;">
-                
+            <div class="deck-header-info">
                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <!-- Icon -->
-                    <div class="deck-icon-large" style="width:60px; height:60px; font-size:2rem; background:rgba(59,130,246,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,0.2); flex-shrink: 0;">
+                    <div class="deck-icon-large">
                         ${RepasoManager.renderColoredIcon(deck?.icon, 'fas fa-layer-group')}
                     </div>
 
-                    <!-- Info Column -->
                     <div style="flex-grow: 1; min-width: 0;">
-                        <h1 class="deck-title" style="font-size:1.75rem; font-weight:700; margin:0 0 0.5rem 0; color:#f8fafc; line-height:1.1;">
-                            ${deck?.name || 'Mazo sin nombre'}
-                        </h1>
+                        <h1 class="deck-title">${deck?.name || 'Mazo sin nombre'}</h1>
                         
-                        <!-- Stats Badges -->
-                        <div style="display:flex; flex-wrap:wrap; gap:1rem; color:#94a3b8; font-size:0.85rem; align-items:center; margin-bottom: 1rem;">
+                        <div class="deck-meta">
                             <div style="display:flex; align-items:center; gap:0.4rem;">
                                 <i class="fas fa-layer-group"></i> ${total} <span class="desktop-only">tarjetas</span>
                             </div>
@@ -264,38 +249,29 @@ class RepasoManager {
                             </div>
                         </div>
 
-                        <!-- Actions Row (Consolidated) -->
-                        <div class="action-bar" style="display:flex; gap:0.8rem; align-items:center;">
-                            
-                            <!-- 1. Study (Primary - Standard Size) -->
+                        <div class="action-bar">
                             ${total > 0 && this.token ? `
-                            <button class="btn-action" style="background:#3b82f6; color:white; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s; white-space:nowrap;" onclick="window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${total})" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${total})">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
 
                             ${!this.token ? `
-                            <button class="btn-action" style="background:#3b82f6; color:white; height:46px; padding:0 2rem; border-radius:14px; font-weight:800; font-size:1.05rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.8rem; cursor:pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" onclick="window.repasoManager.startStudyDemo('${deck.id}')">
-                                <i class="fas fa-play-circle" style="font-size:1.2rem;"></i> <span class="btn-text">¡PROBAR DEMO AHORA!</span>
+                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudyDemo('${deck.id}')">
+                                <i class="fas fa-play-circle"></i> <span class="btn-text">¡PROBAR DEMO!</span>
                             </button>
                             ` : ''}
 
-                            <!-- 2. Add Card -->
                             ${this.token ? `
-                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAddCardModal()" onmouseover="this.style.background='rgba(51, 65, 85, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
+                            <button class="btn-premium btn-premium-secondary" onclick="window.repasoManager.openAddCardModal()">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
-                            ` : ''}
-
-                            <!-- 3. AI -->
-                            ${this.token ? `
-                            <button class="btn-action" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:#d8b4fe; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="window.repasoManager.openAiModal()" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
-                                <i class="fas fa-magic"></i> <span class="btn-text">Generar con IA</span>
+                            <button class="btn-premium btn-premium-ia" onclick="window.repasoManager.openAiModal()">
+                                <i class="fas fa-magic"></i> <span class="btn-text">Con IA</span>
                             </button>
                             ` : ''}
                             
-                            <!-- 4. Stats -->
-                            <button class="btn-action" style="background:rgba(30, 41, 59, 0.6); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; box-sizing:border-box; transition: background 0.2s; white-space:nowrap;" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered})` : 'window.uiManager.showAuthPromptModal()'}" onmouseover="this.style.background='rgba(51, 65, 12, 0.8)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.6)'">
+                            <button class="btn-premium btn-premium-secondary" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered})` : 'window.uiManager.showAuthPromptModal()'}">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
                         </div>
@@ -316,47 +292,64 @@ class RepasoManager {
             return;
         }
 
-        container.style.display = 'grid';
-        this.renderDeckCards(decks, container, this.currentDeck?.id || null);
+        container.style.display = 'block'; // Changed to block to contain header + grid
+        
+        const count = decks.length;
+        const title = count > 0 ? `Sub-mazos (${count})` : 'Sub-mazos';
+        const icon = this.subDecksCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+
+        container.innerHTML = `
+            <div class="subdecks-header" onclick="window.repasoManager.toggleSubDecks()">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <i class="${icon} toggle-icon"></i>
+                    <h3 style="margin:0; font-size:0.9rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">${title}</h3>
+                </div>
+                <div class="subdecks-line"></div>
+            </div>
+            <div id="subdecks-grid" class="decks-grid ${this.subDecksCollapsed ? 'collapsed' : ''}" style="margin-top:1rem;"></div>
+        `;
+
+        const grid = document.getElementById('subdecks-grid');
+        this.renderDeckCards(decks, grid, this.currentDeck?.id || null);
+    }
+
+    toggleSubDecks() {
+        this.subDecksCollapsed = !this.subDecksCollapsed;
+        localStorage.setItem('subDecksCollapsed', this.subDecksCollapsed);
+        
+        const grid = document.getElementById('subdecks-grid');
+        const icon = document.querySelector('.subdecks-header .toggle-icon');
+        
+        if (this.subDecksCollapsed) {
+            grid?.classList.add('collapsed');
+            if (icon) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        } else {
+            grid?.classList.remove('collapsed');
+            if (icon) {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
     }
 
     renderDeckCards(decks, container, parentId = null) {
-        // Ensure smaller grid layout via inline style on container if not governed by CSS class
-        container.style.display = 'grid';
-        container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
-        container.style.gap = '1rem';
-        container.innerHTML = ''; // Clear previous content
+        container.innerHTML = '';
 
         // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users) ---
         if (this.token) {
             const addCard = document.createElement('div');
-            addCard.className = 'deck-card';
-            addCard.style.padding = '1rem';
-            addCard.style.minHeight = '80px';
-            addCard.style.border = '2px dashed rgba(255, 255, 255, 0.1)';
-            addCard.style.background = 'transparent';
-            addCard.style.display = 'flex';
-            addCard.style.flexDirection = 'column';
-            addCard.style.alignItems = 'center';
-            addCard.style.justifyContent = 'center';
-            addCard.style.cursor = 'pointer';
-            addCard.style.transition = 'all 0.2s';
-
-            addCard.onmouseover = () => {
-                addCard.style.borderColor = '#3b82f6';
-                addCard.style.background = 'rgba(59, 130, 246, 0.05)';
-            };
-            addCard.onmouseout = () => {
-                addCard.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                addCard.style.background = 'transparent';
-            };
+            addCard.className = 'deck-card add-deck-card';
             addCard.onclick = () => DeckExplorer.openCreateModal(parentId);
-
             addCard.innerHTML = `
-                <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.5rem;">
-                    <i class="fas fa-plus"></i>
+                <div class="add-content">
+                    <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.5rem;">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div style="font-size: 0.95rem; font-weight: 600;">Crear Mazo</div>
                 </div>
-                <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8;">Crear Mazo</div>
             `;
             container.appendChild(addCard);
         }
@@ -475,8 +468,7 @@ class RepasoManager {
 
         this.isSelectionMode = false;
 
-        // Build header with search and bulk actions
-        let html = `
+        container.innerHTML = `
             <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
                 <h3 style="margin:0; font-size:1.2rem; font-weight:600;">Tarjetas (${cards.length})</h3>
                 <div style="position:relative; width:100%; max-width:250px;">
@@ -486,7 +478,7 @@ class RepasoManager {
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center; background:rgba(255,255,255,0.02); padding:0.5rem 1rem; border-radius:8px;">
                 <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin:0;">
-                    <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer;">
+                    <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" class="card-checkbox">
                     <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
                 </label>
                 <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
@@ -495,186 +487,115 @@ class RepasoManager {
             </div>
             <div id="cards-list-container"></div>
         `;
-        container.innerHTML = html;
 
         const listContainer = document.getElementById('cards-list-container');
-
-        if (cards.length === 0) {
-            listContainer.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; font-size:0.9rem;">No se encontraron tarjetas en esta búsqueda.</div>';
-            return;
-        }
+        const fragment = document.createDocumentFragment();
 
         cards.forEach((c, index) => {
-            // Evaluamos la métrica SRS de la tarjeta para pintarla en UI principal
-            let colorClass = '';
-            if (c.last_quality === 1) {
-                colorClass = 'srs-status-forgot';
-            } else if (c.last_quality === 2) {
-                colorClass = 'srs-status-hard';
-            } else if (c.last_quality === 3) {
-                colorClass = 'srs-status-good';
-            } else if (c.last_quality === 4) {
-                colorClass = 'srs-status-easy';
-            } else {
-                // Fallback heurístico
-                if (c.repetition_number === 0) {
-                    colorClass = '';
-                } else if (c.interval_days === 0 && c.repetition_number > 0) {
-                    colorClass = 'srs-status-forgot';
-                } else if (c.ease_factor < 2.0 && c.interval_days > 0) {
-                    colorClass = 'srs-status-hard';
-                } else if (c.ease_factor >= 2.0 && c.interval_days <= 10) {
-                    colorClass = 'srs-status-good';
-                } else if (c.interval_days > 10) {
-                    colorClass = 'srs-status-easy';
-                }
-            }
-
+            const srsClass = this._getSrsClass(c);
             const isDue = new Date(c.next_review_at) <= new Date();
-            const dueClass = isDue ? 'is-due-glow' : '';
-
             const row = document.createElement('div');
-            row.className = `card-row-item ${colorClass} ${dueClass}`;
+            row.className = `card-row-item ${srsClass} ${isDue ? 'is-due-glow' : ''}`;
             row.dataset.id = c.id;
             row.dataset.index = index;
             row.draggable = true;
-            row.style.cssText = `display:grid; grid-template-columns: 45px 1fr 1fr 80px; gap:1rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; transition:background 0.2s; cursor:grab; background:${colorClass ? '' : 'transparent'}; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; border-radius: 8px; margin-bottom: 4px; border-left-width: 4px; border-left-style: solid; ${!colorClass ? 'border-left-color: transparent;' : ''}`;
 
-            // Efecto Hover solo si no tiene color base, de lo contrario oscurecer levemente el color srs
-            row.onmouseover = () => row.style.filter = 'brightness(1.5)';
-            row.onmouseout = () => row.style.filter = '';
-
-            // Drag Events
-            row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
-            row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
-            row.addEventListener('drop', (e) => this.handleDrop(e, row));
-            row.addEventListener('dragenter', (e) => row.style.borderTop = '2px solid #3b82f6');
-            row.addEventListener('dragleave', (e) => row.style.borderTop = '');
-            row.addEventListener('dragend', (e) => {
-                row.style.opacity = '1';
-                document.querySelectorAll('.card-row-item').forEach(r => r.style.borderTop = '');
-            });
-
-            // Column 1: Drag Handle & Checkbox
-            const checkDiv = document.createElement('div');
-            checkDiv.style.cssText = 'display:flex; align-items:center; gap:0.5rem; color:#64748b;';
-            checkDiv.innerHTML = `
-                <i class="fas fa-grip-vertical" style="cursor:grab; font-size:1rem; padding:10px 10px 10px 0; touch-action:none;"></i>
-                <input type="checkbox" class="card-checkbox" value="${c.id}" onchange="window.repasoManager.updateBulkDeleteButton()" style="accent-color:#3b82f6; width:16px; height:16px; cursor:pointer; margin-left:2px;" onclick="event.stopPropagation()">
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:0.5rem; color:#64748b;">
+                    <i class="fas fa-grip-vertical drag-handle"></i>
+                    <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" onclick="event.stopPropagation()">
+                </div>
+                <div class="card-row-front">${this.escapeHtml(c.front_content)}</div>
+                <div class="card-row-back">${this.escapeHtml(c.back_content)}</div>
+                <div class="card-row-actions">
+                    <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`)">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="deck-action-btn deck-action-btn--delete" title="Eliminar" onclick="event.stopPropagation(); window.repasoManager.onDeleteCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             `;
 
-            // Column 2: Front
-            const frontDiv = document.createElement('div');
-            frontDiv.style.cssText = 'color:#cbd5e1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-            frontDiv.textContent = c.front_content;
-
-            // Column 3: Back
-            const backDiv = document.createElement('div');
-            backDiv.style.cssText = 'color:#94a3b8; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-            backDiv.textContent = c.back_content;
-
-            // Column 4: Actions
-            const actionsDiv = document.createElement('div');
-            actionsDiv.style.cssText = 'display:flex; gap:0.5rem; justify-content:flex-end;';
-
-            const editBtn = document.createElement('button');
-            editBtn.className = 'deck-action-btn';
-            editBtn.title = 'Editar';
-            editBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
-            editBtn.innerHTML = '<i class="fas fa-pen"></i>';
-            editBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (this.token) {
-                    window.repasoManager.openEditCardModal(c.id, c.front_content, c.back_content);
-                } else {
-                    window.uiManager.showAuthPromptModal();
-                }
-            };
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'deck-action-btn deck-action-btn--delete';
-            deleteBtn.title = 'Eliminar';
-            deleteBtn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:0.8rem;';
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (this.token) {
-                    window.repasoManager.confirmDeleteCard(c.id, c.front_content);
-                } else {
-                    window.uiManager.showAuthPromptModal();
-                }
-            };
-
-            actionsDiv.appendChild(editBtn);
-            actionsDiv.appendChild(deleteBtn);
-
-            row.appendChild(checkDiv);
-            row.appendChild(frontDiv);
-            row.appendChild(backDiv);
-            row.appendChild(actionsDiv);
-
-            listContainer.appendChild(row);
-
-            // Setup mobile touch-to-select (Long Press) via pure JS timeout
-            // Also allow standard click on the row to toggle selection
-            let pressTimer = null;
-            let longPressed = false;
-
-            row.addEventListener('touchstart', (e) => {
-                const targetTag = e.target.tagName.toLowerCase();
-                // 🚫 IGNORAR COMPONENTES ACCIONABLES: botones, inputs y especfícamente THE DRAG HANDLE (fa-grip-vertical)
-                if (targetTag === 'button' || targetTag === 'input' || e.target.classList.contains('fa-grip-vertical')) {
-                    return;
-                }
-
-                longPressed = false;
-                pressTimer = setTimeout(() => {
-                    longPressed = true;
-                    const cb = row.querySelector('.card-checkbox');
-                    if (cb) {
-                        cb.checked = !cb.checked;
-                        window.repasoManager.updateBulkDeleteButton();
-                        if (navigator.vibrate) navigator.vibrate(50);
-                    }
-                }, 500);
-            }, { passive: true });
-
-            row.addEventListener('touchend', () => clearTimeout(pressTimer));
-            row.addEventListener('touchmove', () => clearTimeout(pressTimer));
-
-            row.addEventListener('click', (e) => {
-                const targetTag = e.target.tagName.toLowerCase();
-                // 🚫 IGNORAR COMPONENTES ACCIONABLES: botones, inputs y especfícamente THE DRAG HANDLE
-                if (targetTag === 'button' || targetTag === 'input' || e.target.classList.contains('fa-grip-vertical')) {
-                    return;
-                }
-
-                // Si fue long press, ya se seleccionó, no hacemos el toggle de nuevo.
-                if (longPressed) {
-                    longPressed = false;
-                    return;
-                }
-
-                // Sólo seleccionar automáticamente si YA ESTAMOS en modo de selección
-                if (window.repasoManager.isSelectionMode) {
-                    const cb = row.querySelector('.card-checkbox');
-                    if (cb) {
-                        cb.checked = !cb.checked;
-                        window.repasoManager.updateBulkDeleteButton();
-                    }
-                }
-            });
-
-            listContainer.appendChild(row);
+            // Row Events
+            this._bindCardRowEvents(row);
+            fragment.appendChild(row);
         });
 
-        // Ensure input holds focus if it had it
-        const searchInput = document.getElementById('card-search-input');
-        if (this._lastSearchQuery && searchInput) {
-            searchInput.value = this._lastSearchQuery;
-            searchInput.focus();
+        listContainer.appendChild(fragment);
+
+        // UI Restore
+        if (this._lastSearchQuery) {
+            const input = document.getElementById('card-search-input');
+            if (input) { input.value = this._lastSearchQuery; input.focus(); }
         }
     }
+
+    _getSrsClass(c) {
+        if (c.last_quality === 1) return 'srs-status-forgot';
+        if (c.last_quality === 2) return 'srs-status-hard';
+        if (c.last_quality === 3) return 'srs-status-good';
+        if (c.last_quality === 4) return 'srs-status-easy';
+
+        if (c.repetition_number === 0) return '';
+        if (c.interval_days === 0) return 'srs-status-forgot';
+        if (c.ease_factor < 2.0) return 'srs-status-hard';
+        return c.interval_days > 10 ? 'srs-status-easy' : 'srs-status-good';
+    }
+
+    _bindCardRowEvents(row) {
+        row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
+        row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
+        row.addEventListener('drop', (e) => this.handleDrop(e, row));
+        row.addEventListener('dragenter', () => row.style.borderTop = '2px solid #3b82f6');
+        row.addEventListener('dragleave', () => row.style.borderTop = '');
+        row.addEventListener('dragend', () => {
+            row.style.opacity = '1';
+            document.querySelectorAll('.card-row-item').forEach(r => r.style.borderTop = '');
+        });
+
+        // Checkbox change
+        const cb = row.querySelector('.card-item-checkbox');
+        cb.addEventListener('change', () => this.updateBulkDeleteButton());
+
+        // Mobile Selection (Long Press)
+        let pressTimer = null;
+        let longPressed = false;
+
+        row.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button, input, .drag-handle')) return;
+            longPressed = false;
+            pressTimer = setTimeout(() => {
+                longPressed = true;
+                cb.checked = !cb.checked;
+                this.updateBulkDeleteButton();
+                if (navigator.vibrate) navigator.vibrate(50);
+            }, 500);
+        }, { passive: true });
+
+        row.addEventListener('touchend', () => clearTimeout(pressTimer));
+        row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('button, input, .drag-handle')) return;
+            if (longPressed) { longPressed = false; return; }
+            if (this.isSelectionMode) {
+                cb.checked = !cb.checked;
+                this.updateBulkDeleteButton();
+            }
+        });
+    }
+
+    onEditCardClick(id, front, back) {
+        if (this.token) this.openEditCardModal(id, front, back);
+        else window.uiManager.showAuthPromptModal();
+    }
+
+    onDeleteCardClick(id, front) {
+        if (this.token) this.confirmDeleteCard(id, front);
+        else window.uiManager.showAuthPromptModal();
+    }
+
 
     // --- Search & Bulk Actions Helpers ---
 
@@ -694,14 +615,14 @@ class RepasoManager {
     }
 
     toggleSelectAllCards(isChecked) {
-        document.querySelectorAll('.card-checkbox').forEach(cb => {
+        document.querySelectorAll('.card-item-checkbox').forEach(cb => {
             cb.checked = isChecked;
         });
         this.updateBulkDeleteButton();
     }
 
     updateBulkDeleteButton() {
-        const checked = document.querySelectorAll('.card-checkbox:checked');
+        const checked = document.querySelectorAll('.card-item-checkbox:checked');
         const btn = document.getElementById('btn-bulk-delete');
 
         this.isSelectionMode = checked.length > 0;
@@ -713,7 +634,7 @@ class RepasoManager {
             btn.style.display = 'none';
         }
 
-        const total = document.querySelectorAll('.card-checkbox').length;
+        const total = document.querySelectorAll('.card-item-checkbox').length;
         const masterCb = document.getElementById('select-all-cards');
         if (masterCb) {
             masterCb.checked = (checked.length === total && total > 0);
@@ -763,7 +684,7 @@ class RepasoManager {
     }
 
     confirmBulkDelete() {
-        const checked = Array.from(document.querySelectorAll('.card-checkbox:checked')).map(cb => cb.value);
+        const checked = Array.from(document.querySelectorAll('.card-item-checkbox:checked')).map(cb => cb.value);
         if (checked.length === 0) return;
 
         const modal = document.getElementById('delete-confirm-modal');
@@ -1227,22 +1148,31 @@ class RepasoManager {
      * Muestra alerta 100% nativa para los limites de uso
      */
     _showLimitModal(msg) {
-        if (document.getElementById('custom-limit-modal')) return;
-        const modalHtml = `
-            <div class="modal-overlay active" id="custom-limit-modal" style="z-index:9999; backdrop-filter:blur(8px);">
-                <div class="modal-content" style="background:var(--bg-card, #1f1f1f); padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
-                    <div style="margin-bottom:1.5rem;">
-                        <i class="fas fa-crown" style="font-size:3.5rem; color:#ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
-                    </div>
-                    <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main, #f8fafc);">Límite Alcanzado</h2>
-                    <p style="color:var(--text-muted, #94a3b8); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
-                    <button class="btn-action" style="background:linear-gradient(90deg, #f59e0b, #d97706); color:white; font-weight:bold; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="const m = document.getElementById('custom-limit-modal'); if(m){ m.classList.remove('active'); } if(window.uiManager && window.uiManager.popModalState) window.uiManager.popModalState('custom-limit-modal');">Entendido</button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        let modal = document.getElementById('custom-limit-modal');
 
-        // Registrar en historial para que el botón "Atrás" solo cierre el modal y no retroceda de página
+        if (modal) {
+            // Si ya existe, solo actualizamos el mensaje y lo activamos
+            modal.querySelector('p').textContent = msg;
+            modal.classList.add('active');
+        } else {
+            // Si no existe, lo creamos
+            const modalHtml = `
+                <div class="modal-overlay active" id="custom-limit-modal" style="z-index:9999; backdrop-filter:blur(8px);">
+                    <div class="modal-content" style="background:var(--bg-card, #1f1f1f); padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+                        <div style="margin-bottom:1.5rem;">
+                            <i class="fas fa-crown" style="font-size:3.5rem; color:#ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
+                        </div>
+                        <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main, #f8fafc);">Límite Alcanzado</h2>
+                        <p style="color:var(--text-muted, #94a3b8); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
+                        <button class="btn-action" style="background:linear-gradient(90deg, #f59e0b, #d97706); color:white; font-weight:bold; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="const m = document.getElementById('custom-limit-modal'); if(m){ m.classList.remove('active'); } if(window.uiManager && window.uiManager.popModalState) window.uiManager.popModalState('custom-limit-modal');">Entendido</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            modal = document.getElementById('custom-limit-modal');
+        }
+
+        // Registrar en historial
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
             window.uiManager.pushModalState('custom-limit-modal');
         }
