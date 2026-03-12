@@ -146,17 +146,33 @@ class RepasoManager {
 
     // --- Views ---
 
-    loadDashboard() {
+    loadDashboard(pushState = true) {
         document.getElementById('dashboard-view').style.display = 'block';
         document.getElementById('folder-view').style.display = 'none';
         this.currentDeck = null;
 
+        // Sync URL: If we go to Dashboard, clear deckId
+        if (pushState && window.history.pushState) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('deckId');
+            window.history.pushState({ view: 'dashboard' }, 'Centro de Repaso', url.toString());
+        }
+
         this.renderRootDecks();
     }
 
-    async loadFolder(deckId) {
+    async loadFolder(deckId, pushState = true) {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'block';
+
+        // Sync URL: If navigatived internally, push state
+        if (pushState && window.history.pushState) {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('deckId') !== deckId) {
+                url.searchParams.set('deckId', deckId);
+                window.history.pushState({ view: 'folder', deckId }, `Mazo ${deckId}`, url.toString());
+            }
+        }
         
         // Show loading state in the content area if possible
         const container = document.getElementById('folder-header');
@@ -294,10 +310,12 @@ class RepasoManager {
         if (!container) return;
         container.innerHTML = '';
 
-        if (!decks || decks.length === 0) {
+        // If guest and no decks, hide. If registered, show (to see the "Create" button)
+        if ((!decks || decks.length === 0) && !this.token) {
             container.style.display = 'none';
             return;
         }
+
         container.style.display = 'grid';
         this.renderDeckCards(decks, container, this.currentDeck?.id || null);
     }
@@ -719,13 +737,28 @@ class RepasoManager {
         }
     }
 
-    // ✅ NUEVO: Interceptor del botón físico "Atrás" en móviles
+    // ✅ NUEVO: Interceptor de navegación y botón físico "Atrás"
     handlePopState(e) {
+        // 1. Manejo de Selección (Mobile UI)
         if (this.isSelectionMode && (!e.state || !e.state.selectionMode)) {
-            console.log('🔙 Botón Atrás detectado. Deseleccionando tarjetas para prevenir salida...');
+            console.log('🔙 Deseleccionando tarjetas...');
             this.toggleSelectAllCards(false);
         } else {
             this._lastSelectionState = false;
+        }
+
+        // 2. Manejo de Navegación de URL (Refrescos / Back / Deep Links)
+        const params = new URLSearchParams(window.location.search);
+        const deckId = params.get('deckId');
+
+        if (deckId) {
+            if (!this.currentDeck || this.currentDeck.id !== deckId) {
+                this.loadFolder(deckId, false); // false to avoid recursive pushState
+            }
+        } else {
+            if (this.currentDeck) {
+                this.loadDashboard(false); // false to avoid recursive pushState
+            }
         }
     }
 
