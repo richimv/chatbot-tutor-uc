@@ -19,7 +19,6 @@ const checkAILimits = (type) => {
                     max_free_limit,
                     subscription_expires_at, 
                     daily_ai_usage, 
-                    monthly_thinking_usage, 
                     monthly_flashcards_usage,
                     daily_arena_usage, 
                     last_usage_reset
@@ -56,24 +55,21 @@ const checkAILimits = (type) => {
                 const lastResetDate = user.last_usage_reset ? new Date(user.last_usage_reset) : new Date(0);
                 const currentMonth = new Date().getMonth();
 
-                let resetMonthlyThinking = false;
+                let resetMonthlyFlashcards = false;
 
-                // Si no hay registro previo, o si el mes calendario ha cambiado respecto al último reset, devolvemos el saldo mensual.
                 if (!user.last_usage_reset || lastResetDate.getMonth() !== currentMonth) {
-                    resetMonthlyThinking = true;
+                    resetMonthlyFlashcards = true;
                 }
 
-                if (resetMonthlyThinking) {
+                if (resetMonthlyFlashcards) {
                     await pool.query(`
                         UPDATE users SET 
                             daily_ai_usage = 0, 
                             daily_arena_usage = 0, 
-                            monthly_thinking_usage = 0,
                             monthly_flashcards_usage = 0,
                             last_usage_reset = $1 
                         WHERE id = $2
                     `, [todayDate, userId]);
-                    user.monthly_thinking_usage = 0;
                     user.monthly_flashcards_usage = 0;
                 } else {
                     await pool.query(`
@@ -94,9 +90,9 @@ const checkAILimits = (type) => {
             // - Básico: 20 tarjetas/mes = 4 llamadas.
             // - Avanzado: 100 tarjetas/mes = 20 llamadas.
             const LIMITS = {
-                free: { chat_standard: 3, chat_thinking: 0, quiz_arena: 3, monthly_flashcards: 1 },
-                basic: { chat_standard: 15, chat_thinking: 0, quiz_arena: 5, monthly_flashcards: 4 },
-                advanced: { chat_standard: 40, chat_thinking: 5, quiz_arena: 10, monthly_flashcards: 20 }
+                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1 },
+                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 4 },
+                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 20 }
             };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
@@ -122,14 +118,7 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_ai_usage';
                 }
             }
-            else if (type === 'chat_thinking') {
-                // Thinking rara vez se abre a Trial, pero si fuera el caso, validamos.
-                // Como es feature Avanzado, normalmente solo los activos entran.
-                if (user.monthly_thinking_usage >= userLimits.chat_thinking) {
-                    return res.status(403).json({ error: 'Límite mensual de IA Avanzada (Thinking) alcanzado o bloqueado. Requiere Plan Avanzado.', reason: 'MONTHLY_LIMIT_EXHAUSTED' });
-                }
-                req.usageType = 'monthly_thinking_usage';
-            }
+            // El tipo 'chat_thinking' ha sido retirado. Los diagnósticos/chat usarán chat_standard o rutas sin límite.
             else if (type === 'quiz_arena') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {

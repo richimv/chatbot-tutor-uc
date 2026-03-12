@@ -157,6 +157,10 @@ class RepasoManager {
     async loadFolder(deckId) {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'block';
+        
+        // Show loading state in the content area if possible
+        const container = document.getElementById('folder-header');
+        if (container) container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
 
         try {
             const [deck, children, cards] = await Promise.all([
@@ -165,6 +169,15 @@ class RepasoManager {
                 this.fetchCards(deckId)
             ]);
 
+            if (!deck) {
+                console.warn(`Deck with ID ${deckId} not found or inaccessible.`);
+                if (window.uiManager && window.uiManager.showToast) {
+                    window.uiManager.showToast('El mazo solicitado no existe o fue eliminado.', 'error');
+                }
+                this.loadDashboard();
+                return;
+            }
+
             this.currentDeck = deck;
             this.currentCards = cards || [];
             this.renderDeckHeader(deck, cards);
@@ -172,8 +185,13 @@ class RepasoManager {
             this.renderCards(this.currentCards);
 
         } catch (e) {
-            console.error(e);
-            alert('Error cargando contenido');
+            console.error('Error in loadFolder:', e);
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast('No se pudo cargar el mazo. Intente de nuevo.', 'error');
+            } else {
+                alert('Ocurrió un error al cargar el contenido. Por favor, recarga la página.');
+            }
+            this.loadDashboard();
         }
     }
 
@@ -191,11 +209,13 @@ class RepasoManager {
         });
     }
 
-    renderDeckHeader(deck, cards) {
+    renderDeckHeader(deck, cards = []) {
+        if (!deck) return;
+
         const container = document.getElementById('folder-header');
-        const total = cards.length;
+        const total = cards?.length || 0;
         // Calculate mastered properly based on intervals (SM-2 standard > 21 days)
-        const mastered = cards.filter(c => c.interval_days > 21).length;
+        const mastered = cards?.filter(c => c.interval_days > 21).length || 0;
         const pending = deck.due_cards || 0;
 
         // Premium Header with Inline Actions
@@ -206,13 +226,13 @@ class RepasoManager {
                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
                     <!-- Icon -->
                     <div class="deck-icon-large" style="width:60px; height:60px; font-size:2rem; background:rgba(59,130,246,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,0.2); flex-shrink: 0;">
-                        ${RepasoManager.renderColoredIcon(deck.icon, 'fas fa-layer-group')}
+                        ${RepasoManager.renderColoredIcon(deck?.icon, 'fas fa-layer-group')}
                     </div>
 
                     <!-- Info Column -->
                     <div style="flex-grow: 1; min-width: 0;">
                         <h1 class="deck-title" style="font-size:1.75rem; font-weight:700; margin:0 0 0.5rem 0; color:#f8fafc; line-height:1.1;">
-                            ${deck.name}
+                            ${deck?.name || 'Mazo sin nombre'}
                         </h1>
                         
                         <!-- Stats Badges -->
@@ -233,7 +253,7 @@ class RepasoManager {
                             
                             <!-- 1. Study (Primary - Standard Size) -->
                             ${total > 0 && this.token ? `
-                            <button class="btn-action" style="background:#3b82f6; color:white; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s; white-space:nowrap;" onclick="window.repasoManager.startStudy('${deck.id}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                            <button class="btn-action" style="background:#3b82f6; color:white; height:42px; padding:0 1.5rem; border-radius:12px; font-weight:600; font-size:0.95rem; border:none; display:flex; align-items:center; justify-content:center; gap:0.6rem; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.2s; white-space:nowrap;" onclick="window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${total})" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
@@ -269,11 +289,17 @@ class RepasoManager {
         `;
     }
 
-    renderSubDecks(decks) {
+    renderSubDecks(decks = []) {
         const container = document.getElementById('subdecks-container');
+        if (!container) return;
         container.innerHTML = '';
-        // Always render, even if empty, to show "Add Deck" button
-        this.renderDeckCards(decks, container, this.currentDeck.id);
+
+        if (!decks || decks.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'grid';
+        this.renderDeckCards(decks, container, this.currentDeck?.id || null);
     }
 
     renderDeckCards(decks, container, parentId = null) {
@@ -331,24 +357,47 @@ class RepasoManager {
             const badgeClass = isSystem ? 'badge-system' : 'badge-user';
             const badgeText = isSystem ? 'AUTOMÁTICO' : 'PERSONAL';
 
-            // Edit/Delete buttons HTML (only for user decks)
-            const editDeleteBtns = !isSystem ? `
-                <div style="display:flex; gap:0.3rem;">
-                    <button class="deck-action-btn" style="background:rgba(59,130,246,0.1); color:#60a5fa;" onclick="event.stopPropagation(); window.repasoManager.startStudyDemo('${deck.id}')" 
-                        title="Probar Demo">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <button class="deck-action-btn deck-action-btn--delete" onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
-                        title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>` : '';
+            // --- Dynamic Actions Logic ---
+            let actionBtns = '';
+            if (this.token) {
+                // Registered User: Play (Real) + Edit/Delete (if not system)
+                actionBtns = `
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <button class="deck-action-btn" style="background:rgba(59,130,246,0.15); color:#60a5fa; border: 1px solid rgba(59,130,246,0.2);" 
+                            onclick="event.stopPropagation(); window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${deck.total_cards || 0})" 
+                            title="Estudiar">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        ${!isSystem ? `
+                            <button class="deck-action-btn" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" 
+                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')" 
+                                title="Editar nombre/icono">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="deck-action-btn deck-action-btn--delete" 
+                                onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                                title="Eliminar mazo">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>`;
+            } else {
+                // Guest User: Only Demo Play
+                actionBtns = `
+                    <div style="display:flex; gap:0.3rem;">
+                        <button class="deck-action-btn" style="background:rgba(59,130,246,0.1); color:#60a5fa;" 
+                            onclick="event.stopPropagation(); window.repasoManager.startStudyDemo('${deck.id}')" 
+                            title="Probar Demo">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>`;
+            }
 
             card.innerHTML = `
                 <!-- Desktop layout -->
                 <div class="deck-card-desktop">
-                    <div style="display:flex; justify-content:${!isSystem ? 'space-between' : 'flex-end'}; align-items:center; margin-bottom:0.5rem;">
-                        ${editDeleteBtns}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        ${actionBtns}
                         <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem;">${badgeText}</span>
                     </div>
                     <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
@@ -377,9 +426,9 @@ class RepasoManager {
                             ${hasDue ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pend.</span>` : ''}
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
-                        ${editDeleteBtns}
-                        <span class="deck-badge ${badgeClass}" style="font-size:0.55rem; padding:0.1rem 0.4rem;">${isSystem ? 'AUTO' : 'PERS.'}</span>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
+                        ${actionBtns}
+                        <span class="deck-badge ${badgeClass}" style="font-size:0.5rem; padding:0.1rem 0.4rem;">${isSystem ? 'AUTO' : 'PERS.'}</span>
                     </div>
                 </div>
             `;
@@ -399,8 +448,9 @@ class RepasoManager {
 
     renderCards(cards = this.currentCards) {
         const container = document.getElementById('cards-container');
+        if (!container) return;
 
-        if (!this.currentCards || this.currentCards.length === 0) {
+        if (!cards || cards.length === 0) {
             container.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px;">No hay tarjetas en este mazo. ¡Crea la primera!</div>';
             return;
         }
@@ -843,10 +893,22 @@ class RepasoManager {
         }
     }
 
-    async startStudy(deckId) {
-        // Ya no verificamos el límite de IA/vidas al estudiar,
-        // ya que el repaso del conocimiento almacenado es libre y no consume tokens.
-        const deckName = this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || '';
+    /**
+     * Inicia el modo de estudio real para un mazo específico.
+     * Solo para usuarios registrados con tarjetas.
+     */
+    async startStudy(deckId, deckNameParam = null, cardCount = null) {
+        // Validar si el mazo tiene tarjetas antes de intentar estudiar (solo si conocemos el count)
+        if (cardCount !== null && cardCount === 0) {
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast('Este mazo no tiene tarjetas. ¡Crea o genera algunas primero!', 'warning');
+            } else {
+                alert('Este mazo no tiene tarjetas para estudiar.');
+            }
+            return;
+        }
+
+        const deckName = deckNameParam || this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || 'Mazo';
         window.location.href = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
     }
 
@@ -861,8 +923,8 @@ class RepasoManager {
                     name: 'Repaso Medicina',
                     icon: '🩺',
                     type: 'SYSTEM',
-                    total_cards: 5,
-                    due_cards: 5
+                    total_cards: 3,
+                    due_cards: 3
                 };
             }
             if (id === 'demo-user-1') {
@@ -871,8 +933,8 @@ class RepasoManager {
                     name: 'Mis Tarjetas',
                     icon: '👶',
                     type: 'USER',
-                    total_cards: 1,
-                    due_cards: 1
+                    total_cards: 3,
+                    due_cards: 3
                 };
             }
         }
@@ -881,6 +943,12 @@ class RepasoManager {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
+
+        if (!res.ok) {
+            console.error(`Error fetching deck ${id}: ${res.status} ${res.statusText}`);
+            return null;
+        }
+
         const data = await res.json();
         return data.deck;
     }
@@ -890,8 +958,8 @@ class RepasoManager {
             if (parentId) return []; // No subdecks for demo root yet
             // Return root guest decks
             return [
-                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 5, due_cards: 5, mastery_percentage: 10 },
-                { id: 'demo-user-1', name: 'Mis Tarjetas', icon: '👶', type: 'USER', total_cards: 1, due_cards: 1, mastery_percentage: 0 }
+                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 3, due_cards: 3, mastery_percentage: 10 },
+                { id: 'demo-user-1', name: 'Mis Tarjetas', icon: '👶', type: 'USER', total_cards: 3, due_cards: 3, mastery_percentage: 0 }
             ];
         }
 
@@ -907,24 +975,15 @@ class RepasoManager {
 
     async fetchCards(deckId) {
         if (!this.token) {
-            // Mock fallback cards for Guests viewing their fake UI folders
             const demoDeck = [
                 { id: 'demo-fc-1', front_content: '¿Cuál es la tríada de Charcot para la Colangitis Aguda?', back_content: '1. Fiebre\n2. Ictericia\n3. Dolor en hipocondrio derecho', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Gastroenterología' },
                 { id: 'demo-fc-2', front_content: 'Mujer de 30 años con exoftalmos, bocio y taquicardia. TSH disminuida y T4 libre elevada. Diagnóstico más probable.', back_content: 'Enfermedad de Graves-Basedow', next_review_at: new Date(Date.now() + 86400000).toISOString(), interval_days: 5, last_quality: 3, topic: 'Endocrinología' },
                 { id: 'demo-fc-3', front_content: '¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?', back_content: 'Signo de Rovsing', next_review_at: new Date(Date.now() - 50000).toISOString(), interval_days: 1, last_quality: 1, topic: 'Cirugía General' }
             ];
-
-            if (deckId === 'demo-system-1' || deckId === 'demo-system-fallback' || !deckId) {
-                 return demoDeck;
-            }
-            if (deckId === 'demo-user-1') {
-                 return [
-                    { id: 'd-6', front_content: 'Signo de Koplik indica', back_content: 'Sarampión.', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: 2 }
-                 ];
-            }
-            // Retornamos las tarjetas de demo-system-1 por defecto si el ID no cuadra para salvar la UI del Invitado
+            // Para huéspedes, siempre retornamos las 3 tarjetas de ejemplo sin importar el ID del mazo de demo
             return demoDeck;
         }
+
 
         const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
@@ -1301,7 +1360,12 @@ class RepasoManager {
 
     escapeHtml(text) {
         if (!text) return '';
-        return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     /**

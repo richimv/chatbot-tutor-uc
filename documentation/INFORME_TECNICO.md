@@ -1,4 +1,4 @@
-﻿# 📘 Informe Técnico Profesional: Chatbot Tutor UC
+# 📘 Informe Técnico Profesional: Chatbot Tutor UC
 
 **Versión del Documento:** 1.0  
 **Fecha de Generación:** 06 de Febrero de 2026  
@@ -356,9 +356,9 @@ El sistema ofrece dos niveles de pago procesados por MercadoPago, con beneficios
 | Característica | **Plan Básico (Entry)** | **Plan Avanzado (Pro/Premium)** |
 | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
-| **Tutor IA (Chat)** | Estándar (15 mensajes/día) | Pro (Thinking) (40 stnd + 5 Thinking/mes) |
+| **Tutor IA (Chat)** | Estándar (15 mensajes/día) | Pro con Biblioteca Médica RAG (50 mensajes/día) |
 | **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
-| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico Thinking (1 / mes) |
+| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico IA (Consume chat_standard) |
 | **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
 | **Simulador Médico** | Banco Local (ILIMITADO) | Banco Local + Generación RAG (ILIMITADO) |
 
@@ -371,9 +371,9 @@ La protección de rentabilidad del sistema se basa en un guardián central: `che
 1.  **Validación en Cascada:**
     *   **Vencimiento:** Compara `Date.now() > subscription_expires_at`. Si venció, rebaja automáticamente al usuario a `'free'`.
     *   **Ciclo de Día:** Utiliza `last_usage_reset` para determinar si es un nuevo día y resetear contadores diarios (`daily_ai_usage`, `daily_arena_usage`).
-    *   **Ciclo de Mes:** Resetea los consumos mensuales (`monthly_thinking_usage`, `monthly_flashcards_usage`) cuando cambia el mes calendario o se renueva la suscripción.
-2.  **Degradación Elegante:** Cuando un usuario Advanced agota sus 5 tokens de *Thinking*, el sistema no bloquea el acceso, sino que degrada el servicio a *Chat Estándar*, manteniendo la operatividad sin frustrar al usuario.
-3.  **Protección de Base de Datos:** Las peticiones al simulador que requieren RAG (IA costosa) están restringidas en el backend para usuarios de Plan Básico, obligando al sistema a servir únicamente desde el `question_bank` estático, asegurando un margen de utilidad del 100% en ese módulo.
+    *   **Ciclo de Mes:** Resetea los consumos mensuales (`monthly_flashcards_usage`) cuando cambia el mes calendario o se renueva la suscripción.
+2.  **Unificación de Inteligencia (Costo Cero):** El sistema RAG ahora opera de forma 100% local en base de datos. En vez de bloquear a los usuarios con límites arbitrarios mensuales, los usuarios del Plan Avanzado pueden invocar a la IA Clínica con RAG la cantidad de veces que deseen dentro de su tope masivo de 50 chats al día.
+3.  **Protección de Base de Datos:** Las peticiones al simulador que requieren RAG (IA generadora) están restringidas en el backend para usuarios de Plan Básico, obligando al sistema a servir únicamente desde el `question_bank` estático, asegurando un margen de utilidad gigantesco.
 
 ---
 

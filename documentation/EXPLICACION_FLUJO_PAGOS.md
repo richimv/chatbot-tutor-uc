@@ -39,7 +39,7 @@ El navegador del usuario no aprueba la transacción jamás. Es **Mercado Pago qu
 En ese mismo milisegundo de aprobación, se dispara un `UPDATE users` titánico en PostgreSQL que:
 1. Pone `subscription_tier`: `'advanced'` o `'basic'` dependiendo del ID de Mercado Pago.
 2. Pone `subscription_status`: `'active'`.
-3. Pone todas las cuotas a cero `monthly_thinking_usage = 0`, `monthly_flashcards_usage = 0` (Le resetea los consumos que tuvo gratis en el pasado si los tuvo erróneamente para reiniciar en limpio).
+3. Pone todas las cuotas a cero `daily_ai_usage = 0`, `monthly_flashcards_usage = 0` (Le resetea los consumos diarios/mensuales que tuvo gratis en el pasado si los tuvo erróneamente para reiniciar en limpio).
 4. Cómputo Automático de Caducidad usando un reloj Universal (UTC): Inyecta a la Columna de Expiración el comando nativo `NOW() + INTERVAL '6 months'` (Advanced) o `INTERVAL '2 months'` (Basic). Así el servidor Base de Datos calcula hasta el segundo y día exacto su vencimiento a futuro, descartando fallos por años bisiestos.
 
 ## FASE 4.5: El Retorno Triunfal a la Aplicación (Frontend Callback)
@@ -55,19 +55,19 @@ A partir de este momento, todos y cada uno de los clics que el alumno haga por l
 - El middleware antes de darle acceso al Chat/Simulator hace 3 preguntas relámpago a la BD:
   1. **"¿Este loco ya venció?"**: Extrae su fecha de vencimiento. Si `Date.now() > FechaEnBD` en tiempo real... rebaja su fila en Base de Datos de vuelta a Tier: `'free'`. Y lo expulsa.
   2. **"¿Cambió el Sol de día?"**: Compara la columna silenciosa `last_usage_reset` con hoy. Si no son iguales, le resetea los disparos de Chat y Arena a Cero `0`.
-  3. **"¿Ya consumió sus Thinking del mes?"**: Al intentar usar en el Simulador el boton de "Patrones de Error", la ruta pasa la batuta `req.usageType = 'monthly_thinking_usage'`. El Middleware mira en BD, ¿tiene menos del límite permitido? Lo deja pasar a ver su reporte de fortalezas y debilidades. 
-     - **El Fallback Elegante:** Al hacer el diagnóstico repetidas veces y vaciar su cuota, o siendo un plan menor. El backend tira un HTTP 403 Forbidden. El Frontend JavaScript cacha el 403, oculta la alerta de Paywall, dibuja velozmente un mensaje puramente estadístico pre-cocinado del Banco Local usando JavaScript, sin gastar nada y entregando un servicio degradado pero funcional como un campeón.
+  3. **"¿Qué funciones especiales le corresponden por plan?"**: Al intentar usar en el Simulador el boton de "Diagnóstico Clínico AI", la ruta pasa la validación de suscripción limitando su acceso a 'Advanced' o 'Elite'. Si califica, consume un token de su masivo total `chat_standard` (Ej. 50/día).
+     - **El Fallback Elegante:** Siendo un plan menor (Basic o Free), el backend bloquea la petición a IA arrojando 403. El Frontend JavaScript cacha el 403, oculta la alerta de Paywall, dibuja velozmente un mensaje puramente estadístico pre-cocinado del Banco Local usando JavaScript, sin gastar nada y entregando un servicio degradado pero funcional como un campeón.
 
 ---
 
 ## Módulo Final: Aclaraciones sobre Límites Compartidos y el Simulador
 
-### 1. El Bucket Compartido de "monthly_thinking_usage"
-Las interacciones de IA avanzadas (como RAG Matricial) le cuestan mucho dinero al backend. Por eso existe `monthly_thinking_usage`.
-El Plan **Advanced** tiene exactamente configurados **5 Tokens de Thinking al Mes** (`chat_thinking: 5` en el middleware). Este es un *Bote Compartido*. Es decir, el estudiante Advanced puede decidir cómo gastarlo:
-- Gastarlo detonando búsquedas pesadas (RAG) sobre libros dentro del Tutor IA de chat.
-- Gastarlo pidiendo reportes de Análisis de Patrones de Error.
-Cualquiera de las dos funciones le restará 1 a su mismo pozo, hasta agotarse los 5 mensuales. Cuando se agote, el Chat dejará de usar RAG y pasará a Chat Estándar, y el Botón de Patrones pasará a dibujar JS estático como vimos antes. No salta paywall invasivo, se degrada elegantemente.
+### 1. El Beneficio "Tutor IA Clínico RAG"
+Las interacciones de IA avanzadas (como Búsqueda de Libros y Diagnósticos Clínicos) históricamente costaban mucho dinero por requerir modelos engorrosos ("Thinking"). Actualmente operan a costo **$0.00** extra al usar RAG 100% Local (PostgreSQL ILIKE).
+Por ello, el Plan **Advanced** ha unificado sus topes: otorga generosos **50 Chats Diarios**.
+- El usuario Advanced goza automáticamente de **Acceso a la Biblioteca Médica (RAG)**. Cada vez que consulta, la IA recupera pasajes del Harrison, NTS o CTO.
+- Puede detonar reportes de Diagnóstico Clínico en el Simulador las veces que lo requiera.
+Cualquiera de las dos funciones le restará simplemente 1 token a sus 50 tokens diarios. Es una oferta inmensa para el alumno, pero que no genera deudas imprevistas para la academia.
 
 ### 2. Generación de Exámenes y Rutas ILIMITADAS
 En el Simulador (`api/quiz/start`), la lógica para la IA de Generación de Preguntas Inédita es manejada dentro del `TrainingService.js`.

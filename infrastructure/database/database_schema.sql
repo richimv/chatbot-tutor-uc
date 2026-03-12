@@ -270,7 +270,6 @@ CREATE TABLE IF NOT EXISTS public.users (
     subscription_tier CHARACTER VARYING(50) DEFAULT 'free'::character varying,
     subscription_expires_at TIMESTAMP WITH TIME ZONE,
     daily_ai_usage INTEGER DEFAULT 0,
-    monthly_thinking_usage INTEGER DEFAULT 0,
     daily_arena_usage INTEGER DEFAULT 0,
     last_usage_reset DATE,
     CONSTRAINT users_pkey PRIMARY KEY (id)

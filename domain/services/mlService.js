@@ -38,7 +38,7 @@ const systemInstruction = {
     2.  **Referencias:** 
         * **Si mencionas Guías/Normas:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
         * **Fuentes Oficiales:** Fundamenta tu explicación en los libros de texto médicos verificados y normas oficiales peruanas (NTS, RM, Leyes) que forman parte de tu base de conocimiento experto.
-    3.  **Si no estás seguro:** Explica el concepto general médicamente e invita a buscar en repositorios oficiales o a practicar en el "Quiz Arena".
+    3.  **Uso de Conocimiento General:** Si el contexto provisto (RAG) no contiene la respuesta exacta a preguntas específicas (ej. plazos normativos, tiempos, o dosis exactas), **DEBES usar tu conocimiento experto pre-entrenado general** para dar la respuesta correcta. BAJO NINGUNA CIRCUNSTANCIA respondas "no está en mi base de conocimientos" o "el contexto proporcionado no lo menciona". Eres un médico experto y debes suplir cualquier deficiencia de los documentos con tu propio conocimiento médico.
 
     B) AL RESPONDER SOBRE ESTRUCTURA (CARRERAS/CURSOS):
     Si el usuario pregunta "¿Qué carreras hay?" o "¿Qué cursos tiene Medicina?", revisa el contexto inyectado "[ESTRUCTURA...]".
@@ -259,20 +259,44 @@ class MLService {
                 }
             }
 
-            // 5. BÚSQUEDA RAG LOCAL (Cero Costo - Palabras Clave)
+            // 5. BÚSQUEDA RAG LOCAL INTELIGENTE (Cero Costo - Palabras Clave)
             const RagService = require('./ragService');
-            // Intentamos detectar el target si está en el historial o es general
-            const localContext = await RagService.searchContext(message, 4, { target: 'SERUMS' }); // Por defecto SERUMS para máxima cobertura normativa en chat
-            if (localContext) {
-                contextInjection += `\n[CONTEXTO MÉDICO RAG LOCAL - DOCUMENTOS VERIFICADOS]\n${localContext}\n[FIN CONTEXTO RAG]\n`;
-                console.log("🚀 RAG Local: Fragmentos inyectados exitosamente.");
+            const disableRAG = dependencies.disableRAG || false; // ✅ Verificamos si el RAG está bloqueado para este tier
+            
+            // --- INICIO ROUTER CLÍNICO-NORMATIVO ---
+            // Le damos inteligencia al RAG leyendo la intención de la pregunta antes de buscar
+            let targetFocus = ''; 
+
+            if (!disableRAG) { // ✅ Solo ejecutamos la lógica de búsqueda si NO está deshabilitado
+                const msgLower = normalizedMsg; // variable local previamente normalizada
+                
+                // Regla A: Intención Operativa, Legal, o Procedimental (Prioridad SERUMS - NTS/Leyes)
+                if (/(deberia|hacer|enfermera|procedimiento|norma|ley|legal|minsa|essalud|protocolo|manejo inicial|notificar|notificacion|referir|serums|plazo|tiempo|cuando)/i.test(msgLower)) {
+                    targetFocus = 'SERUMS';
+                } 
+                // Regla B: Intención Puramente Clínica, Diagnóstica o Especialidad (Prioridad RESIDENTADO - Harrison/Washington)
+                else if (/(fisioterapia|fisiopatologia|mecanismo|dosis|tratamiento de eleccion|gold standard|diagnostico diferencial|receptor|enzima|gen|mutacion|residentado)/i.test(msgLower)) {
+                    targetFocus = 'RESIDENTADO';
+                }
+                
+                console.log(`🧠 Router RAG Detectó Intención: ${targetFocus || 'GENERAL/MIXTO'} para la pregunta`);
+                // --- FIN ROUTER ---
+
+                // Pedimos 3 fragmentos (antes 4) para ahorrar tokens y enfocar calidad, pasando el enfoque ideal.
+                const localContext = await RagService.searchContext(message, 3, { target: targetFocus }); 
+                if (localContext) {
+                    contextInjection += `\n[CONTEXTO MÉDICO RAG LOCAL - DOCUMENTOS VERIFICADOS]\n${localContext}\n[FIN CONTEXTO RAG]\n`;
+                    console.log(`🚀 RAG Local (${targetFocus || 'GENERAL'}): Fragmentos inyectados exitosamente.`);
+                }
+            } else {
+                console.log(`⚠️ RAG Local saltado por configuración (disableRAG: true)`);
             }
 
         } catch (e) {
             console.warn("⚠️ Error en pre-fetching/RAG Local (continuando sin contexto extra):", e);
         }
 
-        const usedRAG = contextInjection.includes('[CONTEXTO MÉDICO RAG LOCAL]');
+        const usedRAG = contextInjection.includes('RAG LOCAL');
         console.log(`🤖 MLService: RAG Local Status: ${usedRAG ? 'ACTIVO' : 'INACTIVO'}`);
 
         try {

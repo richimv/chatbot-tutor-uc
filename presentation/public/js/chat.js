@@ -62,7 +62,7 @@ class ChatComponent {
                         </button>
                         <div class="chatbot-title">
                             <i class="fas fa-robot chatbot-icon-svg"></i>
-                            <h3 id="chatbot-title-heading">Tutor IA</h3>
+                            <h3 id="chatbot-title-heading">Asistente Hub</h3>
                             <span class="chatbot-status">En línea</span>
                         </div>
                         <button id="chatbot-close" class="chatbot-close"><i class="fas fa-times"></i></button>
@@ -76,7 +76,7 @@ class ChatComponent {
 
                     <div class="chatbot-typing" id="chatbot-typing" style="display: none;">
                         <div class="typing-indicator"><span></span><span></span><span></span></div>
-                        <span>El tutor está escribiendo...</span>
+                        <span>El asistente está escribiendo...</span>
                     </div>
 
                     <div class="chatbot-input-container">
@@ -93,7 +93,7 @@ class ChatComponent {
                 </div>
             </div>
 
-            <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Tutor IA">
+            <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Asistente">
                 <i class="fas fa-robot"></i>
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
@@ -114,8 +114,8 @@ class ChatComponent {
         // Se usa `this.messages.length` en lugar del antiguo `this.conversationHistory.length`.
         // Esto evita que el mensaje aparezca al cambiar entre chats existentes.
         if (this.messages.length === 0) {
-            const welcomeText = `**¡Hola! Soy tu tutor IA.**
-¿               En qué puedo ayudarte hoy?`;
+            const welcomeText = `**¡Hola! Soy tu asistente académico.**
+¿En qué puedo ayudarte hoy?`;
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
 
             // ✅ RESTAURADO: Sugerencias iniciales
@@ -338,13 +338,13 @@ class ChatComponent {
             }
             document.getElementById('chatbot-input').focus();
             this.hideNotification();
-            toggleBtn.setAttribute('aria-label', 'Cerrar chat del Tutor IA');
+            toggleBtn.setAttribute('aria-label', 'Cerrar chat del Asistente');
         } else {
             // ✅ CORRECCIÓN: Devolver el foco al botón principal ANTES de hacer otros cambios.
             // Esto evita el error de accesibilidad al cerrar el chat.
             toggleBtn.focus();
             toggleBtn.style.display = 'block';
-            toggleBtn.setAttribute('aria-label', 'Abrir chat del Tutor IA');
+            toggleBtn.setAttribute('aria-label', 'Abrir chat del Asistente');
         }
     }
 
@@ -376,7 +376,7 @@ class ChatComponent {
             toggleBtn.style.display = 'block';
             toggleBtn.focus();
             toggleBtn.setAttribute('aria-expanded', 'false');
-            toggleBtn.setAttribute('aria-label', 'Abrir chat del Tutor IA');
+            toggleBtn.setAttribute('aria-label', 'Abrir chat del Asistente');
         }
 
         // 2. Ocultar el contenedor del chat.

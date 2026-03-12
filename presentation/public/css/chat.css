@@ -552,7 +552,7 @@
     align-items: center;
     justify-content: center;
     font-size: 1.6rem;
-    z-index: 2147483647;
+    z-index: 2147483640;
     transition: transform 0.2s;
 }
 

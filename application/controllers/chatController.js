@@ -73,19 +73,15 @@ class ChatController {
             const conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
 
             // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---
-            const pool = require('../../infrastructure/database/db');
-            const userQuery = await pool.query('SELECT subscription_tier, monthly_thinking_usage FROM users WHERE id = $1', [userId]);
-            const userAct = userQuery.rows[0];
-            const tierLimits = { free: 0, basic: 0, advanced: 5 }; // Hardcode referencial a matriz de límites
-            const maxThinking = tierLimits[userAct.subscription_tier] || 0;
-            const hasThinkingQuota = userAct.monthly_thinking_usage < maxThinking;
+            // Los usuarios Avanzados y Elite tienen acceso ILIMITADO (dentro de su cuota diaria de chat) a la Biblioteca Médica (RAG)
+            const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'elite');
 
             // --- LÓGICA ORIGINAL DE IA (MODIFICADA PARA USAR EL HISTORIAL Y FILTROS) ---
             let classification;
             try {
                 const loadedKBSet = await this.knowledgeBaseRepo.load();
 
-                console.log(`🤖 Intentando generar respuesta con LLM. Cuota Thinking Activa: ${hasThinkingQuota}. Tier: ${req.userTier}.`);
+                console.log(`🤖 Intentando generar respuesta con LLM. Acceso Biblioteca RAG: ${hasRAGAccess}. Tier: ${req.userTier}.`);
                 // Se pasa el historial obtenido de la base de datos.
                 classification = await this.mlService.classifyIntent(message, conversationHistory, {
                     knowledgeBaseRepo: this.knowledgeBaseRepo,
@@ -94,13 +90,13 @@ class ChatController {
                     bookRepo: new BookRepository(),
                     knowledgeBaseSet: loadedKBSet,
                     userTier: req.userTier || 'free',
-                    disableRAG: !hasThinkingQuota // Bloquea silenciosamente RAG si no hay cuota, degradando la IA
+                    disableRAG: !hasRAGAccess // Bloquea silenciosamente RAG si no es avanzado, degradando la IA a memoria general
                 });
 
                 if (classification.usedRAG) {
                     console.log(`📚 RAG EXITOSO: La IA utilizó fragmentos de la base documental.`);
-                } else if (!hasThinkingQuota) {
-                    console.log(`🚫 RAG SKIPPED: Usuario no tiene cuota 'Thinking' (Tier: ${req.userTier}).`);
+                } else if (!hasRAGAccess) {
+                    console.log(`🚫 RAG SKIPPED: Usuario no tiene acceso a Biblioteca (Tier: ${req.userTier}).`);
                 }
             } catch (mlError) {
                 console.error('❌ ERROR CRÍTICO llamando a mlService:', mlError);
@@ -125,14 +121,11 @@ class ChatController {
                 );
             }
 
-            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Híbrido: Standard vs Thinking)
+            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Estándar Diario)
             try {
                 const pool = require('../../infrastructure/database/db');
-                // Si la IA empleó contexto RAG complejo, se cobrará de la cuota mensual Thinking (solo disponible para Avanzados)
-                // ✅ RESTRICCIÓN: Jamás sobrescribir si el Middleware dictó el consumo de una Vida Global Trial (usage_count)
-                if (classification && classification.usedRAG && req.usageType !== 'usage_count') {
-                    req.usageType = 'monthly_thinking_usage';
-                }
+                
+                // El RAG ya no consume una cuota especial mensual (Thinking), consume una interacción del chat normal
 
                 if (req.usageType) {
                     await pool.query(

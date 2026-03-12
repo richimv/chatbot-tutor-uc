@@ -100,7 +100,6 @@ exports.handleWebhook = async (req, res) => {
                             subscription_tier = $1,
                             subscription_expires_at = NOW() + INTERVAL '${plan.months} months',
                             daily_ai_usage = 0,
-                            monthly_thinking_usage = 0,
                             monthly_flashcards_usage = 0,
                             daily_arena_usage = 0,
                             payment_id = $2

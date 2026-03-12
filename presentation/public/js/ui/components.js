@@ -361,7 +361,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
             <div class="recommendation-icon"><i class="fas ${icon}"></i></div>
             <div class="recommendation-content">
                 <div class="recommendation-type">${typeLabel} 
-                    ${item.confidence ? `<span class="ml-confidence-badge" title="Confianza de la IA">${item.confidence}% Match</span>` : ''}
+                    ${item.confidence ? `<span class="ml-confidence-badge" title="Confianza del Asistente">${item.confidence}% Match</span>` : ''}
                 </div>
                 <div class="recommendation-title">${item.name}</div>
                 ${isBook && item.author ? `<div class="recommendation-author" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${item.author}</div>` : ''}
@@ -375,7 +375,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
             <div class="recommendation-icon topic-icon"><i class="fas fa-lightbulb"></i></div>
             <div class="recommendation-content">
                 <div class="recommendation-type">TEMA PARA EXPLORAR
-                    ${topic.confidence ? `<span class="ml-confidence-badge" title="Confianza de la IA">${topic.confidence}% Match</span>` : ''}
+                    ${topic.confidence ? `<span class="ml-confidence-badge" title="Confianza del Asistente">${topic.confidence}% Match</span>` : ''}
                 </div>
                 <div class="recommendation-title">${topic.name}</div>
             </div>
@@ -399,7 +399,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
     const mlIndicator = avgConfidence > 0 ? `
         <div class="ml-powered-indicator">
             <i class="fas fa-robot"></i>
-            <span>Recomendaciones generadas por IA</span>
+            <span>Recomendaciones del Asistente</span>
             <span class="ml-confidence-avg">${avgConfidence}% de coincidencia promedio</span>
         </div>
     ` : '';
@@ -451,7 +451,7 @@ function createEducationalIntentCardHTML(query) {
             <div class="intent-actions">
                 <button class="btn-primary intent-cta-btn" onclick="window.askAboutTopic('${query}')">
                     <i class="fas fa-sparkles"></i>
-                    Explicar con IA
+                    Explicar con el Asistente
                 </button>
             </div>
         </div>
@@ -464,7 +464,7 @@ function createContextualChatButtonHTML(type, name) {
     return `
         <div class="contextual-chat-section">
             <button class="btn-secondary btn-ask-ai" onclick="${action}">
-                🤖 Preguntar al Tutor IA sobre este ${type === 'course' ? 'curso' : 'tema'}
+                🤖 Consultar al Asistente sobre este ${type === 'course' ? 'curso' : 'tema'}
             </button>
         </div>
     `;

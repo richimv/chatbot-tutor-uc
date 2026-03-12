@@ -95,7 +95,7 @@ class UIManager {
                         
                         <p style="color: #cbd5e1; font-size: 1rem; line-height: 1.5; margin-bottom: 25px;">
                             Gracias por unirte a la comunidad Premium. <br>
-                            Ahora tienes <strong>Acceso Ilimitado</strong> a todos los recursos y al Tutor IA.
+                            Ahora tienes <strong>Acceso Ilimitado</strong> a todos los recursos y al Asistente.
                         </p>
 
                         <button onclick="document.getElementById('${modalId}').remove()" class="btn-primary" style="
@@ -387,10 +387,12 @@ class UIManager {
                         <div class="auth-prompt-icon" style="margin-bottom: 20px;">
                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
                         </div>
-                        <div class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6; margin-bottom: 25px;">
+                        <div class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6;">
                             Ya usaste tus 3 pruebas gratuitas.
                             <br>Para continuar, suscríbete por <strong style="color: #ffd700;">S/ 9.90</strong>.
                         </div>
+                    </div>
+                    <div class="modal-footer">
                         <button class="btn-primary" style="
                             width: 100%; 
                             background: linear-gradient(45deg, #ffd700, #ffa500); 
@@ -488,7 +490,7 @@ class UIManager {
                         </div>
 
                         <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 5px; line-height: 1.5;">
-                            Regístrate gratis para acceder a simulacros médicos, flashcards inteligentes y analítica avanzada con IA.
+                            Regístrate gratis para acceder a simulacros médicos, flashcards inteligentes y analítica avanzada.
                         </div>
                     </div>
 
@@ -748,7 +750,7 @@ class UIManager {
                                     <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
                                     <div>
                                         <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Pases de Vidas Globales</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea simulacros, retos de Arena, Tutor IA y más.</div>
+                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea simulacros, retos de Arena, Asistente y más.</div>
                                     </div>
                                 </li>
                                 <li style="margin-bottom: 0; display: flex; align-items: start; gap: 10px;">

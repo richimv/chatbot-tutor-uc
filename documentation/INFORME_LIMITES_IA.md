@@ -13,9 +13,9 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | Característica | **Plan Básico (Free / Entry)** | **Plan Avanzado (Pro / Premium)** |
 | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
-| **Tutor IA (Chat)** | Estándar (15 mensajes/día) | Pro (Thinking) (40 stnd + 5 Thinking/mes) |
+| **Tutor IA (Chat)** | Estándar (20 mensajes/día) | Pro con Biblioteca Médica (30 mensajes/día) |
 | **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
-| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico Thinking (1 / mes) |
+| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico con IA (Dentro de los 50 mensajes diarios) |
 | **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
 | **Generador Simulador Médico (IA)** | **[EXTIRPADO] - Solo BD** | **[EXTIRPADO] - Solo BD** |
 
@@ -36,16 +36,15 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
   - **Rentabilidad Conservada:** Se determinó que incluso limitando el Simulador a 30 rondas para el usuario Avanzado, el costo operativo proyectado a 6 meses agregaba un pasivo de S/ 9.00 adicionales por persona, disminuyendo drásticamente el margen bruto a un nivel inaceptable (Utilidad Bruta reducida al 26%). Por lo tanto, el sistema ahora atiende el 100% de los simulacros médicos desde la Base de Datos Histórica y Estática (Costo Cero).
 
 ### 2.2 Módulo: Tutor Médico RAG (Chat Principal)
-- Se inyectó el tracking del límite a través del middleware `checkAILimits('chat_standard')` y se asignó el cobro de tokens Thinking según convenga.
-- La barrera se actualiza a `daily_ai_usage` sumando `+1` en la DB tras cada respuesta existosa de Google Cloud (Vertex).
-- Protege a los usuarios Avanzados con "Deducción Híbrida" (pueden cambiar entre chat barato o Chat que piensa - Thinking Mode).
+- Se estandarizó el tracking de límite a través del middleware `checkAILimits('chat_standard')`.
+- La IA en todos los casos utiliza el modelo rápido transaccional. Sin embargo, si el usuario es de nivel **Avanzado (Premium)**, se activa el **Acceso a Biblioteca Médica RAG** (extracción local de los libros Harrison, NTS, GPC) sin costo agregado por ser una extracción local ILIKE, lo cual funda sus respuestas clínicamente en cada chat que el usuario consume de sus 30 tokens diarios.
 
 ### 2.3 Módulo: Diagnóstico Clínico ("Análisis de Patrones de Error")
 - **El Problema Anterior:** El frontend usaba un `setTimeout` javascript básico que simplemente tomaba la "Peor materia" del alumno en la tabla relacional y fingía durante 1.5 segundos que la IA estaba "pensando", arrojando una oración quemada y dura.
 - **La Solución Implementada:**
   - Se creó la ruta de servidor protegida e íntegramente nueva en Backend: `POST /api/analytics/diagnostic`.
-  - Equipado con un Contexto Clínico en **Modelo Pro/Thinking**. Toma un mapeo estadístico en forma de JSON relacional de los exámenes del alumno, analiza la correlación de fallas y debilita debilidades, y entrega un consejo clínico.
-  - Se conectó en Frontend el Spinner (Cargando...) y se adaptó para restarle al alumno el contador `monthly_thinking_usage`.
+  - Toma un mapeo estadístico en forma de JSON relacional de los exámenes del alumno, analiza la correlación de fallas y entrega un consejo clínico. Exclusivo para usuarios del Plan Avanzado.
+  - Al no emplear ya características onerosas, su uso simplemente consume de la cuota diaria global de "Chat", asegurando la rentabilidad.
 
 ### 2.4 Módulo: Generador de Flashcards (Tarjetas de Repaso)
 - **El Problema Anterior:** Estaba midiendo en el backend usando contadores de "Chat". Por esto, generarlas iba a afectar injustamente al chat y a chocar con la meta mensual del pago de S/ 9.90.

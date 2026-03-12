@@ -198,7 +198,6 @@ function updateHeaderUI(user) {
             <div class="user-menu-container">
                 <button id="user-menu-toggle" class="user-menu-toggle">
                     <img src="${avatarUrl}" class="user-avatar">
-                    <span class="user-menu-name-label">${displayName}</span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">

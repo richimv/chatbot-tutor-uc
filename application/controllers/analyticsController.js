@@ -213,17 +213,23 @@ class AnalyticsController {
         }
     }
 
-    // ✅ NUEVO ESPACIO PENSANTE (Thinking API / Reasoning)
+    // ✅ NUEVO ESPACIO IA CLÍNICA (Sustituye a Thinking)
     async getAIDiagnostic(req, res) {
         try {
             const userId = req.user.id;
+            const tier = req.userTier || 'free';
             const { stats } = req.body; // Llega cacheado desde el front (radar_data, avg_score, accuracy)
+
+            // Validación de acceso exclusivo a Planes Avanzados
+            if (tier !== 'advanced' && tier !== 'elite') {
+                return res.status(403).json({ error: 'El Diagnóstico Clínico Automatizado es exclusivo del Plan Avanzado.' });
+            }
 
             if (!stats || !stats.radar_data) {
                 return res.status(400).json({ error: 'Faltan datos estadísticos para analizar.' });
             }
 
-            console.log(`🧠 [THINKING] Generando diagnóstico clínico para el usuario ${userId}...`);
+            console.log(`🧠 [IA CLÍNICA] Generando diagnóstico clínico para el usuario ${userId}...`);
 
             // Prompt analítico (Rol: Tutor Jefe de Residentes)
             const prompt = `
@@ -254,7 +260,7 @@ class AnalyticsController {
             try {
                 diagnostic = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 
-                // 💸 DESCONTAR LÍMITE (Thinking Token) - SOLO SI EL PARSEO FUE EXITOSO
+                // 💸 DESCONTAR LÍMITE (Chat Standard Diario)
                 try {
                     const db = require('../../infrastructure/database/db');
                     if (req.usageType) {
@@ -262,10 +268,10 @@ class AnalyticsController {
                             `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
                             [userId]
                         );
-                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (THINKING EXITOSO)`);
+                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (DIAGNÓSTICO EXITOSO)`);
                     }
                 } catch (limitErr) {
-                    console.error("⚠️ No se pudo actualizar el límite Thinking. Continuando...", limitErr);
+                    console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
                 }
 
             } catch (err) {

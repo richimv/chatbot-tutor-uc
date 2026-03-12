@@ -549,7 +549,7 @@ body {
     visibility: visible;
 }
 
-.modal-content {
+.modal-overlay .modal-content {
     background: var(--bg-card);
     padding: 2rem;
     border-radius: 16px;
@@ -722,7 +722,7 @@ textarea.form-input {
     }
 
     /* --- MODAL FIXES --- */
-    .modal-content {
+    .modal-overlay .modal-content {
         padding: 1.25rem !important;
         width: 95% !important;
     }

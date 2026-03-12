@@ -8,6 +8,6 @@ router.get('/heatmap', auth, analyticsController.getHeatmap);
 
 // Diagnose Data con IA (Requiere Token Thinking)
 const checkAILimits = require('../../application/middlewares/checkLimitsMiddleware');
-router.post('/diagnostic', auth, checkAILimits('chat_thinking'), analyticsController.getAIDiagnostic);
+router.post('/diagnostic', auth, checkAILimits('chat_standard'), analyticsController.getAIDiagnostic);
 
 module.exports = router;
