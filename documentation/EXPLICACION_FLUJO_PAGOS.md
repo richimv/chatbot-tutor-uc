@@ -9,7 +9,7 @@ Cuando un médico entra al portal y presiona **Registrarse**, es llevado al `aut
 - Al insertar su cuenta a la base de datos `users`, el sistema de postgresql lo inyecta **por defecto** con los siguientes parámetros fundacionales:
   - `role`: `'student'`
   - `subscription_tier`: `'free'`
-  - `subscription_status`: `'active'` (Se refiere a que la cuenta no está bloqueada ni por verificar correo, su cuenta existe y respira).
+  - `subscription_status`: `'pending'` (Significa que la cuenta está creada pero aún no ha realizado su primer pago para activar el dashboard premium o validar su acceso).
   - `subscription_expires_at`: `NULL` (Los usuarios *Free* no tienen fecha límite, siempre vivirán en la capa base y el middleware jamás intentará rebajarlos a nada inferior).
 
 ## FASE 2: El Modelo de Vidas (Freemium de Entrada)
@@ -59,23 +59,3 @@ A partir de este momento, todos y cada uno de los clics que el alumno haga por l
      - **El Fallback Elegante:** Siendo un plan menor (Basic o Free), el backend bloquea la petición a IA arrojando 403. El Frontend JavaScript cacha el 403, oculta la alerta de Paywall, dibuja velozmente un mensaje puramente estadístico pre-cocinado del Banco Local usando JavaScript, sin gastar nada y entregando un servicio degradado pero funcional como un campeón.
 
 ---
-
-## Módulo Final: Aclaraciones sobre Límites Compartidos y el Simulador
-
-### 1. El Beneficio "Tutor IA Clínico RAG"
-Las interacciones de IA avanzadas (como Búsqueda de Libros y Diagnósticos Clínicos) históricamente costaban mucho dinero por requerir modelos engorrosos ("Thinking"). Actualmente operan a costo **$0.00** extra al usar RAG 100% Local (PostgreSQL ILIKE).
-Por ello, el Plan **Advanced** ha unificado sus topes: otorga generosos **50 Chats Diarios**.
-- El usuario Advanced goza automáticamente de **Acceso a la Biblioteca Médica (RAG)**. Cada vez que consulta, la IA recupera pasajes del Harrison, NTS o CTO.
-- Puede detonar reportes de Diagnóstico Clínico en el Simulador las veces que lo requiera.
-Cualquiera de las dos funciones le restará simplemente 1 token a sus 50 tokens diarios. Es una oferta inmensa para el alumno, pero que no genera deudas imprevistas para la academia.
-
-### 2. Generación de Exámenes y Rutas ILIMITADAS
-En el Simulador (`api/quiz/start`), la lógica para la IA de Generación de Preguntas Inédita es manejada dentro del `TrainingService.js`.
-- **Free y Basic**: Jamás generan nuevas preguntas. El Backend (`isAdvanced`) detecta su plan y si la base de datos se secó y el alumno ya leyó todas, el simulador explota el proceso y arroja un Error solicitando la compra para generar más. Solo sacan estáticas.
-- **Advanced**: Cuando se agotan las estáticas, el servicio envía RAG al modelo (Flash 2.5) para generar nuevas. A nivel arquitectónico, **este proceso no consume tokens diarios ni mensuales (`usageType`)**. Para el alumno Advanced, la inyección generativa del simulador es **ILIMITADA**. Literalmente puede generar exámenes crudos hasta el infinito. Esto es el motor de retención del Plan Pro.
-
-### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
-Las tarjetas generadas con IA estipulan **20 tarjetas al mes** para Basic y **100 tarjetas al mes** para Advanced.
-El middleware extrae directamente de PostgreSQL la entidad `monthly_flashcards_usage`. 
-Al saturar las cuotas (4 o 20 llamadas), el backend escupe rígidamente un 403.
-El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- un bloque DOM `custom-limit-modal` con posición absoluta `fixed` que bloquea y empapela toda la pantalla. Es imposible de romper o saltar mediante CSS de otros módulos y blinda tajantemente la base de datos de usuarios aprovechados.

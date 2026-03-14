@@ -74,34 +74,44 @@ class TrainingRepository {
 
         console.log(`🔎 [Repo] Usuario ${userId} ha visto ${seenIds.length} preguntas cruzadas en las últimas 24h.`);
 
-        // 2. Query Dinámico con Exclusión
+        // 2. Query Dinámico con Exclusión y Balanceo de Áreas (Inteligencia Natural)
+        // Usamos ROW_NUMBER() para asegurar que traemos preguntas de todas las áreas si existen.
         let query = `
-            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
-            FROM question_bank
-            WHERE topic = ANY($1::text[]) 
-            AND domain = $2 
-            AND ($3::text IS NULL OR target = $3)
-            AND difficulty = $4
+            WITH BalancedPool AS (
+                SELECT id, question_text, options, correct_option_index, explanation, domain, topic,
+                       ROW_NUMBER() OVER(PARTITION BY topic ORDER BY RANDOM()) as rn
+                FROM question_bank
+                WHERE UPPER(topic) = ANY($1::text[]) 
+                AND domain = $2 
+                AND ($3::text IS NULL OR target = $3)
+                AND difficulty = $4
         `;
 
         const params = [topics, domain, target, difficulty];
         let paramIdx = 5;
 
-        // Fusión experta: Filtrado por Especialidad Paramédica solo si fue solicitada (ej. SERUMS).
-        // Si career está nulo en la BD es una pregunta general válida para cualquier profesional.
+        // Filtro de Carrera (SERUMS)
         if (target === 'SERUMS' && career) {
             query += ` AND (career IS NULL OR career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
         }
 
+        // Exclusión de Vistas
         if (seenIds.length > 0) {
             query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
             params.push(seenIds);
             paramIdx++;
         }
 
-        query += ` ORDER BY RANDOM() LIMIT $${paramIdx}`;
+        // Finalización del CTE y Selección Final
+        query += `
+            )
+            SELECT * FROM BalancedPool 
+            WHERE rn <= 3
+            ORDER BY RANDOM() 
+            LIMIT $${paramIdx}
+        `;
         params.push(limit);
 
         const res = await db.query(query, params);
@@ -561,7 +571,7 @@ class TrainingRepository {
      */
     async checkExistingFlashcards(userId, deckId, fronts = []) {
         if (!fronts || fronts.length === 0) return [];
-        
+
         const query = `
             SELECT front_content FROM user_flashcards
             WHERE user_id = $1 AND deck_id = $2 AND front_content = ANY($3::text[])

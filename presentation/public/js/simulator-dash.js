@@ -10,7 +10,7 @@ const SimulatorDash = (() => {
         'MEDICINA': {
             title: 'Ciencias de la Salud',
             icon: '<i class="fas fa-heartbeat"></i>',
-            quizParams: '?topic=Medicina%20General'
+            quizParams: '?target=SERUMS&career=Medicina%20Humana&difficulty=Básico'
         },
         'INGLES': {
             title: 'Inglés Técnico',
@@ -284,7 +284,7 @@ const SimulatorDash = (() => {
                 }
             </style>
             <i class="fas fa-lightbulb tip-icon"></i>
-            <strong>Tip:</strong> Personaliza tu examen eligiendo tipo (ENAM, SERUMS, Residentado), áreas clínicas y dificultad.
+            <strong>Tip:</strong> Tu simulador está configurado por defecto para el SERUMS. Personaliza tu meta, áreas clínicas y dificultad aquí.
         `;
 
         btn.parentElement.style.position = 'relative';
@@ -940,7 +940,12 @@ const SimulatorDash = (() => {
     function renderGuestBanner() {
         const container = document.getElementById('dashboard-content');
         if (!container) return; // Guard
+        
+        // --- 🛡️ PREVENCIÓN DE DUPLICADOS ---
+        if (document.getElementById('guest-mode-banner')) return;
+
         const banner = document.createElement('div');
+        banner.id = 'guest-mode-banner';
         banner.style.cssText = 'background: linear-gradient(90deg, #1e293b, #0f172a); border: 1px solid #3b82f6; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1); animation: fadeIn 0.8s ease-out;';
         banner.innerHTML = `
             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -1030,6 +1035,12 @@ const SimulatorDash = (() => {
         // 2. Evolution Chart Demo
         const evoCanvas = document.getElementById('evolutionChart');
         if (evoCanvas) {
+            // --- 🧹 LIMPIEZA DE CANVAS ---
+            if (lineChartInst) {
+                lineChartInst.destroy();
+                lineChartInst = null;
+            }
+
             const evolutionCtx = evoCanvas.getContext('2d');
             lineChartInst = new Chart(evolutionCtx, {
                 type: 'line',
@@ -1097,3 +1108,12 @@ const SimulatorDash = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', SimulatorDash.init);
+
+// 🔄 AUTO-REFRESH: Recargar estadísticas al volver al tablero (Botón Atrás o Salir del Quiz)
+window.addEventListener('pageshow', (event) => {
+    // Si la página se está mostrando desde el cache del navegador (persisted)
+    if (event.persisted) {
+        console.log("🔄 Navegación detectada: Refrescando Estadísticas...");
+        SimulatorDash.init();
+    }
+});

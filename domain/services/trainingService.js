@@ -6,13 +6,13 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// INSTANCIAS DE VERTEX AI ELIMINADAS (Simulador Médico ahora usa 100% BD)
-// Instancia Modelo CREATIVO (Para Arena/General - Variado)
+// INSTANCIAS DE VERTEX AI (Simulador Médico usa RAG Maestro)
 const modelCreative = vertex_ai.preview.getGenerativeModel({
     model: 'gemini-2.5-flash',
+    thinking: { disable: true },
     generationConfig: {
         maxOutputTokens: 8192,
-        temperature: 0.9, // Alto para creatividad y variedad
+        temperature: 0.9,
         topP: 0.95,
         responseMimeType: 'application/json'
     },
@@ -64,10 +64,10 @@ class TrainingService {
     // MÉTODO _buildRagQuery EXTIRPADO COMPLETAMENTE POR CONTROL FINANCIERO
 
     /**
-     * Obtiene Preguntas (Híbrido: Banco -> IA).
+     * Obtiene Preguntas (Banco Local).
      * Soporta tanto Modo Legacy (String) como Modo Multi-Area (Objeto).
      */
-    async getQuestions(categoryOptions, difficulty, limit = 5, userId) {
+    async getQuestions(categoryOptions, difficulty, limit = 5, userId, subscriptionTier = 'free') {
         // 1. Parsear opciones
         let target = 'MEDICINA';
         let areas = ['Medicina General'];
@@ -101,56 +101,130 @@ class TrainingService {
             }
         }
 
-        // 🔄 ROTACIÓN DE TEMAS (Solo si es general)
-        if (areas.length === 1 && (areas[0] === 'MEDICINA GENERAL' || areas[0] === 'GENERAL' || !areas[0])) {
-            const subtopics = ['CARDIOLOGIA', 'PEDIATRIA', 'GINECOLOGIA', 'NEUROLOGIA', 'DERMATOLOGIA', 'TRAUMATOLOGIA', 'SALUD PUBLICA', 'NEFROLOGIA', 'GASTROENTEROLOGIA'];
-            areas[0] = subtopics[Math.floor(Math.random() * subtopics.length)];
-            console.log(`🔄 Rotación de Tema: Seleccionado '${areas[0]}' para Medicina General.`);
+        // 🔄 FALLBACK DE ÁREAS (SERUMS POR DEFECTO)
+        // Si no hay áreas o son genéricas, inyectamos el bloque oficial del SERUMS.
+        const isGeneric = !areas || areas.length === 0 ||
+            (areas.length === 1 && (areas[0].toUpperCase() === 'MEDICINA GENERAL' || areas[0].toUpperCase() === 'GENERAL'));
+
+        if (isGeneric) {
+            areas = [
+                'Salud Pública y Epidemiología',
+                'Gestión de Servicios de Salud',
+                'Ética Deontología e Interculturalidad',
+                'Medicina Legal',
+                'Investigación y Bioestadística',
+                'Cuidado Integral'
+            ];
+            console.log(`📡 Fallback Activado: Usando 6 áreas oficiales de SERUMS para configuración inicial.`);
         }
 
-        const areaString = areas.join(', ');
-        console.log(`🧠 TrainingService: Buscando Multi-Área: [${areaString}] Target: (${target}) Career: (${career || 'N/A'}) Nivel Forzado: [${difficulty}]...`);
+        // ---------------------------------------------------------
+        // A. FLUJO MÉDICO (ENAM, SERUMS, RESIDENTADO)
+        // ---------------------------------------------------------
+        if (dbDomain === 'medicine') {
+            // 1. ESCANEO DE STOCK GLOBAL (Prioridad: Banco Real)
+            const normalizedAllAreas = areas.map(a => a.toUpperCase());
+            console.log(`\n🧠 [TrainingService] Analizando stock en ${normalizedAllAreas.length} áreas para ${dbTarget}...`);
 
-        // 1. Intentar obtener del Banco (DB) con la nueva query (Batch)
-        let questions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, areas, difficulty, limit, userId, career);
+            const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, difficulty, 50, userId, career);
 
-        // 🔀 Shuffle de opciones para preguntas de DB
-        questions = questions.map(q => this.shuffleOptions(q));
+            const questionsByArea = {};
+            rawBankQuestions.forEach(q => {
+                const shuffledQ = this.shuffleOptions(q);
+                const topicKey = shuffledQ.topic ? shuffledQ.topic.toUpperCase() : 'GENERAL';
+                if (!questionsByArea[topicKey]) questionsByArea[topicKey] = [];
+                questionsByArea[topicKey].push(shuffledQ);
+            });
 
-        if (questions.length >= limit) {
-            console.log(`✅ ¡Éxito! ${questions.length} preguntas recuperadas del Banco (Cost $0).`);
-            repository.markQuestionsAsSeen(userId, questions.map(q => q.id));
-            return { questions: questions.slice(0, limit), source: 'BANK', topic: areas[0] };
-        }
+            const areasWithStock = normalizedAllAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
 
-        // 🛑 MOCK TEST PROTECTION (Límite 100 o mayor)
-        if (limit >= 100) {
-            console.warn(`🛑 Modo Simulacro Real (Limit ${limit}): Bloqueando generación IA masiva por seguridad financiera. Retornando las locales.`);
-            if (questions.length < 10) {
-                throw new Error(`No hay suficientes preguntas en el banco para este simulacro. Solo hay ${questions.length} disponibles en estas áreas. Juega "Modo Estudio" primero para alimentar la base de datos con la IA.`);
+            let sampledAreas;
+            if (areasWithStock.length >= 5) {
+                sampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
+            } else if (areasWithStock.length > 0) {
+                sampledAreas = [...areasWithStock];
+            } else {
+                sampledAreas = areas.length > 5 ? areas.sort(() => 0.5 - Math.random()).slice(0, 5) : areas;
             }
-            // Retorna lo que tenga el banco (ej: 40 o 70) para no romper el front
-            repository.markQuestionsAsSeen(userId, questions.map(q => q.id));
-            return { questions: questions, source: 'BANK', topic: areas[0] };
-        }
 
-        // 2. Si faltan, procesar lógica según el target (Trivia vs Médico)
-        const needed = limit - questions.length;
-
-        // 🛡️ EXTIRPACIÓN DEL GENERADOR IA PARA EL SIMULADOR MÉDICO
-        // Por orden directa de rentabilidad (UX/Finanzas): NINGÚN USUARIO genera preguntas médicas con IA en vivo.
-        if (target !== 'GENERAL_TRIVIA') {
-            if (questions.length === 0) {
-                throw new Error("No hay preguntas disponibles en el banco para los temas seleccionados. Intenta con otra dificultad o añade más áreas de estudio.");
+            let balancedBatch = [];
+            for (const area of sampledAreas) {
+                if (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
+                    balancedBatch.push(questionsByArea[area].shift());
+                }
             }
-            console.warn(`🛑 Simulador Médico: Banco insuficiente (Encontradas: ${questions.length}). Retornando lo disponible (Se extirpó la Generación IA).`);
-            repository.markQuestionsAsSeen(userId, questions.map(q => q.id));
-            return { questions: questions, source: 'BANK', topic: areas[0] };
+
+            if (balancedBatch.length < limit) {
+                for (const area of sampledAreas) {
+                    while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
+                        balancedBatch.push(questionsByArea[area].shift());
+                    }
+                }
+            }
+
+            const areasStr = areasWithStock.length > 5 ? `${areasWithStock.length} áreas` : `[${areasWithStock.join(', ')}]`;
+            console.log(`🔎 [Banco] Stock detectado en: ${areasStr} (${balancedBatch.length}/${limit} preguntas).`);
+
+            const bankCount = balancedBatch.length;
+            const batchIsHealthy = bankCount === limit;
+            let source = 'BANK';
+
+            if (!batchIsHealthy) {
+                const tier = String(subscriptionTier || 'free').toLowerCase();
+
+                if (tier !== 'advanced' && tier !== 'admin') {
+                    console.log(`🚫 [Limit] Usuario '${tier}' alcanzó agotamiento de banco. Bloqueando generación IA.`);
+                    throw new Error("BANCO_AGOTADO_TIER");
+                }
+
+                console.log(`🤖 [IA] Lote insuficiente (${bankCount}/${limit}). Activando Reposición para ${sampledAreas.length} áreas...`);
+                source = 'AI_REPOSITION';
+
+                if (limit >= 100) {
+                    if (bankCount < 10) {
+                        throw new Error(`No hay suficientes preguntas en el banco para este simulacro. Solo hay ${bankCount} disponibles.`);
+                    }
+                    repository.markQuestionsAsSeen(userId, balancedBatch.map(q => q.id));
+                    return { questions: balancedBatch, source: 'BANK', topic: sampledAreas[0] };
+                }
+
+                const areaPrompt = sampledAreas.join(', ');
+                const MLService = require('./mlService');
+                let aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5);
+
+                if (aiQuestions && aiQuestions.length > 0) {
+                    source = 'HYBRID';
+                    aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
+                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, difficulty);
+                    if (newIds && newIds.length > 0) {
+                        await repository.markQuestionsAsSeen(userId, newIds);
+                        aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
+                    }
+                    balancedBatch = aiQuestions.slice(0, limit);
+                    console.log(`✅ Balance Restaurado: Lote de emergencia generado y entregado.`);
+                }
+            }
+
+            if (balancedBatch.length > 0) {
+                repository.markQuestionsAsSeen(userId, balancedBatch.filter(q => q.id).map(q => q.id));
+                return {
+                    questions: balancedBatch.slice(0, limit),
+                    source: source,
+                    topic: sampledAreas[0]
+                };
+            }
+
+            throw new Error("No hay preguntas disponibles. Intenta con otros temas o dificultad.");
         }
+
+        // ---------------------------------------------------------
+        // B. FLUJO ARENA (GENERAL_TRIVIA / OTROS)
+        // ---------------------------------------------------------
+        const questions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, areas, difficulty, limit, userId);
 
         // SI ES QUIZ ARENA (GENERAL_TRIVIA), Conservamos la IA (Bajo temperatura creativa y sin RAG)
-        console.log(`🧠 Quiz Arena, generando ${needed} nuevas con IA Creative... [Áreas: ${areas.join(', ')}]`);
-        let newQuestions = await this.generateGeneralQuestionsAI(areas, difficulty, needed);
+        console.log(`🧠 Quiz Arena, generando ${limit} nuevas con IA Creative... [Áreas: ${areas.join(', ')}]`);
+        let newQuestions = await this.generateGeneralQuestionsAI(areas, difficulty, limit);
 
         // 🔀 Shuffle de opciones para nuevas preguntas IA
         newQuestions = newQuestions.map(q => this.shuffleOptions(q));
@@ -178,7 +252,7 @@ class TrainingService {
         return { questions: combined, source: 'HYBRID', topic: areas[0] };
     }
 
-    // MÉTODO generateMedicalQuestionsAI EXTIRPADO COMPLETAMENTE POR CONTROL FINANCIERO
+    // MÉTODO generateMedicalQuestionsAI MIGRADO A MLService.generateRAGQuestions (RAG Maestro)
 
     /**
      * Generador Puro IA (GENERAL) - Lógica interna y Deduplicación
@@ -302,8 +376,8 @@ class TrainingService {
     // --- MÉTODOS LEGACY (Wrappers para compatibilidad) ---
 
     // Usado por QuizController (ENAM/SERUMS/RESIDENTADO)
-    async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5) {
-        const result = await this.getQuestions(categoryOptions, difficulty, limit, userId);
+    async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5, subscriptionTier = 'free') {
+        const result = await this.getQuestions(categoryOptions, difficulty, limit, userId, subscriptionTier);
         return { questions: result.questions, topic: result.topic };
     }
 

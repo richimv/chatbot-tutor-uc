@@ -14,8 +14,22 @@ class QuizController {
             const { target, areas, difficulty, round = 1, limit = 5, topic, career } = req.body;
             const user = req.user;
 
-            const finalTarget = target || 'MEDICINA';
-            const finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : ['Medicina General']);
+            const finalTarget = target || 'SERUMS';
+            const finalCareer = career || 'Medicina Humana';
+            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
+
+            // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración, inyectamos el bloque oficial.
+            if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
+                finalAreas = [
+                    'Salud Pública y Epidemiología',
+                    'Gestión de Servicios de Salud',
+                    'Ética Deontología e Interculturalidad',
+                    'Medicina Legal',
+                    'Investigación y Bioestadística',
+                    'Cuidado Integral'
+                ];
+                console.log(`📡 Fallback Controller: Aplicando 6 áreas SERUMS para ${user.email}`);
+            }
 
             // Validación básica
             if (finalAreas.length === 0) {
@@ -23,7 +37,9 @@ class QuizController {
             }
 
             // 1. Lógica FREEMIUM: Verificar Límite Global de Vidas (Solo en Ronda 1)
-            const isPremium = user.subscriptionStatus === 'active' || user.role === 'admin';
+            // ✅ CORRECCIÓN: Basado en Tiers oficiales (Case-Insensitive)
+            const tier = String(user.subscriptionTier || 'free').toLowerCase();
+            const isPremium = ['basic', 'advanced'].includes(tier) || user.role === 'admin';
 
             if (round === 1 && !isPremium) {
                 const usageCheck = await usageService.checkAndIncrementUsage(user.id);
@@ -53,12 +69,13 @@ class QuizController {
 
             console.log(`🎮 Generando Ronda ${round} [Nivel ${aiDifficulty}] de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
-            // Llamar al servicio de IA Médico (TrainingService)
-            const result = await TrainingService.generateQuiz({ target: finalTarget, areas: finalAreas, career: career }, aiDifficulty, user.id, limit);
+            // 3. Generar el Quiz Balanceado (Pasamos subscriptionTier para control de IA)
+            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer };
+            const quizData = await TrainingService.generateQuiz(categoryOptions, aiDifficulty, user.id, limit, user.subscriptionTier);
 
             // 💡 FIX: Devolver el tema ESPECÍFICO (ej: "CARDIOLOGIA") rotado por el servicio,
             // en lugar del genérico "Medicina General".
-            const returnedTopic = result.topic || finalAreas[0];
+            const returnedTopic = quizData.topic || finalAreas[0];
 
             const logTopic = finalAreas.length > 1 ? `Multi-Área (${finalAreas.length} áreas)` : returnedTopic;
             console.log(`✅ Quiz Generado. Tema Real: ${logTopic} en Target: ${finalTarget}`);
@@ -66,14 +83,22 @@ class QuizController {
             res.json({
                 success: true,
                 topic: returnedTopic,
+                areas: finalAreas, // 🔄 Sincronización de Áreas para lotes subsiguientes
                 difficulty: aiDifficulty,
                 round: round,
-                questions: result.questions,
+                questions: quizData.questions,
                 isPremium: isPremium
             });
 
         } catch (error) {
-            console.error('Error en startQuiz:', error);
+            // 🎯 CAPTURA DE AGOTAMIENTO DE BANCO (Uso Profesional del Log)
+            if (error.message === "BANCO_AGOTADO_TIER") {
+                console.log(`🚫 [Limit] Bloqueo de inicio de Quiz: Banco Agotado para el usuario.`);
+                return res.status(403).json({ success: false, errorCode: 'BANK_EXHAUSTED' });
+            }
+
+            console.error('❌ [Error] startQuiz:', error);
+
             if (error.message && error.message.includes("No hay preguntas disponibles")) {
                 return res.status(404).json({ error: error.message, noQuestions: true });
             }
@@ -461,22 +486,47 @@ class QuizController {
             const { target, areas, difficulty, topic, career } = req.body;
             const userId = req.user.id;
 
-            const finalTarget = target || 'MEDICINA';
-            const finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : ['Medicina General']);
+            const finalTarget = target || 'SERUMS';
+            const finalCareer = career || 'Medicina Humana';
+            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
 
-            // 🎯 FIX CRÍTICO: Usar el motor híbrido (DB + IA) para que NUNCA se corte a la mitad.
-            // Si el banco local se queda sin preguntas no vistas, el TrainingService llamará a Gemini.
+            // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración (ej: ronda 2 del usuario anterior), inyectamos el bloque oficial.
+            if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
+                finalAreas = [
+                    'Salud Pública y Epidemiología',
+                    'Gestión de Servicios de Salud',
+                    'Ética Deontología e Interculturalidad',
+                    'Medicina Legal',
+                    'Investigación y Bioestadística',
+                    'Cuidado Integral'
+                ];
+                console.log(`📡 Fallback Controller [Batch]: Aplicando 6 áreas SERUMS.`);
+            }
+
+            // 🎯 OBTENCIÓN DE BANCO: Usar el repositorio para obtener preguntas no vistas.
+            // TrainingService.generateQuiz ahora solo consulta la DB para Simulacros Médicos.
             const result = await TrainingService.generateQuiz(
-                { target: finalTarget, areas: finalAreas, career: career },
+                { target: finalTarget, areas: finalAreas, career: finalCareer },
                 difficulty || 'Intermedio',
                 userId,
                 5
             );
 
-            res.json({ success: true, questions: result.questions });
+            res.json({ 
+                success: true, 
+                questions: result.questions,
+                areas: finalAreas // 🔄 Mantener el contexto multi-área
+            });
 
         } catch (error) {
-            console.error('Error fetching next batch:', error);
+            // 🎯 CAPTURA DE AGOTAMIENTO DE BANCO (Siguiente Lote)
+            if (error.message === "BANCO_AGOTADO_TIER") {
+                console.log(`🚫 [Limit] Bloqueo en lotes (batch): Banco Agotado.`);
+                return res.status(403).json({ success: false, errorCode: 'BANK_EXHAUSTED' });
+            }
+
+            console.error('❌ [Error] getNextBatch:', error);
+
             if (error.message && error.message.includes("No hay preguntas disponibles")) {
                 return res.status(404).json({ error: error.message, noQuestions: true });
             }

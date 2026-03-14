@@ -15,7 +15,7 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
 | **Tutor IA (Chat)** | Estándar (20 mensajes/día) | Pro con Biblioteca Médica (30 mensajes/día) |
 | **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
-| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico con IA (Dentro de los 50 mensajes diarios) |
+| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico con IA (Dentro de los 30 mensajes diarios) |
 | **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
 | **Generador Simulador Médico (IA)** | **[EXTIRPADO] - Solo BD** | **[EXTIRPADO] - Solo BD** |
 
@@ -82,3 +82,24 @@ El ecosistema de pagos interactúa con el de Límites de IAs de manera nativa:
 
 ## ✅ Resumen del Estado de Producción
 Todo el software ha culminado el hito de protección de ingresos. **Cualquier usuario en Plan 'basic' tiene matemáticamente el 0% de probabilidades de superar la utilidad estipulada.** Todos los Endpoints, APIs en Express y Frontends han sido cubiertos y blindados contra sobrecargas por consumos no autorizados. Misión comercial y técnica documentadas y concluidas con éxito.
+
+
+## 5. Aclaraciones sobre Límites Compartidos y el Simulador
+
+### 1. El Beneficio "Tutor IA Clínico RAG"
+Las interacciones de IA avanzadas (como Búsqueda de Libros y Diagnósticos Clínicos) históricamente costaban mucho dinero por requerir modelos engorrosos ("Thinking"). Actualmente operan a costo **$0.00** extra al usar RAG 100% Local (PostgreSQL ILIKE).
+Por ello, el Plan **Advanced** ha unificado sus topes: otorga generosos **30 Chats Diarios**.
+- El usuario Advanced goza automáticamente de **Acceso a la Biblioteca Médica (RAG)**. Cada vez que consulta, la IA recupera pasajes del Harrison, NTS o CTO.
+- Puede detonar reportes de Diagnóstico Clínico en el Simulador las veces que lo requiera.
+Cualquiera de las dos funciones le restará simplemente 1 token a sus 30 tokens diarios. Es una oferta inmensa para el alumno, pero que no genera deudas imprevistas para la academia.
+
+### 2. Generación de Exámenes y Rutas ILIMITADAS
+En el Simulador (`api/quiz/start`), la lógica para la IA de Generación de Preguntas Inédita es manejada dentro del `TrainingService.js`.
+- **Free y Basic**: Jamás generan nuevas preguntas. El Backend (`isAdvanced`) detecta su plan y si la base de datos se secó y el alumno ya leyó todas, el simulador explota el proceso y arroja un Error solicitando la compra para generar más. Solo sacan estáticas.
+- **Advanced**: Cuando se agotan las estáticas, el servicio envía RAG al modelo (Flash 2.5) para generar nuevas. A nivel arquitectónico, **este proceso no consume tokens diarios ni mensuales (`usageType`)**. Para el alumno Advanced, la inyección generativa del simulador es **ILIMITADA**. Literalmente puede generar exámenes crudos hasta el infinito. Esto es el motor de retención del Plan Pro.
+
+### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
+Las tarjetas generadas con IA estipulan **20 tarjetas al mes** para Basic y **100 tarjetas al mes** para Advanced.
+El middleware extrae directamente de PostgreSQL la entidad `monthly_flashcards_usage`. 
+Al saturar las cuotas (4 o 20 llamadas), el backend escupe rígidamente un 403.
+El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- un bloque DOM `custom-limit-modal` con posición absoluta `fixed` que bloquea y empapela toda la pantalla. Es imposible de romper o saltar mediante CSS de otros módulos y blinda tajantemente la base de datos de usuarios aprovechados.

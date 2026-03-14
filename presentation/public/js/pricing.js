@@ -17,33 +17,77 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function checkPremiumStatus(user) {
-    if (!user) return; // Si no hay usuario, mostrar pricing por defecto (Free)
+    if (!user) return; // Si no hay usuario, mostrar pricing por defecto
 
     try {
-        // Verificar status (Soporte para camelCase y snake_case)
         const status = user.subscriptionStatus || user.subscription_status;
+        const tier = String(user.subscriptionTier || 'free').toLowerCase();
         const role = user.role;
 
-        console.log("💎 Verificando Estatus Premium:", status);
+        console.log(`💎 Verificando Estatus: Plan=${tier}, Status=${status}`);
 
-        // Lógica: Si es 'active' o 'premium' o es admin (para pruebas)
-        if (status === 'active' || status === 'premium' || role === 'admin') {
-            // Ocultar Pricing
-            const pricingContent = document.getElementById('pricing-content');
-            if (pricingContent) pricingContent.style.display = 'none';
+        const isPremium = (status === 'active' || status === 'premium' || role === 'admin');
+        const isAdvanced = (tier === 'advanced' || role === 'admin');
 
-            // Mostrar Premium
-            const premiumContent = document.getElementById('premium-content');
-            if (premiumContent) {
-                premiumContent.style.display = 'block';
-                // Trigger reflow for animation if needed
-                premiumContent.style.animation = 'none';
-                premiumContent.offsetHeight; /* trigger reflow */
-                premiumContent.style.animation = 'fadeIn 0.5s ease-in-out';
+        // 1. Lógica de Visibilidad - Siempre mostrar tabla para permitir upgrades/fidelización
+        const pricingContent = document.getElementById('pricing-content');
+        if (pricingContent) pricingContent.style.display = 'block';
+
+        const premiumContent = document.getElementById('premium-content');
+        if (premiumContent) premiumContent.style.display = 'none';
+
+        // 2. Resaltar Plan Actual if existe
+        if (isPremium) {
+            if (tier === 'advanced') {
+                markCurrentPlan('advanced');
+            } else if (tier === 'basic') {
+                markCurrentPlan('basic');
             }
         }
     } catch (e) {
         console.error("Error checking premium status:", e);
+    }
+}
+
+/**
+ * Ajusta el UI para indicar cuál es el plan que el usuario ya posee.
+ */
+function markCurrentPlan(planId) {
+    const card = document.getElementById(`plan-card-${planId}`);
+    const btn = document.getElementById(`btn-plan-${planId}`);
+
+    if (card) {
+        card.style.border = '2px solid #fbbf24';
+        card.style.position = 'relative';
+        
+        // Añadir badge de "Tu Plan"
+        const badge = document.createElement('div');
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Tu Plan Actual';
+        badge.style.cssText = `
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fbbf24;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(251, 191, 36, 0.3);
+        `;
+        card.appendChild(badge);
+    }
+
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-certificate"></i> Plan Activo';
+        btn.disabled = true;
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.color = '#94a3b8';
+        btn.style.cursor = 'default';
+        btn.style.pointerEvents = 'none';
+        btn.style.border = '1px solid rgba(255,255,255,0.1)';
     }
 }
 

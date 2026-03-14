@@ -16,7 +16,9 @@ class UserRepository {
             row.subscription_status,
             row.payment_id,
             row.usage_count,    // DB envía snake_case
-            row.max_free_limit  // DB envía snake_case
+            row.max_free_limit,  // DB envía snake_case
+            row.subscription_tier,
+            row.subscription_expires_at
         );
     }
 
@@ -77,6 +79,14 @@ class UserRepository {
         // Manejo de Payment ID
         if (userData.paymentId !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.paymentId); }
         else if (userData.payment_id !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.payment_id); }
+
+        // Manejo de Tier
+        if (userData.subscriptionTier !== undefined) { fields.push(`subscription_tier = $${idx++}`); values.push(userData.subscriptionTier); }
+        else if (userData.subscription_tier !== undefined) { fields.push(`subscription_tier = $${idx++}`); values.push(userData.subscription_tier); }
+
+        // Manejo de Expiración
+        if (userData.subscriptionExpiresAt !== undefined) { fields.push(`subscription_expires_at = $${idx++}`); values.push(userData.subscriptionExpiresAt); }
+        else if (userData.subscription_expires_at !== undefined) { fields.push(`subscription_expires_at = $${idx++}`); values.push(userData.subscription_expires_at); }
 
         // ✅ CRÍTICO: Actualizar contadores (Soporta userData.usageCount o usage_count)
         const usage = userData.usageCount !== undefined ? userData.usageCount : userData.usage_count;

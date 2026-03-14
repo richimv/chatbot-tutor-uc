@@ -262,28 +262,28 @@ class MLService {
             // 5. BÚSQUEDA RAG LOCAL INTELIGENTE (Cero Costo - Palabras Clave)
             const RagService = require('./ragService');
             const disableRAG = dependencies.disableRAG || false; // ✅ Verificamos si el RAG está bloqueado para este tier
-            
+
             // --- INICIO ROUTER CLÍNICO-NORMATIVO ---
             // Le damos inteligencia al RAG leyendo la intención de la pregunta antes de buscar
-            let targetFocus = ''; 
+            let targetFocus = '';
 
             if (!disableRAG) { // ✅ Solo ejecutamos la lógica de búsqueda si NO está deshabilitado
                 const msgLower = normalizedMsg; // variable local previamente normalizada
-                
+
                 // Regla A: Intención Operativa, Legal, o Procedimental (Prioridad SERUMS - NTS/Leyes)
                 if (/(deberia|hacer|enfermera|procedimiento|norma|ley|legal|minsa|essalud|protocolo|manejo inicial|notificar|notificacion|referir|serums|plazo|tiempo|cuando)/i.test(msgLower)) {
                     targetFocus = 'SERUMS';
-                } 
+                }
                 // Regla B: Intención Puramente Clínica, Diagnóstica o Especialidad (Prioridad RESIDENTADO - Harrison/Washington)
                 else if (/(fisioterapia|fisiopatologia|mecanismo|dosis|tratamiento de eleccion|gold standard|diagnostico diferencial|receptor|enzima|gen|mutacion|residentado)/i.test(msgLower)) {
                     targetFocus = 'RESIDENTADO';
                 }
-                
+
                 console.log(`🧠 Router RAG Detectó Intención: ${targetFocus || 'GENERAL/MIXTO'} para la pregunta`);
                 // --- FIN ROUTER ---
 
                 // Pedimos 3 fragmentos (antes 4) para ahorrar tokens y enfocar calidad, pasando el enfoque ideal.
-                const localContext = await RagService.searchContext(message, 3, { target: targetFocus }); 
+                const localContext = await RagService.searchContext(message, 3, { target: targetFocus });
                 if (localContext) {
                     contextInjection += `\n[CONTEXTO MÉDICO RAG LOCAL - DOCUMENTOS VERIFICADOS]\n${localContext}\n[FIN CONTEXTO RAG]\n`;
                     console.log(`🚀 RAG Local (${targetFocus || 'GENERAL'}): Fragmentos inyectados exitosamente.`);
@@ -720,6 +720,7 @@ class MLService {
 
             - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
             - Áreas de Estudio: ${studyAreas}.
+            - DISTRIBUCIÓN OBLIGATORIA: Debes generar exactamente UNA (1) pregunta por cada área listada en "Áreas de Estudio" hasta completar el total de ${amount}. Si hay menos áreas que preguntas, distribúyelas equitativamente (ej: si hay 3 áreas y pido 5 preguntas, haz 2-2-1).
             - Dificultad Target: ${difficulty} (${levelInstruction})
             ${recentQuestionsText}
             

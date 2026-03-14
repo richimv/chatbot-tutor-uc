@@ -45,8 +45,8 @@ const API_URL = `${window.AppConfig.API_URL}/api/quiz`; // Ajustar según config
 async function init() {
     // Obtener parámetros de URL
     const urlParams = new URLSearchParams(window.location.search);
-    state.topic = urlParams.get('topic') || 'Medicina General';
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Intermedio';
+    state.topic = urlParams.get('topic') || '';
+    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Básico';
     // Custom Exam Builder params
     let savedConfig = null;
     try {
@@ -54,8 +54,8 @@ async function init() {
         if (stored) savedConfig = JSON.parse(stored);
     } catch (e) { console.warn("No active config found"); }
 
-    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'ENAM');
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig ? savedConfig.difficulty : 'Intermedio');
+    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
+    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig ? savedConfig.difficulty : 'Básico');
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
 
@@ -65,8 +65,8 @@ async function init() {
     } else if (savedConfig && savedConfig.areas && savedConfig.areas.length > 0) {
         state.areas = savedConfig.areas;
     } else {
-        state.topic = urlParams.get('topic') || 'Medicina General';
-        state.areas = [state.topic];
+        state.topic = urlParams.get('topic') || '';
+        state.areas = state.topic ? [state.topic] : [];
     }
 
     // 🎯 Mode Selection: 
@@ -129,7 +129,8 @@ async function startQuiz() {
     // Mostrar Loading
     elements.loadingOverlay.classList.remove('hidden');
 
-    let data; // ✅ Declare here so it's available in both branches
+    let data;
+    let response; // ✅ Declare here for function-wide scope
     const urlParams = new URLSearchParams(window.location.search);
     const isDemo = urlParams.get('demo') === 'true';
 
@@ -231,36 +232,49 @@ async function startQuiz() {
             return;
         }
         fetchOptions.headers['Authorization'] = `Bearer ${token}`;
-        const response = await fetch(fetchUrl, fetchOptions);
+        response = await fetch(fetchUrl, fetchOptions);
         data = await response.json();
 
         // ⛔ Freemium: Límite de vidas o bloqueo premium
         if (response.status === 403) {
+        // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
+        if (response.status === 403) {
             elements.loadingOverlay.classList.add('hidden');
-            if (data.limitReached || data.premiumLock) {
-                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                    window.uiManager.showPaywallModal();
+            if (data.errorCode === 'BANK_EXHAUSTED') {
+                if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
+                    window.uiManager.showBankExhaustedModal();
                 } else {
-                    alert(data.error || 'Has alcanzado tu límite de acciones gratuitas.');
+                    alert("Has agotado las preguntas disponibles. Pásate a Advanced para generar más con IA.");
                     window.location.href = '/pricing';
                 }
-                return;
+            } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error);
             }
+            return;
+        }
+        }
+
+        // 🛠 Error de Servidor (500) u Otros
+        if (!response.ok && response.status !== 404) {
+            elements.loadingOverlay.classList.add('hidden');
+            console.error("Server Error:", data.error);
+            alert("Hubo un error interno en el servidor. Por favor, intenta de nuevo o contacta a soporte técnico.");
+            return;
         }
     }
 
     if (!data.success) {
         elements.loadingOverlay.classList.add('hidden');
 
-        if (response.status === 404 && data.noQuestions) {
+        if (response && response.status === 404 && data.noQuestions) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: '<span class="text-gradient-primary" style="font-size: 1.5rem; font-weight: 800;">¡Banco Agotado!</span>',
                     html: `
                         <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
                             <i class="fas fa-info-circle" style="color: #3b82f6; margin-right: 5px;"></i> 
-                            Genial, has abarcado <strong>todas las preguntas reservadas</strong> para esta configuración en particular.<br><br>
-                            Intenta cambiar de Área de Estudio, Dificultad o Tipo de Examen en el Dashboard para desbloquear nuevos escenarios clínicos.
+                            Has abarcado <strong>todas las preguntas</strong> disponibles para esta configuración.<br><br>
+                            Intenta cambiar de Área de Estudio, Dificultad o Tipo de Examen en el Dashboard para desbloquear nuevos escenarios clínícos.
                         </div>
                     `,
                     icon: 'info',
@@ -285,8 +299,13 @@ async function startQuiz() {
             return;
         }
 
-        if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-            window.uiManager.showPaywallModal(data.error || 'No hay más preguntas disponibles en el Banco para este tema. Cambia de tema o mejora tu plan para utilizar Inteligencia Artificial ilimitada.');
+        if (response && response.status === 500) {
+            alert("Error del servidor al cargar preguntas. Revisa tu conexión o intenta más tarde.");
+            return;
+        }
+
+        if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function' && response && response.status === 403) {
+            window.uiManager.showPaywallModal(data.error || 'No hay más preguntas disponibles en el Banco para este tema. Cambia de configuración o mejora tu plan para acceder a funciones avanzadas.');
         } else {
             alert(data.error || 'Hubo un error cargando el simulacro.');
         }
@@ -298,6 +317,11 @@ async function startQuiz() {
     if (data.topic) {
         state.topic = data.topic;
         console.log(`Topic actualizado por Backend: ${state.topic}`);
+    }
+    // 🔄 SINCRONIZACIÓN DE ÁREAS: Asegurar que el frontend mantenga el filtro multi-área (ej: Fallback SERUMS)
+    if (data.areas && data.areas.length > 0) {
+        state.areas = data.areas;
+        console.log(`Áreas sincronizadas por Backend: ${state.areas.join(', ')}`);
     }
     state.startTime = Date.now();
 
@@ -379,16 +403,47 @@ async function fetchNextBatch() {
             }
 
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal(data.error || "No hay más preguntas disponibles para tu Plan. Mejora a Advanced para Generación AI ilimitada.");
+                window.uiManager.showPaywallModal(data.error || "No hay más preguntas disponibles para tu Plan. Mejora a Advanced para acceder a más funciones.");
             } else {
                 alert(data.error || "No hay más preguntas disponibles para tu Plan actual.");
             }
             return finishQuiz(); // Acabar el examen con lo poco que tenía
         }
 
+        // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
+        if (response.status === 403) {
+            elements.loadingOverlay.classList.add('hidden');
+            
+            if (data.errorCode === 'BANK_EXHAUSTED') {
+                if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
+                    window.uiManager.showBankExhaustedModal();
+                } else {
+                    alert("Banco de preguntas agotado para tu plan actual.");
+                    finishQuiz();
+                }
+            } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error);
+            }
+            return;
+        }
+
+        // 🛠 Error de Servidor (500) u Otros (No 404)
+        if (!response.ok && response.status !== 404) {
+            elements.loadingOverlay.classList.add('hidden');
+            console.error("Server Error:", data.error);
+            alert("Error cargando más preguntas. Reintentando...");
+            return;
+        }
+
         if (data.success && data.questions.length > 0) {
             state.questions.push(...data.questions);
             console.log(`✅ Batch loaded. Total questions: ${state.questions.length}`);
+
+            // 🔄 Refrescar áreas por si el backend rotó algo (opcional pero robusto)
+            if (data.areas && data.areas.length > 0) {
+                state.areas = data.areas;
+            }
+
             updateProgressUI(); // Update progress bar with new total? Or keep relative to 20?
         }
     } catch (e) {
@@ -413,11 +468,8 @@ function renderQuestion() {
     if (!q) {
         if (state.isLoadingBatch) {
             if (elements.loadingTitle && elements.loadingSubtitle) {
-                elements.loadingTitle.textContent = "Generando más preguntas...";
-                const isBasic = state.difficulty && state.difficulty.toLowerCase() === 'básico';
-                elements.loadingSubtitle.textContent = isBasic
-                    ? `Consultando banco de ${state.targetExam || state.topic}...`
-                    : `Analizando contexto y generando caso clínico...`;
+                elements.loadingTitle.textContent = "Cargando próximas preguntas...";
+                elements.loadingSubtitle.textContent = `Consultando banco de ${state.targetExam || state.topic}...`;
             }
             elements.loadingOverlay.classList.remove('hidden');
             setTimeout(renderQuestion, 500); // Retry
@@ -464,7 +516,7 @@ function renderQuestion() {
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        
+
         const letterSpan = document.createElement('span');
         letterSpan.className = 'option-letter';
         letterSpan.textContent = letters[index] || '';
@@ -519,7 +571,11 @@ function handleAnswer(selectedIndex, btnElement) {
         // Auto-avanzar después de medio segundo de delay "táctil"
         setTimeout(() => {
             state.currentQuestionIndex++;
-            renderQuestion();
+            if (state.currentQuestionIndex >= state.questions.length) {
+                finishQuiz();
+            } else {
+                renderQuestion();
+            }
         }, 600);
         return;
     }
@@ -542,10 +598,10 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // Configurar Botón Siguiente
     elements.nextBtn.onclick = () => {
-        if (state.currentQuestionIndex >= state.questions.length - 1) {
+        state.currentQuestionIndex++;
+        if (state.currentQuestionIndex >= state.questions.length) {
             finishQuiz();
         } else {
-            state.currentQuestionIndex++;
             renderQuestion();
         }
     };
@@ -596,11 +652,11 @@ async function finishQuiz() {
     // Calcular porcentaje para el círculo (SVG dashoffset)
     const actualTotal = denominator || 1;
     const pct = (state.score / actualTotal) * 100;
-    
+
     // Circunferencia = 2 * PI * r(45) = 282.74
-    const circumference = 283; 
+    const circumference = 283;
     const dashoffset = circumference - (pct / 100) * circumference;
-    
+
     if (elements.svgScoreProgress) {
         // Trigger fluid animation slightly after modal opens
         setTimeout(() => {
@@ -694,10 +750,12 @@ window.showExamReview = async function () {
     const feed = document.getElementById('reviewFeed');
     feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
 
-    // Iterar solo por las preguntas que realmente contestó
-    const totalAnswered = state.currentQuestionIndex;
-    const answeredQuestions = state.questions.slice(0, totalAnswered);
-    
+    // Iterar por las preguntas que realmente contestó o el total si ya terminó
+    const totalProcessed = state.currentQuestionIndex >= state.questions.length 
+                           ? state.questions.length 
+                           : state.currentQuestionIndex;
+    const answeredQuestions = state.questions.slice(0, totalProcessed);
+
     // Check which ones are already saved as flashcards
     let savedFronts = new Set();
     const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
@@ -707,9 +765,9 @@ window.showExamReview = async function () {
             const res = await fetch(`${API_URL}/../training/flashcards/check-saved`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ 
-                    questions: answeredQuestions, 
-                    moduleName: state.context || 'MEDICINA' 
+                body: JSON.stringify({
+                    questions: answeredQuestions,
+                    moduleName: state.context || 'MEDICINA'
                 })
             });
             const data = await res.json();
@@ -723,7 +781,7 @@ window.showExamReview = async function () {
 
     feed.innerHTML = ''; // Limpiar indicator
 
-    for (let i = 0; i < totalAnswered; i++) {
+    for (let i = 0; i < totalProcessed; i++) {
         const q = state.questions[i];
         const ans = state.answers[i]; // { questionId, userAnswer, isCorrect }
 
@@ -751,7 +809,7 @@ window.showExamReview = async function () {
             saveBtn.style.fontSize = '0.75rem';
             saveBtn.style.whiteSpace = 'nowrap';
             saveBtn.style.borderRadius = '20px'; // Mas redondeado
-            
+
             const isSaved = savedFronts.has(q.question_text.trim());
             if (isSaved) {
                 saveBtn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
@@ -765,7 +823,7 @@ window.showExamReview = async function () {
             } else {
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Flashcard';
                 // Añadir un color de acento azul/purpura para distinción
-                
+
                 saveBtn.onclick = async () => {
                     const originalText = saveBtn.innerHTML;
                     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
@@ -795,7 +853,7 @@ window.showExamReview = async function () {
                             saveBtn.disabled = false;
                             alert('No se pudo guardar la flashcard: ' + (data.error || 'Error desconocido'));
                         }
-                    } catch(e) {
+                    } catch (e) {
                         saveBtn.innerHTML = originalText;
                         saveBtn.disabled = false;
                         console.error('Error saving flashcard', e);
@@ -829,7 +887,7 @@ window.showExamReview = async function () {
         q.options.forEach((optText, optIdx) => {
             const optDiv = document.createElement('div');
             optDiv.className = 'review-opt';
-            
+
             // Text content
             const textSpan = document.createElement('span');
             textSpan.style.flex = '1';

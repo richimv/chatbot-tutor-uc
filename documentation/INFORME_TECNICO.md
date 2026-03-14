@@ -159,17 +159,18 @@ El sistema utiliza un flujo unidireccional de datos con responsabilidades claras
 
     **UX del Modal:** Renderizado dinámico con sub-headers por grupo, scrollable (`max-height: 85vh`). Tooltip de primera visita (15s) + efecto neón pulsante en el botón "Configurar Examen" hasta que el usuario guarde una configuración.
 
-#### C. Lógica de Generación Híbrida (TrainingService v2.0)
-Estrategia costo-eficiente para generar contenido infinito y altamente preciso usando Inteligencia Artificial Agéntica:
-1.  **Bank First (Cost $0):** Consulta masiva al `question_bank` filtrando por Target (ENAM/SERUMS/RESIDENTADO), Arrays de Áreas Médicas (23 áreas), Dificultad y exclusión de preguntas vistas.
-2.  **Smart Filtering (Anti-Repetición 24h):** Excluye preguntas vistas por el usuario en las últimas 24 horas (`user_question_history`) con query `seen_at > NOW() - INTERVAL '24 hours'`. Después de 24h, las preguntas pueden reaparecer ("Olvido Saludable").
-3.  **AI Fallback Dinámico (Gemini 2.5 Flash):** Si el banco local no tiene suficientes preguntas frescas, se conecta al LLM con un prompt que incluye:
-    *   **Directrices por tipo de examen:** Diferentes instrucciones para ENAM (clínico universal), SERUMS (atención primaria holística) y RESIDENTADO (especialidad avanzada).
-    *   **Contexto RAG:** Documentos reales del MINSA buscados semánticamente en el vector store.
-    *   **Deduplicación por Contexto Negativo:** 15 preguntas previas del banco inyectadas como "preguntas prohibidas" en el prompt.
-    *   **Semantic Sub-Drift:** Rotación aleatoria de enfoque clínico (etiología, diagnóstico, tratamiento, complicaciones, prevención) para garantizar diversidad temática.
-4.  **Auto-Learning Global:** Las nuevas preguntas generadas por IA se persisten atómicamente en el Banco Global (con `ON CONFLICT` contra duplicidad) y se marcan como vistas para el usuario.
-5.  **Protección Financiera (Mock Test):** En simulacros de 100+ preguntas, se bloquea la generación masiva por IA y se retorna solo preguntas del banco existente.
+#### C. Lógica de Generación Híbrida y Reposición Equilibrada (v2.5)
+Estrategia costo-eficiente para generar contenido infinito y altamente preciso sin sesgos estadísticos:
+1.  **Balanced Bank First (Cost $0):** Consulta masiva al `question_bank` aplicando un **Sistema de Cuotas Estricto**. Se seleccionan hasta 5 áreas (muestreo proactivo) y se extraen preguntas respetando un **máximo de 2 por área** en cada tanda de 5.
+2.  **Disparador Proactivo de Emergencia:** Si el banco no logra surtir un lote completo de 5 (debido a agotamiento de una área específica o falta de stock balanceado), el sistema activa inmediatamente el flujo de reposición.
+3.  **Smart Filtering (Anti-Repetición 24h):** Excluye preguntas vistas por el usuario en las últimas 24 horas (`user_question_history`).
+4.  **AI Fallback Dinámico (RAG Maestro Flow):** Si el banco local tiene stock crítico o desbalanceado, se invoca a Gemini 2.5 Flash inyectando:
+    *   **Muestreo Aleatorio de Áreas:** Máximo 5 áreas por lote para optimizar el contexto RAG.
+    *   **Contexto RAG Local:** Búsqueda SQL `ILIKE` en documentos reales del MINSA.
+    *   **Deduplicación Semántica:** Scaneo de los últimos 200 temas generados.
+    *   **Estilo de Examen:** Adaptación según Target (ENAM, SERUMS, Residentado).
+5.  **Auto-Learning Global:** Las nuevas preguntas generadas se persisten en el Banco Global y se marcan como vistas para el usuario de forma inmediata.
+6.  **Protección Financiera (Mock Test):** En simulacros masivos (100+ q), se bloquea la generación IA para proteger la rentabilidad, sirviendo solo desde el banco estático.
 
 #### D. Analítica de Rendimiento Profunda y JSONB (v2.0)
 El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un modelo granular subatómico alimentado por base de datos híbrida (Relacional/NoSQL Documental en PostgreSQL):

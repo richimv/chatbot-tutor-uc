@@ -31,13 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('user-email').textContent = user.email || '';
 
     const badgeContainer = document.getElementById('plan-badge-container');
+    const tier = String(user.subscriptionTier || 'free').toLowerCase();
+
     if (user.role === 'admin') {
         badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;"><i class="fas fa-shield-alt"></i> Administrador</span>';
-    } else if (user.subscriptionStatus === 'active') {
-        badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-crown"></i> Plan Premium</span>';
+    } else if (tier === 'advanced') {
+        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 800;"><i class="fas fa-crown"></i> Plan Advanced</span>';
+    } else if (tier === 'basic') {
+        badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
     } else {
         badgeContainer.innerHTML = '<span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito</span>';
     }
+
+    // ✅ NUEVO: Renderizar Detalles Detallados
+    renderSubscriptionDetails(user);
 
     // Inject Header (Simplified)
     const headerPlaceholder = document.getElementById('header-placeholder');
@@ -55,6 +62,70 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </header>
             `;
 });
+
+/**
+ * ✅ NUEVO: Renderiza los detalles de la suscripción en el perfil.
+ */
+function renderSubscriptionDetails(user) {
+    const container = document.getElementById('subscription-status-container');
+    if (!container) return;
+
+    const tier = String(user.subscriptionTier || 'free').toLowerCase();
+    const expiresAt = user.subscriptionExpiresAt;
+    const status = user.subscriptionStatus || user.subscription_status;
+
+    const isPremium = tier !== 'free' && status === 'active';
+
+    if (isPremium) {
+        const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Acceso Vitalicio';
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.2rem; font-weight: 800; color: #fff;">${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: #4ade80;"></i></span>
+                    <span style="background: rgba(74, 222, 128, 0.1); color: #4ade80; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">ACTIVO</span>
+                </div>
+                <div style="color: #cbd5e1; font-size: 0.95rem;">
+                    <i class="far fa-calendar-alt" style="margin-right: 8px;"></i> Vence: <strong>${dateStr}</strong>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Beneficios del Plan:</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-gamepad" style="color: #4ade80; width: 20px;"></i> Quiz Arena (${tier === 'advanced' ? '10' : '5'} partidas diarias)</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-clone" style="color: #60a5fa; width: 20px;"></i> Flashcards ${tier === 'advanced' ? 'Manuales + 100/mes con IA' : 'Manuales + 20/mes con IA'}</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-chart-line" style="color: #a78bfa; width: 20px;"></i> Estadísticas ${tier === 'advanced' ? 'Avanzadas (IA)' : 'Básicas'}</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-book-medical" style="color: #f472b6; width: 20px;"></i> Biblioteca Completa (DRIVE)</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-robot" style="color: #f472b6; width: 20px;"></i> Simulador Examenes (${tier === 'advanced' ? 'Banco Generativo con IA' : 'Banco con stock'})</li>
+                    </ul>
+                </div>
+                <button onclick="window.location.href='/pricing'" class="btn-action" style="background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); width: auto; align-self: flex-start;">
+                    Administrar Suscripción
+                </button>
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.2rem; font-weight: 800; color: #94a3b8;">PLAN GRATUITO</span>
+                    <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">LIMITADO</span>
+                </div>
+                <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
+                    Estás usando la versión gratuita. Tu progreso se guarda, pero tienes acceso restringido a algunos beneficios.
+                </p>
+                <div style="background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 1.5rem; color: #fbbf24;"><i class="fas fa-unlock-alt"></i></div>
+                    <div>
+                        <div style="color: #fbbf24; font-weight: 700; font-size: 0.9rem;">¿Quieres más?</div>
+                        <div style="color: #cbd5e1; font-size: 0.85rem;">Adquiere un plan y mejora tu experiencia.</div>
+                    </div>
+                </div>
+                <button onclick="window.location.href='/pricing'" class="btn-action btn-primary" style="width: 100%; justify-content: center; height: 50px; font-size: 1rem;">
+                    💎 Ver Planes Premium
+                </button>
+            </div>
+        `;
+    }
+}
 
 // Modal Logic
 const modal = document.getElementById('delete-modal');

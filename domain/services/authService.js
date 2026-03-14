@@ -1,4 +1,6 @@
 const UserRepository = require('../../domain/repositories/userRepository');
+const UserPreferencesService = require('../../domain/services/userPreferencesService');
+const userPreferencesService = new UserPreferencesService();
 const bcrypt = require('bcryptjs');
 // const jwt = require('jsonwebtoken'); // ❌ YA NO SE USA
 const crypto = require('crypto');
@@ -152,6 +154,22 @@ class AuthService {
         // 3. Crear usuario en Base de Datos Local (Public)
         try {
             await this.userRepository.create(email, password, name, 'student', userId);
+            
+            // 🎯 PROVISIÓN AUTOMÁTICA: Configuración SERUMS por defecto
+            await userPreferencesService.savePreferences(userId, 'medicine', {
+                target: 'SERUMS',
+                difficulty: 'Básico',
+                career: 'Medicina Humana',
+                areas: [
+                    'Salud Pública y Epidemiología',
+                    'Gestión de Servicios de Salud',
+                    'Ética Deontología e Interculturalidad',
+                    'Medicina Legal',
+                    'Investigación y Bioestadística',
+                    'Cuidado Integral'
+                ]
+            });
+            console.log(`🚀 Preferences provisioned for ${email}`);
         } catch (dbError) {
             console.error('Error creando usuario local (Rollback pendiente):', dbError);
             // Opcional: Borrar de Supabase si falla la DB local
@@ -301,6 +319,22 @@ class AuthService {
             const randomPassword = crypto.randomBytes(16).toString('hex');
 
             user = await this.userRepository.create(email, randomPassword, name || 'Usuario Google', 'student', id);
+            
+            // 🎯 PROVISIÓN AUTOMÁTICA: Configuración SERUMS por defecto
+            await userPreferencesService.savePreferences(id, 'medicine', {
+                target: 'SERUMS',
+                difficulty: 'Básico',
+                career: 'Medicina Humana',
+                areas: [
+                    'Salud Pública y Epidemiología',
+                    'Gestión de Servicios de Salud',
+                    'Ética Deontología e Interculturalidad',
+                    'Medicina Legal',
+                    'Investigación y Bioestadística',
+                    'Cuidado Integral'
+                ]
+            });
+            console.log(`🚀 Preferences provisioned for Google user: ${email}`);
         } else {
             // Opcional: Podríamos verificar si el ID coincide, pero por ahora confiamos en el email
             // Si el ID es diferente, podría ser un caso de login híbrido (manual previo + google despues)

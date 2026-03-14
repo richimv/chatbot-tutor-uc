@@ -36,11 +36,13 @@ El usuario puede cruzar 3 variables fundamentales:
 3. **Áreas**: Multi-selección de 23 especialidades médicas agrupadas por categorías.
 
 ### 🧠 Motor Híbrido RAG (AI Agéntica)
-1. **Fase 1 (Bank First)**: Intenta llenar el buffer de preguntas desde el banco local excluyendo las vistas en las últimas 24h.
-2. **Fase 2 (AI Fallback)**: Si faltan preguntas, invoca a Gemini 2.5 Flash inyectando:
-   - **Guías Clínicas (RAG)**: Contexto extraído de Normas Técnicas/GPCs.
-   - **Deduplicación Semántica**: Se le envían 15 preguntas previas para evitar repeticiones de conceptos.
-   - **Estilo de Examen**: Diferencia entre el enfoque "Médico de Posta" (SERUMS) vs "Médico Científico" (Residentado).
+1. **Fase 1 (Balanced Bank First)**: Intenta llenar el buffer de 5 preguntas desde el banco local balanceadamente (Max 2 por área).
+2. **Fase 2 (Pro-Active AI Replenishment)**: Si el banco devuelve < 5 preguntas o no puede cumplir la cuota de balanceo (área agotada), se considera el stock como insuficiente.
+3. **Fase 3 (RAG Maestro Flow)**: Invoca a Gemini 2.5 Flash inyectando:
+   - **Muestreo Aleatorio**: Máximo 5 áreas por lote para optimizar el contexto RAG.
+   - **Guías Clínicas (RAG)**: Contexto extraído de Normas Técnicas/GPCs mediante búsqueda SQL ILIKE local.
+   - **Deduplicación Semántica**: Scaneo de los últimos 200 temas generados.
+   - **Estilo de Examen**: Adaptación al Target (ENAM, SERUMS, Residentado).
 
 ### 📊 Real-Feel Analytics (JSONB Intelligence)
 - Al finalizar, el sistema calcula el desempeño por cada una de las 23 áreas.
