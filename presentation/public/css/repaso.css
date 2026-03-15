@@ -148,6 +148,10 @@
         max-width: none !important;
         padding: 0.7rem 0.8rem !important;
     }
+
+    .add-deck-card {
+        min-height: auto !important;
+    }
 }
 
 /* Badge for System/User Decks */
