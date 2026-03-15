@@ -509,7 +509,8 @@ class QuizController {
                 { target: finalTarget, areas: finalAreas, career: finalCareer },
                 difficulty || 'Intermedio',
                 userId,
-                5
+                5,
+                req.user.subscriptionTier
             );
 
             res.json({ 

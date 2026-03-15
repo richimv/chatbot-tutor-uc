@@ -25,7 +25,9 @@ La generación de emergencia sigue estrictamente la `RAG_FLOW_GUIDE` para asegur
     *   **SERUMS:** Prioriza NTS y RM (Salud Pública).
     *   **RESIDENTADO:** Prioriza Libros de Referencia (Harrison, Nelson).
     *   **ENAM:** Equilibrio Clínico-GPC.
-4.  **Generación Flash:** Usa `gemini-2.5-flash` con el modo `thinking` desactivado para control de costos.
+4.  **Generación Flash Dual:** 
+    *   **Advanced/Elite:** Usa `gemini-2.5-flash-lite` (Costo razonamiento $0.00).
+    *   **Admin (Auditoría):** Usa `gemini-2.5-flash` (Estándar para monitoreo de costos).
 
 ---
 

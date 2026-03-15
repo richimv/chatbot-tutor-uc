@@ -13,11 +13,11 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | Característica | **Plan Básico (Free / Entry)** | **Plan Avanzado (Pro / Premium)** |
 | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
-| **Tutor IA (Chat)** | Estándar (20 mensajes/día) | Pro con Biblioteca Médica (30 mensajes/día) |
-| **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
-| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico con IA (Dentro de los 30 mensajes diarios) |
-| **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
-| **Generador Simulador Médico (IA)** | **[EXTIRPADO] - Solo BD** | **[EXTIRPADO] - Solo BD** |
+| **Tutor IA (Chat)** | Estándar + Lite (20 msg/día) | Biblioteca RAG + Lite (30 msg/día) |
+| **Quiz Arena (IA)** | 5 partidas/día (Modelo Lite) | 10 partidas/día (Modelo Lite) |
+| **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
+| **Flashcards (IA)** | 20 tarjetas / mes (Lite) | 100 tarjetas / mes (Lite) |
+| **Simulador Médico (Repuesto IA)** | **BLOQUEADO (Solo Banco)** | **ILIMITADO (Modelo Lite)** |
 
 ---
 
@@ -30,10 +30,10 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
 
 - **El Problema Anterior:** Si a un alumno se le acababan las preguntas de un tema almacenado en la Base de Datos (Banco), el sistema apelaba a una función recursiva de RAG e Inteligencia Artificial Vertex para *construirle al aire y en tiempo real* un set de 10-15 preguntas médicas. Este consumo desbordaba el pago de S/ 9.90.
 - **La Solución Implementada:** 
-  - Se modificó a nivel de núcleo `TrainingService.js`.
-  - Ahora, si el usuario hace un Simulacro y es Plan Básico, **solo** se servirán y reciclarán las preguntas creadas por el equipo médico u originadas pasivamente en el Banco Global.
-  - La **IA Generativa de Preguntas Médicas RAG ha sido completamente EXTIRPADA para TODOS los planes**. 
-  - **Rentabilidad Conservada:** Se determinó que incluso limitando el Simulador a 30 rondas para el usuario Avanzado, el costo operativo proyectado a 6 meses agregaba un pasivo de S/ 9.00 adicionales por persona, disminuyendo drásticamente el margen bruto a un nivel inaceptable (Utilidad Bruta reducida al 26%). Por lo tanto, el sistema ahora atiende el 100% de los simulacros médicos desde la Base de Datos Histórica y Estática (Costo Cero).
+  - Se modificó el núcleo `TrainingService.js` con una **Lógica de Modelo Dual**.
+  - **Plan Free/Basic**: Sigue restringido al Banco de Datos (Costo Cero). Si se agotan las preguntas, el sistema arroja `BANK_EXHAUSTED`.
+  - **Plan Advanced/Elite**: Se habilitó la **Reposición Automática con IA**. Cuando el banco se agota, el sistema genera preguntas nuevas usando `gemini-2.5-flash-lite`.
+  - **Rentabilidad Máxima:** Al usar el modelo **Lite**, el costo por "Thinking" (razonamiento) es de **$0.00**. Esto permite ofrecer generación ILIMITADA a los usuarios Advanced sin comprometer el margen de utilidad de la academia.
 
 ### 2.2 Módulo: Tutor Médico RAG (Chat Principal)
 - Se estandarizó el tracking de límite a través del middleware `checkAILimits('chat_standard')`.
@@ -93,10 +93,11 @@ Por ello, el Plan **Advanced** ha unificado sus topes: otorga generosos **30 Cha
 - Puede detonar reportes de Diagnóstico Clínico en el Simulador las veces que lo requiera.
 Cualquiera de las dos funciones le restará simplemente 1 token a sus 30 tokens diarios. Es una oferta inmensa para el alumno, pero que no genera deudas imprevistas para la academia.
 
-### 2. Generación de Exámenes y Rutas ILIMITADAS
-En el Simulador (`api/quiz/start`), la lógica para la IA de Generación de Preguntas Inédita es manejada dentro del `TrainingService.js`.
-- **Free y Basic**: Jamás generan nuevas preguntas. El Backend (`isAdvanced`) detecta su plan y si la base de datos se secó y el alumno ya leyó todas, el simulador explota el proceso y arroja un Error solicitando la compra para generar más. Solo sacan estáticas.
-- **Advanced**: Cuando se agotan las estáticas, el servicio envía RAG al modelo (Flash 2.5) para generar nuevas. A nivel arquitectónico, **este proceso no consume tokens diarios ni mensuales (`usageType`)**. Para el alumno Advanced, la inyección generativa del simulador es **ILIMITADA**. Literalmente puede generar exámenes crudos hasta el infinito. Esto es el motor de retención del Plan Pro.
+### 2. Generación de Exámenes y Reposición ILIMITADA
+En el Simulador (`api/quiz/start` y `api/quiz/next-batch`), la generación de preguntas inéditas está blindada:
+- **Free y Basic**: Jamás generan nuevas preguntas. Solo consumen stock del Banco.
+- **Advanced**: Cuando se agotan las estáticas, el servicio activa la reposición con `gemini-2.5-flash-lite`.
+- **Costo Cero de Razonamiento**: Al usar el motor Lite, HubAcademia deja de pagar por los "pasos de pensamiento" de la IA, permitiendo que esta función sea el motor de venta del Plan Pro sin riesgo financiero.
 
 ### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
 Las tarjetas generadas con IA estipulan **20 tarjetas al mes** para Basic y **100 tarjetas al mes** para Advanced.

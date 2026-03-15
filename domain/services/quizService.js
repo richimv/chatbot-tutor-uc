@@ -1,4 +1,5 @@
 const { VertexAI } = require('@google-cloud/vertexai');
+const MLService = require('./mlService');
 
 // === CONFIGURACIÓN VERTEX AI (Igual que MLService) ===
 const project = process.env.GOOGLE_CLOUD_PROJECT;
@@ -11,25 +12,40 @@ if (!project || !location) {
 // Inicializar Cliente Vertex AI
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// Instanciar Modelo "gemini-2.5-flash" (Preview en Vertex)
-const model = vertex_ai.preview.getGenerativeModel({
+// Instancias Duales
+const modelStandard = vertex_ai.preview.getGenerativeModel({
     model: 'gemini-2.5-flash',
+    thinking: { disable: false },
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.4,
         topP: 0.9,
-        responseMimeType: 'application/json' // ✅ JSON Mode Activado para estabilidad
+        responseMimeType: 'application/json'
+    },
+});
+
+const modelLite = vertex_ai.getGenerativeModel({
+    model: 'gemini-2.5-flash-lite',
+    generationConfig: {
+        maxOutputTokens: 8192,
+        temperature: 0.4,
+        responseMimeType: 'application/json'
     },
 });
 
 class QuizService {
 
     /**
-     * Genera un batch de preguntas de trivia usando Vertex AI (Gemini 2.5 Flash).
+     * Genera un batch de preguntas de trivia usando Vertex AI (Motor Dual).
      * @param {string} topic 
      * @param {string} difficulty 
+     * @param {number} roundNumber
+     * @param {string} tier
      */
-    async generateRound(topic, difficulty, roundNumber = 1) {
+    async generateRound(topic, difficulty, roundNumber = 1, tier = 'free') {
+        const activeModel = (tier === 'admin') ? modelStandard : modelLite;
+        console.log(`🎲 [Trivia IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
+        
         try {
             // Matriz de Dificultad ACADÉMICA (Nivel Universitario a Doctorado)
             const difficultyMatrix = {
@@ -62,95 +78,59 @@ class QuizService {
 
             const complexityGuide = difficultyMatrix[selectedDiff][Math.min(roundNumber, 5)] || difficultyMatrix['Básico'][1];
 
-            // ⚠️ LIMITACIÓN DE TOKENS: Restricción estricta de longitud en feedback
+            // --- FLUJO TRIVIA GENERAL ---
             const basePrompt = `
-                Actúa como un catedrático universitario exigente y experto en la materia.
+                Actúa como un experto en trivia y educación dinámica de alto nivel.
                 
                 CONTEXTO:
                 - Tema: ${JSON.stringify(topic)}
-                - Audiencia: Estudiantes universitarios, Docentes y Doctorandos.
                 - Nivel Seleccionado: ${selectedDiff}
-                - Ronda Actual: ${roundNumber} de 5.
 
                 TU MISIÓN:
-                Genera 5 preguntas de opción múltiple siguiendo ESTRICTAMENTE este nivel de complejidad acadèmica:
-                "${complexityGuide}"
-
-                REGLAS DE ORO (ANTI-REPETICIÓN Y ECONOMÍA):
-                1. CONCISIÓN EXTREMA: Preguntas detalladas según el nivel, máximo 320 caracteres. Opciones no muy cortas, ni extensas.
-                2. DIVERSIDAD: No repitas conceptos.
-                3. CONSISTENCIA: Mantén el nivel académico alto, pero sé breve.
-                4. PRECISIÓN: Las respuestas deben ser técnicamente correctas.
-                5. FEEDBACK LIMITADO: Limita el 'educationalFeedback' a MÁXIMO 250 CARACTERES. Solo la idea central.
+                Genera 5 preguntas de opción múltiple de alta calidad.
+                
+                REGLAS DE ORO:
+                1. EXPLICACIÓN PEDAGÓGICA (EXTENSA): Para cada pregunta, proporciona un feedback educativo nutritivo de MÍNIMO 2 párrafos que explique el "por qué" de la respuesta y aporte datos adicionales interesantes.
+                2. DIVERSIDAD: No repitas conceptos básicos.
+                3. PRECISIÓN: Las respuestas deben ser técnicamente correctas.
+                4. SIN LÍMITES DE CARACTERES: Prioriza la calidad y profundidad sobre la brevedad.
 
                 FORMATO DE SALIDA (JSON Array Puro):
                 [
                     {
-                        "question": "¿Pregunta académica rigurosa y corta?",
+                        "question": "¿Pregunta interesante y desafiante?",
                         "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
                         "correctAnswerIndex": 1,
-                        "timeLimit": 45,
-                        "educationalFeedback": "Explicación académica muy breve (Máx 250 chars)."
+                        "timeLimit": 30,
+                        "educationalFeedback": "Explicación detallada, nutritiva y pedagógica de al menos 2 párrafos."
                     }
                 ]
                 IMPORTANT: Return ONLY valid JSON.
                 `;
 
-            // Batch 1: Enfoque Conceptual
-            const promptBatch1 = `${basePrompt}\nENFOQUE ESPECÍFICO BATCH A: Céntrate en **Teoría, Historia y Definiciones**. Sobre todo, teoría y definiciones. No incluyas casos prácticos.`;
+            const result = await activeModel.generateContent(basePrompt);
+            const text = result.response.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
 
-            // Batch 2: Enfoque Aplicado
-            const promptBatch2 = `${basePrompt}\nENFOQUE ESPECÍFICO BATCH B: Céntrate en **Aplicación Práctica y Problemas**.`;
-
-            // Ejecución Paralela (2 workers)
-            const [result1, result2] = await Promise.all([
-                model.generateContent(promptBatch1),
-                model.generateContent(promptBatch2)
-            ]);
-
-            const parseResponse = (result) => {
-                let text = result.response.candidates[0].content.parts[0].text;
-                // Limpieza agresiva de markdown
-                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-                // Extracción segura del JSON Array [...]
-                const jsonStart = text.indexOf('[');
-                const jsonEnd = text.lastIndexOf(']');
-                if (jsonStart !== -1 && jsonEnd !== -1) {
-                    text = text.substring(jsonStart, jsonEnd + 1);
-                }
-
+            const jsonStart = text.indexOf('[');
+            const jsonEnd = text.lastIndexOf(']');
+            let allQuestions = [];
+            
+            if (jsonStart !== -1 && jsonEnd !== -1) {
                 try {
-                    return JSON.parse(text);
+                    allQuestions = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
                 } catch (e) {
-                    console.error("⚠️ Error parseando JSON de un batch:", e.message);
-                    return [];
+                    console.error("⚠️ Error parseando JSON de QuizService:", e.message);
+                    throw new Error("Error en el formato de respuesta de la IA.");
                 }
-            };
-
-            const questions1 = parseResponse(result1);
-            const questions2 = parseResponse(result2);
-
-            // Unión de resultados
-            let allQuestions = [...questions1, ...questions2];
-
-            // Validación final
-            if (allQuestions.length < 5) {
-                throw new new Error("La IA no pudo generar suficientes preguntas válidas. Intenta de nuevo.");
             }
 
             // 🎲 ALGORITMO DE MEZCLA (Fisher-Yates) PARA OPCIONES
-            // Soluciona el problema de "Siempre es la B" reordenando las respuestas manualmente.
             allQuestions = allQuestions.map(q => {
-                const correctAnswerText = q.options[q.correctAnswerIndex]; // Guardar texto correcto
-
-                // Mezclar opciones
+                const correctAnswerText = q.options[q.correctAnswerIndex];
                 for (let i = q.options.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [q.options[i], q.options[j]] = [q.options[j], q.options[i]];
                 }
-
-                // Encontrar nuevo índice de la respuesta correcta
                 q.correctAnswerIndex = q.options.indexOf(correctAnswerText);
                 return q;
             });

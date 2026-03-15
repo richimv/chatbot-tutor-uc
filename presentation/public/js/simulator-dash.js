@@ -194,9 +194,13 @@ const SimulatorDash = (() => {
                 const summaryBox = document.getElementById('active-config-summary');
                 if (summaryBox && activeConfig) {
                     summaryBox.style.display = 'flex';
+                    const targetDisplay = activeConfig.target === 'SERUMS' && activeConfig.career 
+                        ? `${activeConfig.target} (${activeConfig.career})` 
+                        : activeConfig.target;
+                    
                     summaryBox.innerHTML = `
                         <i class="fas fa-filter"></i> 
-                        <span><strong>Filtro Recuperado:</strong> ${activeConfig.target} | ${activeConfig.difficulty} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
+                        <span><strong>Filtro Recuperado:</strong> ${targetDisplay} | ${activeConfig.difficulty} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
                     `;
                 }
             } catch (e) {
@@ -593,9 +597,13 @@ const SimulatorDash = (() => {
 
                 // Update UI Summary
                 summaryBox.style.display = 'flex';
+                const targetDisplay = target === 'SERUMS' && career 
+                    ? `${target} (${career})` 
+                    : target;
+
                 summaryBox.innerHTML = `
                     <i class="fas fa-filter"></i> 
-                    <span><strong>Filtro Activo:</strong> ${target} | ${difficulty} | ${selectedAreas.length} áreas seleccionadas</span>
+                    <span><strong>Filtro Activo:</strong> ${targetDisplay} | ${difficulty} | ${selectedAreas.length} áreas seleccionadas</span>
                 `;
 
                 // Update Links

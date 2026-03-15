@@ -116,7 +116,7 @@ class TrainingRepository {
 
         const res = await db.query(query, params);
 
-        console.log(`🔎 [Repo] Encontradas ${res.rows.length} preguntas Multi-Area disponibles (excluyendo vistas).`);
+        console.log(`🔎 [Repo-Simulador] Encontradas ${res.rows.length} preguntas balanceadas disponibles.`);
 
         if (res.rows.length > 0) {
             try {
@@ -134,7 +134,66 @@ class TrainingRepository {
             options: row.options,
             correct_option_index: row.correct_option_index,
             explanation: row.explanation,
-            topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
+            topic: row.topic 
+        }));
+    }
+
+    /**
+     * @senior_refactor ⚔️ MÉTODO EXCLUSIVO PARA QUIZ ARENA 
+     * Optimizado para agotar el banco local antes de usar IA.
+     * Elimina el sub-muestreo restrictivo (rn <= 3) del Simulador.
+     */
+    async findArenaQuestions(domain, target, topic, difficulty, limit = 5, userId) {
+        // 1. IDs vistos (24h)
+        const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
+        const seenRes = await db.query(seenQuery, [userId]);
+        const seenIds = seenRes.rows.map(r => r.question_id);
+
+        console.log(`🔎 [Repo-Arena] User ${userId} ha visto ${seenIds.length} preguntas recientemente.`);
+
+        // 2. Query Directo (Prioridad Absoluta al Stock Local)
+        // 🚨 NORMALIZACIÓN: Usamos TRIM/UPPER y permitimos target NULL para trivia
+        let query = `
+            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
+            FROM question_bank
+            WHERE TRIM(UPPER(topic)) = TRIM(UPPER($1)) 
+              AND domain = $2 
+              AND (target IS NULL OR target = $3)
+              AND (UPPER(difficulty) = UPPER($4) OR difficulty IS NULL)
+        `;
+
+        const params = [topic, domain, target, difficulty];
+        let paramIdx = 5;
+
+        // Exclusión
+        if (seenIds.length > 0) {
+            query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
+            params.push(seenIds);
+            paramIdx++;
+        }
+
+        query += ` ORDER BY RANDOM() LIMIT $${paramIdx}`;
+        params.push(limit);
+
+        const res = await db.query(query, params);
+
+        console.log(`⚔️ [Repo-Arena] Banco entregó ${res.rows.length}/${limit} preguntas para el tema '${topic}'.`);
+
+        // Actualizar estadísticas de uso
+        if (res.rows.length > 0) {
+            try {
+                const fetchedIds = res.rows.map(r => r.id);
+                await db.query(`UPDATE question_bank SET times_used = times_used + 1 WHERE id = ANY($1::uuid[])`, [fetchedIds]);
+            } catch (err) { console.error("❌ Repo-Arena usage counter err:", err.message); }
+        }
+
+        return res.rows.map(row => ({
+            id: row.id,
+            question_text: row.question_text,
+            options: row.options,
+            correct_option_index: row.correct_option_index,
+            explanation: row.explanation,
+            topic: row.topic
         }));
     }
 
@@ -152,7 +211,7 @@ class TrainingRepository {
                 FROM question_bank 
                 WHERE domain = $1 
                 AND ($2::text IS NULL OR target = $2)
-                AND topic = ANY($3::text[])
+                AND UPPER(topic) = ANY($3::text[])
             `;
             const params = [domain, target, topics];
             let paramIdx = 4;
@@ -189,15 +248,17 @@ class TrainingRepository {
      * Guarda un lote de nuevas preguntas en el question_bank.
      * @returns {Promise<string[]>} Array de IDs insertados
      */
-    async saveQuestionBankBatch(questions, defaultTopic, domain, target, difficulty) {
+    async saveQuestionBankBatch(questions, defaultTopic, domain, target, difficulty, defaultCareer = null) {
         if (!questions || questions.length === 0) return [];
 
-        console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} - ${domain} - ${target})...`);
+        console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} | C: ${defaultCareer} - ${domain} - ${target})...`);
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, question_hash, times_used)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
-            ON CONFLICT (question_hash) DO UPDATE SET times_used = question_bank.times_used + 1
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, question_hash, times_used, career)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, $10)
+            ON CONFLICT (question_hash) DO UPDATE SET 
+                times_used = question_bank.times_used + 1,
+                career = EXCLUDED.career
             RETURNING id;
         `;
 
@@ -206,6 +267,8 @@ class TrainingRepository {
         for (const q of questions) {
             // Usar el topic exacto generado por la IA, o el defaultTopic si la IA falló en generarlo
             const exactTopic = q.topic || defaultTopic;
+            const exactCareer = q.career || defaultCareer;
+
             // Generar Hash ÚNICO basado en Topic + Pregunta + Opciones (para diferenciar mismas preguntas con mismas opciones)
             // Usamos un hash MD5 o SHA256 corto para indexación eficiente
             const rawString = `${exactTopic}-${q.question_text}-${JSON.stringify(q.options)}`;
@@ -221,7 +284,8 @@ class TrainingRepository {
                     JSON.stringify(q.options),
                     q.correct_option_index,
                     q.explanation,
-                    hash
+                    hash,
+                    exactCareer
                 ]);
                 if (res.rows.length > 0) {
                     newIds.push(res.rows[0].id);

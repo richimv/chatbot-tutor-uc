@@ -40,6 +40,8 @@ Se han profesionalizado los logs en la terminal (`TrainingService.js`) utilizand
 - `🔎 [Banco]`: Estado de stock en las áreas seleccionadas.
 - `⚠️ [Límite]`: Bloqueo de generación por restricciones de plan.
 - `🤖 [IA]`: Activación de reposición (solo para Advanced/Admin).
+- `🍃 [IA AHORRO]`: Uso de modelo Lite para optimización financiera.
+- `🛡️ [IA AUDITORÍA]`: Uso de modelo Estándar (exclusivo Admin).
 
 ## 4. Refactorización de Pricing (Upgrades)
 Se eliminó la restricción que ocultaba la tabla de precios a usuarios con suscripción activa:

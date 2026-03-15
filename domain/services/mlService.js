@@ -28,8 +28,8 @@ const systemInstruction = {
     
     TU MISIÓN TIENE 3 PILARES:
     1.  **TUTOR CLÍNICO:** Explicar conceptos médicos basándote estrictamente en las Normas Técnicas, Guías de Práctica Clínica (GPC) y el marco legal del MINSA/EsSalud provistos en el contexto.
-    2.  **CURADOR DE RECURSOS:** Conectar al usuario con material "Open Source", Papers de libre acceso, y guías oficiales que estén en nuestra BD. NO RECOMIENDES NI MENCIONES libros comerciales (ej. Harrison, CTO, etc.) a favor de la piratería; apóyate en fuentes oficiales, bases RAG, PubMed, SciELO, o material de la Academia.
-    3.  **GUÍA ACADÉMICO:** Orientar sobre qué Carreras, Cursos, Módulos de Entrenamiento y Flashcards están disponibles en Hub Academia.
+    2.  **CURADOR DE RECURSOS:** Conectar al usuario con material "Open Source", Papers de libre acceso, y guías oficiales que estén en nuestra BD. Presenta siempre estos recursos como enlaces Markdown directos: [Título del Recurso](URL).
+    3.  **GUÍA ACADÉMICO:** Orientar sobre qué Cursos, Módulos de Entrenamiento y Flashcards están disponibles en Hub Academia. Cuando menciones un curso, genera SIEMPRE un enlace en formato Markdown: [Nombre del Curso](/course?id=ID).
 
     --- DIRECTRICES DE COMPORTAMIENTO ---
 
@@ -40,10 +40,11 @@ const systemInstruction = {
         * **Fuentes Oficiales:** Fundamenta tu explicación en los libros de texto médicos verificados y normas oficiales peruanas (NTS, RM, Leyes) que forman parte de tu base de conocimiento experto.
     3.  **Uso de Conocimiento General:** Si el contexto provisto (RAG) no contiene la respuesta exacta a preguntas específicas (ej. plazos normativos, tiempos, o dosis exactas), **DEBES usar tu conocimiento experto pre-entrenado general** para dar la respuesta correcta. BAJO NINGUNA CIRCUNSTANCIA respondas "no está en mi base de conocimientos" o "el contexto proporcionado no lo menciona". Eres un médico experto y debes suplir cualquier deficiencia de los documentos con tu propio conocimiento médico.
 
-    B) AL RESPONDER SOBRE ESTRUCTURA (CARRERAS/CURSOS):
-    Si el usuario pregunta "¿Qué carreras hay?" o "¿Qué cursos tiene Medicina?", revisa el contexto inyectado "[ESTRUCTURA...]".
-    1.  **Listado Claro:** Presenta la información con viñetas o listas numeradas para que sea fácil de leer (usa formato * [course:ID] Nombre).
-    2.  **No inventes:** Solo menciona lo que el sistema te ha mostrado en el contexto.
+    B) AL RESPONDER SOBRE ESTRUCTURA DE CURSOS:
+    Si el usuario pregunta "¿Qué cursos tiene Medicina?" o sobre temas específicos, revisa el contexto inyectado.
+    1.  **Listado Claro:** Presenta la información con viñetas. OBLIGATORIO: Usa enlaces Markdown para que sean clickeables.
+        * Ejemplo: "Te recomiendo el curso de [Anatomía Humana](/course?id=123)".
+    2.  **No inventes:** Solo menciona los cursos que el sistema te ha mostrado en el contexto.
 
     D) LÍMITE DE RECURSOS (OPTIMIZACIÓN):
     *   Si el contexto te da muchos recursos, **LISTA MÁXIMO 3 a 5**.
@@ -56,96 +57,82 @@ const systemInstruction = {
     IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
     {
       "intencion": "clasificación_de_la_intención",
-      "respuesta": "Tu respuesta completa aquí en Markdown...",
+      "respuesta": "Tu respuesta completa aquí en Markdown. POR FAVOR, SE EXTENSO Y PEDAGÓGICO. Para conceptos médicos, utiliza al menos 3 párrafos bien estructurados, usa negritas para términos clave y tablas si es necesario para comparar conceptos. No seas breve; el usuario busca aprender.",
       "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
     }
+
+    --- VALLA DE SEGURIDAD ACADÉMICA (CERO TOLERANCIA A LA CREATIVIDAD) ---
+    1. PROHIBIDO INVENTAR ENLACES O IDs. Usa ÚNICAMENTE los IDs del bloque [CATÁLOGO ACADÉMICO] inyectado.
+    2. SI NO ESTÁ EN LA LISTA, NO EXISTE: Si un curso no aparece en el [CATÁLOGO ACADÉMICO], tienes PROHIBIDO mencionarlo como una oferta o recomendación de Hub Academia. No inventes nombres de cursos genéricos (ej. "Salud Pública" o "Medicina Interna") si no están en la lista.
+    3. PROHIBIDO MENCIONAR "FICTICIO": Nunca indiques que un ID es ficticio o que el usuario debe verificar el catálogo; simplemente no menciones lo que no está verificado en el contexto.
+    4. Si recomiendas un curso de la lista, usa estrictamente su ID real: [Nombre](/course?id=ID). Cualquier otro formato o ID falso (123, 456, abc) está terminantemente prohibido.
+    5. Para libros y recursos, usa la propiedad 'url' exacta que se te proporcione. No inventes links a Google Drive ni a otras plataformas.
+    6. RESPUESTA SINCERA: Si el usuario pide un curso sobre un tema que no tenemos (ej. Dengue), responde: "Actualmente no contamos con un curso específico de ese tema, pero puedes revisar las normativas y recursos en nuestra biblioteca." No intentes "adivinar" o "sugerir" cursos inexistentes.
     `
     }]
 };
 
 
 
-const model = vertex_ai.preview.getGenerativeModel({
+// ✅ 3. CONFIGURACIÓN DE MODELOS DUALES (Control Financiero)
+// modelStandard: Para Auditoría/Admin (Mantiene Thinking para pruebas de costo)
+// modelLite: Para Usuarios Finales (Sin Thinking -> Ahorro Total)
+
+const standardConfig = {
     model: 'gemini-2.5-flash',
-    thinking: { disable: true },
     generationConfig: {
         maxOutputTokens: 8192,
-        temperature: 0.3, // ✅ Reducido para ser más preciso como bibliotecario
+        temperature: 0.3,
         topP: 0.8,
-    },
-    tools: [{
-        functionDeclarations: [{
-            name: "getCourseDetails",
-            description: "Obtiene información detallada sobre un curso. Úsalo para buscar materiales, horarios o docentes.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    courseName: { type: "STRING", description: "Nombre del curso (ej. 'Programación')." }
-                },
-                required: ["courseName"]
-            }
-        },
-        {
-            name: "getCareerDetails",
-            description: "Obtiene detalles sobre una carrera.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    careerName: { type: "STRING", description: "Nombre de la carrera." }
-                },
-                required: ["careerName"]
-            }
-        },
-        {
-            name: "listAllCareers",
-            description: "Lista todas las carreras disponibles.",
-            parameters: { type: "OBJECT", properties: {} }
-        },
-        {
-            name: "getCoursesForCareer",
-            description: "Lista cursos de una carrera.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    careerName: { type: "STRING", description: "Nombre de la carrera." }
-                },
-                required: ["careerName"]
-            }
-        },
-        {
-            name: "getInstructorInfo",
-            description: "Obtiene información sobre un docente y los cursos que enseña. Úsalo cuando pregunten por un profesor o docente específico.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    instructorName: { type: "STRING", description: "Nombre del docente/profesor." }
-                },
-                required: ["instructorName"]
-            }
-        },
-        {
-            name: "listAllInstructors",
-            description: "Lista todos los docentes/profesores disponibles.",
-            parameters: { type: "OBJECT", properties: {} }
-        }]
-    }],
-    systemInstruction: systemInstruction
-});
-console.log('🤖 MLService: Modelo configurado (Singleton): gemini-2.5-flash');
+    }
+};
+
+const liteConfig = {
+    model: 'gemini-2.5-flash-lite',
+    generationConfig: standardConfig.generationConfig
+};
+
+// Instancias Singleton
+// Mantenemos temperatura alta (0.7) para el chat para que sea más expresivo y pedagógico.
+const modelStandard = vertex_ai.preview.getGenerativeModel({ ...standardConfig, systemInstruction, generationConfig: { ...standardConfig.generationConfig, temperature: 0.7 }, thinking: { disable: false } });
+const modelLite = vertex_ai.getGenerativeModel({ ...liteConfig, systemInstruction, generationConfig: { ...liteConfig.generationConfig, temperature: 0.7 } });
+
+console.log('🤖 MLService: Motor Dual Inicializado (Standard: gemini-2.5-flash | Lite: gemini-2.5-flash-lite)');
 
 class MLService {
+    /**
+     * Selecciona el modelo adecuado según el tier del usuario.
+     * @private
+     */
+    static _getModelByTier(tier = 'free') {
+        const t = String(tier || 'free').toLowerCase();
+        if (t === 'admin') {
+            console.log('🛡️ [IA MODO AUDITORÍA] Admin detectado: Usando gemini-2.5-flash.');
+            return modelStandard;
+        }
+        console.log(`🍃 [IA MODO AHORRO] Usuario '${t}' detectado: Usando gemini-2.5-flash-lite.`);
+        return modelLite;
+    }
+
     /**
      * Procesa un mensaje de usuario usando un Modelo de Lenguaje Grande (LLM).
      */
     static async classifyIntent(message, conversationHistory, dependencies) {
-        console.log(`🤖 MLService: Generando respuesta con LLM para: ${message}`);
-
-        // Usar los repositorios pasados como argumentos.
+        // Extraer dependencias
         const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet, userTier } = dependencies;
 
-        // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite)
+        const activeModel = this._getModelByTier(userTier);
+        console.log(`🤖 MLService: Generando respuesta con LLM para: ${message}`);
+
+        // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite) y Catálogo Maestro (Escalable)
         let contextInjection = "";
         try {
+            // 0. CATÁLOGO MAESTRO (Evita alucinaciones de IDs)
+            const allCourses = await courseRepo.findAll();
+            if (allCourses && allCourses.length > 0) {
+                const catalogStr = allCourses.map(c => `[ID=${c.id}] "${c.name}"`).join(' | ');
+                contextInjection += `\n[CATÁLOGO ACADÉMICO REAL - TOTAL: ${allCourses.length} CURSOS]\n${catalogStr}\n[FIN CATÁLOGO - PROHIBIDO MENCIONAR CURSOS FUERA DE ESTA LISTA]\n`;
+            }
             // 1. Buscar coincidencias directas de libros (Metadata Search - MEJORADO 🧠)
             const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
             const normalizedMsg = normalizeText(message);
@@ -234,30 +221,16 @@ class MLService {
 
                     contextInjection += `\n[BIBLIOTECA: CURSO "${course.name}"]\n` +
                         `Descripción: ${course.description || "No disponible"}\n` +
+                        `ENLACE AL CURSO: /course?id=${course.id}\n` +
                         `Bibliografía (${limitedBooks.length} de ${courseBooks.length} mostrados):\n` +
                         limitedBooks.map(b =>
                             `* Título: "${b.title}" | Autor: ${b.author} | URL: ${b.url}`
                         ).join('\n') +
                         (remaining > 0 ? `\n... y ${remaining} libros más.` : '') +
-                        `\n[Enlace para ver todos: /?q=${encodeURIComponent(course.name)}]` +
                         `\n[FIN INFO CURSO]\n`;
                 }
             }
 
-            // 4. Buscar por CARRERA
-            if (entities.careers.length > 0) {
-                const careerName = entities.careers[0];
-                const allCareers = await careerRepo.findAll();
-                const career = allCareers.find(c => normalizeText(c.name).includes(normalizeText(careerName)));
-
-                if (career) {
-                    contextInjection += `\n[ESTRUCTURA: INFORMACIÓN DE LA CARRERA "${career.name}"]\n` +
-                        `Descripción: ${career.description || "No disponible"}\n` +
-                        `ID para enlace: ${career.id}\n` +
-                        `\n[FIN INFORMACIÓN CARRERA]\n`;
-                    console.log(`🚀 Pre-fetching: Datos de la carrera "${career.name}" inyectados.`);
-                }
-            }
 
             // 5. BÚSQUEDA RAG LOCAL INTELIGENTE (Cero Costo - Palabras Clave)
             const RagService = require('./ragService');
@@ -300,12 +273,26 @@ class MLService {
         console.log(`🤖 MLService: RAG Local Status: ${usedRAG ? 'ACTIVO' : 'INACTIVO'}`);
 
         try {
-            const historyForAPI = conversationHistory.map(msg => ({
-                role: msg.role === 'bot' ? 'model' : 'user',
+            // 🚀 LIMPIEZA DE HISTORIAL: Evitar que el último mensaje del usuario esté duplicado 
+            // (El controlador ya guardó el mensaje actual en la BD y getMessagesByConversationId lo trajo).
+            // Si el último mensaje del historial es igual al mensaje actual, lo removemos del historial enviado a la API
+            // porque lo enviaremos como el mensaje "sendMessage" actual para mantener la atención de la IA.
+            let cleanHistory = [...conversationHistory];
+            if (cleanHistory.length > 0 &&
+                cleanHistory[cleanHistory.length - 1].sender === 'user' &&
+                cleanHistory[cleanHistory.length - 1].content.trim() === message.trim()) {
+                cleanHistory.pop();
+            }
+
+            // Limitar historial a los últimos 10 mensajes para evitar ruido
+            const limitedHistory = cleanHistory.slice(-10);
+
+            const historyForAPI = limitedHistory.map(msg => ({
+                role: msg.sender === 'bot' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
             }));
 
-            const chat = model.startChat({ history: historyForAPI });
+            const chat = activeModel.startChat({ history: historyForAPI });
 
             // Si hay contexto pre-cargado, lo adjuntamos al mensaje del usuario de forma invisible para él.
             const finalMessage = contextInjection ? `${contextInjection}\n\nUsuario: ${message}` : message;
@@ -340,8 +327,9 @@ class MLService {
 
                         courseDetailsResponse = {
                             ...course,
+                            url: `/course?id=${course.id}`,
                             topics,
-                            books
+                            books: books.map(b => ({ title: b.title, author: b.author, url: b.url }))
                         };
                         console.log('🔍 Resultado (getCourseDetails): Encontrado:', course.name);
                     } else {
@@ -357,67 +345,6 @@ class MLService {
                     response = result.response;
 
 
-                } else if (call.name === 'getCareerDetails') {
-                    // ✅ SOLUCIÓN: Búsqueda de carrera (faltaba la lógica completa)
-                    const allCareers = await careerRepo.findAll();
-                    const normalizedQuery = normalizeText(call.args.careerName);
-                    const career = allCareers.find(c => normalizeText(c.name).includes(normalizedQuery));
-
-                    let careerDetailsResponse = null;
-
-                    if (career) {
-                        // Obtener los cursos de esta carrera
-                        const courses = await courseRepo.findByCareerCategory(career.name);
-                        const courseList = courses.map(c => ({ id: c.id, name: c.name }));
-
-                        careerDetailsResponse = {
-                            id: career.id,
-                            name: career.name,
-                            description: career.description || 'No disponible',
-                            courses: courseList
-                        };
-                        console.log('🔍 Resultado (getCareerDetails): Encontrado:', career.name, 'con', courseList.length, 'cursos.');
-                    } else {
-                        console.log(`⚠️ No se encontró carrera para "${call.args.careerName}"`);
-                    }
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'getCareerDetails',
-                            response: careerDetailsResponse || { error: "Carrera no encontrada" }
-                        }
-                    }]);
-                    response = result.response;
-
-
-                } else if (call.name === 'listAllCareers') {
-                    const allCareers = await careerRepo.findAll();
-                    const careerList = allCareers.map(c => ({ id: c.id, name: c.name }));
-
-                    console.log('🔍 Resultado de la herramienta (listar carreras):', careerList.length, 'carreras encontradas.');
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'listAllCareers',
-                            response: { careers: careerList }
-                        }
-                    }]);
-                    response = result.response;
-
-                } else if (call.name === 'getCoursesForCareer') {
-                    const courses = await courseRepo.findByCareerCategory(call.args.careerName);
-                    console.log(`🔍 Resultado de la herramienta (cursos por carrera): ${courses.length} cursos encontrados.`);
-
-                    // Devolvemos solo id y nombre para ser concisos
-                    const courseList = courses.map(c => ({ id: c.id, name: c.name }));
-
-                    result = await chat.sendMessage([{
-                        functionResponse: {
-                            name: 'getCoursesForCareer',
-                            response: { courses: courseList }
-                        }
-                    }]);
-                    response = result.response;
 
                 } else {
                     console.warn(`⚠️ Herramienta solicitada no encontrada o eliminada: ${call.name}`);
@@ -544,15 +471,11 @@ class MLService {
     static async generateCourseDescription(courseName) {
         console.log(`🤖 MLService: Generando descripción para el curso: "${courseName}"`);
         try {
-            // ✅ 4. Esta es la sintaxis correcta para 'generateContent' en Vertex
-            const model = vertex_ai.preview.getGenerativeModel({
-                model: 'gemini-2.5-flash',
-                thinking: { disable: true }
-            });
-
+            // Usamos Lite para descripciones estáticas (ahorro)
+            const activeModel = this._getModelByTier('advanced');
             const prompt = `Como un experto académico y redactor de planes de estudio, crea una descripción atractiva y concisa (aproximadamente 3 a 4 frases) para el curso universitario llamado "${courseName}". La descripción debe explicar de qué trata el curso, sus objetivos principales y qué aprenderán los estudiantes. El tono debe ser profesional pero accesible.`;
 
-            const result = await model.generateContent({
+            const result = await activeModel.generateContent({
                 contents: [{ role: "user", parts: [{ text: prompt }] }]
             });
             const response = result.response;
@@ -577,8 +500,9 @@ class MLService {
      * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)
      * Genera un total de 10 preguntas fragmentadas en lotes pequeños (3, 3, 3, 1) para evitar truncamiento por token limit.
      */
-    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, domain = 'medicine') {
-        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount}`);
+    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, tier = 'advanced') {
+        const domain = 'medicine';
+        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount} (Tier: ${tier})`);
         try {
             const requestedAmount = amount;
             const BATCH_SIZE_BASE = 3;
@@ -591,7 +515,7 @@ class MLService {
                 const batchNum = Math.floor(i / currentBatchLimit) + 1;
                 console.log(`🤖 MLService: Generando lote ${batchNum} (${currentBatchSize} preguntas)...`);
 
-                const batchQuestions = await this._generateBatchInternal(target, difficulty, studyAreas, career, allQuestions, currentBatchSize);
+                const batchQuestions = await this._generateBatchInternal(target, difficulty, studyAreas, career, allQuestions, currentBatchSize, tier);
 
                 if (batchQuestions && batchQuestions.length > 0) {
                     allQuestions = allQuestions.concat(batchQuestions);
@@ -612,7 +536,7 @@ class MLService {
     /**
      * @private Lógica de generación atómica para un lote pequeño (Prompt Maestro)
      */
-    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions, amount) {
+    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions, amount, tier = 'advanced') {
         try {
             const domain = 'medicine';
 
@@ -656,16 +580,14 @@ class MLService {
                 console.log(`🚀 RAG Local (Generador): Contexto inyectado para ${studyAreas}`);
             }
 
-            // 3. Instanciar Gemini (1.5 Flash para evitar Thinking Costs)
-            const jsonModel = vertex_ai.preview.getGenerativeModel({
-                model: 'gemini-2.5-flash',
-                thinking: { disable: true },
-                generationConfig: {
-                    maxOutputTokens: 8192,
-                    temperature: 0.7,
-                    responseMimeType: "application/json"
-                }
-            });
+            // 3. Selección de Modelo por Tier (Control Financiero)
+            const activeModel = this._getModelByTier(tier);
+
+            const generationConfig = {
+                maxOutputTokens: 8192,
+                temperature: 0.7,
+                responseMimeType: "application/json"
+            };
 
             // 4. Definir reglas dinámicas por Target y Dificultad
             let targetRules = "";
@@ -698,7 +620,7 @@ class MLService {
                 REGLA DE ORO: La fundamentación DEBE priorizar el sustento clínico/fisiopatológico de los LIBROS en temas médicos. Si el contexto RAG interno es insuficiente para cumplir la extensión pedida, ENRIQUECE con fuentes externas oficiales.`;
                 if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Enunciado < 30 palabras. Explicación 2 párrafos.";
                 else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Enunciado < 80 palabras. Explicación 2 párrafos.";
-                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Enunciado < 120 palabras. Explicación 3 párrafos analíticos.";
+                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Explicación 3 párrafos analíticos.";
             }
             // 5. Prompt Maestro (Preservando todas las reglas complejas)
             const prompt = `
@@ -710,7 +632,7 @@ class MLService {
             1. FUNDAMENTACIÓN MULTI-FUENTE: Cada explicación DEBE integrar y citar explícitamente al menos DOS (2) fuentes médicas oficiales basándote en tu conocimiento experto, cumpliendo la "Regla de Oro" del perfil.
             2. JERARQUÍA Y CITACIÓN (ESTRICTO): Obedece RIGUROSAMENTE la "JERARQUÍA DE FUENTES" definida arriba en el PERFIL DEL EXAMEN. Puedes enriquecer con información de la OMS/OPS, CDC o UpToDate solo si no contradice la jerarquía principal.
             3. LÍMITES CUANTITATIVOS (CONTROL DE CALIDAD):
-               - ENUNCIADO: [Nivel Básico: <30 palabras] | [Nivel Intermedio: <80 palabras] | [Nivel Avanzado: <120 palabras]. PROHIBIDO EXCEDER.
+               - ENUNCIADO: [Nivel Básico: <40 palabras] | [Nivel Intermedio: <80 palabras] | [Nivel Avanzado: <150 palabras]. PROHIBIDO EXCEDER.
                - EXPLICACIÓN: [Nivel Básico: 2 párrafos] | [Nivel Intermedio: 2 párrafos] | [Nivel Avanzado: 3 párrafos]. NO RECORTAR.
                - SI NO HAY FUENTES INTERNAS: Usa tu conocimiento experto para alcanzar la extensión y profundidad requerida, citando siempre las fuentes oficiales correspondientes.
             4. EQUILIBRIO Y SIMETRÍA: Respuesta correcta y distractores DEBEN tener longitud similar. No des pistas por extensión de texto.
@@ -764,7 +686,10 @@ class MLService {
             - Campo "subtopic": El SUBTEMA CLÍNICO (ej: CRED, PAI, Triadas).
             `;
 
-            const result = await jsonModel.generateContent(prompt);
+            const result = await activeModel.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig
+            });
             const responseText = result.response.candidates[0].content.parts[0].text;
 
             let questions = [];

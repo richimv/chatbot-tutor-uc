@@ -6,14 +6,23 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// INSTANCIAS DE VERTEX AI (Simulador Médico usa RAG Maestro)
+// INSTANCIAS DE VERTEX AI (Motor Dual)
 const modelCreative = vertex_ai.preview.getGenerativeModel({
     model: 'gemini-2.5-flash',
-    thinking: { disable: true },
+    thinking: { disable: false }, // En Creative mantenemos estándar
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.9,
         topP: 0.95,
+        responseMimeType: 'application/json'
+    },
+});
+
+const modelCreativeLite = vertex_ai.getGenerativeModel({
+    model: 'gemini-2.5-flash-lite',
+    generationConfig: {
+        maxOutputTokens: 4096,
+        temperature: 0.8,
         responseMimeType: 'application/json'
     },
 });
@@ -190,12 +199,13 @@ class TrainingService {
 
                 const areaPrompt = sampledAreas.join(', ');
                 const MLService = require('./mlService');
-                let aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5);
+                let aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
 
                 if (aiQuestions && aiQuestions.length > 0) {
                     source = 'HYBRID';
                     aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
-                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, difficulty);
+                    // 🎯 FIX: Pasar el parámetro 'career' para que el repositorio lo guarde en la BD.
+                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, difficulty, career);
                     if (newIds && newIds.length > 0) {
                         await repository.markQuestionsAsSeen(userId, newIds);
                         aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
@@ -218,38 +228,63 @@ class TrainingService {
         }
 
         // ---------------------------------------------------------
-        // B. FLUJO ARENA (GENERAL_TRIVIA / OTROS)
+        // SI ES QUIZ ARENA (GENERAL_TRIVIA / OTROS)
         // ---------------------------------------------------------
-        const questions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, areas, difficulty, limit, userId);
+        // 🚨 SENIOR REFACTOR: Normalizar tema a UPPERCASE y usar método exclusivo para agotar stock real
+        const normalizedTopic = String(areas[0] || 'Cultura General').trim().toUpperCase();
+        const questions = await repository.findArenaQuestions(dbDomain, dbTarget, normalizedTopic, difficulty, limit, userId);
 
         // SI ES QUIZ ARENA (GENERAL_TRIVIA), Conservamos la IA (Bajo temperatura creativa y sin RAG)
-        console.log(`🧠 Quiz Arena, generando ${limit} nuevas con IA Creative... [Áreas: ${areas.join(', ')}]`);
-        let newQuestions = await this.generateGeneralQuestionsAI(areas, difficulty, limit);
+        if (questions.length < limit) {
+            const tier = String(subscriptionTier || 'free').toLowerCase();
+            
+            // 🛡️ RESTRICCIÓN DE IA EN ARENA: Solo Advanced/Admin pueden generar nuevas de cultura general
+            if (tier !== 'advanced' && tier !== 'admin') {
+                 console.log(`🚫 [Arena Limit] Usuario '${tier}' alcanzó agotamiento de banco de trivia. Bloqueando IA.`);
+                 if (questions.length === 0) throw new Error("BANCO_AGOTADO_TIER");
+                 
+                 const finalQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
+                 await repository.markQuestionsAsSeen(userId, finalQuestions.filter(q => q.id).map(q => q.id));
 
-        // 🔀 Shuffle de opciones para nuevas preguntas IA
-        newQuestions = newQuestions.map(q => this.shuffleOptions(q));
+                 return { questions: finalQuestions, source: 'BANK', topic: areas[0] };
+            }
 
-        // 3. Guardar las nuevas en el Banco Y OBTENER IDs
-        let newIds = [];
-        if (newQuestions.length > 0) {
-            newIds = await repository.saveQuestionBankBatch(newQuestions, areas[0], dbDomain, dbTarget, difficulty);
+            console.log(`🧠 [Arena-IA] Reponiendo ${limit - questions.length} faltantes con IA... [Tema: ${areas[0]}]`);
+            let newQuestions = await this.generateGeneralQuestionsAI(areas, difficulty, limit - questions.length, subscriptionTier);
+
+            // 🔀 Shuffle de opciones para nuevas preguntas IA
+            newQuestions = newQuestions.map(q => this.shuffleOptions(q));
+
+            // 3. Guardar las nuevas en el Banco Y OBTENER IDs
+            let newIds = [];
+            if (newQuestions.length > 0) {
+                newIds = await repository.saveQuestionBankBatch(newQuestions, areas[0], dbDomain, dbTarget, difficulty, career);
+            }
+
+            // 4. Marcar como vistas las nuevas y FILTRAR REPETIDAS
+            if (newIds && newIds.length > 0) {
+                await repository.markQuestionsAsSeen(userId, newIds);
+                newQuestions.forEach((q, index) => {
+                    if (newIds[index]) q.id = newIds[index];
+                });
+            }
+
+            const combined = [...questions, ...newQuestions].slice(0, limit);
+            return { 
+                questions: combined, 
+                source: questions.length > 0 ? 'HYBRID' : 'IA', 
+                topic: normalizedTopic 
+            };
         }
 
-        // 4. Marcar como vistas las nuevas y FILTRAR REPETIDAS
-        if (newIds && newIds.length > 0) {
-            await repository.markQuestionsAsSeen(userId, newIds);
-            newQuestions.forEach((q, index) => {
-                if (newIds[index]) q.id = newIds[index];
-            });
-        }
+        const bankQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
+        await repository.markQuestionsAsSeen(userId, bankQuestions.filter(q => q.id).map(q => q.id));
 
-        // 5. Combinar
-        const bankIds = new Set(questions.map(q => q.id));
-        const uniqueNewQuestions = newQuestions.filter(q => !bankIds.has(q.id));
-
-        const combined = [...questions, ...uniqueNewQuestions].slice(0, limit);
-
-        return { questions: combined, source: 'HYBRID', topic: areas[0] };
+        return { 
+            questions: bankQuestions, 
+            source: 'BANK', 
+            topic: normalizedTopic 
+        };
     }
 
     // MÉTODO generateMedicalQuestionsAI MIGRADO A MLService.generateRAGQuestions (RAG Maestro)
@@ -257,8 +292,11 @@ class TrainingService {
     /**
      * Generador Puro IA (GENERAL) - Lógica interna y Deduplicación
      */
-    async generateGeneralQuestionsAI(areas, difficulty, count) {
+    async generateGeneralQuestionsAI(areas, difficulty, count, tier = 'free') {
         try {
+            const activeModel = (tier === 'admin') ? modelCreative : modelCreativeLite;
+            console.log(`🤖 [Arena IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
+            
             const areaString = areas.join(', ');
 
             // Extraer Contexto de Deduplicación
@@ -276,7 +314,7 @@ class TrainingService {
             const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
 
             const prompt = `
-            Actúa como un Quiz Master experto en educación. 
+            Actúa como un Quiz Master experto en educación de alto nivel. 
             Tema: "${areaString}". Dificultad: ${difficulty}.
             Enfoque: ${randomSeed}.
             
@@ -286,24 +324,25 @@ class TrainingService {
             ${deduplicationText}
             -- FIN PREGUNTAS PROHIBIDAS --
 
-            Instrucciones CRÍTICAS:
+            Instrucciones CRÍTICAS de Calidad:
             1. IDIOMA: ESPAÑOL (Neutro). Todas las preguntas y respuestas en español.
             2. FORMATO: Genera EXACTAMENTE 4 opciones de respuesta para cada pregunta.
-            3. LONGITUD: Preguntas claras y directas (1-2 oraciones), pero no excesivamente cortas.
-            4. TONO: Profesional pero dinámico.
+            3. LONGITUD: Preguntas claras y directas, pero con contenido educativo rico.
+            4. CALIDAD DE OPCIONES: Queda TOTALMENTE PROHIBIDO usar opciones de una sola letra ("A", "X", "J"). Las respuestas deben ser conceptos, nombres, fechas o descripciones completas y plausibles.
+            5. TONO: Profesional pero dinámico.
             
             Genera ${count} preguntas de trivia interesantes y NO repetitivas.
             
             JSON ESTRICTO:
-            [{"question_text":"¿Cuál es...?","options":["Texto crudo", "Respuesta directa", "Concepto limpio", "Opción final sin letras"],"correct_option_index":0,"explanation":"...", "topic": "${areas[0]}"}]
+            [{"question_text":"¿Cuál es el principal factor...?","options":["Concepto A detallado", "Concepto B detallado", "Concepto C detallado", "Concepto D detallado"],"correct_option_index":0,"explanation":"Explicación educativa de 1-2 líneas.","topic":"${areas[0]}"}]
             
             ⚠️ REGLA DE FORMATO:
             Bajo ninguna circunstancia uses letras ("A)", "B.", "C.-", etc.) al inicio de las opciones.
-            Las opciones deben contener únicamente el texto crudo.
+            Las opciones deben contener únicamente el texto crudo del concepto evaluado.
             Asegúrate de escapar correctamente las comillas dobles internas con \\" para no romper el formato JSON.
             `;
 
-            const result = await modelCreative.generateContent(prompt);
+            const result = await activeModel.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;
 
             let questions;
@@ -361,7 +400,8 @@ class TrainingService {
             `;
 
             console.log(`🧠 AI Flashcards: Generando ${count} tarjetas sobre '${topic}'...`);
-            const result = await modelCreative.generateContent(prompt);
+            // Flashcards siempre usan Lite para ahorro
+            const result = await modelCreativeLite.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;
 
             const cards = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
@@ -382,8 +422,8 @@ class TrainingService {
     }
 
     // Usado por QuizGameController (Arena)
-    async generateGeneralQuiz(topic, difficulty = 'Intermedio', userId) {
-        const result = await this.getQuestions({ target: 'GENERAL_TRIVIA', areas: [topic] }, difficulty, 5, userId);
+    async generateGeneralQuiz(topic, difficulty = 'Intermedio', userId, tier = 'free') {
+        const result = await this.getQuestions({ target: 'GENERAL_TRIVIA', areas: [topic] }, difficulty, 5, userId, tier);
         return result.questions;
     }
 

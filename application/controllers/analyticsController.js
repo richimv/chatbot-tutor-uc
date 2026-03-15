@@ -7,12 +7,22 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// Instancia Modelo PRO (Para Análisis de Patrones Clínicos)
+// Instancias Duales para Análisis Pro
 const modelPro = vertex_ai.preview.getGenerativeModel({
-    model: 'gemini-2.5-flash', // Flash / Pro (lo que use Thinking)
+    model: 'gemini-2.5-flash',
+    thinking: { disable: false },
     generationConfig: {
-        maxOutputTokens: 2048, // Un resumen estructurado
-        temperature: 0.3, // Análisis objetivo
+        maxOutputTokens: 2048,
+        temperature: 0.3,
+        responseMimeType: 'application/json'
+    },
+});
+
+const modelLite = vertex_ai.getGenerativeModel({
+    model: 'gemini-2.5-flash-lite',
+    generationConfig: {
+        maxOutputTokens: 2048,
+        temperature: 0.3,
         responseMimeType: 'application/json'
     },
 });
@@ -253,7 +263,10 @@ class AnalyticsController {
             }
             `;
 
-            const result = await modelPro.generateContent(prompt);
+            const activeModel = (tier === 'admin') ? modelPro : modelLite;
+            console.log(`🧠 [IA CLÍNICA] Usando modelo ${tier === 'admin' ? 'Pro/Estándar' : 'Lite'} para Tier: ${tier}`);
+
+            const result = await activeModel.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;
 
             let diagnostic;

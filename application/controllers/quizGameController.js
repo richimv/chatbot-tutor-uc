@@ -22,7 +22,7 @@ class QuizGameController {
             console.log(`⚔️ Iniciando Quiz Battle: ${topic || 'Aleatorio'} para ${user.name} (ID: ${user.id})`);
 
             // 1. Generar Preguntas (Modo Rápido: General / Arcade)
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', difficulty || 'Intermedio', user.id);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', difficulty || 'Intermedio', user.id, user.subscriptionTier);
 
             // 2. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
             // 💡 IMPORTANTE: Aquí se hace efectivo el cobro de "1 Vida" para usuarios Free (1/1), Basic (5/5) o Advanced (10/10).
@@ -46,9 +46,9 @@ class QuizGameController {
                 timePerQuestion: 20,
                 questions: questions.map(q => ({
                     id: Math.random().toString(36).substr(2, 9),
-                    question: q.question,
+                    question: q.question_text,
                     options: q.options,
-                    correctAnswer: q.correctAnswerIndex,
+                    correctAnswer: q.correct_option_index,
                     explanation: q.explanation // ✅ FEEDBACK IMPORTANTE
                 }))
             });
@@ -72,15 +72,15 @@ class QuizGameController {
             // Las preguntas adicionales son parte del mismo juego.
 
             // Generar nuevo lote
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', difficulty || 'Intermedio', user.id);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', difficulty || 'Intermedio', user.id, user.subscriptionTier);
 
             res.json({
                 success: true,
                 questions: questions.map(q => ({
                     id: Math.random().toString(36).substr(2, 9),
-                    question: q.question,
+                    question: q.question_text,
                     options: q.options,
-                    correctAnswer: q.correctAnswerIndex,
+                    correctAnswer: q.correct_option_index,
                     explanation: q.explanation
                 }))
             });
