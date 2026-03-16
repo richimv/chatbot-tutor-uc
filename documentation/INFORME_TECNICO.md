@@ -51,7 +51,7 @@ graph TD
         *   `services/`: Servicios de negocio (e.g., `mlService.js` como cliente directo de Vertex AI, `userService.js`).
         *   `repositories/`: Interfaces abstractas para acceso a datos.
 
-    **Nota:** Originalmente se concibió un microservicio en Python (`/ml_service`), pero en la versión actual (v2.0), la lógica de IA ha sido migrada exitosamente a **Node.js nativo** utilizando el SDK `@google-cloud/vertexai`, reduciendo latencia y complejidad operativa. La carpeta `/ml_service` se mantiene como *deprecated* para scripts de batch legacy.
+    **Nota:** La plataforma utiliza una arquitectura híbrida inteligente. Mientras que la interacción en tiempo real y la IA generativa (Gemini) residen en **Node.js nativo**, el procesamiento analítico pesado de tendencias se mantiene en un microservicio de **Python Local** (`/ml_service`). Esto permite aprovechar librerías científicas superiores (Scikit-Learn, Pandas) para el cálculo de similitudes semánticas y decaimiento temporal sin costos de nube.
 
 4.  **Infrastructure Layer (`/infrastructure`)**:
     *   **Responsabilidad:** Implementación técnica y comunicación con servicios externos.
@@ -72,7 +72,7 @@ La selección de tecnologías prioriza el rendimiento, la escalabilidad y la exp
 | **Frontend** | Vanilla JS / CSS3 | Interfaz reactiva sin la sobrecarga de frameworks pesados. |
 | **Base de Datos** | PostgreSQL (Supabase) | Gestión relacional robusta de usuarios y contenidos. |
 | **Inteligencia Artificial** | Google Vertex AI (Gemini 2.5 Flash) | Motor de razonamiento y generación de respuestas con **Function Calling**. |
-| **Machine Learning** | Node.js (Jaccard Similarity) | Análisis de tendencias y clustering de términos de búsqueda (Migrado de Python). |
+| **Machine Learning** | Python Local + Node.js | Análisis de tendencias, Similitud Coseno/Jaccard y Predicción de Demanda. |
 | **Pagos** | Mercado Pago | Pasarela segura para suscripciones Premium. |
 | **Despliegue** | Render / Vercel | Hosting de alta disponibilidad. |
 

@@ -30,8 +30,8 @@ class DashboardManager {
         try {
             const data = await this.fetchData();
 
-            // 1. Renderizar KPIs
-            this.renderKPIs(data.kpi);
+            // 1. Renderizar KPIs (Pasamos el objeto completo que contiene kpi y realTime)
+            this.renderKPIs(data);
 
             // 2. Renderizar Gráficos
             this.renderCharts(data.charts);

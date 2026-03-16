@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
+const AnalyticsService = require('../../domain/services/analyticsService'); // ✅ NUEVO
 const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
-const MLService = require('../../domain/services/mlService'); // ✅ IMPORTANTE: Invocando la IA del Dominio
+const MLService = require('../../domain/services/mlService'); 
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -26,6 +27,9 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 class AdminController {
+    constructor() {
+        this.analyticsService = new AnalyticsService(); // ✅ Instancia para KPIs de tráfico
+    }
 
     /**
      * Helper para exportar tablas a CSV para que Python las lea
@@ -141,7 +145,9 @@ class AdminController {
                     topCourses: topCoursesRes.rows,
                     topBooks: topBooksRes.rows
                 },
-                ai: aiTrends // <--- Aquí inyectamos la magia
+                // ✅ Agregando Visitas Únicas (Hoy) desde el servicio especializado
+                uniqueVisitors: await this.analyticsService.getUniqueVisitorsCount(1), 
+                ai: aiTrends
             };
 
             res.json(stats);
