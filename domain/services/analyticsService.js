@@ -76,6 +76,47 @@ class AnalyticsService {
     }
 
     // ==========================================
+    // NUEVO: SISTEMA DE PULSO (REAL-TIME)
+    // ==========================================
+
+    async logPulse(sessionId, userId = null, isMobile = false) {
+        try {
+            const queryText = `
+                INSERT INTO web_traffic(session_id, user_id, is_mobile, last_ping)
+                VALUES($1, $2, $3, NOW())
+                ON CONFLICT (session_id) 
+                DO UPDATE SET 
+                    last_ping = EXCLUDED.last_ping,
+                    user_id = COALESCE(EXCLUDED.user_id, web_traffic.user_id);
+            `;
+            await db.query(queryText, [sessionId, userId, isMobile]);
+        } catch (error) {
+            console.error('❌ Error registrando pulso de tráfico:', error);
+        }
+    }
+
+    async getRealTimeStats() {
+        try {
+            const query = `
+                SELECT 
+                    COUNT(*) as active_now,
+                    COUNT(*) FILTER (WHERE is_mobile = TRUE) as mobile_active
+                FROM web_traffic 
+                WHERE last_ping >= NOW() - INTERVAL '5 minutes'
+            `;
+            const res = await db.query(query);
+            return {
+                activeNow: parseInt(res.rows[0].active_now, 10),
+                mobileActive: parseInt(res.rows[0].mobile_active, 10),
+                desktopActive: parseInt(res.rows[0].active_now, 10) - parseInt(res.rows[0].mobile_active, 10)
+            };
+        } catch (error) {
+            console.error('❌ Error obteniendo tráfico en tiempo real:', error);
+            return { activeNow: 0, mobileActive: 0, desktopActive: 0 };
+        }
+    }
+
+    // ==========================================
     // MÉTODOS DE ANALÍTICA (LECTURA)
     // ==========================================
 
@@ -162,8 +203,19 @@ class AnalyticsService {
             topCourses: await this.getTopViewedEntities('course', days),
             topTopics: await this.getTopViewedEntities('topic', days),
             topInstructors: this.getTopInstructorsFromSearches(await this.getTopSearchesRaw(days, 100)),
-            zeroResultSearches: await this.getZeroResultSearches(days)
+            zeroResultSearches: await this.getZeroResultSearches(days),
+            uniqueVisitors: await this.getUniqueVisitorsCount(days)
         };
+    }
+
+    async getUniqueVisitorsCount(days = 1) {
+        try {
+            const query = `SELECT COUNT(DISTINCT session_id) FROM web_traffic WHERE created_at >= NOW() - INTERVAL '${days} days'`;
+            const res = await db.query(query);
+            return parseInt(res.rows[0].count, 10);
+        } catch (error) {
+            return 0;
+        }
     }
 
     // ==========================================

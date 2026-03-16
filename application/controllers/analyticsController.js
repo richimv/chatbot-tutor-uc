@@ -50,6 +50,8 @@ class AnalyticsController {
         this.getAIAnalytics = this.getAIAnalytics.bind(this); // ✅ NUEVO: Bindeo para método de IA
         this.getHeatmap = this.getHeatmap.bind(this); // ✅ NUEVO: Heatmap
         this.getAIDiagnostic = this.getAIDiagnostic.bind(this); // ✅ NUEVO: Diagnóstico Thinking
+        this.recordPulse = this.recordPulse.bind(this); // ✅ NUEVO: Registro de pulso
+        this.getRealTimeStats = this.getRealTimeStats.bind(this); // ✅ NUEVO: Estadísticas en vivo
     }
 
     async getAnalytics(req, res) {
@@ -300,6 +302,37 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error en getAIDiagnostic:', error);
             res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
+        }
+    }
+
+    // ==========================================
+    // NUEVO: CONTROLADORES DE TRÁFICO REAL-TIME
+    // ==========================================
+
+    async recordPulse(req, res) {
+        try {
+            const { sessionId, isMobile } = req.body;
+            const userId = req.user ? req.user.id : null;
+
+            if (!sessionId) {
+                return res.status(400).json({ error: 'sessionId es requerido.' });
+            }
+
+            await this.analyticsService.logPulse(sessionId, userId, isMobile);
+            res.status(204).send();
+        } catch (error) {
+            console.error('❌ Error registrando pulso:', error);
+            res.status(500).json({ error: 'Error interno del servidor.' });
+        }
+    }
+
+    async getRealTimeStats(req, res) {
+        try {
+            const stats = await this.analyticsService.getRealTimeStats();
+            res.json(stats);
+        } catch (error) {
+            console.error('❌ Error obteniendo tráfico real-time:', error);
+            res.status(500).json({ error: 'Error al obtener estadísticas en vivo.' });
         }
     }
 }

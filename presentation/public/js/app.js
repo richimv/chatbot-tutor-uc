@@ -11,8 +11,42 @@ window.API_URL = BACKEND_URL;
 
 console.log('🌍 Entorno:', isLocal ? 'Local' : 'Producción', '| API:', window.API_URL);
 
+// ✅ NUEVO: Tracking de Tráfico en Tiempo Real
+function initTrafficTracking() {
+    const SESSION_KEY = 'hub_visitor_session_id';
+    let sessionId = sessionStorage.getItem(SESSION_KEY);
+    
+    if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem(SESSION_KEY, sessionId);
+    }
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const sendPulse = async () => {
+        try {
+            await fetch(`${window.API_URL}/api/analytics/pulse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, isMobile })
+            });
+        } catch (err) {
+            // Silencioso para no ensuciar la consola del usuario
+        }
+    };
+
+    // Enviar primer pulso inmediato
+    sendPulse();
+
+    // Enviar pulso cada 2.5 minutos (para estar dentro del margen de 5 min del servidor)
+    setInterval(sendPulse, 2.5 * 60 * 1000);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 DOM completamente cargado. Inicializando componentes...');
+    
+    // Inicializar tracking de tráfico
+    initTrafficTracking();
 
     // ✅ 0. INTERCEPTAR RECOVERY LINK (Recuperación de Contraseña)
     if (window.location.hash && window.location.hash.includes('type=recovery')) {
@@ -143,23 +177,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ✅ KEEP-ALIVE: Ping al servidor cada 5 minutos para evitar que Render se duerma
-    setInterval(async () => {
-        const healthUrl = (window.AppConfig && window.AppConfig.API_URL)
-            ? `${window.AppConfig.API_URL}/health`
-            : '/health';
-
-        try {
-            const res = await fetch(healthUrl);
-            if (!res.ok) console.warn('⚠️ Keep-alive ping failed');
-        } catch (err) {
-            console.warn('⚠️ Keep-alive error:', err);
-        }
-
-        // 🛡️ SESIÓN: Verificar silenciosamente si el token de autenticación sigue siendo válido en el backend
-        if (window.sessionManager && window.sessionManager.isLoggedIn()) {
-            await window.sessionManager.validateSession();
-        }
-    }, 5 * 60 * 1000); // 5 minutos
+    // ✅ NOTA: El sistema de KEEP-ALIVE anterior ha sido reemplazado por initTrafficTracking(),
+    // que envía pulsos cada 2.5 minutos, manteniendo el servidor activo de forma más eficiente.
 });
 
 // ✅ LÓGICA DEL BOTÓN "HUB QUIZ ARENA"

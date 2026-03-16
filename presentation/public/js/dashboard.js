@@ -55,22 +55,38 @@ class DashboardManager {
     }
 
     async fetchData() {
-        const res = await fetch(this.apiUrl, {
-            headers: { 'Authorization': `Bearer ${this.token}` }
-        });
+        const [statsRes, realTimeRes] = await Promise.all([
+            fetch(this.apiUrl, { headers: { 'Authorization': `Bearer ${this.token}` } }),
+            fetch('/api/analytics/real-time', { headers: { 'Authorization': `Bearer ${this.token}` } })
+        ]);
 
-        if (!res.ok) {
-            if (res.status === 401) window.location.href = '/login';
-            throw new Error(`API Error ${res.status}`);
+        if (!statsRes.ok || !realTimeRes.ok) {
+            if (statsRes.status === 401) window.location.href = '/login';
+            throw new Error(`API Error ${statsRes.status}`);
         }
-        return await res.json();
+
+        const stats = await statsRes.json();
+        const realTime = await realTimeRes.json();
+
+        return { ...stats, realTime };
     }
 
-    renderKPIs(kpi) {
-        this.animateValue('kpi-users', kpi.totalUsers);
-        this.animateValue('kpi-premium', kpi.premiumUsers);
-        this.animateValue('kpi-searches', kpi.totalSearches);
-        this.animateValue('kpi-chat', kpi.totalChatMessages);
+    renderKPIs(data) {
+        // data ya viene mergeado con kpi y realTime
+        const kpi = data.kpi || data; // Manejo flexible si la estructura cambia
+        
+        this.animateValue('kpi-users', kpi.totalUsers || 0);
+        this.animateValue('kpi-premium', kpi.premiumUsers || 0);
+        this.animateValue('kpi-searches', kpi.totalSearches || 0);
+        this.animateValue('kpi-chat', kpi.totalChatMessages || 0);
+
+        // NUEVOS KPIs
+        if (data.realTime) {
+            this.animateValue('kpi-live', data.realTime.activeNow || 0);
+        }
+        if (kpi.uniqueVisitors !== undefined) {
+            this.animateValue('kpi-daily-visitors', kpi.uniqueVisitors || 0);
+        }
     }
 
     animateValue(id, value) {
