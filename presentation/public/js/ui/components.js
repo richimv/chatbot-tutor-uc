@@ -761,12 +761,22 @@ function createSkeletonCardHTML(type = 'Grid') {
     `;
 }
 
-// ✅ NUEVO: Tarjeta de Video Estandarizada
+// ✅ NUEVO: Tarjeta de Video Premium (Rediseñada para distinción visual)
 window.createVideoCardHTML = function (item) {
     const title = item.title || item.name || 'Video Educativo';
     const author = item.author || 'Hub Academia';
     const url = item.url || '#';
-    const thumbnail = item.image_url || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
+    // Extracción robusta de ID de YouTube via Regex
+    const getYouTubeID = (url) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const videoId = getYouTubeID(url);
+    const thumbnail = item.image_url && !item.image_url.includes('unsplash') 
+        ? item.image_url 
+        : (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
 
     if (url && url !== '#') {
         window.uiManager.registerMaterial(item.id, url);
@@ -776,9 +786,8 @@ window.createVideoCardHTML = function (item) {
     let isLocked = false;
 
     if (isPremium) {
+        const user = window.sessionManager?.getUser();
         const token = localStorage.getItem('authToken');
-        const userStr = localStorage.getItem('user');
-        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
 
         if (!user || !token) {
             isLocked = true;
@@ -793,19 +802,29 @@ window.createVideoCardHTML = function (item) {
     }
 
     return `
-        < div class="video-card ${isPremium ? 'premium-item' : ''} ${isLocked ? 'locked' : ''}" data - id="${item.id}" style = "cursor: pointer; position: relative;" >
-            <div class="video-thumbnail-container" onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})" style="position: relative;">
-                <img src="${thumbnail}" alt="${title}" class="video-thumbnail" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;" onerror="this.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'">
-                <div class="play-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; opacity: 0.8; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                    <i class="fas fa-play-circle"></i>
+        <div class="video-card-premium ${isPremium ? 'is-premium' : ''} ${isLocked ? 'is-locked' : ''}" 
+             data-id="${item.id}" 
+             onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})">
+            
+            <div class="video-thumbnail-wrapper">
+                <img src="${thumbnail}" alt="${title}" class="video-img-contain" 
+                     onerror="if(!this.dataset.triedMq && this.src.includes('youtube')){ this.dataset.triedMq=true; this.src=this.src.replace('hqdefault','mqdefault'); } else { this.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'; }">
+                
+                <div class="video-play-hint">
+                    <div class="play-circle-glow">
+                        <i class="fas fa-play"></i>
+                    </div>
                 </div>
-                ${isPremium ? `<div class="urc-premium-indicator" title="Video Premium" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); z-index: 2;"><i class="fas fa-crown"></i></div>` : ''}
-                ${isLocked ? `<div class="urc-lock-indicator" title="Requiere Premium" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #f8fafc; border-radius: 12px; z-index: 3;"><i class="fas fa-lock"></i></div>` : ''}
+
+                <!-- Overlay Minimalista de Título -->
+                <div class="video-overlay-info">
+                    <h3 class="video-title-text">${title}</h3>
+                    <span class="video-author-mini"><i class="fas fa-user-tie"></i> ${author}</span>
+                </div>
+
+                ${isPremium ? `<div class="video-premium-tag"><i class="fas fa-crown"></i></div>` : ''}
+                ${isLocked ? `<div class="video-locked-overlay"><i class="fas fa-lock"></i></div>` : ''}
             </div>
-            <div class="video-info" style="padding: 12px 5px;" onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})">
-                <h3 class="video-title" style="font-size: 1rem; margin: 0; color: var(--text-primary); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8rem;">${title}</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;"><i class="fas fa-chalkboard-teacher"></i> ${author}</p>
-            </div>
-        </div >
-        `;
+        </div>
+    `;
 };

@@ -94,8 +94,7 @@ class AnalyticsRepository {
         const query = `
             SELECT r.*, COUNT(pv.id) as view_count
             FROM resources r
-            LEFT JOIN page_views pv ON r.id = pv.entity_id AND pv.entity_type = 'book'
-            WHERE r.resource_type = 'book'
+            LEFT JOIN page_views pv ON r.id = pv.entity_id AND pv.entity_type = r.resource_type
             GROUP BY r.id
             ORDER BY view_count DESC
             LIMIT $1

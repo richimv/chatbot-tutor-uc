@@ -1,10 +1,15 @@
 const db = require('../../infrastructure/database/db');
 
 const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository');
+const AnalyticsRepository = require('../repositories/analyticsRepository');
+const { normalizeText } = require('../utils/textUtils');
+const CourseRepository = require('../repositories/courseRepository');
+const TopicRepository = require('../repositories/topicRepository');
 
 class AnalyticsService {
     constructor() {
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
+        this.analyticsRepo = new AnalyticsRepository();
         this.isKBReady = false;
     }
 
@@ -66,10 +71,7 @@ class AnalyticsService {
 
     async recordView(entityType, entityId, userId) {
         try {
-            // ✅ REFACTOR: Delegar en el repositorio
-            const AnalyticsRepository = require('../repositories/analyticsRepository');
-            const repo = new AnalyticsRepository();
-            await repo.recordView(entityType, entityId, userId);
+            await this.analyticsRepo.recordView(entityType, entityId, userId);
         } catch (error) {
             console.error(`❌ Error al registrar la vista para ${entityType} ${entityId}:`, error);
         }
@@ -210,10 +212,12 @@ class AnalyticsService {
 
     async getUniqueVisitorsCount(days = 1) {
         try {
-            const query = `SELECT COUNT(DISTINCT session_id) FROM web_traffic WHERE created_at >= NOW() - INTERVAL '${days} days'`;
+            // "Hoy" significa desde las 00:00:00 del día actual (UTC)
+            const query = `SELECT COUNT(DISTINCT session_id) FROM web_traffic WHERE created_at >= CURRENT_DATE`;
             const res = await db.query(query);
             return parseInt(res.rows[0].count, 10);
         } catch (error) {
+            console.error('❌ Error en getUniqueVisitorsCount:', error);
             return 0;
         }
     }
@@ -223,7 +227,6 @@ class AnalyticsService {
     // ==========================================
 
     classifySearchTerm(query) {
-        const { normalizeText } = require('../utils/textUtils');
         const normalizedQuery = normalizeText(query);
 
         if (normalizedQuery.length < 3) return 'General';
@@ -266,7 +269,6 @@ class AnalyticsService {
     isQueryEducational(queryText) {
         if (!queryText || typeof queryText !== 'string') return false;
 
-        const { normalizeText } = require('../utils/textUtils'); // ✅ Usar utilidad centralizada (Path corregido)
         const query = normalizeText(queryText);
 
         // 1. Detectar Patrones de Pregunta (PRIORIDAD ALTA)
@@ -324,8 +326,6 @@ class AnalyticsService {
         const rawTerms = await this.getTopSearchesRaw(days, 500); // Muestra más grande
 
         // 2. Cargar Catálogo Canónico
-        const CourseRepository = require('../repositories/courseRepository');
-        const TopicRepository = require('../repositories/topicRepository');
         const courseRepo = new CourseRepository();
         const topicRepo = new TopicRepository();
 
@@ -414,9 +414,7 @@ class AnalyticsService {
         }
 
         const allRawQueries = top5Entities.flatMap(e => e.rawQueries);
-        const AnalyticsRepository = require('../repositories/analyticsRepository');
-        const repo = new AnalyticsRepository();
-        const rawRows = await repo.getTimeSeriesForQueries(allRawQueries, days);
+        const rawRows = await this.analyticsRepo.getTimeSeriesForQueries(allRawQueries, days);
 
         const uniqueDates = [...new Set(rawRows.map(r => new Date(r.date).toISOString().split('T')[0]))].sort();
 
@@ -513,15 +511,11 @@ class AnalyticsService {
     }
 
     async getFeaturedBooks(limit = 10) {
-        const AnalyticsRepository = require('../repositories/analyticsRepository');
-        const repo = new AnalyticsRepository();
-        return repo.getFeaturedBooks(limit);
+        return this.analyticsRepo.getFeaturedBooks(limit);
     }
 
     async getFeaturedCourses(limit = 10) {
-        const AnalyticsRepository = require('../repositories/analyticsRepository');
-        const repo = new AnalyticsRepository();
-        return repo.getFeaturedCourses(limit);
+        return this.analyticsRepo.getFeaturedCourses(limit);
     }
 
     getTopInstructorsFromSearches(rawTerms) {
@@ -701,9 +695,7 @@ class AnalyticsService {
 
     // ... (Mantener resto de métodos getTimeSeriesData) ...
     async getTimeSeriesData(days = 30) {
-        const AnalyticsRepository = require('../repositories/analyticsRepository');
-        const repo = new AnalyticsRepository();
-        const rawRows = await repo.getSearchHistoryTimeSeries(days);
+        const rawRows = await this.analyticsRepo.getSearchHistoryTimeSeries(days);
         const uniqueDates = [...new Set(rawRows.map(r => new Date(r.date).toISOString().split('T')[0]))].sort();
         const uniqueQueries = [...new Set(rawRows.map(r => r.query))];
         const datasets = uniqueQueries.map(query => {

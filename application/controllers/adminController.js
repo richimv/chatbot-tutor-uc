@@ -73,9 +73,6 @@ class AdminController {
             console.log('🤖 Iniciando proceso Batch de IA...');
 
             // 1. Exportar datos frescos a CSV
-            // Usamos 'this' para llamar al helper interno
-            const self = new AdminController(); // Truco para contexto en express si se pierde
-
             // Exportamos Search History (Querys) y Courses (Nombres)
             await this._exportTableToCSV('search_history', 'search_history.csv', 'query, created_at');
             await this._exportTableToCSV('courses', 'courses.csv', 'id, name');
@@ -111,15 +108,26 @@ class AdminController {
         try {
             // console.log('⚡ Dashboard Stats solicitados...');
 
-            const [usersRes, premiumRes, searchesRes, chatsRes, topCoursesRes, topBooksRes] = await Promise.all([
+            const [usersRes, premiumRes, searchesRes, chatsRes, topCoursesRes, topBooksRes, uniqueVisitorsCount] = await Promise.all([
                 db.query('SELECT COUNT(*) as count FROM users'),
                 db.query("SELECT COUNT(*) as count FROM users WHERE subscription_status = 'active'"),
                 db.query('SELECT COUNT(*) as count FROM search_history'),
                 db.query('SELECT COUNT(*) as count FROM chat_messages'),
                 // Top 5 Cursos Reales (Page Views)
                 db.query(`SELECT c.name, COUNT(*) as visits FROM page_views pv JOIN courses c ON pv.entity_id = c.id WHERE pv.entity_type = 'course' GROUP BY c.name ORDER BY visits DESC LIMIT 5`),
-                // Top 5 Libros Reales (Page Views)
-                db.query(`SELECT r.title as name, COUNT(*) as visits FROM page_views pv JOIN resources r ON pv.entity_id = r.id WHERE pv.entity_type = 'book' GROUP BY r.title ORDER BY visits DESC LIMIT 5`)
+                // Top 5 Recursos (Desglosado por tipo y filtrado por entidad)
+                db.query(`
+                    SELECT 
+                        r.title || ' (' || r.resource_type || ')' as name, 
+                        COUNT(*) as visits 
+                    FROM page_views pv 
+                    JOIN resources r ON pv.entity_id = r.id 
+                    WHERE pv.entity_type = r.resource_type
+                    GROUP BY r.title, r.resource_type 
+                    ORDER BY visits DESC 
+                    LIMIT 5
+                `),
+                this.analyticsService.getUniqueVisitorsCount(1) // ✅ NUEVO: Visitas de hoy
             ]);
 
             // 📥 Leer predicciones de IA desde el archivo JSON (si existe)
@@ -139,14 +147,13 @@ class AdminController {
                     premiumUsers: parseInt(premiumRes.rows[0].count),
                     estimatedRevenue: parseInt(premiumRes.rows[0].count) * 9.90, // KPI Financiero
                     totalSearches: parseInt(searchesRes.rows[0].count),
-                    totalChatMessages: parseInt(chatsRes.rows[0].count)
+                    totalChatMessages: parseInt(chatsRes.rows[0].count),
+                    uniqueVisitors: uniqueVisitorsCount
                 },
                 charts: {
                     topCourses: topCoursesRes.rows,
-                    topBooks: topBooksRes.rows
+                    topResources: topBooksRes.rows // ✅ RENOMBRADO: De topBooks a topResources
                 },
-                // ✅ Agregando Visitas Únicas (Hoy) desde el servicio especializado
-                uniqueVisitors: await this.analyticsService.getUniqueVisitorsCount(1), 
                 ai: aiTrends
             };
 

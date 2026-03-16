@@ -146,13 +146,13 @@ class AnalyticsController {
     async recordView(req, res) {
         try {
             const { entityType, entityId } = req.body;
-            const userId = req.user.id;
+            const userId = req.user ? req.user.id : null; // ✅ Soporte para invitados
 
             if (!entityType || !entityId) {
                 return res.status(400).json({ error: 'entityType y entityId son requeridos.' });
             }
             await this.analyticsService.recordView(entityType, entityId, userId);
-            res.status(202).send(); // 202 Accepted: La petición fue aceptada, no necesita devolver contenido.
+            res.status(202).send(); // 202 Accepted
         } catch (error) {
             console.error('❌ Error registrando vista de página:', error);
             res.status(500).json({ error: 'Error al registrar la vista.' });

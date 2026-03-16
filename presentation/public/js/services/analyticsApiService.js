@@ -133,14 +133,18 @@ class AnalyticsApiService {
      */
     static recordView(entityType, entityId) {
         const token = localStorage.getItem('authToken');
-        if (!token) return; // No registrar vistas para usuarios no logueados.
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
 
         fetch(`${API_URL}/api/analytics/view`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: headers,
             body: JSON.stringify({ entityType, entityId }),
             // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
             keepalive: true

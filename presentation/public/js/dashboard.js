@@ -99,7 +99,7 @@ class DashboardManager {
         // Destruir gráficos anteriores si existen (para evitar superposiciones al recargar)
         // Nota: Chart.js maneja instancias en el canvas. En esta versión simple asumimos carga única.
         this.createBarChart('chart-courses', data.topCourses, 'Cursos Populares', '#3b82f6');
-        this.createBarChart('chart-books', data.topBooks, 'Libros Populares', '#10b981');
+        this.createBarChart('chart-books', data.topResources, 'Recursos Populares', '#10b981');
     }
 
     renderAiSection(aiData) {

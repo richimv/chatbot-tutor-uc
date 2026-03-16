@@ -93,7 +93,8 @@
                 </div>
 
                 <!-- Usuarios en Vivo (NUEVO) -->
-                <div class="kpi-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div class="kpi-card"
+                    style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
                             <div class="kpi-label" style="color: #f87171;">🔥 En Vivo Ahora</div>
@@ -140,7 +141,7 @@
 
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">📚 Top 5 Libros Más Visitados</h3>
+                        <h3 class="chart-title">📚 Top 5 Recursos Más Visitados</h3>
                     </div>
                     <div style="height: 300px;">
                         <canvas id="chart-books"></canvas>
@@ -194,6 +195,12 @@
     <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración Global -->
     <script src="js/sessionManager.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/services/aiApiService.js"></script>
+    <script src="js/services/courseApiService.js"></script>
+    <script src="js/services/bookApiService.js"></script>
     <script>
         // Auth Check inline para evitar FOUC
         const token = localStorage.getItem('authToken');
@@ -202,4 +209,3 @@
 </body>
 
 </html>
-

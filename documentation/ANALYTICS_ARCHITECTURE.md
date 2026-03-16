@@ -13,10 +13,13 @@ El sistema de analíticas de Hub Academia está diseñado siguiendo una arquitec
     -   **Captura:** `app.js` (Interceptor de rutas).
     -   **Flujo:** Registra cada visita a Carreras, Cursos o Temas.
     -   **Tabla:** `page_views`.
-3.  **Historial de Búsquedas e Interacción IA:**
-    -   **Captura:** `mlService.js` y `chatController.js`.
-    -   **Flujo:** Registra cada query del usuario, resultados obtenidos y feedback (thumbs up/down).
-    -   **Tablas:** `search_history`, `feedback`, `chat_messages`.
+3.  **Clics en Recursos (Multimedia/Videos):**
+    -   **Captura:** `uiManager.js` (`unlockResource`) y `recordResourceClick`.
+    -   **Lógica:** Dispara un evento asíncrono hacia el backend antes de abrir el recurso.
+    -   **Distinción de Usuarios:**
+        *   **Logueados:** Se asocia al `user_id` y afecta su contador de pases/vidas si es premium.
+        *   **Visitantes:** Registra clics anónimos pero asociados a una `session_id`, permitiendo medir la popularidad real de los recursos frente a nuevos prospectos.
+    -   **Tablas:** `resource_interactions`, `analytics_events`.
 
 ## 2. Componentes del Backend
 
@@ -82,6 +85,7 @@ A continuación se detalla el significado estratégico de cada métrica visible 
     -   *Valor:* Te da una sensación de "pulso" real. Ideal para medir el impacto inmediato cuando lanzas una notificación o publicidad.
 *   **Visitas Únicas (Hoy):** 
     -   *Propósito:* Cuenta dispositivos distintos que entraron a la web hoy (anónimos + logueados).
+    -   *Lógica:* Utiliza la función SQL `CURRENT_DATE` para filtrar sesiones generadas desde las 00:00:00 del día actual (servidor).
     -   *Valor:* Mide el alcance real de tu marca. Si tienes 100 visitas únicas pero 0 registros, indica que necesitas optimizar el mensaje de tu página de inicio.
 
 ### C. Métricas de Engagement (Uso)
@@ -93,9 +97,10 @@ A continuación se detalla el significado estratégico de cada métrica visible 
     -   *Valor:* Mide la adopción de la Inteligencia Artificial. Es el corazón del proyecto; un número alto aquí significa que la IA está aportando valor real al estudio.
 
 ### D. Métricas Estratégicas y de Contenido
-*   **Top 5 Cursos/Libros (Gráficos):** 
-    -   *Propósito:* Ranking de los recursos con más "clics" o vistas.
-    -   *Valor:* Te dice qué contenido es el más valioso para tus alumnos. Puedes usar esto para decidir qué nuevos libros comprar o qué áreas reforzar en tu banco de preguntas.
+*   **Top 5 Recursos Más Visitados (Visualización Diferenciada):** 
+    -   *Propósito:* Ranking de los recursos con más interacción.
+    -   *Lógica:* El backend agrupa por `resource_type` para mostrar la distribución real (ej. 70% Videos, 30% PDFs).
+    -   *Valor:* Identifica qué formato prefiere tu audiencia. Si los videos dominan, la estrategia de contenidos debe priorizar YouTube.
 *   **Predicciones de IA (Tendencias):** 
     -   *Propósito:* Análisis matemático de búsquedas que no devolvieron resultados.
     -   *Valor:* **Predicción de demanda.** Te dice qué es lo que los usuarios están buscando y que tú *aún no tienes*. Es tu hoja de ruta para contenido futuro.

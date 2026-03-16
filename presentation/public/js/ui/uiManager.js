@@ -159,7 +159,7 @@ class UIManager {
         // Si el recurso es gratuito (isPremium = false), se accede directamente sin descontar vidas ni pedir login.
         if (!isPremium) {
             if (type === 'video') {
-                this.openVideoModal(url, 'Video Gratuito');
+                this.openVideoModal(url, ''); // ✅ Eliminado "Video Gratuito"
             } else {
                 window.open(url, '_blank');
             }
@@ -221,7 +221,7 @@ class UIManager {
 
                     // 👉 ACCIÓN SEGÚN TIPO
                     if (type === 'video') {
-                        this.openVideoModal(url, data.title || 'Video Premium');
+                        this.openVideoModal(url, data.title || ''); // ✅ Eliminado "Video Premium"
                     } else {
                         // Artículos y Libros se abren en nueva pestaña
                         window.open(url, '_blank');
@@ -281,30 +281,44 @@ class UIManager {
         const titleEl = document.getElementById('video-modal-title-text');
 
         if (modal && container) {
+            // Limpiar y preparar contenido con un "safe area" inferior
             container.innerHTML = `
-                <div class="video-container-responsive">
-                    <iframe 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
-                        title="${title}" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
+                <div class="video-player-wrapper-safe" style="padding-bottom: 40px;">
+                    <div class="video-container-responsive">
+                        <iframe 
+                            src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=1" 
+                            title="${title || 'Video Hub Academia'}" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
                 </div>
             `;
-            if (titleEl) titleEl.innerText = title;
+            if (titleEl) {
+                titleEl.innerText = title || '';
+                titleEl.style.display = title ? 'block' : 'none';
+            }
+            
             modal.style.display = 'flex';
             this.pushModalState('video-player-modal');
 
-            // ✅ OPTIMIZACIÓN MÓVIL: Solicitar Fullscreen Automático
-            // Esto ayuda a que los celulares giren o ocupen toda la pantalla.
+            // ✅ Listener para tecla ESC
+            const escListener = (e) => {
+                if (e.key === 'Escape') {
+                    this.closeVideoModal();
+                    document.removeEventListener('keydown', escListener);
+                }
+            };
+            document.addEventListener('keydown', escListener);
+
+            // ✅ OPTIMIZACIÓN MÓVIL: Fullscreen Automático si es posible
             if (window.innerWidth < 768) {
                 const videoContainer = container.querySelector('.video-container-responsive');
                 if (videoContainer) {
                     try {
                         if (videoContainer.requestFullscreen) videoContainer.requestFullscreen();
-                        else if (videoContainer.webkitRequestFullscreen) videoContainer.webkitRequestFullscreen(); // Safari
-                        else if (videoContainer.msRequestFullscreen) videoContainer.msRequestFullscreen(); // IE/Edge
-                    } catch (e) { console.warn('Fullscreen triggered automatically blocked by browser policy'); }
+                        else if (videoContainer.webkitRequestFullscreen) videoContainer.webkitRequestFullscreen();
+                    } catch (e) { }
                 }
             }
         }
@@ -328,14 +342,14 @@ class UIManager {
         if (document.getElementById('video-player-modal')) return;
 
         const modalHTML = `
-            <div id="video-player-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-                <div class="modal-content" style="background: transparent; border: none; box-shadow: none; width: 95%; max-width: 900px; position: relative;">
-                    <div class="modal-header" style="border: none; padding: 0; justify-content: flex-end; position: absolute; top: -40px; right: 0;">
-                        <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()" style="color: white; font-size: 2.5rem; background: none; border: none; cursor: pointer;">&times;</button>
+            <div id="video-player-modal" class="modal video-modal-overlay" onclick="if(event.target === this) window.uiManager.closeVideoModal()">
+                <div class="modal-content video-modal-container">
+                    <div class="video-modal-close-wrapper">
+                        <button class="modal-close-btn" onclick="window.uiManager.closeVideoModal()">&times;</button>
                     </div>
                     <div class="modal-body" style="overflow: visible; padding: 0;">
                         <div id="video-modal-content-area"></div>
-                        <h3 id="video-modal-title-text" class="video-modal-title" style="color: white; text-align: center; margin-top: 15px; font-weight: 500;"></h3>
+                        <h3 id="video-modal-title-text" class="video-modal-title"></h3>
                     </div>
                 </div>
             </div>

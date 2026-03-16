@@ -147,8 +147,8 @@ router.get('/analytics/predictions', auth, adminOnly, analyticsController.getPop
 router.get('/analytics/ai', auth, adminOnly, analyticsController.getAIAnalytics); // ✅ NUEVO: KPIs de IA
 router.get('/analytics/feedback', auth, adminOnly, analyticsController.getFeedback);
 router.post('/analytics/feedback', auth, analyticsController.recordFeedback);
-// ✅ NUEVO: Ruta para registrar una vista de página.
-router.post('/analytics/view', auth, analyticsController.recordView.bind(analyticsController));
+// ✅ NUEVO: Ruta para registrar una vista de página. (Accesible para invitados y registrados)
+router.post('/analytics/view', optionalAuth, analyticsController.recordView.bind(analyticsController));
 
 // --- Rutas Internas (para servicios de ML) ---
 router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
