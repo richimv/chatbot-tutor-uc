@@ -1091,17 +1091,25 @@ class SearchComponent {
                 if (!data || data.length === 0) {
                     gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
                 } else {
-                    // Agrupar por Topic (ahora usando doc.topics array devuelto por el backend)
+                    // Construcción Multi-Tema
                     const groupedData = data.reduce((acc, doc) => {
-                        let topicName = 'General';
                         if (doc.topics && doc.topics.length > 0) {
-                            topicName = doc.topics[0];
-                            if (typeof topicName === 'object' && topicName !== null) {
-                                topicName = topicName.name || topicName.title || 'General';
-                            }
+                            doc.topics.forEach(t => {
+                                let topicName = typeof t === 'object' && t !== null ? (t.name || t.title || 'General') : t;
+                                if (!acc[topicName]) acc[topicName] = [];
+                                // Evitar duplicar
+                                if (!acc[topicName].some(item => item.id === doc.id)) {
+                                    acc[topicName].push(doc);
+                                }
+                            });
+                        } else {
+                            if (!acc['General']) acc['General'] = [];
+                            acc['General'].push(doc);
                         }
-                        if (!acc[topicName]) acc[topicName] = [];
-                        acc[topicName].push(doc);
+                        // Aplicar orden cronológico (más recientes primero según ID) como mejora extra
+                        for (let key in acc) {
+                            acc[key].sort((a, b) => (b.id || 0) - (a.id || 0));
+                        }
                         return acc;
                     }, {});
 
@@ -1129,17 +1137,25 @@ class SearchComponent {
                 if (!data || data.length === 0) {
                     gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos disponibles.</p>';
                 } else {
-                    // Agrupar por Topic (ahora usando doc.topics array devuelto por el backend)
+                    // Construcción Multi-Tema
                     const groupedData = data.reduce((acc, doc) => {
-                        let topicName = 'General';
                         if (doc.topics && doc.topics.length > 0) {
-                            topicName = doc.topics[0];
-                            if (typeof topicName === 'object' && topicName !== null) {
-                                topicName = topicName.name || topicName.title || 'General';
-                            }
+                            doc.topics.forEach(t => {
+                                let topicName = typeof t === 'object' && t !== null ? (t.name || t.title || 'General') : t;
+                                if (!acc[topicName]) acc[topicName] = [];
+                                // Evitar duplicar
+                                if (!acc[topicName].some(item => item.id === doc.id)) {
+                                    acc[topicName].push(doc);
+                                }
+                            });
+                        } else {
+                            if (!acc['General']) acc['General'] = [];
+                            acc['General'].push(doc);
                         }
-                        if (!acc[topicName]) acc[topicName] = [];
-                        acc[topicName].push(doc);
+                        // Aplicar orden cronológico (Nuevos primero)
+                        for (let key in acc) {
+                            acc[key].sort((a, b) => (b.id || 0) - (a.id || 0));
+                        }
                         return acc;
                     }, {});
 

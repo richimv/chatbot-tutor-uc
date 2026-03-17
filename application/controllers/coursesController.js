@@ -267,6 +267,10 @@ class CoursesController {
             if (typeof req.body.topicIds === 'string') {
                 try { req.body.topicIds = JSON.parse(req.body.topicIds); } catch (e) { req.body.topicIds = []; }
             }
+            // ✅ NUEVO: Parsear courseIds (usado para recursos)
+            if (typeof req.body.courseIds === 'string') {
+                try { req.body.courseIds = JSON.parse(req.body.courseIds); } catch (e) { req.body.courseIds = []; }
+            }
             // ✅ NUEVO: Parsear is_premium (FormData envía strings)
             if (req.body.is_premium !== undefined) {
                 req.body.is_premium = req.body.is_premium === 'true';
@@ -410,6 +414,15 @@ class CoursesController {
                 } catch (e) {
                     console.error('Error parsing topicIds:', e);
                     req.body.topicIds = []; // Fallback seguro
+                }
+            }
+            // ✅ NUEVO: Parsear courseIds
+            if (typeof req.body.courseIds === 'string') {
+                try {
+                    req.body.courseIds = JSON.parse(req.body.courseIds);
+                } catch (e) {
+                    console.error('Error parsing courseIds:', e);
+                    req.body.courseIds = []; // Fallback seguro
                 }
             }
             // ✅ NUEVO: Parsear is_premium (FormData envía strings)

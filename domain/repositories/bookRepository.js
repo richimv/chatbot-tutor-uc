@@ -25,7 +25,12 @@ class BookRepository {
                     FROM topic_resources tr
                     JOIN topics t ON tr.topic_id = t.id
                     WHERE tr.resource_id = r.id
-                ) as topics
+                ) as topics,
+                (
+                    SELECT COALESCE(JSON_AGG(cb.course_id), '[]')
+                    FROM course_books cb
+                    WHERE cb.resource_id = r.id
+                ) as "courseIds"
             FROM resources r
             ${type ? 'WHERE r.resource_type = $1' : ''}
             ORDER BY r.title
@@ -68,7 +73,12 @@ class BookRepository {
                     FROM topic_resources tr
                     JOIN topics t ON tr.topic_id = t.id
                     WHERE tr.resource_id = r.id
-                ) as "topicIds"
+                ) as "topicIds",
+                (
+                    SELECT COALESCE(JSON_AGG(cb.course_id), '[]')
+                    FROM course_books cb
+                    WHERE cb.resource_id = r.id
+                ) as "courseIds"
             FROM resources r
             WHERE r.id = $1
         `;
@@ -77,7 +87,7 @@ class BookRepository {
     }
 
     async create(bookData) {
-        const { title, author, url, image_url, resource_type, topicIds = [], is_premium = false } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
 
@@ -98,6 +108,13 @@ class BookRepository {
                 await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, params);
             }
 
+            // ✅ NUEVO: Insertar relación directa con Cursos (courseIds) para facilitar gestión
+            if (Array.isArray(courseIds) && courseIds.length > 0) {
+                const valuesStrCourses = courseIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                const paramsCourses = [newResource.id, ...courseIds.map(id => parseInt(id, 10))];
+                await db.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, paramsCourses);
+            }
+
             await db.query('COMMIT');
             return newResource;
         } catch (error) {
@@ -108,7 +125,7 @@ class BookRepository {
 
     async update(id, bookData) {
         // ✅ MEJORA ROBUSTA: Construcción dinámica de la query.
-        const { title, author, url, image_url, resource_type, topicIds = [], is_premium } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium } = bookData;
 
         const fields = [
             'title = $1', 'author = $2', 'url = $3', 'resource_type = $4'
@@ -148,6 +165,14 @@ class BookRepository {
                 const valuesStr = topicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
                 const relParams = [id, ...topicIds.map(tid => parseInt(tid, 10))];
                 await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, relParams);
+            }
+
+            // ✅ NUEVO: Agregar/Actualizar relación directa con Cursos (courseIds)
+            await db.query('DELETE FROM course_books WHERE resource_id = $1', [id]);
+            if (Array.isArray(courseIds) && courseIds.length > 0) {
+                const valuesStrCourses = courseIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                const relParamsCourses = [id, ...courseIds.map(cid => parseInt(cid, 10))];
+                await db.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, relParamsCourses);
             }
 
             await db.query('COMMIT');

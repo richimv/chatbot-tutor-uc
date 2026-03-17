@@ -66,18 +66,30 @@ function renderCourse(course, container) {
     let contentHTML = '';
 
     if (course.materials && course.materials.length > 0) {
+        // Función de ordenamiento por más reciente (ID más alto = más reciente)
+        const sortByNewest = (a, b) => (b.id || 0) - (a.id || 0);
+
         // 1. INSTITUTIONAL DOCUMENTS (Normas, Guías) - TOP PRIORITY
-        const officialDocs = course.materials.filter(m => m.type === 'norma' || m.type === 'guia');
+        const officialDocs = course.materials.filter(m => m.type === 'norma' || m.type === 'guia').sort(sortByNewest);
 
         // 2. SCIENTIFIC PAPERS
-        const papers = course.materials.filter(m => m.type === 'paper' || m.type === 'article');
+        const papers = course.materials.filter(m => m.type === 'paper' || m.type === 'article').sort(sortByNewest);
 
         // 3. VIDEOS (YouTube Embeds)
-        const videos = course.materials.filter(m => m.type === 'video');
+        const videos = course.materials.filter(m => m.type === 'video').sort(sortByNewest);
 
         // 4. HISTORICAL BIBLIOGRAPHY & OTHERS
         const booksAndOthers = course.materials.filter(m => !m.type || m.type === 'book' || m.type === 'other');
-
+        
+        // Ordenar explícitamente: Libros primero, luego Otros Materiales, y secundariamente por LOS MÁS RECIENTES
+        booksAndOthers.sort((a, b) => {
+            const typeA = a.type || 'other';
+            const typeB = b.type || 'other';
+            if (typeA === 'book' && typeB !== 'book') return -1;
+            if (typeA !== 'book' && typeB === 'book') return 1;
+            // Ordenamiento cronológico (Nuevos primero)
+            return (b.id || 0) - (a.id || 0);
+        });
         // A. DOCUMENTOS OFICIALES E INSTITUCIONALES
         if (officialDocs.length > 0) {
             contentHTML += `

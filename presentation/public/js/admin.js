@@ -896,6 +896,12 @@ class AdminManager {
                     ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, currentItem?.topics?.map(t => t.id) || currentItem?.topicIds || [], 'topic')}
                 </div>
 
+                <!-- ✅ NUEVO: Asignación Directa de Curso(s) -->
+                <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                    ${this.createCheckboxList('Cursos Asociados', 'generic-courses', this.allCourses, currentItem?.courseIds || [], 'course')}
+                    <small style="color:var(--text-muted); display:block; margin-top:4px;">Asigna directamente a la biblioteca de los cursos este material sin tener que navegar a editarlos.</small>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div style="grid-column: 1 / -1;">
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', currentItem?.title || '', true)}
@@ -975,6 +981,7 @@ class AdminManager {
         this._liveSearchFilter('search-generic-books', 'fieldset[data-name="generic-books"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-generic-related-courses', 'fieldset[data-name="generic-related-courses"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-section-career-select', 'fieldset[data-name="section-career-select"] .checkbox-list', '.checkbox-item', 'label');
+        this._liveSearchFilter('search-generic-courses', 'div[data-name="generic-courses"] .checkbox-list', '.checkbox-item', 'label');
     }
 
     _setupSearchableSelect(inputId, selectId) {
@@ -1277,6 +1284,14 @@ class AdminManager {
         }
 
         let body = {};
+        
+        // ✅ MEJORA UI/UX: Bloquear botón para evitar spam clicks / duplicados
+        const saveBtn = document.getElementById('generic-save-btn');
+        const originalBtnText = saveBtn ? saveBtn.innerHTML : 'Guardar';
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            saveBtn.disabled = true;
+        }
 
         try {
             switch (type) {
@@ -1373,6 +1388,10 @@ class AdminManager {
                     // ✅ NUEVO: Capturar Temas Seleccionados
                     const resourceTopicIds = this.getSelectedIds('generic-topics');
                     formData.append('topicIds', JSON.stringify(resourceTopicIds));
+
+                    // ✅ NUEVO: Capturar Cursos Asociados
+                    const resourceCourseIds = this.getSelectedIds('generic-courses');
+                    formData.append('courseIds', JSON.stringify(resourceCourseIds));
 
                     // ✅ NUEVO: Manejo de eliminación de imagen
                     const deleteImageFlag = document.getElementById('generic-delete-image')?.value;
@@ -1590,6 +1609,12 @@ class AdminManager {
                 // setTimeout(() => window.location.href = '/login', 2000);
             } else {
                 await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
+            }
+        } finally {
+            // ✅ MEJORA UI/UX: Restaurar botón independientemente de si hubo éxito o error
+            if (saveBtn) {
+                saveBtn.innerHTML = originalBtnText;
+                saveBtn.disabled = false;
             }
         }
     }
