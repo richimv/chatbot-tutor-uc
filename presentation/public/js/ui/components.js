@@ -637,8 +637,9 @@ function createUnifiedResourceCardHTML(item) {
     // 5. Layout Híbrido: Si tiene imagen priorizamos imagen, sino un fondo degradado con Icono grande
     const rawImage = item.image_url || item.coverUrl;
     let visualHTML = '';
+    const hasImage = Boolean(rawImage && rawImage.trim() !== '');
 
-    if (rawImage && rawImage.trim() !== '') {
+    if (hasImage) {
         visualHTML = `<img src="${rawImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='https://placehold.co/200x260/1e293b/ffffff?text=Material'">`;
     } else {
         visualHTML = `
@@ -651,7 +652,7 @@ function createUnifiedResourceCardHTML(item) {
     // 6. Ensamblaje del Componente Universal
     // Nota: El type interno para la biblioteca siempre será "book" para guardar favoritos (legado compatible)
     return `
-        <div class="unified-resource-card" data-resource-type="${type}">
+        <div class="unified-resource-card ${hasImage ? 'has-bg-image' : ''}" data-resource-type="${type}">
             
             <!-- Zona de Acciones Flotantes (Librería) -->
             <div class="urc-library-actions">

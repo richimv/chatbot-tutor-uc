@@ -996,6 +996,90 @@
     color: white;
 }
 
+/* =================================================== */
+/* =================================================== */
+/* == MODIFICADOR: Tarjeta con Imagen de Fondo Full == */
+/* =================================================== */
+
+.unified-resource-card.has-bg-image {
+    position: relative;
+    overflow: hidden;
+    /* Mantiene las dimensiones exactas intrínsecas impuestas al resto de tarjetas fallback */
+}
+
+/* Permitimos que el absolute de la imagen y overlay escape usando position: static.
+   Mantiene el aspect-ratio: 4/3 aportando la misma altura base que tarjetas sin imagen. */
+.unified-resource-card.has-bg-image .urc-visual-zone {
+    position: static;
+    overflow: visible;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* La imagen es absoluta a toda la tarjeta */
+.unified-resource-card.has-bg-image .urc-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+}
+
+/* Overlay negro puro para legibilidad (sin tinte azul) */
+.unified-resource-card.has-bg-image .urc-visual-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+    z-index: 1;
+}
+
+/* Corregir z-index para elementos interactivos */
+.unified-resource-card.has-bg-image .urc-premium-indicator,
+.unified-resource-card.has-bg-image .urc-lock-indicator {
+    z-index: 3;
+}
+
+/* Zona inferior de Info en el flujo normal pero de fondo transparente */
+.unified-resource-card.has-bg-image .urc-info-zone {
+    position: relative; /* Queda sobre el z-index 1 del overlay */
+    z-index: 2;
+    background: transparent;
+    border-top: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Apretar contenido hacia abajo */
+}
+
+/* Quitar auto-margin que separaba título y autor haciéndolos flotar al medio */
+.unified-resource-card.has-bg-image .urc-author {
+    margin-top: 0.5rem;
+}
+
+/* Textos claros para el modo background-image */
+.unified-resource-card.has-bg-image .urc-title {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.unified-resource-card.has-bg-image .urc-author,
+.unified-resource-card.has-bg-image .urc-size,
+.unified-resource-card.has-bg-image .urc-badge {
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.unified-resource-card.has-bg-image .urc-badge {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    color: white;
+}
+
 /* --- Responsive para Móviles (Ultra Compacto) --- */
 @media (max-width: 768px) {
     .unified-resource-card {
@@ -1007,6 +1091,10 @@
     .urc-info-zone {
         padding: 0.4rem 0.5rem;
         gap: 0.1rem;
+    }
+    
+    .unified-resource-card.has-bg-image .urc-info-zone {
+        padding-top: 1.5rem; /* Conservar gradiente en móviles */
     }
 
     .urc-meta {
