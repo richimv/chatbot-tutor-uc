@@ -237,21 +237,21 @@ async function startQuiz() {
 
         // ⛔ Freemium: Límite de vidas o bloqueo premium
         if (response.status === 403) {
-        // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
-        if (response.status === 403) {
-            elements.loadingOverlay.classList.add('hidden');
-            if (data.errorCode === 'BANK_EXHAUSTED') {
-                if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
-                    window.uiManager.showBankExhaustedModal();
-                } else {
-                    alert("Has agotado las preguntas disponibles. Pásate a Advanced para generar más con IA.");
-                    window.location.href = '/pricing';
+            // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
+            if (response.status === 403) {
+                elements.loadingOverlay.classList.add('hidden');
+                if (data.errorCode === 'BANK_EXHAUSTED') {
+                    if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
+                        window.uiManager.showBankExhaustedModal();
+                    } else {
+                        alert("Has agotado las preguntas disponibles. Pásate a Advanced para generar más con IA.");
+                        window.location.href = '/pricing';
+                    }
+                } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    window.uiManager.showPaywallModal(data.error);
                 }
-            } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal(data.error);
+                return;
             }
-            return;
-        }
         }
 
         // 🛠 Error de Servidor (500) u Otros
@@ -413,7 +413,7 @@ async function fetchNextBatch() {
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
         if (response.status === 403) {
             elements.loadingOverlay.classList.add('hidden');
-            
+
             if (data.errorCode === 'BANK_EXHAUSTED') {
                 if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
                     window.uiManager.showBankExhaustedModal();
@@ -588,8 +588,11 @@ function handleAnswer(selectedIndex, btnElement) {
         state.score++;
     } else {
         btnElement.classList.add('wrong');
-        // Mostrar cuál era la correcta
-        allBtns[q.correct_option_index].classList.add('correct');
+        // Mostrar cuál era la correcta (Seguridad: q.correct_option_index debe ser válido)
+        const correctIdx = q.correct_option_index !== undefined ? q.correct_option_index : q.correct_index;
+        if (correctIdx !== undefined && allBtns[correctIdx]) {
+            allBtns[correctIdx].classList.add('correct');
+        }
         elements.feedbackBox.classList.add('error');
     }
 
@@ -753,9 +756,9 @@ window.showExamReview = async function () {
     feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
 
     // Iterar por las preguntas que realmente contestó o el total si ya terminó
-    const totalProcessed = state.currentQuestionIndex >= state.questions.length 
-                           ? state.questions.length 
-                           : state.currentQuestionIndex;
+    const totalProcessed = state.currentQuestionIndex >= state.questions.length
+        ? state.questions.length
+        : state.currentQuestionIndex;
     const answeredQuestions = state.questions.slice(0, totalProcessed);
 
     // Check which ones are already saved as flashcards

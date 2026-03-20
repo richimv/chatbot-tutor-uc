@@ -442,7 +442,7 @@ window.DemoBank = {
                 "Comité Técnico de Categorización",
                 "Comité de Médicos Auditores"
             ],
-            "correct_index": 2,
+            "correct_option_index": 2,
             "explanation": "*Según la NTS N° 021-MINSA/DGSP (Norma Técnica de Categorización de Establecimientos de Salud)* y el Reglamento de Establecimientos de Salud y Servicios Médicos de Apoyo, la asignación formal de la categoría es competencia exclusiva del Comité Técnico de Categorización de la respectiva DIRIS, DIRESA o GERESA.\n\nEste proceso implica la verificación 'in situ' del cumplimiento de las Unidades Productoras de Servicios de Salud (UPSS) y la capacidad resolutiva declarada. **TIP SERUMS:** No confundas categoría con complejidad; la categorización es un proceso administrativo formal, mientras que la complejidad es una característica intrínseca de los procesos y tecnología del establecimiento.",
             "domain": "medicine",
             "target": "SERUMS",
@@ -459,7 +459,7 @@ window.DemoBank = {
                 "ASIS",
                 "POI"
             ],
-            "correct_index": 3,
+            "correct_option_index": 3,
             "explanation": "*Según el Decreto Legislativo N° 1088 (Ley del Sistema Nacional de Planeamiento Estratégico)* y las directivas de CEPLAN, el Plan Operativo Institucional (POI) es el instrumento que desglosa los objetivos del Plan Estratégico Institucional (PEI) en metas físicas y financieras de ejecución anual.\n\nEl POI es fundamental para la asignación presupuestal y el seguimiento de la gestión de cada unidad ejecutora. **TIP SERUMS:** En tu establecimiento, el POI es la hoja de ruta que justifica el gasto de caja chica y los requerimientos de insumos; si una actividad no está en el POI, técnicamente no debería recibir financiamiento público.",
             "domain": "medicine",
             "target": "SERUMS",
@@ -476,7 +476,7 @@ window.DemoBank = {
                 "Reducir tiempos en consultorio.",
                 "Adquirir tecnología de diagnóstico."
             ],
-            "correct_index": 1,
+            "correct_option_index": 1,
             "explanation": "*Según la Ley N° 30885 (Ley de Redes Integradas de Salud - RIS)* y la NTS N° 169-MINSA (Atención Integral de Salud), el éxito de la atención extramural depende de la continuidad de cuidados mediante la articulación fluida entre el hospital y el primer nivel de atención.\n\nLa gestión de redes busca que el paciente sea el centro del sistema, garantizando que el seguimiento domiciliario esté coordinado con su puesto de salud local. **TIP SERUMS:** La telemedicina y las visitas domiciliarias son las herramientas de 'articulación' más potentes que tendrás en el SERUMS para evitar que tus pacientes con diagnósticos crónicos 'se pierdan' tras el alta hospitalaria.",
             "domain": "medicine",
             "target": "SERUMS",
@@ -493,7 +493,7 @@ window.DemoBank = {
                 "Equipos de última generación.",
                 "Sistema de notificación de eventos adversos."
             ],
-            "correct_index": 3,
+            "correct_option_index": 3,
             "explanation": "*Según la NTS N° 029-MINSA/DIGEGI (Norma Técnica de Auditoría de la Calidad)* y los estándares de Seguridad del Paciente del MINSA, la base de la mejora continua es el registro y reporte sistemático de eventos adversos e incidentes.\n\nSin una cultura de notificación no punitiva, es imposible identificar las fallas sistémicas que originan las IAAS. **TIP SERUMS:** El reporte de incidentes (casi-errores) es tan valioso como el de eventos adversos; permite corregir el proceso antes de que el daño llegue al paciente. No ocultar los errores es el primer paso de una gestión de calidad.",
             "domain": "medicine",
             "target": "SERUMS",
@@ -510,7 +510,7 @@ window.DemoBank = {
                 "Probidad y custodia",
                 "Uso de recursos públicos"
             ],
-            "correct_index": 3,
+            "correct_option_index": 3,
             "explanation": "*Según la Ley N° 27815 (Código de Ética de la Función Pública)* y el Reglamento de Control Patrimonial del Estado, el uso de recursos públicos exige que el servidor emplee los bienes asignados exclusivamente para los fines institucionales previstos.\n\nEl incumplimiento de este deber genera responsabilidad administrativa y, en casos graves, responsabilidad penal por peculado de uso. **TIP SERUMS:** Mucho cuidado con el uso de la camioneta o ambulancia del centro de salud para fines personales o traslados no autorizados; es una de las causas más comunes de procesos administrativos disciplinarios para profesionales en el SERUMS.",
             "domain": "medicine",
             "target": "SERUMS",
