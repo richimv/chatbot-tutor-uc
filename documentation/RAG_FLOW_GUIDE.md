@@ -63,8 +63,11 @@ La IA actúa como un redactor experto. Lee los fragmentos y redacta la pregunta 
   "question_text": "Cuerpo de la pregunta...",
   "options": ["Opción A", "Opción B", ...],
   "correct_option_index": 0,
-  "explanation": "2-3 párrafos según nivel, citando fuentes locales.",
-  "subtopic": "Tema clínico específico"
+  "explanation": "2-3 párrafos según nivel, citando fuentes locales y externas.",
+  "domain": "medicine",
+  "target": "El tipo de Examen (SERUMS, ENAM, RESIDENTADO)",
+  "career": "La carrera profesional (para SERUMS)",
+  "subtopic": "Sub temas (Opcional)"
 }
 ```
 

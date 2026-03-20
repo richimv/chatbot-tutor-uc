@@ -676,7 +676,7 @@ class MLService {
                 1. LEY (NTS/RM): Cadena de Frío, Dengue, VIH, TB, PAI, NTS 169, Cáncer, etc.
                 2. OFICIAL: GPC del Minsa.
                 3. SOPORTE: Manuales y Libros del RAG.
-                REGLA DE ORO: Mínimo 2 fuentes diferentes.`;
+                REGLA DE ORO: Mínimo 2 fuentes diferentes + Un TIP SERUMS`;
 
                 starterGallery = `
                   * LOCALIDAD: "EESS nivel I-4 en la sierra...", "C.S. en zona amazónica...", "Puesto de salud I-1 reporta..."
@@ -737,6 +737,13 @@ class MLService {
             [EXPLICACIÓN (FUNDAMENTACIÓN)]
             - ${levelInstruction}
             - Usa CITACIÓN EN NEGRITA al inicio (Ej: "*Según la NTS 123-MINSA*: ...").
+            
+            [PROHIBICIÓN ABSOLUTA EN LA EXPLICACIÓN]
+            - PROHIBIDO mencionar letras de opciones (Ej: "La opción A es correcta", "Como dice la B...").
+            - PROHIBIDO mencionar números de opciones (Ej: "La 1 es falsa").
+            - Debido a que las opciones se barajan (shuffle), debes referirte a los conceptos por su NOMBRE. 
+            - MAL: "La opción A es la dosis correcta".
+            - BIEN: "La dosis de 500mg es la correcta porque...".
             [JERARQUÍA DE FUENTES (RESPETA ESTO)]:
             ${targetRules}
 

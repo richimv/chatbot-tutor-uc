@@ -26,9 +26,9 @@ class RagService {
         words = words.filter(word => word.length >= 4 || medicalAcronyms.includes(word));
 
         // Inyectamos términos clave según el target
-        if (target === "SERUMS") words.push("norma", "tecnica");
-        if (target === "ENAM") words.push("guia", "clinica");
-        if (target === "RESIDENTADO") words.push("harrison", "washington");
+        if (target === "SERUMS") words.push("Resolucion_Ministerial", "ley", "nts", "rm");
+        if (target === "ENAM") words.push("guia", "clinica", "gpc", "rm", "nts", "cto");
+        if (target === "RESIDENTADO") words.push("harrison", "washington", "amir", "cto");
 
         // Quitamos duplicados y limitamos a 6 términos para mantener el query rápido
         words = [...new Set(words)].slice(0, 6);
@@ -106,13 +106,18 @@ class RagService {
 
             return res.rows.map(r => {
                 let text = r.content || "";
-                // 🧹 Limpieza profunda de cabeceras de exámenes reales
+                // 🧹 Limpieza profunda de cabeceras y ruido de exámenes reales
                 text = text.replace(/Evaluación para el Servicio Rural.*?Página \d+ de \d+/gs, '');
                 text = text.replace(/Examen Nacional de Medicina.*?ASPEFAM/gs, '');
                 text = text.replace(/Página \d+ de \d+/g, '');
                 text = text.replace(/MINSA.*?\d{4}/g, '');
                 text = text.replace(/ASPEFAM.*?\d{4}/g, '');
                 text = text.replace(/Enam Ordinario.*?\d{4}/g, '');
+
+                // 🧹 Limpieza de etiquetas de opciones (A., B., C...) para evitar que la IA las imite
+                text = text.replace(/^[A-E]\.\s+/gm, ''); // Al inicio de línea
+                text = text.replace(/\s[A-E]\.\s+/g, ' '); // En medio del texto
+
                 return text.trim();
             }).join('\n\n---\n\n');
 
