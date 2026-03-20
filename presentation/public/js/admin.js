@@ -499,7 +499,7 @@ class AdminManager {
                     <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar JSON/CSV</span>
                 </button>
                 <button class="btn-primary" onclick="window.adminManager.openGenericModal('ai-question')" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: transparent; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                    <i class="fas fa-robot"></i> <span class="hide-mobile">Generar con IA</span>
+                    <i class="fas fa-robot"></i> <span class="hide-mobile">Generar con IA (Lite)</span>
                 </button>
                 <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
                     <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Pregunta</span>
@@ -578,6 +578,7 @@ class AdminManager {
                 let optB = currentItem?.options?.[1] || '';
                 let optC = currentItem?.options?.[2] || '';
                 let optD = currentItem?.options?.[3] || '';
+                let optE = currentItem?.options?.[4] || ''; // Añadida 5ta opción
                 let correctAns = currentItem?.correct_answer ?? 0;
 
                 const domains = [
@@ -598,10 +599,30 @@ class AdminManager {
                         <div>
                             <label class="form-label" for="generic-target">Programa/Target (Ej: ENAM, SERUMS, RESIDENTADO)</label>
                             <input type="text" id="generic-target" class="form-input" value="${currentItem?.target || ''}" oninput="
-                                const isSerums = this.value.toUpperCase() === 'SERUMS';
+                                const targetVal = this.value.toUpperCase();
+                                const isSerums = targetVal === 'SERUMS';
+                                const isResidentado = targetVal === 'RESIDENTADO';
+                                
                                 const cm = document.getElementById('generic-career-wrapper');
                                 if(cm) cm.style.display = isSerums ? 'block' : 'none';
                                 if(!isSerums) document.getElementById('generic-career').value = '';
+
+                                const optEWrap = document.getElementById('generic-opt4-wrapper');
+                                if(optEWrap) optEWrap.style.display = isResidentado ? 'block' : 'none';
+                                if(!isResidentado) document.getElementById('generic-opt4').value = '';
+
+                                const selectCorrect = document.getElementById('generic-correct-ans');
+                                if(selectCorrect) {
+                                    const optEOption = selectCorrect.querySelector('option[value=\\'4\\']');
+                                    if(isResidentado && !optEOption) {
+                                        const newOpt = document.createElement('option');
+                                        newOpt.value = '4'; newOpt.textContent = 'Opción E';
+                                        selectCorrect.appendChild(newOpt);
+                                    } else if (!isResidentado && optEOption) {
+                                        optEOption.remove();
+                                        if (selectCorrect.value === '4') selectCorrect.value = '0';
+                                    }
+                                }
                             ">
                         </div>
                     </div>
@@ -628,10 +649,13 @@ class AdminManager {
                             ${this.createFormGroup('text', 'generic-opt1', 'Opción B (*)', optB, true)}
                             ${this.createFormGroup('text', 'generic-opt2', 'Opción C (*)', optC, true)}
                             ${this.createFormGroup('text', 'generic-opt3', 'Opción D (*)', optD, true)}
+                            <div id="generic-opt4-wrapper" style="display: ${currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? 'block' : 'none'};">
+                                ${this.createFormGroup('text', 'generic-opt4', 'Opción E (* Solo Residentado)', optE, false)}
+                            </div>
                         </div>
                         <div style="margin-top: 10px;">
                             ${this.createSelect('generic-correct-ans', 'Definir Respuesta Correcta (*)', [
-                    { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }
+                    { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }, ...(currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? [{ id: 4, name: 'Opción E' }] : [])
                 ], correctAns, false)}
                         </div>
                     </fieldset>
@@ -681,7 +705,7 @@ class AdminManager {
                 }, 0);
                 break;
             case 'ai-question':
-                title.textContent = 'Generador de Preguntas IA (RAG)';
+                title.textContent = 'Generador de Preguntas IA (Flash Lite)';
                 fieldsHTML = `
                     <div style="margin-bottom:15px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.1); padding: 10px; border-radius: 8px;">
                         <i class="fas fa-info-circle" style="color: #a855f7;"></i> La IA escaneará un vasto acervo documental RAG que incluye <b>exámenes pasados, libros de autores reconocidos (Harrison, Washington, manuales AMIR, CTO, etc.), normas técnicas, guías clínicas y leyes</b>. Generará un lote de 5 preguntas sin duplicarse con el banco existente.
@@ -699,6 +723,22 @@ class AdminManager {
                         const wrapper = document.getElementById('ai-career-wrapper');
                         if(info) info.style.display = isSerums ? 'block' : 'none';
                         if(wrapper) wrapper.style.display = isSerums ? 'block' : 'none';
+                        
+                        // Filtrar Grupos de Estudio
+                        document.querySelectorAll('.ai-study-group').forEach(el => {
+                            if (isSerums) {
+                                // Solo Grupo D
+                                el.style.display = el.dataset.group === 'D' ? 'block' : 'none';
+                            } else {
+                                // Todos los grupos (ENAM, RESIDENTADO, etc)
+                                el.style.display = 'block';
+                            }
+                        });
+                        
+                        // Desmarcar todo al cambiar de objetivo para evitar envíos erróneos
+                        document.querySelectorAll('.ai-domain-cb').forEach(cb => cb.checked = false);
+                        const allCheck = document.getElementById('ai-domain-all');
+                        if(allCheck) allCheck.checked = false;
                     ">
                         <option value="ENAM">ENAM</option>
                         <option value="SERUMS">SERUMS</option>
@@ -723,21 +763,21 @@ class AdminManager {
                     </select>
                     <h4 style="margin-bottom:0.5rem;">Áreas de Estudio</h4>
                     <div id="ai-domain-container" style="min-height: 200px; max-height: 250px; overflow-y: scroll; display: block; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: var(--bg-secondary); margin-bottom: 15px;">
-                        <div style="margin-bottom: 15px;">
+                        <div class="ai-study-group" data-group="A" style="margin-bottom: 15px;">
                             <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo A — Ciencias Básicas</strong>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Anatomía"> Anatomía</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Fisiología"> Fisiología</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Farmacología"> Farmacología</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Microbiología y Parasitología"> Microbiología y Parasitología</label>
                         </div>
-                        <div style="margin-bottom: 15px;">
+                        <div class="ai-study-group" data-group="B" style="margin-bottom: 15px;">
                             <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo B — Las 4 Grandes</strong>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Medicina Interna"> Medicina Interna</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Pediatría"> Pediatría</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Ginecología y Obstetricia"> Ginecología y Obstetricia</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cirugía General"> Cirugía General</label>
                         </div>
-                        <div style="margin-bottom: 15px;">
+                        <div class="ai-study-group" data-group="C" style="margin-bottom: 15px;">
                             <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo C — Especialidades Clínicas</strong>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cardiología"> Cardiología</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gastroenterología"> Gastroenterología</label>
@@ -749,7 +789,7 @@ class AdminManager {
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Reumatología"> Reumatología</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Traumatología"> Traumatología</label>
                         </div>
-                        <div style="margin-bottom: 5px;">
+                        <div class="ai-study-group" data-group="D" style="margin-bottom: 5px;">
                             <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo D — Salud Pública y Gestión</strong>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Salud Pública y Epidemiología"> Salud Pública y Epidemiología</label>
                             <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gestión de Servicios de Salud"> Gestión de Servicios de Salud</label>
@@ -1422,12 +1462,20 @@ class AdminManager {
                         topic: document.getElementById('generic-topic').value,
                         subtopic: document.getElementById('generic-subtopic')?.value || null, // Subtema clínico específico
                         difficulty: document.getElementById('generic-difficulty').value,
-                        options: [
-                            document.getElementById('generic-opt0').value,
-                            document.getElementById('generic-opt1').value,
-                            document.getElementById('generic-opt2').value,
-                            document.getElementById('generic-opt3').value
-                        ],
+                        options: (qTarget.toUpperCase() === 'RESIDENTADO')
+                            ? [
+                                document.getElementById('generic-opt0').value,
+                                document.getElementById('generic-opt1').value,
+                                document.getElementById('generic-opt2').value,
+                                document.getElementById('generic-opt3').value,
+                                document.getElementById('generic-opt4').value
+                            ]
+                            : [
+                                document.getElementById('generic-opt0').value,
+                                document.getElementById('generic-opt1').value,
+                                document.getElementById('generic-opt2').value,
+                                document.getElementById('generic-opt3').value
+                            ],
                         correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
                         explanation: document.getElementById('generic-explanation').value,
                         image_url: document.getElementById('generic-image-url').value
@@ -1519,16 +1567,22 @@ class AdminManager {
                                             career: cols[3] ? String(cols[3]).trim() : null,
                                             topic: String(cols[4] || 'General').trim(),
                                             difficulty: String(cols[5] || 'Intermedio').trim(),
-                                            options: [
+                                            options: (String(cols[2] || '').trim().toUpperCase() === 'RESIDENTADO') ? [
+                                                String(cols[6] || 'Opción A').trim(),
+                                                String(cols[7] || 'Opción B').trim(),
+                                                String(cols[8] || 'Opción C').trim(),
+                                                String(cols[9] || 'Opción D').trim(),
+                                                String(cols[10] || 'Opción E').trim()
+                                            ] : [
                                                 String(cols[6] || 'Opción A').trim(),
                                                 String(cols[7] || 'Opción B').trim(),
                                                 String(cols[8] || 'Opción C').trim(),
                                                 String(cols[9] || 'Opción D').trim()
                                             ],
-                                            correct_answer: parseInt(cols[10] || 0, 10),
-                                            explanation: cols[11] ? String(cols[11]).trim() : null,
-                                            image_url: cols[12] ? String(cols[12]).trim() : null,
-                                            subtopic: cols[13] ? String(cols[13]).trim() : null
+                                            correct_answer: parseInt(cols[11] || 0, 10),
+                                            explanation: cols[12] ? String(cols[12]).trim() : null,
+                                            image_url: cols[13] ? String(cols[13]).trim() : null,
+                                            subtopic: cols[14] ? String(cols[14]).trim() : null
                                         };
                                     }).filter(Boolean);
 
@@ -1762,8 +1816,10 @@ class AdminManager {
     downloadExcelTemplate() {
         if (typeof window.XLSX !== 'undefined') {
             const ws_data = [
-                ['PREGUNTA (*)', 'DOMINIO', 'TARGET', 'CARRERA', 'AREA_ESTUDIO (*)', 'DIFICULTAD', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'INDEX_CORRECTA (*)', 'EXPLICACION', 'URL_IMAGEN', 'SUBTEMA (OPCIONAL)'],
-                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Intermedio', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '', 'Emergencias Endocrinas']
+                ['PREGUNTA (*)', 'DOMINIO (medicine/english)', 'TARGET (ENAM/SERUMS/RESIDENTADO)', 'CARRERA (Solo SERUMS)', 'AREA_ESTUDIO (*)', 'DIFICULTAD', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'OPCION_E (Solo RESIDENTADO)', 'INDEX_CORRECTA (0 al 4) (*)', 'EXPLICACION', 'URL_IMAGEN', 'SUBTEMA (OPCIONAL)'],
+                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Intermedio', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '', 'Emergencias Endocrinas'],
+                ['¿Qué vacuna se aplica a la gestante según calendario PAI SERUMS?', 'medicine', 'SERUMS', 'Enfermería', 'Inmunizaciones', 'Básico', 'Hepatitis B', 'dTpa', 'Rotavirus', 'VPH', '', '1', 'La dTpa se aplica entre la semana 27 y 36 de gestación.', '', 'PAI'],
+                ['¿Causa más frecuente de absceso hepático piógeno?', 'medicine', 'RESIDENTADO', '', 'Gastroenterología', 'Avanzado', 'E. Coli', 'K. pneumoniae', 'Bacteroides fragilis', 'Streptococcus milleri', 'Entamoeba histolytica', '1', 'Klebsiella pneumoniae es actualmente el principal agente causal, especialmente en diabéticos (Harrison).', '', 'Cirugía Hepatobiliar']
             ];
             const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
             const wb = window.XLSX.utils.book_new();

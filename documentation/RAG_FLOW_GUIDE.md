@@ -9,11 +9,16 @@ Este documento es la referencia definitiva del motor de IA implementado en **Hub
 Para proteger la economía del proyecto, el sistema ha sido auditado y re-estructurado para eliminar dependencias costosas de Google Cloud:
 *   **Búsqueda Sin Embeddings:** No se usa la IA de Google para "buscar" (ahorro de cuota de `text-embedding-004`).
 *   **Deduplicación Local:** Se comparan preguntas nuevas contra las antiguas usando SQL directo.
-*   **Gemini Flash (No Thinking):** Se utiliza el modelo `gemini-2.5-flash` con el modo de razonamiento extendido desactivado para evitar cargos por tokens de 'Thinking'.
+*   **RAG FTS (Full Text Search - V3):** Se ha migrado de `ILIKE` a una arquitectura de búsqueda vectorial nativa de PostgreSQL usando `tsvector` y `tsquery`.
+    - **Indexación Bilingüe:** Soporte nativo para términos en Español e Inglés (crítico en medicina).
+    - **Salva-vidas Médico:** Los acrónimos cortos (TB, VIH, NTS, GPC) no se ignoran, se protegen en la búsqueda.
+    - **Ranking por Relevancia:** Usa `ts_rank` para ordenar fragmentos por qué tan bien coinciden con la consulta, además de la prioridad por "carpetas de negocio" (Normas > Guías > Libros).
+    - **Costo $0:** Todo ocurre dentro de la base de datos local sin llamar a APIs externas.
 
 ---
 
-## 2. Flujo de Generación Paso a Paso
+## 🏗️ Flujo de Generación (FTS Edition)
+ Paso a Paso
 
 ### Paso 1: Solicitud desde el Chat / Admin
 El usuario define los parámetros en el frontend o vía chat:
@@ -137,27 +142,34 @@ Para entender cómo el sistema "piensa" al buscar fragmentos, aquí tienes los t
 
 Tras las pruebas de fuego realizadas el **09 de Marzo de 2026**, se certifica que el sistema cumple con los siguientes estándares:
 
-### 7.1 Prueba SERUMS (Salud Pública/Gestión)
-*   **Pedido:** 5 preguntas, Nivel Básico.
-*   **Jerarquía:** Citó correctamente **NTS 134, 120, 169, 161 y 192**.
-*   **Extensión:** Explicaciones de **exactamente 2 párrafos** cada una.
-*   **ENCAPS:** Casos adaptados al primer nivel de atención (I-1 al I-4).
+## 8. Mimetización de Estilo Real (Few-Shot v2.0)
 
-### 7.2 Prueba RESIDENTADO (Fisiología/Gastro)
-*   **Pedido:** 3 preguntas, Nivel Básico.
-*   **Jerarquía:** Priorizó **Harrison, Guyton y Washington Manual**.
-*   **Extensión:** Explicaciones de **exactamente 2 párrafos**.
-*   **Formato:** 5 opciones (A-E) obligatorias para Residentado.
+Para lograr que la IA genere preguntas idénticas a los exámenes reales del MINSA, se ha implementado un sistema de **Mimetización Orgánica**:
 
-### 7.3 Métricas de Eficiencia (Cero Costo IA)
-*   **Búsqueda RAG:** Ejecutada localmente en milisegundos. **Costo de Búsqueda: $0.00**.
-*   **Razonamiento:** Modo `thinking` desactivado. **Costo de Razonamiento: Mínimo**.
+### 8.1 Extracción de Ejemplos Reales (`getStyleExamples`)
+El motor RAG ahora posee una función especializada que busca en la tabla `documents` fragmentos de exámenes pasados específicos:
+-   **Criterio de Selección (CRÍTICO):** La selección del patrón de estilo se basa en la **Carrera Profesional** (parámetro `career`) y NO en el área de estudio. Esto garantiza que si un enfermero solicita "Salud Pública", la IA emule exámenes de Enfermería y no de Medicina.
+-   **Patrones de búsqueda:** `%SERUMS-medicina%`, `%SERUMS-enfermeria%`, `%SERUMS-obstetricia%`.
+-   **Inyección:** Se extraen 4 preguntas reales aleatorias y se inyectan en el prompt bajo la sección `[EJEMPLOS DE ESTILO REAL]`. Esto permite que la IA "copie" el tono, la brevedad y la estructura sin necesidad de reglas rígidas.
 
-### 7.4 Regla de Transparencia de Salida (Chat/IA)
-- **Prohibición de Truncamiento:** La IA (Asistente) DEBE mostrar SIEMPRE el JSON íntegro en el chat.
-- **Sin Resúmenes:** Queda prohibido el uso de "... (puntos suspensivos)" en las opciones o explicaciones durante el proceso de auditoría y entrega de lotes.
-- **Formato Estricto:** Cada pregunta, opción y párrafo de explicación debe ser visible para su validación final por el administrador.
+### 8.2 Reglas de Redacción "Telegrama"
+Se han establecido restricciones inviolables en el prompt maestro:
+*   **Opciones (1 a 15 palabras):** Prohibido el uso de párrafos o explicaciones dentro de la opción.
+*   **Formato Híbrido:** La IA debe alternar obligatoriamente entre Casos Clínicos, Definiciones Directas y **Completar Espacios ( _____ )**.
+*   **Geografía Real:** Uso de distritos y departamentos reales de Perú (Loreto, Cusco, Puno, Huancavelica) para inmersión total.
 
 ---
 
-**Documentación Finalizada y Auditada - 09 de Marzo, 2026.**
+## 9. Resultados de Auditoría Final (18 de Marzo, 2026)
+
+Tras la última actualización, se certifica el cumplimiento del estándar **MINSA 2025**:
+
+### 9.1 Auditoría SERUMS (Medicina Humana - Avanzado)
+*   **Resultado:** Generación de preguntas sobre **Gestión de Brotes** y **Medicina Legal**.
+*   **Estilo:** Opciones breves (ej: "Inmediata (menos de 24 horas)").
+*   **Precisión:** Cita exacta de la **Ley 26842** y **NTS 161**.
+*   **Mimetización:** Estructura idéntica al examen real aplicado el 24 de agosto de 2025.
+
+---
+
+**Documentación Finalizada y Auditada - 18 de Marzo, 2026.**

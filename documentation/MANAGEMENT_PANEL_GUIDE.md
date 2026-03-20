@@ -47,7 +47,8 @@ Es el core académico de la plataforma, diseñado para simular exámenes de alto
 *   **Control de Calidad:** 
     *   **Anti-duplicidad:** Antes de generar, el sistema escanea las últimas 200 preguntas para asegurar que el nuevo lote sea inédito.
     *   **Jerarquía de Fuentes:** La IA tiene prohibido inventar; debe citar al menos dos fuentes oficiales en cada explicación.
-*   **Inyección Masiva:** El administrador puede subir miles de preguntas vía Excel/JSON o generarlas por lotes de 10-20 mediante la IA en tiempo real.
+*   **Inyección Masiva:** El administrador puede subir miles de preguntas vía Excel/JSON o generarlas por lotes de 5 mediante la IA en tiempo real integrada. 
+    *   **Motor RAG Local Lite:** El botón "Generar con IA (Lite)" en el panel usa explícitamente el modelo **Gemini 2.5 Flash Lite** para mantener el costo en cero, utilizando el mismo prompt de alta fidelidad médica de `mlService`.
 
 ---
 

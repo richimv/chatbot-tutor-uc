@@ -571,7 +571,8 @@ function handleAnswer(selectedIndex, btnElement) {
         // Auto-avanzar después de medio segundo de delay "táctil"
         setTimeout(() => {
             state.currentQuestionIndex++;
-            if (state.currentQuestionIndex >= state.questions.length) {
+            // ✅ CORRECCIÓN: No finalizar hasta llegar al total esperado (10, 20 o 100)
+            if (state.currentQuestionIndex >= state.maxQuestions) {
                 finishQuiz();
             } else {
                 renderQuestion();
@@ -599,7 +600,8 @@ function handleAnswer(selectedIndex, btnElement) {
     // Configurar Botón Siguiente
     elements.nextBtn.onclick = () => {
         state.currentQuestionIndex++;
-        if (state.currentQuestionIndex >= state.questions.length) {
+        // ✅ CORRECCIÓN: No finalizar hasta llegar al total esperado (10, 20 o 100)
+        if (state.currentQuestionIndex >= state.maxQuestions) {
             finishQuiz();
         } else {
             renderQuestion();

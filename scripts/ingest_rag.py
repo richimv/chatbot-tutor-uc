@@ -3,8 +3,6 @@ import re
 import fitz  # PyMuPDF
 import psycopg2
 import json
-from vertexai.preview.language_models import TextEmbeddingModel
-import vertexai
 from dotenv import load_dotenv
 
 # Dependencias OCR
@@ -32,21 +30,9 @@ if not DB_CONNECTION_STRING:
         exit(1)
     DB_CONNECTION_STRING = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
 
-# Vertex AI
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
-vertexai.init(project=PROJECT_ID, location=LOCATION)
-model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+# 🚨 VERTEX AI Y EMBEDDINGS ELIMINADOS (Ahorro de API y Espacio)
 
 LIBRARY_PATH = os.path.join(root_dir, "biblioteca_medica")
-
-def get_embedding(text):
-    try:
-        embeddings = model.get_embeddings([text])
-        return embeddings[0].values
-    except Exception as e:
-        print(f"Error generando embedding: {e}")
-        return None
 
 def extract_metadata(file_path):
     """
@@ -114,7 +100,7 @@ def smart_chunking(file_path):
                 print(f"   [Error] Falló el OCR en la página {page_num +1}: {e}", flush=True)
                 traceback.print_exc()
         else:
-             print(f"   [i] Página {page_num + 1} leída correctamente (Texto Nativo).", flush=True)
+             pass # Silenciamos el log para que no ensucie la consola
         
         if not text:
             continue
@@ -146,7 +132,7 @@ def ingest_library():
         print(f"⚠️ No se encontró la carpeta {LIBRARY_PATH}")
         return
 
-    print(f"Iniciando ingesta desde: {LIBRARY_PATH}")
+    print(f"Iniciando ingesta masiva (Sin Embeddings) desde: {LIBRARY_PATH}")
 
     for root, dirs, files in os.walk(LIBRARY_PATH):
         for file in files:
@@ -157,30 +143,27 @@ def ingest_library():
                 print(f"Procesando: {metadata['title']} ({metadata['type']})")
                 
                 try:
-                    # Pasamos file_path en lugar de doc para que OCR funcione
                     chunks = smart_chunking(file_path)
                     
                     if not chunks:
                         print("   [!] Archivo vacío o ilegible.")
                         continue
                         
-                    # Conectar a Supabase JUSTO antes de insertar para evitar "Connection timeout"
+                    # Conectar a Supabase JUSTO antes de insertar
                     conn = psycopg2.connect(DB_CONNECTION_STRING)
                     cur = conn.cursor()
                     
                     for i, chunk in enumerate(chunks):
-                        vector = get_embedding(chunk)
+                        # Enriquecer metadatos con el chunk id
+                        chunk_meta = metadata.copy()
+                        chunk_meta['chunk_index'] = i
                         
-                        if vector:
-                            # Enriquecer metadatos con el chunk id
-                            chunk_meta = metadata.copy()
-                            chunk_meta['chunk_index'] = i
-                            
-                            cur.execute(
-                                "INSERT INTO documents (content, metadata, embedding) VALUES (%s, %s, %s)",
-                                (chunk, json.dumps(chunk_meta), vector)
-                            )
-                            print(f"   - Chunk {i+1}/{len(chunks)} guardado.")
+                        # 🚨 INSERT ACTUALIZADO: Solo guardamos Content y Metadata. La BD hace el resto automáticamente.
+                        cur.execute(
+                            "INSERT INTO documents (content, metadata) VALUES (%s, %s)",
+                            (chunk, json.dumps(chunk_meta))
+                        )
+                        print(f"   - Párrafo {i+1}/{len(chunks)} guardado en Base de Datos.")
                     
                     conn.commit()
                     cur.close()

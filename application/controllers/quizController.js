@@ -483,7 +483,7 @@ class QuizController {
      */
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, topic, career } = req.body;
+            const { target, areas, difficulty, topic, career, seenIds } = req.body;
             const userId = req.user.id;
 
             const finalTarget = target || 'SERUMS';
@@ -510,7 +510,8 @@ class QuizController {
                 difficulty || 'Intermedio',
                 userId,
                 5,
-                req.user.subscriptionTier
+                req.user.subscriptionTier,
+                seenIds || []
             );
 
             res.json({ 

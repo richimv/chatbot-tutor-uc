@@ -12,18 +12,7 @@ if (!project || !location) {
 // Inicializar Cliente Vertex AI
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// Instancias Duales
-const modelStandard = vertex_ai.preview.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    thinking: { disable: false },
-    generationConfig: {
-        maxOutputTokens: 8192,
-        temperature: 0.4,
-        topP: 0.9,
-        responseMimeType: 'application/json'
-    },
-});
-
+// Instancia Unificada a LITE
 const modelLite = vertex_ai.getGenerativeModel({
     model: 'gemini-2.5-flash-lite',
     generationConfig: {
@@ -32,6 +21,8 @@ const modelLite = vertex_ai.getGenerativeModel({
         responseMimeType: 'application/json'
     },
 });
+
+const modelStandard = modelLite; // ✅ UNIFICADO A LITE
 
 class QuizService {
 

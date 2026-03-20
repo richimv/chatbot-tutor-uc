@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const AnalyticsService = require('../../domain/services/analyticsService'); // ✅ NUEVO
 const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
-const MLService = require('../../domain/services/mlService'); 
+const MLService = require('../../domain/services/mlService');
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -194,7 +194,7 @@ class AdminController {
 
     /**
      * POST /api/admin/questions/generate-ai
-     * Endpoint para generar un set de 20 preguntas empleando Retrieval Augmented Generation (RAG)
+     * Endpoint para generar un set de 5 preguntas empleando Retrieval Augmented Generation (RAG)
      */
     async generateAiQuestions(req, res) {
         try {
@@ -212,8 +212,9 @@ class AdminController {
             const resolvedDomain = domain || 'medicine'; // Fallback seguro si el front no envía domain
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
-            // 1. Generar preguntas con Gemini 2.5 — studyAreas para el contexto, domain para la BD
-            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, studyAreas, career, resolvedDomain);
+            // 1. Generar preguntas con Gemini 2.5 Flash Lite — studyAreas para el contexto, domain para la BD
+            // Pasamos: target, difficulty, studyAreas, career, amount=5, tier='lite', domain=resolvedDomain
+            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, studyAreas, career, 5, 'lite', resolvedDomain);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");

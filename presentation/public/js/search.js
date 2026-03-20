@@ -1113,14 +1113,48 @@ class SearchComponent {
                         return acc;
                     }, {});
 
-                    let html = '';
+                    let allCardsHTML = [];
                     for (const topic of Object.keys(groupedData).sort()) {
-                        html += `<div class="manta-group-title">${topic}</div>`;
+                        allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
                         groupedData[topic].forEach(doc => {
-                            html += createUnifiedResourceCardHTML(doc);
+                            allCardsHTML.push(createUnifiedResourceCardHTML(doc));
                         });
                     }
-                    gridContainer.innerHTML = html;
+
+                    // ✅ PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
+                    gridContainer.innerHTML = '';
+                    let currentIndex = 0;
+                    const itemsPerPage = 20;
+
+                    const renderNextBatch = () => {
+                        const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
+                        if (nextBatch.length === 0) return;
+
+                        // Quitar el sentinel anterior si existe para poner uno nuevo al final
+                        const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
+                        if (oldSentinel) oldSentinel.remove();
+
+                        // Añadir HTML sin sobreescribir (insertAdjacentHTML es O(1))
+                        gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
+                        currentIndex += itemsPerPage;
+
+                        // Si hay más elementos, crear un nuevo sentinel
+                        if (currentIndex < allCardsHTML.length) {
+                            const sentinel = document.createElement('div');
+                            sentinel.className = 'scroll-sentinel';
+                            sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
+                            gridContainer.appendChild(sentinel);
+
+                            const observer = new IntersectionObserver((entries) => {
+                                if (entries[0].isIntersecting) {
+                                    observer.disconnect();
+                                    requestAnimationFrame(renderNextBatch);
+                                }
+                            }, { rootMargin: '200px' });
+                            observer.observe(sentinel);
+                        }
+                    };
+                    renderNextBatch();
                 }
             });
 
@@ -1159,14 +1193,45 @@ class SearchComponent {
                         return acc;
                     }, {});
 
-                    let html = '';
+                    let allCardsHTML = [];
                     for (const topic of Object.keys(groupedData).sort()) {
-                        html += `<div class="manta-group-title">${topic}</div>`;
+                        allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
                         groupedData[topic].forEach(doc => {
-                            html += createUnifiedResourceCardHTML(doc);
+                            allCardsHTML.push(createUnifiedResourceCardHTML(doc));
                         });
                     }
-                    gridContainer.innerHTML = html;
+
+                    // ✅ PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
+                    gridContainer.innerHTML = '';
+                    let currentIndex = 0;
+                    const itemsPerPage = 20;
+
+                    const renderNextBatch = () => {
+                        const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
+                        if (nextBatch.length === 0) return;
+
+                        const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
+                        if (oldSentinel) oldSentinel.remove();
+
+                        gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
+                        currentIndex += itemsPerPage;
+
+                        if (currentIndex < allCardsHTML.length) {
+                            const sentinel = document.createElement('div');
+                            sentinel.className = 'scroll-sentinel';
+                            sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
+                            gridContainer.appendChild(sentinel);
+
+                            const observer = new IntersectionObserver((entries) => {
+                                if (entries[0].isIntersecting) {
+                                    observer.disconnect();
+                                    requestAnimationFrame(renderNextBatch);
+                                }
+                            }, { rootMargin: '200px' });
+                            observer.observe(sentinel);
+                        }
+                    };
+                    renderNextBatch();
                 }
             }
 
@@ -1206,12 +1271,94 @@ class SearchComponent {
             // Escuchar clics
             this._attachFilterListeners(filtersContainer, (areaStr) => {
                 const careersInArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === areaStr);
-                gridContainer.innerHTML = renderCoursesByCareer(careersInArea);
+                const rawHTML = renderCoursesByCareer(careersInArea);
+
+                if (rawHTML.includes('empty-state')) {
+                    gridContainer.innerHTML = rawHTML;
+                    return;
+                }
+
+                // Convertir HTML continuo en Array de tarjetas para render progresivo
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rawHTML;
+                const allCardsHTML = Array.from(tempDiv.children).map(el => el.outerHTML);
+
+                // Lógica de Paginación DOM (Progressive)
+                gridContainer.innerHTML = '';
+                let currentIndex = 0;
+                const itemsPerPage = 15;
+
+                const renderNextBatch = () => {
+                    const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
+                    if (nextBatch.length === 0) return;
+
+                    const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
+                    if (oldSentinel) oldSentinel.remove();
+
+                    gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
+                    currentIndex += itemsPerPage;
+
+                    if (currentIndex < allCardsHTML.length) {
+                        const sentinel = document.createElement('div');
+                        sentinel.className = 'scroll-sentinel';
+                        sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
+                        gridContainer.appendChild(sentinel);
+
+                        const observer = new IntersectionObserver((entries) => {
+                            if (entries[0].isIntersecting) {
+                                observer.disconnect();
+                                requestAnimationFrame(renderNextBatch);
+                            }
+                        }, { rootMargin: '200px' });
+                        observer.observe(sentinel);
+                    }
+                };
+                renderNextBatch();
             });
 
             // Disparar autollenado
             const careersInActiveArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === this.activeFilter);
-            gridContainer.innerHTML = renderCoursesByCareer(careersInActiveArea);
+            const rawHTMLActive = renderCoursesByCareer(careersInActiveArea);
+
+            if (rawHTMLActive.includes('empty-state')) {
+                gridContainer.innerHTML = rawHTMLActive;
+            } else {
+                // Convertir HTML continuo en Array de tarjetas para render progresivo
+                const tempDivActive = document.createElement('div');
+                tempDivActive.innerHTML = rawHTMLActive;
+                const allCardsHTMLActive = Array.from(tempDivActive.children).map(el => el.outerHTML);
+
+                gridContainer.innerHTML = '';
+                let currIndex = 0;
+                const limitPerPage = 15;
+
+                const renderInitBatch = () => {
+                    const nextBatch = allCardsHTMLActive.slice(currIndex, currIndex + limitPerPage);
+                    if (nextBatch.length === 0) return;
+
+                    const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
+                    if (oldSentinel) oldSentinel.remove();
+
+                    gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
+                    currIndex += limitPerPage;
+
+                    if (currIndex < allCardsHTMLActive.length) {
+                        const sentinel = document.createElement('div');
+                        sentinel.className = 'scroll-sentinel';
+                        sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
+                        gridContainer.appendChild(sentinel);
+
+                        const obs = new IntersectionObserver((entries) => {
+                            if (entries[0].isIntersecting) {
+                                obs.disconnect();
+                                requestAnimationFrame(renderInitBatch);
+                            }
+                        }, { rootMargin: '200px' });
+                        obs.observe(sentinel);
+                    }
+                };
+                renderInitBatch();
+            }
         }
     }
 

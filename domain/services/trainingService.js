@@ -7,9 +7,8 @@ const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
 // INSTANCIAS DE VERTEX AI (Motor Dual)
-const modelCreative = vertex_ai.preview.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    thinking: { disable: false }, // En Creative mantenemos estándar
+const modelCreativeLite = vertex_ai.getGenerativeModel({
+    model: 'gemini-2.5-flash-lite',
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.9,
@@ -18,14 +17,7 @@ const modelCreative = vertex_ai.preview.getGenerativeModel({
     },
 });
 
-const modelCreativeLite = vertex_ai.getGenerativeModel({
-    model: 'gemini-2.5-flash-lite',
-    generationConfig: {
-        maxOutputTokens: 4096,
-        temperature: 0.8,
-        responseMimeType: 'application/json'
-    },
-});
+const modelCreative = modelCreativeLite; // ✅ UNIFICADO A LITE
 
 class TrainingService {
 
@@ -76,7 +68,7 @@ class TrainingService {
      * Obtiene Preguntas (Banco Local).
      * Soporta tanto Modo Legacy (String) como Modo Multi-Area (Objeto).
      */
-    async getQuestions(categoryOptions, difficulty, limit = 5, userId, subscriptionTier = 'free') {
+    async getQuestions(categoryOptions, difficulty, limit = 5, userId, subscriptionTier = 'free', seenIds = []) {
         // 1. Parsear opciones
         let target = 'MEDICINA';
         let areas = ['Medicina General'];
@@ -132,10 +124,13 @@ class TrainingService {
         // ---------------------------------------------------------
         if (dbDomain === 'medicine') {
             // 1. ESCANEO DE STOCK GLOBAL (Prioridad: Banco Real)
-            const normalizedAllAreas = areas.map(a => a.toUpperCase());
+            const areaMap = new Map(); // Para preservar el Title Case original (ej: "Ginecología")
+            areas.forEach(a => areaMap.set(a.toUpperCase(), a));
+            const normalizedAllAreas = Array.from(areaMap.keys());
+            
             console.log(`\n🧠 [TrainingService] Analizando stock en ${normalizedAllAreas.length} áreas para ${dbTarget}...`);
 
-            const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, difficulty, 50, userId, career);
+            const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, difficulty, 50, userId, career, seenIds);
 
             const questionsByArea = {};
             rawBankQuestions.forEach(q => {
@@ -147,24 +142,27 @@ class TrainingService {
 
             const areasWithStock = normalizedAllAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
 
-            let sampledAreas;
+            // 2. Lotería de Áreas: Para el banco, intentamos abarcar todas las que tengan stock primero
+            let bankSampledAreas;
             if (areasWithStock.length >= 5) {
-                sampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
+                bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
             } else if (areasWithStock.length > 0) {
-                sampledAreas = [...areasWithStock];
+                bankSampledAreas = [...areasWithStock];
             } else {
-                sampledAreas = areas.length > 5 ? areas.sort(() => 0.5 - Math.random()).slice(0, 5) : areas;
+                bankSampledAreas = normalizedAllAreas.length > 5 ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5) : normalizedAllAreas;
             }
 
             let balancedBatch = [];
-            for (const area of sampledAreas) {
+            for (const area of bankSampledAreas) {
                 if (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
                     balancedBatch.push(questionsByArea[area].shift());
                 }
             }
 
+            // Si aún no completamos, intentamos sacar más de las mismas áreas con stock o de cualquier área seleccionada
             if (balancedBatch.length < limit) {
-                for (const area of sampledAreas) {
+                const searchOrder = [...areasWithStock, ...normalizedAllAreas]; 
+                for (const area of searchOrder) {
                     while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
                         balancedBatch.push(questionsByArea[area].shift());
                     }
@@ -175,7 +173,14 @@ class TrainingService {
             console.log(`🔎 [Banco] Stock detectado en: ${areasStr} (${balancedBatch.length}/${limit} preguntas).`);
 
             const bankCount = balancedBatch.length;
-            const batchIsHealthy = bankCount === limit;
+            let batchIsHealthy = bankCount === limit;
+
+            // ✅ REGLA DE ORO (CASOS_FLUJO_IA): Si se seleccionaron >= 5 áreas, el lote DEBE tener 5 áreas únicas.
+            // Si el banco solo tiene stock en < 5 áreas, forzamos IA para cumplir con la diversidad de tópicos.
+            if (normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
+                batchIsHealthy = false;
+                console.log(`⚠️ [IA Trigger] Banco insuficiente para diversidad: solo ${areasWithStock.length} áreas con stock. Forzando Reposición IA.`);
+            }
             let source = 'BANK';
 
             if (!batchIsHealthy) {
@@ -185,6 +190,14 @@ class TrainingService {
                     console.log(`🚫 [Limit] Usuario '${tier}' alcanzó agotamiento de banco. Bloqueando generación IA.`);
                     throw new Error("BANCO_AGOTADO_TIER");
                 }
+
+                // 🎯 REPOSICIÓN IA: Seleccionar las 5 áreas para la generación (Escenarios 1, 2 y 3)
+                const rawSampled = normalizedAllAreas.length >= 5 
+                    ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5)
+                    : normalizedAllAreas;
+
+                // Mapear de vuelta al Title Case original para que la IA genere correctamente
+                const sampledAreas = rawSampled.map(a => areaMap.get(a) || a);
 
                 console.log(`🤖 [IA] Lote insuficiente (${bankCount}/${limit}). Activando Reposición para ${sampledAreas.length} áreas...`);
                 source = 'AI_REPOSITION';
@@ -220,7 +233,7 @@ class TrainingService {
                 return {
                     questions: balancedBatch.slice(0, limit),
                     source: source,
-                    topic: sampledAreas[0]
+                    topic: (!batchIsHealthy && typeof sampledAreas !== 'undefined') ? sampledAreas[0] : (areaMap.get(bankSampledAreas[0]) || bankSampledAreas[0])
                 };
             }
 
@@ -416,8 +429,8 @@ class TrainingService {
     // --- MÉTODOS LEGACY (Wrappers para compatibilidad) ---
 
     // Usado por QuizController (ENAM/SERUMS/RESIDENTADO)
-    async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5, subscriptionTier = 'free') {
-        const result = await this.getQuestions(categoryOptions, difficulty, limit, userId, subscriptionTier);
+    async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5, subscriptionTier = 'free', seenIds = []) {
+        const result = await this.getQuestions(categoryOptions, difficulty, limit, userId, subscriptionTier, seenIds);
         return { questions: result.questions, topic: result.topic };
     }
 

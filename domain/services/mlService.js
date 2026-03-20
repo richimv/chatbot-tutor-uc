@@ -79,7 +79,7 @@ const systemInstruction = {
 // modelLite: Para Usuarios Finales (Sin Thinking -> Ahorro Total)
 
 const standardConfig = {
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-flash-lite', // ✅ FORZADO A LITE (Ahorro Total)
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.3,
@@ -92,12 +92,10 @@ const liteConfig = {
     generationConfig: standardConfig.generationConfig
 };
 
-// Instancias Singleton
-// Mantenemos temperatura alta (0.7) para el chat para que sea más expresivo y pedagógico.
-const modelStandard = vertex_ai.preview.getGenerativeModel({ ...standardConfig, systemInstruction, generationConfig: { ...standardConfig.generationConfig, temperature: 0.7 }, thinking: { disable: false } });
+// Instancia Singleton UNIFICADA
 const modelLite = vertex_ai.getGenerativeModel({ ...liteConfig, systemInstruction, generationConfig: { ...liteConfig.generationConfig, temperature: 0.7 } });
 
-console.log('🤖 MLService: Motor Dual Inicializado (Standard: gemini-2.5-flash | Lite: gemini-2.5-flash-lite)');
+console.log('🤖 MLService: Motor LITE UNIFICADO (Sin Thinking -> 2.5-Flash-Lite)');
 
 class MLService {
     /**
@@ -106,11 +104,8 @@ class MLService {
      */
     static _getModelByTier(tier = 'free') {
         const t = String(tier || 'free').toLowerCase();
-        if (t === 'admin') {
-            console.log('🛡️ [IA MODO AUDITORÍA] Admin detectado: Usando gemini-2.5-flash.');
-            return modelStandard;
-        }
-        console.log(`🍃 [IA MODO AHORRO] Usuario '${t}' detectado: Usando gemini-2.5-flash-lite.`);
+        // 🚀 REVERSIÓN A LITE POR PETICIÓN DE USUARIO (VELOCIDAD Y COSTOS)
+        console.log(`🍃 [IA MODO AHORRO] Usando gemini-2.5-flash-lite para '${t}'.`);
         return modelLite;
     }
 
@@ -464,67 +459,95 @@ class MLService {
         return { relatedCourses: [], relatedTopics: [] };
     }
 
-
-    /**
-     * Genera una descripción concisa y académica para un curso específico.
-     */
-    static async generateCourseDescription(courseName) {
-        console.log(`🤖 MLService: Generando descripción para el curso: "${courseName}"`);
-        try {
-            // Usamos Lite para descripciones estáticas (ahorro)
-            const activeModel = this._getModelByTier('advanced');
-            const prompt = `Como un experto académico y redactor de planes de estudio, crea una descripción atractiva y concisa (aproximadamente 3 a 4 frases) para el curso universitario llamado "${courseName}". La descripción debe explicar de qué trata el curso, sus objetivos principales y qué aprenderán los estudiantes. El tono debe ser profesional pero accesible.`;
-
-            const result = await activeModel.generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }]
-            });
-            const response = result.response;
-            const description = response.candidates[0].content.parts[0].text;
-
-            if (!description) {
-                throw new Error("La respuesta de la IA estaba vacía.");
-            }
-            console.log(`✅ Descripción de curso generada para "${courseName}"`);
-            return description;
-        } catch (error) {
-            console.error(`❌ Error en MLService al generar descripción para el curso "${courseName}":`, error);
-            return "No se pudo generar una descripción en este momento. Inténtalo de nuevo más tarde.";
-        }
-    }
-
-
-
     /**
      * ✅ NUEVO: Generador RAG de Preguntas para el Banco (Admin)
     /**
      * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)
-     * Genera un total de 10 preguntas fragmentadas en lotes pequeños (3, 3, 3, 1) para evitar truncamiento por token limit.
      */
-    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, tier = 'advanced') {
-        const domain = 'medicine';
-        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount} (Tier: ${tier})`);
+    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, tier = 'advanced', reqDomain = 'medicine') {
+        const domain = reqDomain || 'medicine';
+        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount} (Tier: ${tier}, Domain: ${domain})`);
         try {
             const requestedAmount = amount;
-            const BATCH_SIZE_BASE = 3;
-            const currentBatchLimit = (target === 'RESIDENTADO' || target === 'ENAM') ? 1 : BATCH_SIZE_BASE;
 
+            // 1. PROCESAR Y MUESTREAR ÁREAS (Escenarios 1, 2 y 3 de CASOS_FLUJO_IA_USUARIO.md)
+            let areasArray = [];
+            if (typeof studyAreas === 'string') {
+                areasArray = studyAreas.split(',').map(a => a.trim()).filter(a => a);
+            } else if (Array.isArray(studyAreas)) {
+                areasArray = studyAreas;
+            }
+
+            // Muestreo: Si hay más de 5, elegimos 5 aleatorias únicas.
+            let sampledAreas = [];
+            if (areasArray.length >= 5) {
+                sampledAreas = areasArray.sort(() => 0.5 - Math.random()).slice(0, 5);
+            } else if (areasArray.length > 0) {
+                sampledAreas = areasArray;
+            } else {
+                sampledAreas = ['General'];
+            }
+
+            // 2. ORQUESTACIÓN DETERMINISTA CON RESILIENCIA (1-BY-1 PARA ENFOQUE TOTAL)
+            const currentBatchLimit = (target === 'RESIDENTADO' || target === 'ENAM' || target === 'SERUMS') ? 1 : 3;
             let allQuestions = [];
 
+            const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+            // Calculamos cuántas preguntas por área (distribución equitativa)
             for (let i = 0; i < requestedAmount; i += currentBatchLimit) {
                 const currentBatchSize = Math.min(currentBatchLimit, requestedAmount - i);
-                const batchNum = Math.floor(i / currentBatchLimit) + 1;
-                console.log(`🤖 MLService: Generando lote ${batchNum} (${currentBatchSize} preguntas)...`);
 
-                const batchQuestions = await this._generateBatchInternal(target, difficulty, studyAreas, career, allQuestions, currentBatchSize, tier);
+                let areaForThisBatch;
+                if (currentBatchLimit === 1) {
+                    areaForThisBatch = sampledAreas[i % sampledAreas.length];
+                } else {
+                    areaForThisBatch = sampledAreas.join(', ');
+                }
+
+                const batchNum = Math.floor(i / currentBatchLimit) + 1;
+                console.log(`🤖 MLService: Generando lote ${batchNum} (${currentBatchSize} q) para: ${areaForThisBatch}...`);
+
+                // Lógica de Reintento con Backoff (Máximo 3 intentos para error 429)
+                let batchQuestions = null;
+                let attempts = 0;
+                const maxAttempts = 3;
+
+                while (attempts < maxAttempts) {
+                    try {
+                        batchQuestions = await this._generateBatchInternal(target, difficulty, areaForThisBatch, career, allQuestions, currentBatchSize, tier, domain);
+                        break; // Éxito, salir del loop de reintentos
+                    } catch (err) {
+                        attempts++;
+                        const isRateLimit = err.message && (err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED'));
+
+                        if (isRateLimit && attempts < maxAttempts) {
+                            const waitTime = Math.pow(2, attempts) * 1000;
+                            console.warn(`⚠️ [429] Cuota excedida. Reintentando en ${waitTime}ms... (Intento ${attempts}/${maxAttempts})`);
+                            await sleep(waitTime);
+                        } else {
+                            console.error(`❌ Error persistente en lote ${batchNum}:`, err.message);
+                            throw err; // Error no recuperable o máximos intentos alcanzados
+                        }
+                    }
+                }
 
                 if (batchQuestions && batchQuestions.length > 0) {
+                    batchQuestions.forEach((q) => {
+                        if (currentBatchLimit === 1) q.topic = areaForThisBatch;
+                    });
                     allQuestions = allQuestions.concat(batchQuestions);
                 }
 
                 if (allQuestions.length >= requestedAmount) break;
+
+                // Retardo preventivo entre lotes para evitar ráfagas (Rate Limiting preventivo)
+                if (i + currentBatchLimit < requestedAmount) {
+                    await sleep(5000); // Aumento del delay a 5s para evitar 429 con prompts grandes en modo LITE
+                }
             }
 
-            console.log(`✅ MLService: Generación RAG completada (${allQuestions.length} preguntas)`);
+            console.log(`✅ MLService: Generación RAG completada (${allQuestions.length} preguntas) con distribución optimizada.`);
             return allQuestions.slice(0, requestedAmount);
 
         } catch (error) {
@@ -536,13 +559,15 @@ class MLService {
     /**
      * @private Lógica de generación atómica para un lote pequeño (Prompt Maestro)
      */
-    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions, amount, tier = 'advanced') {
+    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions = [], amount = 1, tier = 'advanced', domain = 'medicine') {
         try {
-            const domain = 'medicine';
+            const modelName = "gemini-2.5-flash-lite"; // ✅ TODO LITE
+            const careerStr = String(career || "Medicina");
+            const careerLower = careerStr.toLowerCase();
 
             // 1. Prevenir Duplicidad Escaneando la Base de Datos Histórica
             let recentQuestionsText = "";
-            let careerParam = career || null;
+            let careerParam = careerLower || null;
             try {
                 const db = require('../../infrastructure/database/db'); // Carga dinámica del Pool
                 const areasArray = String(studyAreas || '').split(',').map(a => a.trim()).filter(a => a);
@@ -566,8 +591,11 @@ class MLService {
                 ];
 
                 if (allPreviousTexts.length > 0) {
-                    recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE DUPLICIDAD 🚨\nAquí tienes las últimas preguntas que YA existen en el sistema para este Target/Área. ESTÁ TOTALMENTE PROHIBIDO CREAR PREGUNTAS IDÉNTICAS A ESTAS O EVALUAR EL MISMO DATO EXACTO:\n" +
-                        allPreviousTexts.slice(-20).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') + "\n(Obligatorio: Inventa casos clínicos completamente nuevos o evalúa otras clasificaciones/tratamientos de estos escenarios).\n";
+                    recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE NO-REPETICIÓN (ESTILO Y ENFOQUE) 🚨\n" +
+                        "A continuación se listan temas y enfoques que YA existen. ÚSALOS SOLO COMO REFERENCIA PARA NO REPETIR.\n" +
+                        "⚠️ PROHIBICIÓN: No imites el estilo narrativo ni los inicios (ej: 'En un...', 'Un...') de estas preguntas si ya son mayoría. DEBES romper el patrón.\n" +
+                        allPreviousTexts.slice(-20).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') +
+                        "\n🎯 OBJETIVO: Generar un escenario TOTALMENTE DISTINTO en tono, inicio y estructura.\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
@@ -575,9 +603,38 @@ class MLService {
 
             // 2. BÚSQUEDA RAG LOCAL (ELIKE - Gratuito)
             const RagService = require('./ragService');
-            const ragContext = await RagService.searchContext(studyAreas, 8, { target }); // Pasamos el target para inyectar NTS/RM/GPC
+            const ragContext = await RagService.searchContext(studyAreas, 5, { target }); // Reducido a 5 para Lite
+
+            // 🎨 MIMETIZACIÓN DE ESTILO (FEW-SHOT): Recuperar ejemplos reales según el Target
+            let stylePattern = `%${target}%`; // Default genérico por target
+            const cLower = careerLower.toLowerCase();
+
+            if (target === 'SERUMS') {
+                if (cLower.includes('enfermería') || cLower.includes('enfermeria')) {
+                    stylePattern = '%SERUMS-enfermeria%';
+                } else if (cLower.includes('obstetricia')) {
+                    stylePattern = '%SERUMS-obstetricia%';
+                } else {
+                    stylePattern = '%SERUMS%medicina%'; // ✅ Más flexible (soporta _ y -)
+                }
+            } else if (target === 'ENAM') {
+                stylePattern = '%ENAM%';
+            } else if (target === 'RESIDENTADO') {
+                stylePattern = '%RESIDENTADO%';
+            }
+
+            const styleExamples = await RagService.getStyleExamples(stylePattern, 4); // ✅ Habilitado para todos
+            if (styleExamples) {
+                console.log(`🎨 RAG Style [${target}]: Recuperados ${styleExamples.length} bytes de ejemplos reales (${stylePattern}).`);
+                if (styleExamples.length > 50) {
+                    console.log(`🔍 Vista Previa RAG: "${styleExamples.substring(0, 150).replace(/\n/g, ' ')}..."`);
+                }
+            } else {
+                console.warn(`⚠️ RAG Style: No se encontraron ejemplos para ${stylePattern}.`);
+            }
+
             if (ragContext) {
-                console.log(`🚀 RAG Local (Generador): Contexto inyectado para ${studyAreas}`);
+                console.log(`🚀 RAG Local (Generador): Contexto inyectado p/ ${studyAreas}`);
             }
 
             // 3. Selección de Modelo por Tier (Control Financiero)
@@ -592,98 +649,120 @@ class MLService {
             // 4. Definir reglas dinámicas por Target y Dificultad
             let targetRules = "";
             let levelInstruction = "";
+            let starterGallery = ""; // ✅ Dinámico por target
 
             if (target === "ENAM") {
                 targetRules = `PERFIL ENAM: Médico General - Enfoque Clínico y Diagnóstico.
                 ENFOQUE: Clínica general, diagnóstico diferencial y manejo inicial basado en evidencia.
+                
                 JERARQUÍA DE FUENTES (DATA INTERNA): 1. GPC Oficiales (Minsa/EsSalud) > 2. Libros Clínicos (Harrison/Nelson/Williams) > 3. Manuales de Especialidad (AMIR/CTO) > 4. NTS/RM/Leyes.
                 REGLA DE ORO: Mínimo 2 fuentes distintas en la explicación.`;
-                if (difficulty === "Básico") levelInstruction = "Evalúa MEMORIA DIRECTA (Definiciones, Triadas). Explicación: 2 párrafos.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa RAZONAMIENTO CLÍNICO SIMPLE. Explicación: 2 párrafos detallados.";
-                else if (difficulty === "Avanzado") levelInstruction = "Evalúa MANEJO INICIAL Y REFERENCIAS. Explicación: 3 párrafos analíticos.";
+
+                starterGallery = `
+                  * PACIENTE (Clásico): "Mujer de 45 años...", "Gestante de 32 semanas...", "Niño con fiebre de..." (Sin 'Un' o 'Una').
+                  * TIEMPO: "Tras 4 horas de evolución...", "Hace 3 días presenta..."
+                  * HALLAZGO/CLÍNICA: "Al examen físico se palpa...", "La radiografía de tórax muestra...", "El laboratorio reporta..."
+                  * ACCIÓN: "Usted se encuentra en emergencia...", "Durante el control prenatal...", "Al atender un parto..."
+                  * DIRECTA: "¿Cuál es el diagnóstico más probable?", "¿Qué tratamiento de elección...?", "¿Cuál es la complicación...?"`;
+
+                if (difficulty === "Básico") levelInstruction = "Evalúa MEMORIA DIRECTA (Definiciones, Triadas). Explicación: 2 párrafos extensos y detallados.";
+                else if (difficulty === "Intermedio") levelInstruction = "Evalúa RAZONAMIENTO CLÍNICO SIMPLE. Explicación: 2 párrafos técnicos y detallados.";
+                else if (difficulty === "Avanzado") levelInstruction = "Evalúa MANEJO INICIAL Y REFERENCIAS. Explicación: 3 párrafos analíticos y robustos.";
             } else if (target === "SERUMS") {
-                targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). CONTEXTO: Establecimientos del primer nivel de atención (I-1 al I-4).
+                targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). 
+                VINCULACION COMUNITARIA: El nivel del establecimiento (I-1 al I-4) y la geografía peruana deben integrarse de forma natural y VARIADA (no siempre al inicio del enunciado).
+                
                 JERARQUÍA DE FUENTES (ESTRICTA):
-                1. LEY: NTS y RM (Cadena de Frío, Dengue, VIH, TB/TBC, Malaria, Inmunizaciones (PAI), NTS 169 Adulto Mayor, Cáncer, etc).
-                2. OFICIAL: GPC del Minsa (GPC Sepsis obstétrica, GPC Diabetes, GPC ERC, etc). 
-                3. SOPORTE: Libros y Manuales (AMIR/CTO/otros) de la data. USARLOS SI EXISTEN EN EL RAG DE CONTEXTO.
-                REGLA DE ORO: Mínimo 2 fuentes (NTS + GPC/Manuales).`;
-                if (difficulty === "Básico") levelInstruction = "Evalúa DATOS NORMATIVOS (Plazos, Cadenas de frío, Dosis PAI). Explicación: 2 párrafos.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa APLICACIÓN DE NORMAS EN COMUNIDAD (I-1 al I-4). Explicación: 2 párrafos detallados.";
-                else if (difficulty === "Avanzado") levelInstruction = "Evalúa GESTIÓN DE BROTES Y SITUACIONES LEGALES. Explicación: 3 párrafos profundos.";
+                1. LEY (NTS/RM): Cadena de Frío, Dengue, VIH, TB, PAI, NTS 169, Cáncer, etc.
+                2. OFICIAL: GPC del Minsa.
+                3. SOPORTE: Manuales y Libros del RAG.
+                REGLA DE ORO: Mínimo 2 fuentes diferentes.`;
+
+                starterGallery = `
+                  * LOCALIDAD: "EESS nivel I-4 en la sierra...", "C.S. en zona amazónica...", "Puesto de salud I-1 reporta..."
+                  * ACCIÓN/GESTIÓN: "Se le encarga evaluar...", "Como jefe del EESS usted...", "Durante la visita domiciliaria..."
+                  * PACIENTE (Rural): "Comunero de 40 años...", "Madre de familia acude...", "Escolar de 8 años..."
+                  * ENTIDAD/NORMA: "El Ministerio de Salud...", "La DIRIS reporta...", "Según el PAI..."
+                  * DIRECTA: "¿Qué nivel de prevención...?", "¿Quién integra el equipo...?", "¿Cuál es el plazo de...?"`;
+
+                if (difficulty === "Básico") levelInstruction = "Evalúa DATOS NORMATIVOS. Explicación: 2 párrafos extensos.";
+                else if (difficulty === "Intermedio") levelInstruction = "Evalúa APLICACIÓN DE NORMAS. Explicación: 2 párrafos técnicos y detallados.";
+                else if (difficulty === "Avanzado") levelInstruction = "Evalúa GESTIÓN DE BROTES. Explicación: 3 párrafos profundos y robustos.";
             } else if (target === "RESIDENTADO") {
                 targetRules = `PERFIL RESIDENTADO (ESPECIALIDAD): ENFOQUE EN LIBROS Y EVIDENCIA CLÍNICA.
+                
                 JERARQUÍA ESTRICTA (DATOS INTERNOS): 
                 1. LIBROS DE REFERENCIA (Harrison, Washington, Nelson, Williams, etc.) y GPC Clínicas.
                 2. MANUALES DE ESPECIALIDAD (AMIR, CTO).
                 3. NORMAS (NTS) Y LEYES - Imprescindibles si el tema es Salud Pública, Gestión o Medicina Legal.
                 REGLA DE ORO: La fundamentación DEBE priorizar el sustento clínico/fisiopatológico de los LIBROS en temas médicos. Si el contexto RAG interno es insuficiente para cumplir la extensión pedida, ENRIQUECE con fuentes externas oficiales.`;
-                if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Enunciado < 30 palabras. Explicación 2 párrafos.";
-                else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Enunciado < 80 palabras. Explicación 2 párrafos.";
-                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Explicación 3 párrafos analíticos.";
+
+                starterGallery = `
+                  * PACIENTE (Complejo): "Varón con antecedente de cirrosis...", "Paciente polimedicado que...", "Mujer con clínica de..."
+                  * FISIOPATOLÓGICO: "El mecanismo de acción de...", "La causa más frecuente de...", "La enzima responsable de..."
+                  * ESCENARIO HOSPI: "Paciente en UCI presenta...", "Tras 24h de postoperatorio...", "Durante la laparotomía..."
+                  * HALLAZGO AVANZADO: "El signo de (Epónimo) se asocia a...", "En el frotis de sangre periférica...", "La RM de encéfalo muestra..."
+                  * DIRECTA: "¿Qué marcador tumoral...?", "¿Cuál es el Gold Standard para...?", "¿Qué gen está mutado en...?"`;
+
+                if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Explicación: 2 o 3 párrafos robustos.";
+                else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Explicación: 2 o 3 párrafos robustos.";
+                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Explicación: 3 párrafos analíticos extensos.";
             }
-            // 5. Prompt Maestro (Preservando todas las reglas complejas)
+            // 5. Prompt Maestro (Enfoque: Redactor de Exámenes Oficiales)
             const prompt = `
-            Eres un experto catedrático médico de alto nivel. Genera EXACTAMENTE ${amount} preguntas INÉDITAS de nivel ${difficulty}.
+            Eres un Redactor Senior de Exámenes Médicos Nacionales (SERUMS, ENAM, RESIDENTADO).
 
-            🎯 PERFIL DEL EXAMEN: ${targetRules}
+            MISIÓN CRÍTICA: Generar ${amount} pregunta(s) INÉDITA(S) de nivel ${difficulty}.
+            ÁREA DE ESTUDIO ESTRICTA: **${studyAreas}**.
 
-            REGLAS DE FORMULACIÓN (MANDATORIO):
-            1. FUNDAMENTACIÓN MULTI-FUENTE: Cada explicación DEBE integrar y citar explícitamente al menos DOS (2) fuentes médicas oficiales basándote en tu conocimiento experto, cumpliendo la "Regla de Oro" del perfil.
-            2. JERARQUÍA Y CITACIÓN (ESTRICTO): Obedece RIGUROSAMENTE la "JERARQUÍA DE FUENTES" definida arriba en el PERFIL DEL EXAMEN. Puedes enriquecer con información de la OMS/OPS, CDC o UpToDate solo si no contradice la jerarquía principal.
-            3. LÍMITES CUANTITATIVOS (CONTROL DE CALIDAD):
-               - ENUNCIADO: [Nivel Básico: <40 palabras] | [Nivel Intermedio: <80 palabras] | [Nivel Avanzado: <150 palabras]. PROHIBIDO EXCEDER.
-               - EXPLICACIÓN: [Nivel Básico: 2 párrafos] | [Nivel Intermedio: 2 párrafos] | [Nivel Avanzado: 3 párrafos]. NO RECORTAR.
-               - SI NO HAY FUENTES INTERNAS: Usa tu conocimiento experto para alcanzar la extensión y profundidad requerida, citando siempre las fuentes oficiales correspondientes.
-            4. EQUILIBRIO Y SIMETRÍA: Respuesta correcta y distractores DEBEN tener longitud similar. No des pistas por extensión de texto.
-            5. CANTIDAD DE OPCIONES: SERUMS y ENAM = 4 opciones | RESIDENTADO = 5 opciones.
-            6. DISTRACTORES: Deben ser plausibles y basados en errores de razonamiento clínico o normativo.
-            7. SIN LETRAS: No incluyas letras (A, B, C...) en el array "options".
+            El escenario DEBE evaluar un concepto central de esta área. Prohibido desviar el tema hacia otras especialidades.
 
-            - Examen Objetivo: ${target} -> PERFIL DEL EXAMEN: ${targetRules}
-            - Áreas de Estudio: ${studyAreas}.
-            - DISTRIBUCIÓN OBLIGATORIA: Debes generar exactamente UNA (1) pregunta por cada área listada en "Áreas de Estudio" hasta completar el total de ${amount}. Si hay menos áreas que preguntas, distribúyelas equitativamente (ej: si hay 3 áreas y pido 5 preguntas, haz 2-2-1).
-            - Dificultad Target: ${difficulty} (${levelInstruction})
-            ${recentQuestionsText}
+            [MIMETISMO TOTAL DE LOS EJEMPLOS REALES]
+            Se te proporcionarán ejemplos reales de exámenes en la sección "ESTILO REAL DE EXAMEN".
+            Tu obligación absoluta es analizar y REPLICAR exactamente la longitud y estilo de sus opciones de respuesta.
+            Notarás que las opciones reales suelen tener entre 1 y 10 palabras. ¡CÓPIALES ESE ESTILO CORTO Y DIRECTO!
+
+            [REGLAS PARA LAS OPCIONES DE RESPUESTA (INQUEBRANTABLES)]:
+            1. TEXTO LIMPIO (SIN LETRAS): PROHIBIDO colocar prefijos como "A.", "B.", "C.", "a)", "b)", "-" o números al inicio de las opciones. Escribe SOLO el texto de la respuesta (Ej: "Parto vertical", NO "A. Parto vertical").
+            2. BREVEDAD EXTREMA: OBLIGATORIO mantener las opciones entre 1 y un MÁXIMO de 12 palabras.
+            3. SIMETRÍA VISUAL: La respuesta correcta y los distractores deben tener casi la misma cantidad de palabras.
+            4. PROHIBIDO SOBRE-EXPLICAR: No justifiques la respuesta correcta dentro de la opción.
+            5. ALEATORIEDAD: Coloca la respuesta correcta en una posición aleatoria en el array.
+
+            [ESTILO DEL ENUNCIADO]
+            - Estilo Directo, Operativo y Seco (Estilo Telegrama).
+            - Rota los inicios (Ej: "Mujer de 45 años...", "Durante la guardia...").
+            - Alterna entre preguntas directas ("¿Cuál es...?") y enunciados para completar espacios (____).
+
+            [EXPLICACIÓN (FUNDAMENTACIÓN)]
+            - ${levelInstruction}
+            - Usa CITACIÓN EN NEGRITA al inicio (Ej: "*Según la NTS 123-MINSA*: ...").
+            [JERARQUÍA DE FUENTES (RESPETA ESTO)]:
+            ${targetRules}
+
+            [DATOS DE APOYO RAG LOCAL (FUNDAMENTACIÓN)]:
+            ${ragContext || "Usa tu base experta coherente con la jerarquía."}
+
+            [ESTILO REAL DE EXAMEN (IMITA EL ENUNCIADO Y LA BREVEDAD DE SUS OPCIONES)]:
+            ${styleExamples || "Estilo directo."}
             
-            [DATOS DE APOYO RAG LOCAL - BIBLIOGRAFÍA VERIFICADA]:
-            ${ragContext || "No se encontraron fragmentos específicos. Usa tu base de datos experta respetando estrictamente la jerarquía del examen."}
+            ${recentQuestionsText}
 
-            REGLA DE REDACCIÓN RAG (CRÍTICA):
-            1. No inventes datos que contradigan los [DATOS DE APOYO RAG LOCAL].
-            2. Si el fragmento menciona un autor o norma específica, ÚSALO para la CITACIÓN en la explicación.
-            3. Si no hay fragmentos, usa tu conocimiento pero mantén la jerarquía del perfil.
-            4. Evita repetir los temas mencionados en las restricciones de duplicidad.
-
-            REGLAS DEL JSON (DEBE SER UN ARRAY DE OBJETOS):
-            [
-              {
-                "topic": "Usa uno de estos: ${studyAreas}",
+            [FORMATO DE SALIDA JSON (ARRAY DE OBJETOS - SIN MARKDOWN)]:
+            [{
+                "topic": "${studyAreas}",
                 "difficulty": "${difficulty}",
-                "question_text": "Texto (según nivel). No pongas códigos de NTS aquí.",
-                "options": ${target === 'SERUMS' ? '["Opción1", "Opción2", "Opción3", "Opción4"]' : '["Opción1", "Opción2", "Opción3", "Opción4", "Opción5"]'},
-                "correct_option_index": 0,
-                "explanation": "Explicación robusta de ${levelInstruction}. SINTETIZA TODAS LAS FUENTES citando explícitamente autores o NTS.",
+                "question_text": "Texto Directo (Estilo Telegrama).",
+                "options": ${(target === 'RESIDENTADO') ? '["Opcion A", "Opcion B", "Opcion C", "Opcion D", "Opcion E"]' : '["Opcion A", "Opcion B", "Opcion C", "Opcion D"]'},
+                "correct_option_index": "Número entero (0, 1, 2...) indicando dónde pusiste la correcta aleatoriamente",
+                "explanation": "2-3 párrafos detallados con citado en negrita.",
                 "domain": "${domain}",
                 "target": "${target}",
-                "career": "${(() => {
-                    const c = (career || '').toLowerCase();
-                    if (c.includes('medicina')) return 'Medicina Humana';
-                    if (c.includes('enfermería') || c.includes('enfermeria')) return 'Enfermería';
-                    if (c.includes('obstetricia')) return 'Obstetricia';
-                    return career || 'Medicina Humana';
-                })()}",
-                "subtopic": "Subtema clínico específico",
-                "image_url": ""
-              }
-            ]
+                "career": "${career}",
+                "subtopic": "Subtema específico"
+            }]
 
-            REGLAS CRÍTICAS DE CAMPOS:
-            - Campo "domain": SIEMPRE "${domain}".
-            - Campo "target": SIEMPRE "${target}".
-            - Campo "career": SIEMPRE la carrera seleccionada.
-            - Campo "topic": El ÁREA DE ESTUDIO (Salud Pública, Gestión, etc.).
-            - Campo "subtopic": El SUBTEMA CLÍNICO (ej: CRED, PAI, Triadas).
+            DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. NADA DE TEXTO ANTES NI DESPUÉS. NO USES ETIQUETAS DE MARKDOWN (\`\`\`json).
             `;
 
             const result = await activeModel.generateContent({

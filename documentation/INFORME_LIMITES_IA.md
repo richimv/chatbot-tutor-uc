@@ -32,7 +32,7 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
 - **La Solución Implementada:** 
   - Se modificó el núcleo `TrainingService.js` con una **Lógica de Modelo Dual**.
   - **Plan Free/Basic**: Sigue restringido al Banco de Datos (Costo Cero). Si se agotan las preguntas, el sistema arroja `BANK_EXHAUSTED`.
-  - **Plan Advanced/Elite**: Se habilitó la **Reposición Automática con IA**. Cuando el banco se agota, el sistema genera preguntas nuevas usando `gemini-2.5-flash-lite`.
+  - **Plan Advanced/Elite**: Se habilitó la **Reposición Automática con IA**. Cuando el banco se agota, el sistema genera preguntas nuevas usando `gemini-2.5-flash-lite` (Sin costos de Thinking).
   - **Rentabilidad Máxima:** Al usar el modelo **Lite**, el costo por "Thinking" (razonamiento) es de **$0.00**. Esto permite ofrecer generación ILIMITADA a los usuarios Advanced sin comprometer el margen de utilidad de la academia.
 
 ### 2.2 Módulo: Tutor Médico RAG (Chat Principal)

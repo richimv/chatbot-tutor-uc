@@ -7,17 +7,7 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// Instancias Duales para Análisis Pro
-const modelPro = vertex_ai.preview.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    thinking: { disable: false },
-    generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.3,
-        responseMimeType: 'application/json'
-    },
-});
-
+// Instancia Unificada LITE (Análisis Pro)
 const modelLite = vertex_ai.getGenerativeModel({
     model: 'gemini-2.5-flash-lite',
     generationConfig: {
@@ -26,6 +16,8 @@ const modelLite = vertex_ai.getGenerativeModel({
         responseMimeType: 'application/json'
     },
 });
+
+const modelPro = modelLite; // ✅ UNIFICADO A LITE (Costo $0.00)
 
 class AnalyticsController {
     constructor(analyticsService, userRepository) { // 2. Recibir el repositorio en el constructor.
