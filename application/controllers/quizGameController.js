@@ -54,7 +54,17 @@ class QuizGameController {
             });
 
         } catch (error) {
-            console.error('Error en QuizGameController.startGame:', error);
+            console.error('❌ Error en QuizGameController.startGame:', error);
+
+            // ✅ MANEJO DE AGOTAMIENTO DE BANCO (Para mostrar modal correcto en el front)
+            if (error.message === "BANCO_AGOTADO_TIER") {
+                return res.status(403).json({ 
+                    success: false, 
+                    errorCode: 'BANK_EXHAUSTED',
+                    error: 'Has agotado las preguntas disponibles en este tema. Prueba con otro o sube a Advanced.' 
+                });
+            }
+
             res.status(500).json({ error: 'Error iniciando batalla.' });
         }
     }
@@ -86,6 +96,15 @@ class QuizGameController {
             });
         } catch (error) {
             console.error('Error fetching more questions:', error);
+
+            if (error.message === "BANCO_AGOTADO_TIER") {
+                return res.status(403).json({ 
+                    success: false, 
+                    errorCode: 'BANK_EXHAUSTED',
+                    error: 'Has agotado las preguntas disponibles en este tema.' 
+                });
+            }
+
             res.status(500).json({ error: 'Error generando preguntas.' });
         }
     }

@@ -389,25 +389,55 @@ class UIManager {
         const modalId = 'paywall-modal';
         let modal = document.getElementById(modalId);
 
+        // 🛡️ DETECCIÓN DE TIER DINÁMICA
+        let userTier = 'free';
+        try {
+            const user = window.sessionManager?.getUser();
+            if (user) userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+        } catch (e) { }
+
+        // CONFIGURACIÓN POR TIER
+        let config = {
+            title: '¡Te encantó la prueba!',
+            message: customMsg || '¡Te encantó la prueba gratuita!<br>Suscríbete ahora por s/ 9.90.<br><span style="color: #94a3b8; font-size: 0.9rem;">Acceso a más beneficios.</span>',
+            btnText: 'Suscríbete ahora',
+            btnUrl: '/pricing',
+            icon: 'fa-crown'
+        };
+
+        if (userTier === 'basic') {
+            config.title = '¡Cuota Diaria Completada!';
+            config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota y tener IA ilimitada.';
+            config.btnText = 'Mejorar mi Plan 🚀';
+            config.btnUrl = '/pricing';
+        } else if (userTier === 'advanced' || userTier === 'admin') {
+            config.title = '¡Entrenamiento Finalizado!';
+            config.message = customMsg || 'Has completado tus 10 partidas épicas de hoy. ¡Mañana volvemos con más desafíos!';
+            // ✅ SENIOR_NOTE: Para usuarios ya al tope de Arena, redirigimos al Inicio por simplicidad actual.
+            // A futuro, esto puede llevar a módulos específicos como 'Docentes' o 'Idiomas'.
+            config.btnText = 'Volver al Inicio 🏠';
+            config.btnUrl = '/';
+            config.icon = 'fa-medal';
+        }
+
         if (!modal) {
             const modalHTML = `
             <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
                 <div class="modal-content premium-variant">
                     <div class="modal-header">
-                        <h2 style="background: linear-gradient(90deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">¡Te encantó la prueba!</h2>
+                        <h2 id="${modalId}-title" style="background: linear-gradient(90deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${config.title}</h2>
                         <button class="modal-close-btn" onclick="window.uiManager.popModalState('${modalId}'); document.getElementById('${modalId}').style.display='none'">&times;</button>
                     </div>
                     <div class="modal-body">
                         <div class="auth-prompt-icon" style="margin-bottom: 20px;">
-                           <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));"></i>
+                           <i id="${modalId}-icon" class="fas ${config.icon}" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));"></i>
                         </div>
-                        <div class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6;">
-                            ¡Te encantó la prueba gratuita!<br>Suscríbete ahora por s/ 9.90.
-                            <br><span style="color: #94a3b8; font-size: 0.9rem;">Acceso a más beneficios.</span>
+                        <div id="${modalId}-text" class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6;">
+                            ${config.message}
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-primary" style="
+                        <button id="${modalId}-btn" class="btn-primary" style="
                             width: 100%; 
                             background: linear-gradient(45deg, #ffd700, #ffa500); 
                             color: #000; 
@@ -423,8 +453,8 @@ class UIManager {
                             align-items: center;
                             justify-content: center;
                             gap: 10px;
-                        " onclick="window.location.href='/pricing'">
-                            <i class="fas fa-rocket"></i> Suscríbete ahora
+                        " onclick="window.location.href='${config.btnUrl}'">
+                            <i class="fas fa-rocket"></i> <span id="${modalId}-btn-text">${config.btnText}</span>
                         </button>
                     </div>
                 </div>
@@ -432,10 +462,19 @@ class UIManager {
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             modal = document.getElementById(modalId);
         } else {
-            if (customMsg) {
-                const textEl = modal.querySelector('.auth-prompt-main-text');
-                if (textEl) textEl.innerHTML = customMsg;
-            }
+            // Actualizar contenido si ya existe
+            const titleEl = document.getElementById(`${modalId}-title`);
+            const textEl = document.getElementById(`${modalId}-text`);
+            const iconEl = document.getElementById(`${modalId}-icon`);
+            const btnEl = document.getElementById(`${modalId}-btn`);
+            const btnTextEl = document.getElementById(`${modalId}-btn-text`);
+
+            if (titleEl) titleEl.innerText = config.title;
+            if (textEl) textEl.innerHTML = config.message;
+            if (iconEl) iconEl.className = `fas ${config.icon}`;
+            if (btnEl) btnEl.onclick = () => window.location.href = config.btnUrl;
+            if (btnTextEl) btnTextEl.innerText = config.btnText;
+
             modal.style.display = 'flex';
         }
         this.pushModalState(modalId);

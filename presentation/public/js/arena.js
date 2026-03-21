@@ -66,6 +66,8 @@ const Arena = (function () {
                 body: JSON.stringify({ topic, difficulty: state.difficulty })
             });
 
+            const data = await res.json();
+
             // 2. Auth/Limit Error Handling
             if (res.status === 401) {
                 ui.screens.loading.classList.add('hidden');
@@ -73,7 +75,23 @@ const Arena = (function () {
                 return;
             }
 
-            const data = await res.json();
+            if (res.status === 403) {
+                ui.screens.loading.classList.add('hidden');
+                if (data.errorCode === 'BANK_EXHAUSTED') {
+                    if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
+                        window.uiManager.showBankExhaustedModal();
+                    } else {
+                        showCustomModal('Agotado', data.error || 'Banco agotado. Pásate a Advanced.');
+                    }
+                } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    // Si es un límite diario de la Arena
+                    window.uiManager.showPaywallModal(data.error);
+                } else {
+                    showCustomModal('Límite', data.error || 'Has alcanzado tu límite diario.');
+                }
+                return;
+            }
+
             if (!data.success) throw new Error(data.error || 'No se pudo iniciar');
 
             state.questions = data.questions;

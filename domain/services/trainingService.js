@@ -251,8 +251,9 @@ class TrainingService {
         if (questions.length < limit) {
             const tier = String(subscriptionTier || 'free').toLowerCase();
             
-            // 🛡️ RESTRICCIÓN DE IA EN ARENA: Solo Advanced/Admin pueden generar nuevas de cultura general
-            if (tier !== 'advanced' && tier !== 'admin') {
+            // 🛡️ RESTRICCIÓN DE IA EN ARENA: Solo Basic/Advanced/Admin pueden generar nuevas de cultura general
+            // ✅ CORRECCIÓN: 'basic' tiene 5 partidas/día permitidas con IA Lite según INFORME_LIMITES_IA.
+            if (tier !== 'basic' && tier !== 'advanced' && tier !== 'admin') {
                  console.log(`🚫 [Arena Limit] Usuario '${tier}' alcanzó agotamiento de banco de trivia. Bloqueando IA.`);
                  if (questions.length === 0) throw new Error("BANCO_AGOTADO_TIER");
                  
