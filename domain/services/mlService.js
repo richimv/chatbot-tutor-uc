@@ -66,8 +66,9 @@ const systemInstruction = {
     2. SI NO ESTÁ EN LA LISTA, NO EXISTE: Si un curso no aparece en el [CATÁLOGO ACADÉMICO], tienes PROHIBIDO mencionarlo como una oferta o recomendación de Hub Academia. No inventes nombres de cursos genéricos (ej. "Salud Pública" o "Medicina Interna") si no están en la lista.
     3. PROHIBIDO MENCIONAR "FICTICIO": Nunca indiques que un ID es ficticio o que el usuario debe verificar el catálogo; simplemente no menciones lo que no está verificado en el contexto.
     4. Si recomiendas un curso de la lista, usa estrictamente su ID real: [Nombre](/course?id=ID). Cualquier otro formato o ID falso (123, 456, abc) está terminantemente prohibido.
-    5. Para libros y recursos, usa la propiedad 'url' exacta que se te proporcione. No inventes links a Google Drive ni a otras plataformas.
+    5. Para libros y recursos, usa la propiedad 'url' exacta que se te proporcione. No inventes links a Google Drive ni a otras plataformas salvo sean oficiales y seguras.
     6. RESPUESTA SINCERA: Si el usuario pide un curso sobre un tema que no tenemos (ej. Dengue), responde: "Actualmente no contamos con un curso específico de ese tema, pero puedes revisar las normativas y recursos en nuestra biblioteca." No intentes "adivinar" o "sugerir" cursos inexistentes.
+    7. **AUDITORÍA EN VIVO:** Todo lo que escribas será filtrado técnicamente por el sistema. Si mencionas un curso inexistente, tu enlace será eliminado automáticamente.
     `
     }]
 };
@@ -121,10 +122,13 @@ class MLService {
 
         // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite) y Catálogo Maestro (Escalable)
         let contextInjection = "";
+        let validCourseIds = new Set();
+
         try {
             // 0. CATÁLOGO MAESTRO (Evita alucinaciones de IDs)
             const allCourses = await courseRepo.findAll();
             if (allCourses && allCourses.length > 0) {
+                validCourseIds = new Set(allCourses.map(c => String(c.id)));
                 const catalogStr = allCourses.map(c => `[ID=${c.id}] "${c.name}"`).join(' | ');
                 contextInjection += `\n[CATÁLOGO ACADÉMICO REAL - TOTAL: ${allCourses.length} CURSOS]\n${catalogStr}\n[FIN CATÁLOGO - PROHIBIDO MENCIONAR CURSOS FUERA DE ESTA LISTA]\n`;
             }
@@ -339,8 +343,6 @@ class MLService {
                     }]);
                     response = result.response;
 
-
-
                 } else {
                     console.warn(`⚠️ Herramienta solicitada no encontrada o eliminada: ${call.name}`);
                     result = await chat.sendMessage([{
@@ -416,6 +418,26 @@ class MLService {
                         respuesta: responseText,
                         sugerencias: []
                     };
+                }
+            }
+
+            // 🛡️ [SENIOR_HARDENING] FILTRO DE ALUCINACIONES DE CURSOS
+            if (parsedResult.respuesta) {
+                const courseLinkRegex = /\[([^\]]+)\]\(\/course\?id=([^)]+)\)/g;
+                let hallucinationsCleaned = 0;
+
+                parsedResult.respuesta = parsedResult.respuesta.replace(courseLinkRegex, (match, courseName, courseId) => {
+                    // Si el ID no existe en el catálogo real (validCourseIds), eliminamos el enlace malicioso/falso
+                    if (!validCourseIds.has(String(courseId))) {
+                        hallucinationsCleaned++;
+                        console.warn(`🚨 IA ALUCINÓ CURSO: "${courseName}" con ID: ${courseId}. Ejecutando limpieza preventiva.`);
+                        return `**${courseName}**`; // Devolvemos solo el texto en negrita, sin el link roto.
+                    }
+                    return match; // El ID es válido, mantenemos el link.
+                });
+
+                if (hallucinationsCleaned > 0) {
+                    console.log(`🛡️ Auditoría IA: Se limpiaron ${hallucinationsCleaned} menciones a cursos inexistentes.`);
                 }
             }
 
