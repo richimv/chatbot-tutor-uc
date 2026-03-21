@@ -746,3 +746,95 @@
         margin-top: 0;
     }
 }
+
+/* ==========================================================================
+   🌟 SÚPER PARCHE: RENDIMIENTO, IMÁGENES Y MINIMALISMO MÓVIL
+   ========================================================================== */
+
+/* --- 1. ENCUADRE INTELIGENTE DE IMÁGENES (LETTERBOXING) --- */
+.unified-resource-card.has-bg-image .urc-visual-zone {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    /* Fondo oscuro elegante */
+}
+
+.unified-resource-card .urc-image {
+    object-fit: contain !important;
+    /* Muestra todo el libro/poster sin recortar */
+    width: 100%;
+    height: 100%;
+}
+
+/* --- 2. OPTIMIZACIÓN EXTREMA Y MINIMALISMO EN CELULARES --- */
+@media (max-width: 768px) {
+
+    /* Anti-Lag (Aceleración por GPU y limpieza de transiciones pesadas) */
+    .unified-resource-card,
+    .browse-card {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        will-change: transform;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    /* Matar el Backdrop-Filter que quema la batería y laguea el scroll */
+    .urc-action-btn,
+    .urc-badge,
+    .urc-author {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Ajuste de fondo para los botones sin blur */
+    .urc-action-btn {
+        background: rgba(30, 41, 59, 0.9) !important;
+    }
+
+    /* Textos e interiores Minimalistas (Para que no se vea apretado) */
+    .unified-resource-card .urc-info-zone {
+        padding: 0.4rem !important;
+        /* Reduce el aire interno */
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem !important;
+    }
+
+    .unified-resource-card .urc-meta {
+        margin-bottom: 0 !important;
+    }
+
+    .unified-resource-card .urc-badge {
+        font-size: 0.6rem !important;
+        /* Etiqueta morada/azul más fina */
+        padding: 0.15rem 0.35rem !important;
+        letter-spacing: 0.3px;
+    }
+
+    .unified-resource-card .urc-title {
+        font-size: 0.75rem !important;
+        /* Título más delicado */
+        line-height: 1.2 !important;
+        font-weight: 600 !important;
+        margin: 0.1rem 0 !important;
+        /* Limitar a máximo 2 líneas para que no empuje el contenido */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .unified-resource-card .urc-author,
+    .unified-resource-card .urc-size {
+        font-size: 0.65rem !important;
+        margin-top: 0 !important;
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    /* Reducir ligeramente los botones superiores para ganar aire visual */
+    .urc-library-actions {
+        transform: scale(0.85);
+        transform-origin: top right;
+        top: 5px !important;
+        right: 5px !important;
+    }
+}

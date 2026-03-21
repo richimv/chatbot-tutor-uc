@@ -74,7 +74,9 @@ class LibraryUI {
             }
         });
 
-        observer.observe(document.body, {
+        // Apuntar solo al contenedor principal reduce la carga de CPU
+        const mainContainer = document.getElementById('content-container') || document.body;
+        observer.observe(mainContainer, {
             childList: true,
             subtree: true
         });

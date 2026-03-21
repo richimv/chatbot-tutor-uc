@@ -997,135 +997,148 @@
 }
 
 /* =================================================== */
-/* =================================================== */
 /* == MODIFICADOR: Tarjeta con Imagen de Fondo Full == */
 /* =================================================== */
 
+/* 1. Hacemos que la tarjeta base sea el contenedor absoluto */
 .unified-resource-card.has-bg-image {
     position: relative;
     overflow: hidden;
-    /* Mantiene las dimensiones exactas intrínsecas impuestas al resto de tarjetas fallback */
 }
 
-/* Permitimos que el absolute de la imagen y overlay escape usando position: static.
-   Mantiene el aspect-ratio: 4/3 aportando la misma altura base que tarjetas sin imagen. */
+/* 2. Matamos la franja azul/oscura y liberamos el contenedor visual */
 .unified-resource-card.has-bg-image .urc-visual-zone {
     position: static;
     overflow: visible;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: transparent !important;
+    /* Elimina cualquier franja de color */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
-/* La imagen es absoluta a toda la tarjeta */
+/* 3. LA CLAVE: La imagen llena TODO el espacio (Cover) */
 .unified-resource-card.has-bg-image .urc-image {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover !important;
+    /* 🔥 Fuerza a la imagen a expandirse y llenar la tarjeta */
     object-position: center;
     z-index: 0;
 }
 
-/* Overlay negro puro para legibilidad (sin tinte azul) */
+/* 4. Overlay oscuro que cubre toda la imagen para que el texto se lea perfecto */
 .unified-resource-card.has-bg-image .urc-visual-overlay {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
     z-index: 1;
 }
 
-/* Corregir z-index para elementos interactivos */
-.unified-resource-card.has-bg-image .urc-premium-indicator,
-.unified-resource-card.has-bg-image .urc-lock-indicator {
-    z-index: 3;
-}
-
-/* Zona inferior de Info en el flujo normal pero de fondo transparente */
+/* 5. Asegurarnos que la zona de texto flote sobre la imagen */
 .unified-resource-card.has-bg-image .urc-info-zone {
-    position: relative; /* Queda sobre el z-index 1 del overlay */
+    position: relative;
     z-index: 2;
-    background: transparent;
+    background: transparent !important;
     border-top: none;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* Apretar contenido hacia abajo */
+    justify-content: flex-end;
+    /* Aprieta el contenido hacia abajo */
+    height: 100%;
+    /* Permite que el flex-end funcione en toda la tarjeta */
 }
 
-/* Quitar auto-margin que separaba título y autor haciéndolos flotar al medio */
-.unified-resource-card.has-bg-image .urc-author {
-    margin-top: 0.5rem;
-}
-
-/* Textos claros para el modo background-image */
-.unified-resource-card.has-bg-image .urc-title {
-    color: #ffffff;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-}
-
-.unified-resource-card.has-bg-image .urc-author,
-.unified-resource-card.has-bg-image .urc-size,
-.unified-resource-card.has-bg-image .urc-badge {
-    color: rgba(255, 255, 255, 0.85);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
-}
-
-.unified-resource-card.has-bg-image .urc-badge {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    color: white;
-}
-
-/* --- Responsive para Móviles (Ultra Compacto) --- */
+/* --- Responsive para Móviles (Ultra Compacto y Optimizado) --- */
 @media (max-width: 768px) {
     .unified-resource-card {
         max-width: none;
         width: 100%;
+        /* ✅ ANTI-LAG: Aceleración por GPU y limpieza de transiciones pesadas */
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        will-change: transform;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }
 
-    /* 🚨 Texto minimalista: menos padding y fuentes más pequeñas */
-    .urc-info-zone {
-        padding: 0.4rem 0.5rem;
-        gap: 0.1rem;
+    /* ✅ ANTI-LAG: Matar el blur que quema la batería y laguea el scroll en celulares */
+    .urc-visual-zone,
+    .urc-action-btn,
+    .urc-lock-indicator,
+    .unified-resource-card.has-bg-image .urc-badge {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
-    
+
+    /* Ajuste de fondo para los botones ahora que no tienen blur */
+    .urc-action-btn {
+        background: rgba(30, 41, 59, 0.95) !important;
+    }
+
+    /* 🚨 Texto minimalista: menos padding y fuentes más pequeñas para que respire */
+    .urc-info-zone {
+        padding: 0.4rem !important;
+        gap: 0.2rem !important;
+    }
+
     .unified-resource-card.has-bg-image .urc-info-zone {
-        padding-top: 1.5rem; /* Conservar gradiente en móviles */
+        padding-top: 1.5rem !important;
+        /* Conservar gradiente en móviles */
     }
 
     .urc-meta {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.15rem !important;
     }
 
     .urc-badge {
-        font-size: 0.5rem;
-        padding: 1px 4px;
-        gap: 2px;
+        font-size: 0.55rem !important;
+        /* Etiqueta más fina */
+        padding: 2px 5px !important;
+        gap: 3px !important;
+        letter-spacing: 0.3px;
     }
 
     .urc-size {
-        font-size: 0.6rem;
+        font-size: 0.6rem !important;
     }
 
     .urc-title {
-        font-size: 0.72rem;
-        line-height: 1.2;
-        margin-bottom: 0.15rem;
+        font-size: 0.75rem !important;
+        /* Título más delicado */
+        line-height: 1.2 !important;
+        margin-bottom: 0.15rem !important;
     }
 
     .urc-author {
-        font-size: 0.62rem;
+        font-size: 0.65rem !important;
+        color: rgba(255, 255, 255, 0.6) !important;
+        /* Suavizar el autor */
     }
 
     .urc-icon-fallback {
-        font-size: 2rem;
+        font-size: 2rem !important;
     }
 
-    /* 🚨 FIX: Forzar EXACTAMENTE 3 columnas en móvil (auto-fill con 130px se desbordaba a 2) */
+    /* Reducir ligeramente los botones superiores para ganar aire visual */
+    .urc-library-actions {
+        transform: scale(0.85);
+        transform-origin: top right;
+        top: 5px !important;
+        right: 5px !important;
+    }
+
+    /* Desactivar hover effects que consumen CPU al tocar la pantalla */
+    .unified-resource-card:hover {
+        transform: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* 🚨 FIX: Forzar EXACTAMENTE 3 columnas en móvil (intacto) */
     .books-grid,
     .ml-grid,
     .general-grid {
