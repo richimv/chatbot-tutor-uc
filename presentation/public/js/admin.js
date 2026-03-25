@@ -791,12 +791,11 @@ class AdminManager {
                         </div>
                         <div class="ai-study-group" data-group="D" style="margin-bottom: 5px;">
                             <strong style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 5px; display: block;">Grupo D — Salud Pública y Gestión</strong>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Salud Pública y Epidemiología"> Salud Pública y Epidemiología</label>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gestión de Servicios de Salud"> Gestión de Servicios de Salud</label>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Ética Deontología e Interculturalidad"> Ética Deontología e Interculturalidad</label>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Medicina Legal"> Medicina Legal</label>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Investigación y Bioestadística"> Investigación y Bioestadística</label>
-                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cuidado Integral"> Cuidado Integral</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Salud Pública"> Salud Pública</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Gestión De Servicios De Salud"> Gestión De Servicios De Salud</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Ética E Interculturalidad"> Ética E Interculturalidad</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Investigación"> Investigación</label>
+                            <label style="display:block; margin-left: 10px; margin-bottom: 4px; color: var(--text-secondary);"><input type="checkbox" class="ai-domain-cb" value="Cuidado Integral De Salud"> Cuidado Integral De Salud</label>
                         </div>
                     </div>
                     <div style="margin-bottom: 15px;">

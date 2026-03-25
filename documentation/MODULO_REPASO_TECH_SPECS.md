@@ -32,7 +32,7 @@ El sistema utiliza una variante del algoritmo SM-2 para calcular cuándo debe re
 
 ### ✨ Generación Agéntica de Tarjetas
 1. **Generación Manual por Usuario**: Al finalizar un simulacro, la generación automática fue reemplazada por un modelo de control de usuario. Ahora el alumno revisa su examen y selecciona interactivamente qué preguntas específicas desea convertir en Flashcards para su mazo, previniendo la contaminación de su espacio de estudio.
-2. **Generación IA por Tema**: Permite al usuario crear un mazo completo sobre un tema específico (ej: "Soplos Cardíacos") usando Gemini 2.5 Flash.
+2. **Generación IA por Tema**: Permite al usuario crear un mazo completo sobre un tema específico (ej: "Soplos Cardíacos") usando Gemini 2.5 Flash Lite.
 
 ### 📁 Organización Jerárquica
 - Soporte para sub-mazos (carpetas) para organizar el estudio por especialidades médicas siguiendo la lógica de los simuladores.

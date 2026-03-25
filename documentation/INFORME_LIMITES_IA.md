@@ -2,7 +2,7 @@
 
 Este documento detalla exhaustivamente todos los módulos técnicos, rutas del servidor, base de datos y vistas del usuario final que han sido implementadas e integradas para la **Estructuración de Costos y Límite de Uso de IA** en HubAcademia. 
 
-El objetivo primordial de esta refactorización fue **garantizar el margen de utilidad y rentabilidad de la plataforma**, evitando escenarios donde un usuario de nivel Básico (Free o S/ 9.90) consumiera financieramente el valor total de su paquete mediante peticiones recurrentes a los modelos más costosos de Vertex AI (como Gemini Pro, Thinking Mode y búsquedas RAG repetitivas).
+El objetivo primordial de esta refactorización fue **garantizar el margen de utilidad y rentabilidad de la plataforma**, evitando escenarios donde un usuario de nivel Básico (Free o S/ 9.90) consumiera financieramente el valor total de su paquete mediante peticiones recurrentes a los modelos más costosos de Vertex AI.
 
 ---
 
@@ -17,7 +17,7 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | **Quiz Arena (IA)** | 5 partidas/día (Modelo Lite) | 10 partidas/día (Modelo Lite) |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
 | **Flashcards (IA)** | 10 intentos / mes (1-15 tjs/int) | 30 intentos / mes (1-15 tjs/int) |
-| **Simulador Médico (Repuesto IA)** | **BLOQUEADO (Solo Banco)** | **ILIMITADO (Modelo Lite)** |
+| **Simulador Médico (Completados)** | **CAP 15/Día (Lite)** | **CAP 40/Día (Lite)** |
 
 ---
 
@@ -28,16 +28,18 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
 ### 2.1 Módulo: El Simulador (Training Service)
 > *Aunque inicialmente no fue concebido en la tabla pública de límites, se detectó que este módulo representaba una **Fuga Crítica de Costos (~S/0.05 por interacción)** para el plan básico.*
 
-- **El Problema Anterior:** Si a un alumno se le acababan las preguntas de un tema almacenado en la Base de Datos (Banco), el sistema apelaba a una función recursiva de RAG e Inteligencia Artificial Vertex para *construirle al aire y en tiempo real* un set de 10-15 preguntas médicas. Este consumo desbordaba el pago de S/ 9.90.
+- **El Problema Anterior:** Si a un alumno se le acababan las preguntas de un tema almacenado en la Base de Datos (Banco), el sistema apelaba a una función recursiva de RAG e Inteligencia Artificial Vertex para *construirle al aire en tiempo real* un set de 10-15 preguntas médicas. Este consumo desbordaba el pago de S/ 9.90.
 - **La Solución Implementada:** 
-  - Se modificó el núcleo `TrainingService.js` con una **Lógica de Modelo Dual**.
-  - **Plan Free/Basic**: Sigue restringido al Banco de Datos (Costo Cero). Si se agotan las preguntas, el sistema arroja `BANK_EXHAUSTED`.
-  - **Plan Advanced/Elite**: Se habilitó la **Reposición Automática con IA**. Cuando el banco se agota, el sistema genera preguntas nuevas usando `gemini-2.5-flash-lite` (Sin costos de Thinking).
-  - **Rentabilidad Máxima:** Al usar el modelo **Lite**, el costo por "Thinking" (razonamiento) es de **$0.00**. Esto permite ofrecer generación ILIMITADA a los usuarios Advanced sin comprometer el margen de utilidad de la academia.
+  - **Usuarios Premium (Basic/Advanced):** El límite diario se descuenta únicamente al **culminar** el examen (`submitScore`). Esto permite rotar exámenes o activar IA durante la sesión sin cobros preventivos.
+  - **Generación Directa:** Por velocidad y diseño, **ningún usuario** (incluyendo Advanced) utiliza RAG para el simulador médico. La generación es directa con la IA.
+  - **Usuarios Free:** Consumen su **Vida Global** al **iniciar** la Ronda 1. Una vez dentro, la activación de IA por falta de stock no consume vidas adicionales.
+  - **Persistencia de Estadísticas:** El historial, diagnóstico y KPIs solo se graban al **finalizar** el examen. Un examen abandonado no genera estadística ni consume cupo (Premium).
 
 ### 2.2 Módulo: Tutor Médico RAG (Chat Principal)
 - Se estandarizó el tracking de límite a través del middleware `checkAILimits('chat_standard')`.
-- La IA en todos los casos utiliza el modelo rápido transaccional. Sin embargo, si el usuario es de nivel **Avanzado (Premium)**, se activa el **Acceso a Biblioteca Médica RAG** (extracción local de los libros Harrison, NTS, GPC) sin costo agregado por ser una extracción local ILIKE, lo cual funda sus respuestas clínicamente en cada chat que el usuario consume de sus 30 tokens diarios.
+- La IA en todos los casos utiliza el modelo rápido transaccional. 
+- **Exclusividad RAG:** Solo el usuario de nivel **Avanzado (Premium)** activa el **Acceso a Biblioteca Médica RAG** en este módulo de Chat (extracción local de Harrison, NTS, GPC), lo cual funda sus respuestas clínicamente.
+- **Admin:** El administrador mantiene acceso total a RAG tanto en chat como en paneles de gestión.
 
 ### 2.3 Módulo: Diagnóstico Clínico ("Análisis de Patrones de Error")
 - **El Problema Anterior:** El frontend usaba un `setTimeout` javascript básico que simplemente tomaba la "Peor materia" del alumno en la tabla relacional y fingía durante 1.5 segundos que la IA estaba "pensando", arrojando una oración quemada y dura.
@@ -87,17 +89,15 @@ Todo el software ha culminado el hito de protección de ingresos. **Cualquier us
 ## 5. Aclaraciones sobre Límites Compartidos y el Simulador
 
 ### 1. El Beneficio "Tutor IA Clínico RAG"
-Las interacciones de IA avanzadas (como Búsqueda de Libros y Diagnósticos Clínicos) históricamente costaban mucho dinero por requerir modelos engorrosos ("Thinking"). Actualmente operan a costo **$0.00** extra al usar RAG 100% Local (PostgreSQL ILIKE).
-Por ello, el Plan **Advanced** ha unificado sus topes: otorga generosos **30 Chats Diarios**.
-- El usuario Advanced goza automáticamente de **Acceso a la Biblioteca Médica (RAG)**. Cada vez que consulta, la IA recupera pasajes del Harrison, NTS o CTO.
-- Puede detonar reportes de Diagnóstico Clínico en el Simulador las veces que lo requiera.
-Cualquiera de las dos funciones le restará simplemente 1 token a sus 30 tokens diarios. Es una oferta inmensa para el alumno, pero que no genera deudas imprevistas para la academia.
+- **Acceso Exclusivo a Biblioteca (Chat):** El usuario **Advanced** es el único que activa el motor RAG en el Chat, permitiendo que la IA fundamente sus respuestas en Harrison, NTS o GPC.
+- **Diagnóstico Clínico (Advanced):** Es un análisis de **Patrones Estadísticos**. La IA analiza los resultados de los exámenes para dar consejos de estudio. **No utiliza RAG**, sino procesamiento de datos masivos del alumno.
+- **Costo:** Ambas funciones consumen de la cuota de 30 mensajes diarios del Chat.
 
-### 2. Generación de Exámenes y Reposición ILIMITADA
-En el Simulador (`api/quiz/start` y `api/quiz/next-batch`), la generación de preguntas inéditas está blindada:
-- **Free y Basic**: Jamás generan nuevas preguntas. Solo consumen stock del Banco.
-- **Advanced**: Cuando se agotan las estáticas, el servicio activa la reposición con `gemini-2.5-flash-lite`.
-- **Costo Cero de Razonamiento**: Al usar el motor Lite, HubAcademia deja de pagar por los "pasos de pensamiento" de la IA, permitiendo que esta función sea el motor de venta del Plan Pro sin riesgo financiero.
+### 2. Generación de Exámenes (Sin RAG para Usuarios)
+Por diseño y velocidad de respuesta:
+- **Generación Directa:** El Simulador Médico para todos los niveles (incluyendo Advanced) utiliza generación directa por IA sin interconsulta RAG. 
+- **Modo Experto (Admin):** Solo el Administrador puede activar el barrido RAG para alimentar el banco de preguntas oficial.
+- **Límites "Cap"**: 15 (Basic) y 40 (Advanced) simulacros culmidanos por día.
 
 ### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
 Las tarjetas generadas con IA estipulan **10 intentos al mes** para Basic y **30 intentos al mes** para Advanced.

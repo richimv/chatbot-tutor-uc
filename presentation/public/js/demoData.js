@@ -18,7 +18,7 @@ window.DemoBank = {
             "correct_option_index": 0,
             "explanation": "La vacuna BCG (Bacilo de Calmette-Guérin) forma parte del Esquema Nacional de Vacunación del Perú y se administra a recién nacidos para prevenir las formas graves de tuberculosis, especialmente la tuberculosis militar y la meningitis tuberculosa. Según la Norma Técnica de Salud N° 141-MINSA/2018/DGIESP, la vía de administración correcta es intradérmica en el brazo derecho.\n\nEsta vía permite una respuesta inmunológica local adecuada y la formación de la pápula característica. Es fundamental seguir estrictamente la técnica de administración establecida en la normativa oficial del MINSA para asegurar la protección adecuada y minimizar riesgos de reacciones adversas locales.",
             "domain": "medicine",
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "subtopic": "Programa Ampliado de Inmunizaciones (PAI)",
             "target": "SERUMS",
             "career": "Medicina Humana",
@@ -35,7 +35,7 @@ window.DemoBank = {
             "correct_option_index": 0,
             "explanation": "Según la Directiva Sanitaria N° 046-MINSA/DGE-V.01, el cólera es una enfermedad de notificación inmediata debido a su alto potencial epidémico y severidad. Todo caso sospechoso o confirmado debe informarse en un plazo no mayor a 24 horas.\n\nEsto permite una rápida respuesta de salud pública para la investigación de brotes y la implementación de acciones de control ambiental y sanitario en la comunidad afectada, asegurando el bloqueo epidemiológico oportuno.",
             "domain": "medicine",
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "subtopic": "Vigilancia Epidemiológica",
             "target": "SERUMS",
             "career": "Medicina Humana",
@@ -52,7 +52,7 @@ window.DemoBank = {
             "correct_option_index": 0,
             "explanation": "La Ley N° 29414 establece los Derechos de las Personas Usuarias de los Servicios de Salud. Entre ellos destaca el acceso a información adecuada y oportuna sobre el diagnóstico, tratamiento y alternativas de su estado de salud.\n\nEste derecho es clave para asegurar la autonomía del paciente y permitir la toma de decisiones informadas mediante el consentimiento informado, pilar de la ética médica moderna y la normativa legal vigente de la SUSALUD.",
             "domain": "medicine",
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "subtopic": "Derechos del Paciente",
             "target": "SERUMS",
             "career": "Medicina Humana",
@@ -69,7 +69,7 @@ window.DemoBank = {
             "correct_option_index": 1,
             "explanation": "Según la Directiva Sanitaria N° 079-MINSA/2017/CDC, un caso confirmado de tuberculosis pulmonar se clasifica como evento de notificación obligatoria semanal.\n\nEsta frecuencia permite monitorear la incidencia y realizar el seguimiento de contactos en el marco del Programa de Prevención y Control de la Tuberculosis, asegurando que se cumplan las metas de detección y curación del nivel regional y nacional.",
             "domain": "medicine",
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "subtopic": "Vigilancia Epidemiológica de TB",
             "target": "SERUMS",
             "career": "Medicina Humana",
@@ -86,14 +86,14 @@ window.DemoBank = {
             "correct_option_index": 1,
             "explanation": "La NTS N° 105-MINSA/DGSP-V.01 establece como mínimo seis controles prenatales para una gestante sin complicaciones.\n\nEstos controles son esenciales para la detección temprana de riesgos, la promoción de hábitos saludables y la preparación para el parto institucional seguro, contribuyendo directamente a la reducción de la morbi-mortalidad materna y neonatal en el Perú.",
             "domain": "medicine",
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "subtopic": "Salud Materno-Perinatal",
             "target": "SERUMS",
             "career": "Medicina Humana",
             "difficulty": "Básico"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
@@ -110,7 +110,7 @@ window.DemoBank = {
             "subtopic": "Categorización"
         },
         {
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "Una obstetra administra metamizol intramuscular a una gestante. Minutos después, la paciente presenta rash y náuseas. ¿A qué comité debe reportarse obligatoriamente esta sospecha?",
             "options": [
@@ -127,7 +127,7 @@ window.DemoBank = {
             "subtopic": "Farmacovigilancia"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "En el análisis FODA de un puesto de salud, el comportamiento negativo de la población y sus hábitos difíciles de modificar se identifican como:",
             "options": [
@@ -144,7 +144,7 @@ window.DemoBank = {
             "subtopic": "Matriz FODA"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "Para medir el riesgo de enfermedad en una comunidad, se utiliza la incidencia para evaluar la _____ y la prevalencia para la _____.",
             "options": [
@@ -161,7 +161,7 @@ window.DemoBank = {
             "subtopic": "Indicadores Epidemiológicos"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "Se define como transición epidemiológica al proceso caracterizado por el paso del predominio de enfermedades _____ a la preponderancia de enfermedades _____.",
             "options": [
@@ -178,7 +178,7 @@ window.DemoBank = {
             "subtopic": "Demografía y Salud"
         },
         {
-            "topic": "Investigación y Bioestadística",
+            "topic": "Investigación",
             "difficulty": "Intermedio",
             "question_text": "Se le encarga realizar un estudio descriptivo sobre depresión adolescente en su comunidad. ¿Cuál constituye la principal limitante de este diseño?",
             "options": [
@@ -195,7 +195,7 @@ window.DemoBank = {
             "subtopic": "Diseños de Investigación"
         },
         {
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "Según el Código de Ética de la Función Pública, el servidor tiene el deber de _____ y _____ los bienes del Estado asignados para sus funciones.",
             "options": [
@@ -212,7 +212,7 @@ window.DemoBank = {
             "subtopic": "Ética Pública"
         },
         {
-            "topic": "Investigación y Bioestadística",
+            "topic": "Investigación",
             "difficulty": "Intermedio",
             "question_text": "Desea investigar los factores asociados a la baja adherencia a lactancia materna en su comunidad. ¿Qué acción debe realizar en primer lugar?",
             "options": [
@@ -229,7 +229,7 @@ window.DemoBank = {
             "subtopic": "Proceso de Investigación"
         },
         {
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "difficulty": "Intermedio",
             "question_text": "Acude gestante de 19 años con 34 semanas y anemia sever (Hb: 9 g/dL). ¿Qué tipo de anemia tiene mayor riesgo de presentar el recién nacido?",
             "options": [
@@ -246,7 +246,7 @@ window.DemoBank = {
             "subtopic": "Anemia Materno-Infantil"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "El POI es un instrumento de gestión que establece metas físicas y financieras de vigencia anual, las cuales deben estar alineadas con el:",
             "options": [
@@ -263,7 +263,7 @@ window.DemoBank = {
             "subtopic": "Planeamiento Institucional"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "En un puesto I-2 de Loreto, frascos abiertos y cerrados de vacuna pentavalente estuvieron expuestos a 15 °C durante 6 días tras jornada extramural. ¿Qué medida corresponde?",
             "options": [
@@ -276,11 +276,11 @@ window.DemoBank = {
             "explanation": "Según la **NTS 242-MINSA/DGIESP-2026** y la **NTS 196-MINSA/DGIESP-2022**, la exposición de la vacuna pentavalente a temperaturas entre +8 °C y +25 °C por más de 5 días invalida su uso debido a la pérdida de potencia inmunogénica. Al superarse el límite de estabilidad térmica, el biológico debe ser descartado para garantizar la seguridad del paciente.\n\nAsimismo, las normativas vigentes exigen que todo frasco multidosis abierto en actividades extramurales sea desechado al finalizar la jornada, independientemente del número de dosis utilizadas. **TIP SERUMS**: Las rupturas de cadena de frío superiores a 5 días en vacunas combinadas exigen el descarte definitivo, ya que no existe proceso de 'recuperación' para estos biológicos sensibles.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "MEDICINA",
+            "career": "Medicina Humana",
             "subtopic": "Inmunizaciones y Cadena de Frío"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "Médico de un I-3 organiza talleres para que la población elimine criaderos de Aedes aegypti y reporte signos de alarma de Dengue. ¿Cómo se denomina esta intervención?",
             "options": [
@@ -293,11 +293,11 @@ window.DemoBank = {
             "explanation": "De acuerdo con la **NTS 211-MINSA/DGIESP-2024**, la participación activa de la población en la identificación de riesgos medioambientales se define como **Vigilancia Comunitaria**. Esta estrategia busca que la comunidad capacitada actúe directamente sobre los determinantes locales, como los criaderos de zancudos, y sirva como nexo de reporte temprano hacia el establecimiento de salud.\n\nEsta intervención es un pilar de la promoción de la salud, ya que empodera al ciudadano en el autocuidado y la gestión de su entorno. **TIP SERUMS**: En el primer nivel de atención, la vigilancia comunitaria es la herramienta más potente para el control de arbovirosis, desplazando el enfoque asistencial hacia uno preventivo y participativo.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "MEDICINA",
+            "career": "Medicina Humana",
             "subtopic": "Vigilancia Epidemiológica"
         },
         {
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "Paciente de 80 años con cáncer decide no aceptar quimioterapia tras ser informada de riesgos y beneficios. ¿Qué registro es obligatorio en este escenario?",
             "options": [
@@ -310,11 +310,11 @@ window.DemoBank = {
             "explanation": "El **Reglamento de la Ley 29414 (Derechos de las Personas Usuarias)** y la **Ley Nacional del Cáncer** estipulan que todo paciente competente tiene el derecho soberano de rechazar un tratamiento médico. El profesional de la salud debe registrar obligatoriamente en la historia clínica la negativa del paciente, asegurando que este haya comprendido las consecuencias clínicas de su decisión.\n\nEste proceso garantiza el principio bioético de autonomía y protege legalmente al personal médico ante posibles complicaciones derivadas de la omisión del tratamiento. **TIP SERUMS**: El respeto por la decisión informada es absoluto; siempre que el paciente esté lúcido y orientado, su firma o huella digital en la negativa es el documento legal que deslinda responsabilidad médica ante el curso natural de la enfermedad.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "MEDICINA",
+            "career": "Medicina Humana",
             "subtopic": "Derechos del Paciente y Autonomía"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "Durante su guardia en un puesto de salud I-2 en Sullana, evalúa a un joven con diagnóstico de dengue y signos de alarma. Debido a la gravedad del caso, ¿cuál es el nivel del establecimiento receptor obligatorio para garantizar el monitoreo clínico continuo?",
             "options": [
@@ -331,7 +331,7 @@ window.DemoBank = {
             "subtopic": "Organización y Referencia en Arbovirosis"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "En un centro materno infantil I-3 de Lima Metropolitana, se identifica a un niño de 4 años, contacto intradomiciliario de un paciente con tuberculosis pulmonar confirmada. En este nivel de atención, la actividad primordial a garantizar de inmediato para el niño es ____.",
             "options": [
@@ -348,7 +348,7 @@ window.DemoBank = {
             "subtopic": "Prevención y Control de Tuberculosis"
         },
         {
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "difficulty": "Intermedio",
             "question_text": "Neonato de 2 días nacido en domicilio es traído a un puesto de salud I-1 de una comunidad aymara en Puno. Presenta hipoactividad, rechazo al pecho y temperatura de 35.5 °C. Como parte de los cuidados primarios, ¿cuál es la medida obligatoria antes y durante su traslado?",
             "options": [
@@ -365,7 +365,7 @@ window.DemoBank = {
             "subtopic": "Atención Integral Neonatal"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "Al retornar de una campaña extramural, el enfermero de un centro de salud I-3 en Ucayali reporta que el termo registró temperaturas entre +10 °C y +15 °C durante 6 días. ¿Qué indica la normativa técnica sobre los viales cerrados de vacuna combinada pentavalente expuestos?",
             "options": [
@@ -382,7 +382,7 @@ window.DemoBank = {
             "subtopic": "Cadena de Frío e Inmunizaciones"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "Para reducir la prevalencia de anemia infantil en la jurisdicción de un centro I-2 de Ayacucho, usted organiza talleres que involucran a la municipalidad, agricultura local y escuelas. Esta intervención comunitaria y multisectorial se clasifica específicamente como ____.",
             "options": [
@@ -399,7 +399,7 @@ window.DemoBank = {
             "subtopic": "Promoción de la Salud y Nutrición"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "En un centro de salud I-3 de Madre de Dios, una mujer de 22 años acude tras ser víctima de violencia sexual. Como parte de la prevención combinada, ¿cuál es la pauta obligatoria para iniciar la profilaxis post exposición (PPE) para VIH?",
             "options": [
@@ -416,7 +416,7 @@ window.DemoBank = {
             "subtopic": "Vigilancia y Prevención de Infecciones de Transmisión Sexual"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "En un puesto de salud I-2 de San Martín, evalúa a un joven con fiebre, mialgias y dolor retroocular. Ante la sospecha clínica de un brote de dengue, ¿qué acción epidemiológica es obligatoria respecto a la ficha de investigación?",
             "options": [
@@ -433,7 +433,7 @@ window.DemoBank = {
             "subtopic": "Vigilancia de Enfermedades Metaxénicas"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Avanzado",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
@@ -446,11 +446,11 @@ window.DemoBank = {
             "explanation": "*Según la NTS N° 021-MINSA/DGSP (Norma Técnica de Categorización de Establecimientos de Salud)* y el Reglamento de Establecimientos de Salud y Servicios Médicos de Apoyo, la asignación formal de la categoría es competencia exclusiva del Comité Técnico de Categorización de la respectiva DIRIS, DIRESA o GERESA.\n\nEste proceso implica la verificación 'in situ' del cumplimiento de las Unidades Productoras de Servicios de Salud (UPSS) y la capacidad resolutiva declarada. **TIP SERUMS:** No confundas categoría con complejidad; la categorización es un proceso administrativo formal, mientras que la complejidad es una característica intrínseca de los procesos y tecnología del establecimiento.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "Medicina",
+            "career": "Medicina Humana",
             "subtopic": "Categorización de IPRESS"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Avanzado",
             "question_text": "Es el documento de gestión que comprende la programación de actividades operativas e inversiones alineadas al PEI, permitiendo el ejercicio del rol rector anual.",
             "options": [
@@ -463,11 +463,11 @@ window.DemoBank = {
             "explanation": "*Según el Decreto Legislativo N° 1088 (Ley del Sistema Nacional de Planeamiento Estratégico)* y las directivas de CEPLAN, el Plan Operativo Institucional (POI) es el instrumento que desglosa los objetivos del Plan Estratégico Institucional (PEI) en metas físicas y financieras de ejecución anual.\n\nEl POI es fundamental para la asignación presupuestal y el seguimiento de la gestión de cada unidad ejecutora. **TIP SERUMS:** En tu establecimiento, el POI es la hoja de ruta que justifica el gasto de caja chica y los requerimientos de insumos; si una actividad no está en el POI, técnicamente no debería recibir financiamiento público.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "Medicina",
+            "career": "Medicina Humana",
             "subtopic": "Planeamiento Estratégico (POI)"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Avanzado",
             "question_text": "Dada la necesidad de optimizar la atención de pacientes crónicos en un hospital III-1, se decide implementar seguimiento domiciliario. ¿Qué componente es prioritario para el éxito?",
             "options": [
@@ -480,11 +480,11 @@ window.DemoBank = {
             "explanation": "*Según la Ley N° 30885 (Ley de Redes Integradas de Salud - RIS)* y la NTS N° 169-MINSA (Atención Integral de Salud), el éxito de la atención extramural depende de la continuidad de cuidados mediante la articulación fluida entre el hospital y el primer nivel de atención.\n\nLa gestión de redes busca que el paciente sea el centro del sistema, garantizando que el seguimiento domiciliario esté coordinado con su puesto de salud local. **TIP SERUMS:** La telemedicina y las visitas domiciliarias son las herramientas de 'articulación' más potentes que tendrás en el SERUMS para evitar que tus pacientes con diagnósticos crónicos 'se pierdan' tras el alta hospitalaria.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "Medicina",
+            "career": "Medicina Humana",
             "subtopic": "Redes Integradas de Salud (RIS)"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Avanzado",
             "question_text": "Ante una alta incidencia de IAAS en una UCI de Hospital III-2, se decide implementar vigilancia intensiva. ¿Qué componente es CRUCIAL para la efectividad?",
             "options": [
@@ -497,11 +497,11 @@ window.DemoBank = {
             "explanation": "*Según la NTS N° 029-MINSA/DIGEGI (Norma Técnica de Auditoría de la Calidad)* y los estándares de Seguridad del Paciente del MINSA, la base de la mejora continua es el registro y reporte sistemático de eventos adversos e incidentes.\n\nSin una cultura de notificación no punitiva, es imposible identificar las fallas sistémicas que originan las IAAS. **TIP SERUMS:** El reporte de incidentes (casi-errores) es tan valioso como el de eventos adversos; permite corregir el proceso antes de que el daño llegue al paciente. No ocultar los errores es el primer paso de una gestión de calidad.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "Medicina",
+            "career": "Medicina Humana",
             "subtopic": "Gestión de la Calidad y Seguridad"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Avanzado",
             "question_text": "Todo servidor público debe proteger y conservar los bienes del Estado asignados para sus funciones, evitando abuso o derroche. ¿A qué deber alude?",
             "options": [
@@ -514,11 +514,11 @@ window.DemoBank = {
             "explanation": "*Según la Ley N° 27815 (Código de Ética de la Función Pública)* y el Reglamento de Control Patrimonial del Estado, el uso de recursos públicos exige que el servidor emplee los bienes asignados exclusivamente para los fines institucionales previstos.\n\nEl incumplimiento de este deber genera responsabilidad administrativa y, en casos graves, responsabilidad penal por peculado de uso. **TIP SERUMS:** Mucho cuidado con el uso de la camioneta o ambulancia del centro de salud para fines personales o traslados no autorizados; es una de las causas más comunes de procesos administrativos disciplinarios para profesionales en el SERUMS.",
             "domain": "medicine",
             "target": "SERUMS",
-            "career": "Medicina",
+            "career": "Medicina Humana",
             "subtopic": "Ética y Función Pública"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "¿Cuál es el valor del indicador de una prueba diagnóstica que mide la probabilidad de que un paciente esté enfermo dado que el resultado fue positivo?",
             "options": [
@@ -535,7 +535,7 @@ window.DemoBank = {
             "subtopic": "Pruebas Diagnósticas"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "En el marco de las Redes Integradas de Salud (RIS), ¿qué atributo se refiere a la capacidad de la red para garantizar que el paciente reciba atenciones coordinadas a lo largo de los diferentes niveles?",
             "options": [
@@ -552,7 +552,7 @@ window.DemoBank = {
             "subtopic": "Redes Integradas de Salud"
         },
         {
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "El médico serumista es consultado por la policía sobre el diagnóstico de una paciente víctima de agresión. ¿En qué caso el secreto profesional NO es obligatorio?",
             "options": [
@@ -569,7 +569,7 @@ window.DemoBank = {
             "subtopic": "Secreto Profesional"
         },
         {
-            "topic": "Medicina Legal",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "Usted atiende a un varón que fallece por herida de arma de fuego. ¿Cuál es la conducta médico-legal correcta respecto al cadáver?",
             "options": [
@@ -586,7 +586,7 @@ window.DemoBank = {
             "subtopic": "Muerte Violenta"
         },
         {
-            "topic": "Investigación y Bioestadística",
+            "topic": "Investigación",
             "difficulty": "Intermedio",
             "question_text": "En un estudio sobre anemia se desea que todos los sectores de la comunidad (rural, urbano, periurbano) estén representados proporcionalmente. ¿Qué muestreo utilizaría?",
             "options": [
@@ -603,7 +603,7 @@ window.DemoBank = {
             "subtopic": "Muestreo Probabilístico"
         },
         {
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "difficulty": "Intermedio",
             "question_text": "En el control prenatal de una gestante sin factores de riesgo, ¿a partir de qué semana se debe iniciar la suplementación con Calcio para prevenir la preeclampsia?",
             "options": [
@@ -620,7 +620,7 @@ window.DemoBank = {
             "subtopic": "Suplementación Materna"
         },
         {
-            "topic": "Salud Pública y Epidemiología",
+            "topic": "Salud Pública",
             "difficulty": "Intermedio",
             "question_text": "Niño de 15 meses acude al establecimiento de salud para su inmunización de rutina. ¿Qué vacuna le corresponde recibir según el esquema nacional?",
             "options": [
@@ -637,7 +637,7 @@ window.DemoBank = {
             "subtopic": "Inmunizaciones"
         },
         {
-            "topic": "Gestión de Servicios de Salud",
+            "topic": "Gestión De Servicios De Salud",
             "difficulty": "Intermedio",
             "question_text": "La dimensión de la calidad de atención que busca minimizar los riesgos y daños para el paciente durante el proceso de atención se denomina:",
             "options": [
@@ -654,7 +654,7 @@ window.DemoBank = {
             "subtopic": "Gestión de Calidad"
         },
         {
-            "topic": "Ética Deontología e Interculturalidad",
+            "topic": "Ética E Interculturalidad",
             "difficulty": "Intermedio",
             "question_text": "En la cosmovisión andina, el concepto de salud no solo implica la ausencia de enfermedad, sino la armonía con el entorno y la comunidad. Esto se denomina:",
             "options": [
@@ -671,7 +671,7 @@ window.DemoBank = {
             "subtopic": "Salud Intercultural"
         },
         {
-            "topic": "Cuidado Integral",
+            "topic": "Cuidado Integral De Salud",
             "difficulty": "Intermedio",
             "question_text": "Para evaluar la capacidad de un adulto mayor para realizar actividades instrumentales como usar el teléfono, ir de compras o cocinar, ¿qué escala debe aplicar?",
             "options": [

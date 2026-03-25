@@ -73,8 +73,8 @@ class ChatController {
             const conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
 
             // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---
-            // Los usuarios Avanzados y Elite tienen acceso ILIMITADO (dentro de su cuota diaria de chat) a la Biblioteca Médica (RAG)
-            const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'elite');
+            // Solo los usuarios Advanced y Admin tienen acceso a la Biblioteca Médica (RAG) en el Chat
+            const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'admin');
 
             // --- LÓGICA ORIGINAL DE IA (MODIFICADA PARA USAR EL HISTORIAL Y FILTROS) ---
             let classification;

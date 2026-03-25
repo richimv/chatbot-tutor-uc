@@ -24,11 +24,11 @@ La configuración se divide en los siguientes apartados críticos:
     *   **Básico:** Preguntas directas, teoría pura y definiciones.
     *   **Intermedio:** Casos clínicos centrados en el diagnóstico inicial.
     *   **Avanzado:** Casos complejos de tratamiento, complicaciones y gestión de salud (ASIS/Normas).
-*   **Áreas de Estudio (`topics`):** El sistema agrupa **23+ áreas académicas** en 4 bloques funcionales:
+*   **Áreas de Estudio (`topics`):** El sistema agrupa **22+ áreas académicas** en 4 bloques funcionales:
     1.  **CIENCIAS BÁSICAS:** Anatomía, Fisiología, Farmacología, Microbiología y Parasitología.
     2.  **LAS 4 GRANDES:** Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía General.
     3.  **ESPECIALIDADES CLÍNICAS:** Cardiología, Gastroenterología, Neurología, Nefrología, Neumología, Endocrinología, Hematología, Reumatología, Infectología, Dermatología, Psiquiatría.
-    4.  **SALUD PÚBLICA Y GESTIÓN (SERUMS):** Salud Pública y Epidemiología, Gestión de Servicios de Salud, Ética Deontología e Interculturalidad, Medicina Legal, Investigación y Bioestadística, Cuidado Integral.
+    4.  **SALUD PÚBLICA Y GESTIÓN (MINSA):** Salud Pública, Gestión De Servicios De Salud, Ética E Interculturalidad, Investigación, Cuidado Integral De Salud.
 
 ### 0.2 Bindeo con el Motor de IA
 Cuando el usuario presiona "Configurar Simulacro" o el administrador "Generar con IA", estos parámetros se encapsulan en un objeto JSON que viaja a `mlService.js`. Este servicio utiliza el **Target** para elegir los recursos vectorizados y la **Carrera** para inyectar los ejemplos de estilo (Few-Shot) recuperados por el RAG.
@@ -40,8 +40,7 @@ Ojo: No se debe cambiar el estilo title-case de topic, subtopic, difficulty y ca
 Para evitar que el usuario experimente interrupciones por "Banco Agotado", el sistema monitoriza activamente el stock disponible en cada solicitud.
 
 ### El Disparador de Emergencia (Fallo de Cuota)
-*   **Condición:** Se activa si el banco devuelve **menos de 5 preguntas** para la configuración actual.
-*   **Inteligencia de Cuotas**: Si el usuario tiene 5 o más áreas elegidas, el sistema exige **exactamente 1 pregunta por área**. Si el banco no puede surtir este 1-a-1, el lote se considera "fallido" y se dispara la IA.
+*   **IA para Todos**: El sistema es universal. Si el banco no puede surtir este 1-a-1, se dispara la IA (Modo Fast para usuarios, Modo RAG para administradores).
 *   **Proactividad:** El sistema no muestra lotes incompletos; repone el stock balanceadamente de inmediato para asegurar que el usuario siempre reciba 5 preguntas distribuidas.
 
 ---
@@ -56,8 +55,10 @@ La generación de emergencia sigue estrictamente la `RAG_FLOW_GUIDE` para asegur
     *   **SERUMS:** Prioriza NTS y RM (Salud Pública).
     *   **RESIDENTADO:** Prioriza Libros de Referencia (Harrison, Nelson).
     *   **ENAM:** Equilibrio Clínico-GPC.
-4.  **Generación Flash Dual:** 
-    *   **Todos los Niveles (User/Admin):** Usan exclusivamente `gemini-2.5-flash-lite` (Velocidad máxima y Costos controlados). 
+4.  **Arquitectura de Generación Dual**: 
+    - **Modo High-Fidelity (Admin):** Gestionado por `mlService.js`. Utiliza RAG local para inyectar fragmentos de NTS/GPC y libros originales en la generación de preguntas para el banco oficial.
+    - **Modo Fast (Usuario):** Gestionado por `userAiService.js`. Utiliza el mismo "Prompt Maestro" experto pero **sin inyección RAG**, garantizando respuestas inmediatas y ultra-rápidas para el simulador médico.
+    - **Modelo Unificado:** Ambos motores usan exclusivamente `gemini-2.5-flash-lite` para ahorro total de costos.
 
 ---
 
@@ -82,7 +83,7 @@ Para asegurar que el simulador sea indistinguible del examen real, se ha impleme
 *   **Few-Shot por Carrera:** Inyección de preguntas reales basadas epecíficamente en la **Carrera Profesional** (Medicina, Enfermería u Obstetricia), asegurando que el tono y los ejemplos sean coherentes con la profesión técnica del usuario.
 *   **Restricción de Concisión:** Opciones limitadas a un máximo de 15 palabras.
 *   **Formatos Híbridos:** Alternancia entre casos, definiciones y "completar espacios".
-*   **Generación 1-a-1 (Medical Target):** Para SERUMS, ENAM y RESIDENTADO, el sistema fuerza la generación de 1 en 1. Cada pregunta tiene su propio barrido RAG de 8 fragmentos, garantizando fundamento bibliográfico máximo.
+*   **Generación 1-a-1 (Expert Mode):** Solo disponible para el **Administrador** o en el **Chat Advanced**, el sistema permite opcionalmente un barrido RAG de 8 fragmentos por pregunta para garantizar fundamento bibliográfico máximo en casos de alta complejidad. Los simulacros de usuario omiten este paso para priorizar la fluidez.
 
 ---
 **Certificado como Estándar de Oro - 18 de Marzo, 2026**

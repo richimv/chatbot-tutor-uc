@@ -46,7 +46,7 @@ const SimulatorDash = (() => {
         },
         {
             label: 'Salud Pública y Gestión',
-            areas: ['Salud Pública y Epidemiología', 'Gestión de Servicios de Salud', 'Ética Deontología e Interculturalidad', 'Medicina Legal', 'Investigación y Bioestadística', 'Cuidado Integral'],
+            areas: ['Salud Pública', 'Cuidado Integral De Salud', 'Ética E Interculturalidad', 'Investigación', 'Gestión De Servicios De Salud'],
             bg: 'rgba(16, 185, 129, 0.7)',
             border: '#10b981'
         }
@@ -214,6 +214,10 @@ const SimulatorDash = (() => {
 
         // 4. Fetch Stats or Demo Data
         if (token) {
+            // ✅ Sincronizar usuario para tener contadores de límites (usageCount, dailySimulatorUsage) actualizados
+            if (window.sessionManager) {
+                await window.sessionManager.refreshUser();
+            }
             await loadStats();
             await loadEvolution();
         } else {
@@ -347,7 +351,7 @@ const SimulatorDash = (() => {
      * Intercept clicks on mode buttons to validate freemium limits
      */
     function bindModeClicks() {
-        const ids = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real', 'btn-flashcards'];
+        const ids = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real'];
         ids.forEach(id => {
             const btn = document.getElementById(id);
             if (btn) {
@@ -385,7 +389,8 @@ const SimulatorDash = (() => {
 
                     if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
                         // Returns false and calls showPaywallModal() if limit reached
-                        window.uiManager.validateFreemiumAction(e);
+                        // Pasamos 'simulator' para que valide contra los límites de 15/40
+                        if (!window.uiManager.validateFreemiumAction(e, 'simulator')) return;
                     }
                 });
             }
@@ -832,7 +837,7 @@ const SimulatorDash = (() => {
 
                     let mockWeaknesses = `
                         <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
-                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Salud Pública y Gestión (${targetExamName}):</strong> Se detectan inconsistencias analíticas críticas en el dominio de normas técnicas vigentes (NTS), indicadores epidemiológicos de impacto y cadena de gestión documental exigidos para esta especialidad.</li>
+                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Salud Pública y Gestión de Servicios (${targetExamName}):</strong> Se detectan inconsistencias analíticas críticas en el dominio de normas técnicas vigentes (NTS), indicadores epidemiológicos de impacto y cadena de gestión documental exigidos para este eje.</li>
                         </ul>
                         <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 6px;">
                             <span style="color: #60a5fa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;"><i class="fas fa-microchip"></i> RECOMENDACIÓN DEL MOTOR:</span>
@@ -1073,7 +1078,7 @@ const SimulatorDash = (() => {
             'Ginecología y Obstetricia': { correct: 90, total: 100 },
             'Medicina Interna': { correct: 85, total: 100 },
             'Pediatría': { correct: 75, total: 100 },
-            'Salud Pública y Epidemiología': { correct: 65, total: 100 },
+            'Salud Pública': { correct: 65, total: 100 },
             'Fisiología': { correct: 60, total: 100 },
             'Cardiología': { correct: 50, total: 100 }
         };

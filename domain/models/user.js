@@ -1,6 +1,6 @@
 class User {
     // Constructor estandarizado
-    constructor(id, email, passwordHash, role, name, subscriptionStatus = 'pending', paymentId = null, usageCount = 0, maxFreeLimit = 3, subscriptionTier = 'free', subscriptionExpiresAt = null) {
+    constructor(id, email, passwordHash, role, name, subscriptionStatus = 'pending', paymentId = null, usageCount = 0, maxFreeLimit = 3, subscriptionTier = 'free', subscriptionExpiresAt = null, dailySimulatorUsage = 0) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -14,6 +14,7 @@ class User {
         // ✅ CORRECCIÓN: Usamos camelCase para que coincida con el resto de la App
         this.usageCount = usageCount;
         this.maxFreeLimit = maxFreeLimit;
+        this.dailySimulatorUsage = dailySimulatorUsage;
     }
 }
 

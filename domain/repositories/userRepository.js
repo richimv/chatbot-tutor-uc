@@ -18,7 +18,8 @@ class UserRepository {
             row.usage_count,    // DB envía snake_case
             row.max_free_limit,  // DB envía snake_case
             row.subscription_tier,
-            row.subscription_expires_at
+            row.subscription_expires_at,
+            row.daily_simulator_usage
         );
     }
 
@@ -91,6 +92,9 @@ class UserRepository {
         // ✅ CRÍTICO: Actualizar contadores (Soporta userData.usageCount o usage_count)
         const usage = userData.usageCount !== undefined ? userData.usageCount : userData.usage_count;
         if (usage !== undefined) { fields.push(`usage_count = $${idx++}`); values.push(usage); }
+
+        const simUsage = userData.dailySimulatorUsage !== undefined ? userData.dailySimulatorUsage : userData.daily_simulator_usage;
+        if (simUsage !== undefined) { fields.push(`daily_simulator_usage = $${idx++}`); values.push(simUsage); }
 
         if (fields.length === 0) return this.findById(id);
 

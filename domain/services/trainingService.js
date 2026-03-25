@@ -1,5 +1,7 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const repository = require('../../infrastructure/repositories/trainingRepository');
+const MLService = require('./mlService');
+const UserAiService = require('./userAiService');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT;
@@ -109,12 +111,11 @@ class TrainingService {
 
         if (isGeneric) {
             areas = [
-                'Salud Pública y Epidemiología',
-                'Gestión de Servicios de Salud',
-                'Ética Deontología e Interculturalidad',
-                'Medicina Legal',
-                'Investigación y Bioestadística',
-                'Cuidado Integral'
+                'Salud Pública',
+                'Gestión De Servicios De Salud',
+                'Ética E Interculturalidad',
+                'Investigación',
+                'Cuidado Integral De Salud'
             ];
             console.log(`📡 Fallback Activado: Usando 6 áreas oficiales de SERUMS para configuración inicial.`);
         }
@@ -127,7 +128,7 @@ class TrainingService {
             const areaMap = new Map(); // Para preservar el Title Case original (ej: "Ginecología")
             areas.forEach(a => areaMap.set(a.toUpperCase(), a));
             const normalizedAllAreas = Array.from(areaMap.keys());
-            
+
             console.log(`\n🧠 [TrainingService] Analizando stock en ${normalizedAllAreas.length} áreas para ${dbTarget}...`);
 
             const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, difficulty, 50, userId, career, seenIds);
@@ -161,7 +162,7 @@ class TrainingService {
 
             // Si aún no completamos, intentamos sacar más de las mismas áreas con stock o de cualquier área seleccionada
             if (balancedBatch.length < limit) {
-                const searchOrder = [...areasWithStock, ...normalizedAllAreas]; 
+                const searchOrder = [...areasWithStock, ...normalizedAllAreas];
                 for (const area of searchOrder) {
                     while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
                         balancedBatch.push(questionsByArea[area].shift());
@@ -186,13 +187,11 @@ class TrainingService {
             if (!batchIsHealthy) {
                 const tier = String(subscriptionTier || 'free').toLowerCase();
 
-                if (tier !== 'advanced' && tier !== 'admin') {
-                    console.log(`🚫 [Limit] Usuario '${tier}' alcanzó agotamiento de banco. Bloqueando generación IA.`);
-                    throw new Error("BANCO_AGOTADO_TIER");
-                }
+                // ✅ IA PARA TODOS: Se permite la generación IA (Modo Fast para Free/Basic, RAG para Admin)
+                // Se elimina el bloqueo previo: tier !== 'advanced' && tier !== 'admin'
 
                 // 🎯 REPOSICIÓN IA: Seleccionar las 5 áreas para la generación (Escenarios 1, 2 y 3)
-                const rawSampled = normalizedAllAreas.length >= 5 
+                const rawSampled = normalizedAllAreas.length >= 5
                     ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5)
                     : normalizedAllAreas;
 
@@ -211,8 +210,17 @@ class TrainingService {
                 }
 
                 const areaPrompt = sampledAreas.join(', ');
-                const MLService = require('./mlService');
-                let aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
+                
+                let aiQuestions;
+                const isAdmin = subscriptionTier === 'admin';
+
+                if (isAdmin) {
+                    console.log(`🚀 [Replenish-Admin] Calling MLService (RAG) for ${target}`);
+                    aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
+                } else {
+                    console.log(`⚡ [Replenish-User] Calling UserAiService (Fast) for ${target}`);
+                    aiQuestions = await UserAiService.generateQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
+                }
 
                 if (aiQuestions && aiQuestions.length > 0) {
                     source = 'HYBRID';
@@ -250,17 +258,17 @@ class TrainingService {
         // SI ES QUIZ ARENA (GENERAL_TRIVIA), Conservamos la IA (Bajo temperatura creativa y sin RAG)
         if (questions.length < limit) {
             const tier = String(subscriptionTier || 'free').toLowerCase();
-            
+
             // 🛡️ RESTRICCIÓN DE IA EN ARENA: Solo Basic/Advanced/Admin pueden generar nuevas de cultura general
             // ✅ CORRECCIÓN: 'basic' tiene 5 partidas/día permitidas con IA Lite según INFORME_LIMITES_IA.
             if (tier !== 'basic' && tier !== 'advanced' && tier !== 'admin') {
-                 console.log(`🚫 [Arena Limit] Usuario '${tier}' alcanzó agotamiento de banco de trivia. Bloqueando IA.`);
-                 if (questions.length === 0) throw new Error("BANCO_AGOTADO_TIER");
-                 
-                 const finalQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
-                 await repository.markQuestionsAsSeen(userId, finalQuestions.filter(q => q.id).map(q => q.id));
+                console.log(`🚫 [Arena Limit] Usuario '${tier}' alcanzó agotamiento de banco de trivia. Bloqueando IA.`);
+                if (questions.length === 0) throw new Error("BANCO_AGOTADO_TIER");
 
-                 return { questions: finalQuestions, source: 'BANK', topic: areas[0] };
+                const finalQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
+                await repository.markQuestionsAsSeen(userId, finalQuestions.filter(q => q.id).map(q => q.id));
+
+                return { questions: finalQuestions, source: 'BANK', topic: areas[0] };
             }
 
             console.log(`🧠 [Arena-IA] Reponiendo ${limit - questions.length} faltantes con IA... [Tema: ${areas[0]}]`);
@@ -284,20 +292,20 @@ class TrainingService {
             }
 
             const combined = [...questions, ...newQuestions].slice(0, limit);
-            return { 
-                questions: combined, 
-                source: questions.length > 0 ? 'HYBRID' : 'IA', 
-                topic: normalizedTopic 
+            return {
+                questions: combined,
+                source: questions.length > 0 ? 'HYBRID' : 'IA',
+                topic: normalizedTopic
             };
         }
 
         const bankQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
         await repository.markQuestionsAsSeen(userId, bankQuestions.filter(q => q.id).map(q => q.id));
 
-        return { 
-            questions: bankQuestions, 
-            source: 'BANK', 
-            topic: normalizedTopic 
+        return {
+            questions: bankQuestions,
+            source: 'BANK',
+            topic: normalizedTopic
         };
     }
 
@@ -310,7 +318,7 @@ class TrainingService {
         try {
             const activeModel = (tier === 'admin') ? modelCreative : modelCreativeLite;
             console.log(`🤖 [Arena IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
-            
+
             const areaString = areas.join(', ');
 
             // Extraer Contexto de Deduplicación

@@ -76,8 +76,8 @@ const systemInstruction = {
 
 
 // ✅ 3. CONFIGURACIÓN DE MODELOS DUALES (Control Financiero)
-// modelStandard: Para Auditoría/Admin (Mantiene Thinking para pruebas de costo)
-// modelLite: Para Usuarios Finales (Sin Thinking -> Ahorro Total)
+// modelStandard: Para Auditoría/Admin
+// modelLite: Para Usuarios Finales (Ahorro Total)
 
 const standardConfig = {
     model: 'gemini-2.5-flash-lite', // ✅ FORZADO A LITE (Ahorro Total)
@@ -482,9 +482,8 @@ class MLService {
     }
 
     /**
-     * ✅ NUEVO: Generador RAG de Preguntas para el Banco (Admin)
-    /**
      * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)
+     * Exclusivo para Administradores (Motor High-Fidelity).
      */
     static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, tier = 'advanced', reqDomain = 'medicine') {
         const domain = reqDomain || 'medicine';

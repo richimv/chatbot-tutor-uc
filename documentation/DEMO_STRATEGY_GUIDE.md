@@ -28,7 +28,7 @@ Detectan si el usuario debe recibir datos de demo:
 ### 3. Motor de Analíticas Locales (`simulator-dash.js`)
 Para que la demo no sea estática, el sistema:
 - Guarda los `areaStats` y puntajes en `localStorage` al finalizar un examen de demo.
-- El Tablero Médico (`simulator-dash.js`) prioriza estos datos locales sobre los de la API para renderizar el **Gráfico de Radar** y los **KPIs**.
+- El Tablero Médico (`simulator-dash.js`) prioriza estos datos locales sobre los de la API para renderizar el **Gráfico de Barras** y los **KPIs**.
 
 ---
 

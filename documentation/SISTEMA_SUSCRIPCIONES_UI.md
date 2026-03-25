@@ -8,24 +8,21 @@ Se han realizado actualizaciones en la capa de datos para soportar una visualiza
 - **UserRepository**: Mapeo y persistencia de `subscription_expires_at` desde la base de datos PostgreSQL.
 - **Auth Controller**: El endpoint `/api/auth/me` ahora entrega estos metadatos al cliente para su renderizado.
 
-## 2. Gestión de Banco Agotado (Tier Protection)
-Se implementó un flujo de intercepción en `TrainingService.js` para evitar que usuarios de planes gratuitos o básicos fuercen la generación por IA cuando el banco de preguntas tradicional se agota.
+## 2. Gestión de Banco Agotado (IA Universal)
+Se implementó un flujo de reposición automática en `TrainingService.js` para garantizar que ningún usuario se quede sin preguntas, independientemente de su plan.
 
-### Flujo de Error:
-1. El servidor detecta que el lote de preguntas es insuficiente.
-2. Si el usuario **no es Advanced/Admin**, lanza el error `BANCO_AGOTADO_TIER`.
-3. El frontend (`quiz.js`) captura este error específico.
-4. Se dispara el `UIManager.showBankExhaustedModal()`.
-
-### Modal "Banco Dominado":
-A diferencia de un paywall genérico, este modal informa al usuario que ha "dominado" las preguntas disponibles en su configuración actual y lo invita a escalar al plan Advanced para desbloquear la generación infinita con IA.
+### Flujo de Reposición:
+1. El servidor detecta que el lote de preguntas del banco es insuficiente (< 5).
+2. Se activa el **Modo Fast (IA)** para todos los usuarios.
+3. El sistema genera preguntas nuevas balanceadamente para completar el lote.
+4. **Beneficio**: Experiencia fluida y sin interrupciones ("Banco Infinito") para todos los Tiers.
 
 ### 3. Onboarding: Configuración por Defecto
 Para garantizar que un usuario nuevo pueda entrenar inmediatamente sin fricciones, se ha implementado un sistema de "Provisión Automática" en `AuthService.js`:
 - **Target**: `SERUMS` (Enfoque en Salud Pública).
 - **Dificultad**: `Básico` (Nivel Teórico).
 - **Carrera**: `Medicina Humana`.
-- **Áreas**: 6 áreas clave de gestión y medicina legal pre-seleccionadas.
+- **Áreas**: 5 ejes oficiales del MINSA pre-seleccionados (Sincronización académica).
 - **Visualización**: El dashboard del simulador detecta estos valores automáticamente si no existen preferencias previas, permitiendo el inicio instantáneo del primer examen.
 
 ## 4. Sección de Suscripción en el Perfil
@@ -38,10 +35,9 @@ Se reemplazó la visualización simple del rol por una sección dedicada en `pro
 ## 4. Estándares de Logging
 Se han profesionalizado los logs en la terminal (`TrainingService.js`) utilizando iconos y trazas claras:
 - `🔎 [Banco]`: Estado de stock en las áreas seleccionadas.
-- `⚠️ [Límite]`: Bloqueo de generación por restricciones de plan.
-- `🤖 [IA]`: Activación de reposición (solo para Advanced/Admin).
-- `🍃 [IA AHORRO]`: Uso de modelo Lite para optimización financiera.
-- `🛡️ [IA AUDITORÍA]`: Uso de modelo Estándar (exclusivo Admin).
+- `🤖 [IA Reposición]`: Activación de generación universal para completar lotes.
+- `🍃 [IA AHORRO]`: Uso de modelo Lite ($0 cost) para todos los usuarios.
+- `🛡️ [IA RAG]`: Uso de bibliografía oficial (exclusivo Advanced/Admin).
 
 ## 4. Refactorización de Pricing (Upgrades)
 Se eliminó la restricción que ocultaba la tabla de precios a usuarios con suscripción activa:

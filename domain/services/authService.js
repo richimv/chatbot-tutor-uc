@@ -161,12 +161,11 @@ class AuthService {
                 difficulty: 'Básico',
                 career: 'Medicina Humana',
                 areas: [
-                    'Salud Pública y Epidemiología',
-                    'Gestión de Servicios de Salud',
-                    'Ética Deontología e Interculturalidad',
-                    'Medicina Legal',
-                    'Investigación y Bioestadística',
-                    'Cuidado Integral'
+                    'Salud Pública',
+                    'Cuidado Integral De Salud',
+                    'Ética E Interculturalidad',
+                    'Investigación',
+                    'Gestión De Servicios De Salud'
                 ]
             });
             console.log(`🚀 Preferences provisioned for ${email}`);
@@ -326,12 +325,11 @@ class AuthService {
                 difficulty: 'Básico',
                 career: 'Medicina Humana',
                 areas: [
-                    'Salud Pública y Epidemiología',
-                    'Gestión de Servicios de Salud',
-                    'Ética Deontología e Interculturalidad',
-                    'Medicina Legal',
-                    'Investigación y Bioestadística',
-                    'Cuidado Integral'
+                    'Salud Pública',
+                    'Cuidado Integral De Salud',
+                    'Ética E Interculturalidad',
+                    'Investigación',
+                    'Gestión De Servicios De Salud'
                 ]
             });
             console.log(`🚀 Preferences provisioned for Google user: ${email}`);

@@ -359,33 +359,53 @@ class UIManager {
 
 
     /**
-     * ✅ Valida límites freemium para acciones secundarias (Citar, Guardar, Favorito).
+     * ✅ Valida límites para acciones (Simulador, Arena, o acciones secundarias como Citar).
      * Retorna FALSE si el usuario está bloqueado, TRUE si puede proceder.
      */
-    validateFreemiumAction(event) {
+    validateFreemiumAction(event, type = 'arena') {
         if (!window.sessionManager) return true;
         const user = window.sessionManager.getUser();
 
         // Si no hay usuario, dejamos pasar (el checkAuth posterior lo atrapará)
         if (!user) return true;
 
-        // Validar campos camelCase o snake_case por robustez
-        const status = user.subscriptionStatus || user.subscription_status;
-        const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+        // 🛡️ DETECCIÓN DE TIER Y PROPIEDADES (Robusto: camelCase o snake_case)
+        const userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+        const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+        const dailySimUsage = user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0);
 
-        if (status === 'pending' && usage >= limit) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation(); // Detener propagación a listeners globales
+        // 1. Lógica para Usuarios FREE (Vidas Globales)
+        if (userTier === 'free') {
+            if (usageCount >= maxFreeLimit) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                this.showPaywallModal(null, type);
+                return false;
             }
-            this.showPaywallModal();
-            return false;
+            return true;
         }
+
+        // 2. Lógica para Usuarios PREMIUM (Límites Diarios)
+        if (type === 'simulator') {
+            const limit = userTier === 'basic' ? 15 : 40;
+            if (dailySimUsage >= limit) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                // Disparar modal con contexto simulator para que use los textos correctos
+                this.showPaywallModal(null, 'simulator');
+                return false;
+            }
+        }
+
         return true;
     }
 
-    showPaywallModal(customMsg = null) {
+    showPaywallModal(customMsg = null, context = 'arena') {
         const modalId = 'paywall-modal';
         let modal = document.getElementById(modalId);
 
@@ -396,7 +416,7 @@ class UIManager {
             if (user) userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
         } catch (e) { }
 
-        // CONFIGURACIÓN POR TIER
+        // CONFIGURACIÓN POR DEFECTO (Free / Global)
         let config = {
             title: '¡Te encantó la prueba!',
             message: customMsg || '¡Te encantó la prueba gratuita!<br>Suscríbete ahora por s/ 9.90.<br><span style="color: #94a3b8; font-size: 0.9rem;">Acceso a más beneficios.</span>',
@@ -405,19 +425,34 @@ class UIManager {
             icon: 'fa-crown'
         };
 
-        if (userTier === 'basic') {
-            config.title = '¡Cuota Diaria Completada!';
-            config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota y tener IA ilimitada.';
-            config.btnText = 'Mejorar mi Plan 🚀';
-            config.btnUrl = '/pricing';
-        } else if (userTier === 'advanced' || userTier === 'admin') {
-            config.title = '¡Entrenamiento Finalizado!';
-            config.message = customMsg || 'Has completado tus 10 partidas épicas de hoy. ¡Mañana volvemos con más desafíos!';
-            // ✅ SENIOR_NOTE: Para usuarios ya al tope de Arena, redirigimos al Inicio por simplicidad actual.
-            // A futuro, esto puede llevar a módulos específicos como 'Docentes' o 'Idiomas'.
-            config.btnText = 'Volver al Inicio 🏠';
-            config.btnUrl = '/';
-            config.icon = 'fa-medal';
+        // BIFURCACIÓN POR CONTEXTO Y TIER
+        if (context === 'simulator') {
+            if (userTier === 'basic') {
+                config.title = '¡Cuota Diaria Completada!';
+                config.message = customMsg || 'Has alcanzado tu límite de <strong>15 simulacros diarios</strong>.<br>Mejora a <strong>Advanced</strong> para obtener 40 simulacros e IA Clínica.';
+                config.btnText = 'Mejorar Plan 🚀';
+                config.btnUrl = '/pricing';
+            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+                config.title = '¡Meta Diaria Alcanzada!';
+                config.message = customMsg || 'Has completado tus <strong>40 simulacros épicos</strong> de hoy. ¡Mañana volvemos con más desafíos!';
+                config.btnText = 'Volver al Inicio 🏠';
+                config.btnUrl = '/';
+                config.icon = 'fa-medal';
+            }
+        } else {
+            // Contexto Arena (Default)
+            if (userTier === 'basic') {
+                config.title = '¡Cuota Diaria Completada!';
+                config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota y tener IA ilimitada.';
+                config.btnText = 'Mejorar Plan 🚀';
+                config.btnUrl = '/pricing';
+            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+                config.title = '¡Entrenamiento Finalizado!';
+                config.message = customMsg || 'Has completado tus 10 partidas épicas de hoy. ¡Mañana volvemos con más desafíos!';
+                config.btnText = 'Volver al Inicio 🏠';
+                config.btnUrl = '/';
+                config.icon = 'fa-medal';
+            }
         }
 
         if (!modal) {
@@ -480,64 +515,6 @@ class UIManager {
         this.pushModalState(modalId);
     }
 
-    /**
-     * ✅ MODAL UNIFICADO: Cuando el banco se agota y requiere Advanced para IA.
-     * Funciona para usuarios Free y Basic.
-     */
-    showBankExhaustedModal() {
-        const modalId = 'bank-exhausted-modal';
-
-        // Determinar texto del botón según el plan actual
-        let userPlan = 'free';
-        try {
-            const user = window.sessionManager?.getUser();
-            if (user) userPlan = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
-        } catch (e) { }
-
-        const btnText = userPlan === 'free' ? 'Obtener Plan Advanced' : 'Subir a Advanced (IA Ilimitada)';
-
-        if (document.getElementById(modalId)) {
-            const btn = document.getElementById(`${modalId}-action-btn`);
-            if (btn) btn.innerHTML = `<i class="fas fa-crown"></i> ${btnText}`;
-            document.getElementById(modalId).style.display = 'flex';
-            this.pushModalState(modalId);
-            return;
-        }
-
-        const modalHTML = `
-        <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
-            <div class="modal-content" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(15, 23, 42, 0.95); box-shadow: 0 0 40px rgba(0,0,0,0.6);">
-                <div class="modal-header">
-                    <h2 style="background: linear-gradient(90deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">¡Has dominado el Banco!</h2>
-                    <button class="modal-close-btn" onclick="window.uiManager.popModalState('${modalId}'); document.getElementById('${modalId}').style.display='none'">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="auth-prompt-icon" style="margin-bottom: 20px;">
-                       <div style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid rgba(59, 130, 246, 0.3); box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);">
-                            <i class="fas fa-brain" style="font-size: 2.5rem; color: #60a5fa; filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));"></i>
-                       </div>
-                    </div>
-                    <div class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f1f5f9; line-height: 1.6; text-align: center;">
-                        Has completado todas las preguntas disponibles en nuestro banco oficial para esta configuración.
-                        <br><br>
-                        Para seguir entrenando con <strong>las preguntas</strong> generadas por IA en tiempo real, necesitas el plan <span style="color: #fbbf24; font-weight: 800; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);">ADVANCED</span>.
-                    </div>
-                </div>
-                <div class="modal-footer" style="flex-direction: column; gap: 12px; padding-bottom: 20px;">
-                    <button id="${modalId}-action-btn" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 14px; padding: 16px; font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); cursor: pointer; transition: transform 0.2s;" 
-                        onclick="window.location.href='/pricing'">
-                        <i class="fas fa-crown"></i> ${btnText}
-                    </button>
-                    <button class="btn-secondary" style="width: 100%; border-radius: 14px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); padding: 12px;" 
-                        onclick="window.location.href='/simulator-dashboard'">
-                        Explorar otros temas
-                    </button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        this.pushModalState(modalId);
-    }
 
     /**
      * Verifica si el usuario está logueado. Si sí, ejecuta el callback.

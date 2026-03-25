@@ -21,14 +21,13 @@ class QuizController {
             // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración, inyectamos el bloque oficial.
             if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
                 finalAreas = [
-                    'Salud Pública y Epidemiología',
-                    'Gestión de Servicios de Salud',
-                    'Ética Deontología e Interculturalidad',
-                    'Medicina Legal',
-                    'Investigación y Bioestadística',
-                    'Cuidado Integral'
+                    'Salud Pública',
+                    'Gestión De Servicios De Salud',
+                    'Ética E Interculturalidad',
+                    'Investigación',
+                    'Cuidado Integral De Salud'
                 ];
-                console.log(`📡 Fallback Controller: Aplicando 6 áreas SERUMS para ${user.email}`);
+                console.log(`📡 Fallback Controller: Aplicando 5 ejes MINSA para ${user.email}`);
             }
 
             // Validación básica
@@ -83,19 +82,17 @@ class QuizController {
             res.json({
                 success: true,
                 topic: returnedTopic,
-                areas: finalAreas, // 🔄 Sincronización de Áreas para lotes subsiguientes
+                areas: finalAreas, 
                 difficulty: aiDifficulty,
                 round: round,
                 questions: quizData.questions,
-                isPremium: isPremium
+                isPremium: isPremium,
+                source: quizData.source // Informar al front si fue IA o BANK
             });
 
         } catch (error) {
             // 🎯 CAPTURA DE AGOTAMIENTO DE BANCO (Uso Profesional del Log)
-            if (error.message === "BANCO_AGOTADO_TIER") {
-                console.log(`🚫 [Limit] Bloqueo de inicio de Quiz: Banco Agotado para el usuario.`);
-                return res.status(403).json({ success: false, errorCode: 'BANK_EXHAUSTED' });
-            }
+            // ✅ IA FALLBACK: El servicio ahora gestiona la reposición IA de forma transparente.
 
             console.error('❌ [Error] startQuiz:', error);
 
@@ -131,6 +128,23 @@ class QuizController {
                 totalQuestions: total_questions || 10,
                 questions: questions || []
             }, { createFlashcards: false });
+
+            // 🎯 ACTUALIZAR LÍMITES DE USO PREMIUM (Solo al CULMINAR el examen)
+            // Solo para usuarios Basic o Advanced con suscripción activa.
+            const tier = String(req.user.subscriptionTier || 'free').toLowerCase();
+            const isActiveAccount = req.user.subscriptionStatus === 'active';
+
+            if (isActiveAccount && ['basic', 'advanced'].includes(tier)) {
+                try {
+                    await db.query(
+                        `UPDATE users SET daily_simulator_usage = daily_simulator_usage + 1 WHERE id = $1`,
+                        [userId]
+                    );
+                    console.log(`📉 [Simulator Limit] +1 Simulator Usage (Culminación) para Premium: ${req.user.email}`);
+                } catch (limitErr) {
+                    console.error("⚠️ Error incrementando uso de simulador al culminar:", limitErr);
+                }
+            }
 
             res.json({
                 success: true,
@@ -493,14 +507,13 @@ class QuizController {
             // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración (ej: ronda 2 del usuario anterior), inyectamos el bloque oficial.
             if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
                 finalAreas = [
-                    'Salud Pública y Epidemiología',
-                    'Gestión de Servicios de Salud',
-                    'Ética Deontología e Interculturalidad',
-                    'Medicina Legal',
-                    'Investigación y Bioestadística',
-                    'Cuidado Integral'
+                    'Salud Pública',
+                    'Gestión De Servicios De Salud',
+                    'Ética E Interculturalidad',
+                    'Investigación',
+                    'Cuidado Integral De Salud'
                 ];
-                console.log(`📡 Fallback Controller [Batch]: Aplicando 6 áreas SERUMS.`);
+                console.log(`📡 Fallback Controller [Batch]: Aplicando 5 ejes MINSA.`);
             }
 
             // 🎯 OBTENCIÓN DE BANCO: Usar el repositorio para obtener preguntas no vistas.
@@ -517,15 +530,13 @@ class QuizController {
             res.json({ 
                 success: true, 
                 questions: result.questions,
-                areas: finalAreas // 🔄 Mantener el contexto multi-área
+                areas: finalAreas,
+                source: result.source
             });
 
         } catch (error) {
             // 🎯 CAPTURA DE AGOTAMIENTO DE BANCO (Siguiente Lote)
-            if (error.message === "BANCO_AGOTADO_TIER") {
-                console.log(`🚫 [Limit] Bloqueo en lotes (batch): Banco Agotado.`);
-                return res.status(403).json({ success: false, errorCode: 'BANK_EXHAUSTED' });
-            }
+            // ✅ IA FALLBACK
 
             console.error('❌ [Error] getNextBatch:', error);
 

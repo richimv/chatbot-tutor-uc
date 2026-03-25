@@ -21,6 +21,7 @@ const checkAILimits = (type) => {
                     daily_ai_usage, 
                     monthly_flashcards_usage,
                     daily_arena_usage, 
+                    daily_simulator_usage,
                     last_usage_reset
                 FROM users 
                 WHERE id = $1
@@ -66,6 +67,7 @@ const checkAILimits = (type) => {
                         UPDATE users SET 
                             daily_ai_usage = 0, 
                             daily_arena_usage = 0, 
+                            daily_simulator_usage = 0,
                             monthly_flashcards_usage = 0,
                             last_usage_reset = $1 
                         WHERE id = $2
@@ -76,6 +78,7 @@ const checkAILimits = (type) => {
                         UPDATE users SET 
                             daily_ai_usage = 0, 
                             daily_arena_usage = 0, 
+                            daily_simulator_usage = 0,
                             last_usage_reset = $1 
                         WHERE id = $2
                     `, [todayDate, userId]);
@@ -83,6 +86,7 @@ const checkAILimits = (type) => {
 
                 user.daily_ai_usage = 0;
                 user.daily_arena_usage = 0;
+                user.daily_simulator_usage = 0;
             }
 
             // 3. MATRIZ DE LÍMITES POR TIER (Calculado en base a matemática del doc MD)
@@ -90,9 +94,9 @@ const checkAILimits = (type) => {
             // - Básico: 10 intentos/mes.
             // - Avanzado: 30 intentos/mes.
             const LIMITS = {
-                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1 },
-                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10 },
-                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30 }
+                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1, simulator: 0 },
+                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10, simulator: 15 },
+                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30, simulator: 40 }
             };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
@@ -145,6 +149,20 @@ const checkAILimits = (type) => {
                         return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
                     }
                     req.usageType = 'monthly_flashcards_usage';
+                }
+            }
+            else if (type === 'simulator') {
+                if (!isActiveAccount) {
+                    if (hasGlobalLives) {
+                        req.usageType = 'usage_count';
+                    } else {
+                        return res.status(403).json({ error: 'Límite de simulacros de Prueba agotado. Mejora tu plan para continuar.', reason: 'FREE_LIVES_EXHAUSTED' });
+                    }
+                } else {
+                    if ((user.daily_simulator_usage || 0) >= userLimits.simulator) {
+                        return res.status(403).json({ error: 'Límite diario de simulacros con IA alcanzado. Vuelve mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                    }
+                    req.usageType = 'daily_simulator_usage';
                 }
             }
             // Todo Ok. Se le pasa el control a la ruta. Luego el controlador DEBE sumar +1 al req.usageType

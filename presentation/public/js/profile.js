@@ -94,7 +94,7 @@ function renderSubscriptionDetails(user) {
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-clone" style="color: #60a5fa; width: 20px;"></i> Flashcards ${tier === 'advanced' ? 'Manuales + IA(30 pedidos/mes)' : 'Manuales + IA(10 pedidos/mes)'}</li>
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-chart-line" style="color: #a78bfa; width: 20px;"></i> Estadísticas ${tier === 'advanced' ? 'Avanzadas (IA)' : 'Básicas'}</li>
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-book-medical" style="color: #f472b6; width: 20px;"></i> Biblioteca Completa (DRIVE)</li>
-                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-robot" style="color: #f472b6; width: 20px;"></i> Simulador Examenes (${tier === 'advanced' ? 'Banco Generativo con IA' : 'Banco con stock'})</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-robot" style="color: #f472b6; width: 20px;"></i> Simulador Exámenes (${user.dailySimulatorUsage || 0}/${tier === 'advanced' ? '40' : '15'} hoy)</li>
                     </ul>
                 </div>
                 <button onclick="window.location.href='/pricing'" class="btn-action" style="background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); width: auto; align-self: flex-start;">

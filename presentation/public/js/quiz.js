@@ -235,23 +235,16 @@ async function startQuiz() {
         response = await fetch(fetchUrl, fetchOptions);
         data = await response.json();
 
-        // ⛔ Freemium: Límite de vidas o bloqueo premium
+        // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
         if (response.status === 403) {
-            // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
-            if (response.status === 403) {
-                elements.loadingOverlay.classList.add('hidden');
-                if (data.errorCode === 'BANK_EXHAUSTED') {
-                    if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
-                        window.uiManager.showBankExhaustedModal();
-                    } else {
-                        alert("Has agotado las preguntas disponibles. Pásate a Advanced para generar más con IA.");
-                        window.location.href = '/pricing';
-                    }
-                } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                    window.uiManager.showPaywallModal(data.error);
-                }
-                return;
+            elements.loadingOverlay.classList.add('hidden');
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error, 'simulator');
+            } else {
+                alert(data.error || "Límite alcanzado.");
+                window.location.href = '/pricing';
             }
+            return;
         }
 
         // 🛠 Error de Servidor (500) u Otros
@@ -267,31 +260,8 @@ async function startQuiz() {
         elements.loadingOverlay.classList.add('hidden');
 
         if (response && response.status === 404 && data.noQuestions) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '<span class="text-gradient-primary" style="font-size: 1.5rem; font-weight: 800;">¡Banco Agotado!</span>',
-                    html: `
-                        <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
-                            <i class="fas fa-info-circle" style="color: #3b82f6; margin-right: 5px;"></i> 
-                            Has abarcado <strong>todas las preguntas</strong> disponibles para esta configuración.<br><br>
-                            Intenta cambiar de Área de Estudio, Dificultad o Tipo de Examen en el Dashboard para desbloquear nuevos escenarios clínícos.
-                        </div>
-                    `,
-                    icon: 'info',
-                    iconColor: '#60a5fa',
-                    background: 'rgba(30, 41, 59, 0.85)',
-                    color: '#f8fafc',
-                    backdrop: `rgba(10, 10, 10, 0.8) backdrop-filter: blur(4px);`,
-                    customClass: {
-                        popup: 'swal-glass-popup',
-                        confirmButton: 'btn-neon'
-                    },
-                    buttonsStyling: false,
-                    confirmButtonText: '<i class="fas fa-sliders-h" style="margin-right: 5px;"></i> Configurar otro Simulacro',
-                    allowOutsideClick: false
-                }).then(() => {
-                    window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
-                });
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal('Has completado las preguntas disponibles en este banco.', 'simulator');
             } else {
                 alert('¡Banco Agotado!\\n\\nHas abarcado todas las preguntas de este tema y dificultad. Intenta cambiar tu configuración en el dashboard para acceder a más casos clínicos.');
                 window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
@@ -373,37 +343,12 @@ async function fetchNextBatch() {
             elements.loadingOverlay.classList.add('hidden');
 
             if (response.status === 404 && data.noQuestions) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: '<span style="color: #10b981; font-size: 1.5rem; font-weight: 800;"><i class="fas fa-award"></i> ¡Banco Agotado!</span>',
-                        html: `
-                            <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0.5rem; text-align: left;">
-                                ¡Excelente trabajo! Has terminado con <strong>todas las preguntas disponibles</strong> para esta configuración exacta.<br><br>
-                                Te entregaremos tu simulacro ahora mismo evaluando las preguntas que llegaste a contestar.
-                            </div>
-                        `,
-                        icon: 'success',
-                        iconColor: '#10b981',
-                        background: 'rgba(30, 41, 59, 0.85)',
-                        color: '#f8fafc',
-                        backdrop: `rgba(10, 10, 10, 0.8) backdrop-filter: blur(4px);`,
-                        customClass: {
-                            popup: 'swal-glass-popup',
-                            confirmButton: 'btn-neon'
-                        },
-                        buttonsStyling: false,
-                        confirmButtonText: '<i class="fas fa-chart-line" style="margin-right: 5px;"></i> Ver mis Resultados',
-                        allowOutsideClick: false
-                    }).then(() => finishQuiz());
-                } else {
-                    alert('¡Banco Agotado!\\nHas terminado con todas las preguntas disponibles para esta configuración. Puntuando lo que respondiste...');
-                    finishQuiz();
-                }
-                return;
+                alert('¡Excelente Trabajo! Has terminado con todas las preguntas disponibles para esta configuración. Puntuando lo que respondiste...');
+                return finishQuiz();
             }
 
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal(data.error || "No hay más preguntas disponibles para tu Plan. Mejora a Advanced para acceder a más funciones.");
+                window.uiManager.showPaywallModal(data.error, 'simulator');
             } else {
                 alert(data.error || "No hay más preguntas disponibles para tu Plan actual.");
             }
@@ -413,16 +358,11 @@ async function fetchNextBatch() {
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
         if (response.status === 403) {
             elements.loadingOverlay.classList.add('hidden');
-
-            if (data.errorCode === 'BANK_EXHAUSTED') {
-                if (window.uiManager && typeof window.uiManager.showBankExhaustedModal === 'function') {
-                    window.uiManager.showBankExhaustedModal();
-                } else {
-                    alert("Banco de preguntas agotado para tu plan actual.");
-                    finishQuiz();
-                }
-            } else if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal(data.error);
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error, 'simulator');
+            } else {
+                alert(data.error || "Límite alcanzado.");
+                finishQuiz();
             }
             return;
         }

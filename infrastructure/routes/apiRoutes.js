@@ -155,8 +155,8 @@ router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
 router.get('/internal/ml-data', coursesController.getDataForML);
 
 // --- Rutas de Quiz (Gamificación) ---
-router.post('/quiz/start', auth, quizController.startQuiz);
-router.post('/quiz/next-batch', auth, quizController.getNextBatch); // ✅ NUEVO
+router.post('/quiz/start', auth, checkAILimits('simulator'), quizController.startQuiz);
+router.post('/quiz/next-batch', auth, checkAILimits('simulator'), quizController.getNextBatch); // ✅ NUEVO
 router.post('/quiz/submit', auth, quizController.submitScore); // Updated logic
 router.get('/quiz/stats', optionalAuth, quizController.getStats);
 router.get('/quiz/evolution', optionalAuth, quizController.getEvolution); // ✅ NEW endpoint

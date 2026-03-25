@@ -1,6 +1,6 @@
 # 🧪 Casos de Uso: Selección, Optimización y Distribución IA
 
-Este documento describe el motor de inteligencia de Hub Academia para la gestión de stocks de preguntas. El sistema opera bajo un principio de **Eficiencia de Costos y Balance Estadístico**, priorizando el banco local antes de recurrir a la IA para los usuarios advanced.
+Este documento describe el motor de inteligencia de Hub Academia para la gestión de stocks de preguntas. El sistema opera bajo un principio de **Eficiencia de Costos y Balance Estadístico**, priorizando el banco local antes de recurrir a la IA para **todos** los usuarios (Mode Fast para Free/Basic/Advanced, RAG para Admin).
 
 ---
 
@@ -36,14 +36,15 @@ Solo cuando el Escaneo Global detecta que el banco local es insuficiente para co
 1.  **Muestreo Fiel**: Se toman las 5 áreas.
 2.  **Distribución 1:1**: 1 pregunta por área.
 
-### 📉 Escenario 3: Reposición con Pocas Áreas (< 5 áreas)
-1.  **Distribución Equitativa**: Se distribuyen las 5 preguntas entre las áreas disponibles (ej: 2 áreas -> 3 y 2 preguntas respectivamente).
+### 📉 Escenario 3: Reposición con Pocas Áreas (< 5 ejes MINSA)
+1.  **Distribución Equitativa**: Se distribuyen las 5 preguntas entre los ejes disponibles (ej: 2 ejes -> 3 y 2 preguntas respectivamente).
 2.  **Repetición Permitida**: Aquí la repetición es necesaria para alcanzar la cuota de 5.
 
 ---
 
 ## 🛠️ Resumen de Implementación Técnica
 
--   **trainingService.js**: Responsable del Escaneo Global y la decisión de disparo de IA.
--   **mlService.js**: Responsable de la orquestación 1:1 (Determinismo de Tópicos) para que la IA cumpla la cuota de áreas asignada.
--   **Propósito Final**: Que la estadística del usuario (Radar de Rendimiento) se vea bien distribuida y no sesgada a unos pocos temas.
+-   **trainingService.js**: Responsable del Escaneo Global y la reposición IA transparente para todos los usuarios.
+-   **userAiService.js**: Responsable de la generación experta (Modo Fast) para usuarios Free, Basic y Advanced.
+-   **mlService.js**: Responsable de la orquestación RAG (Modo High-Fidelity) exclusiva para Administradores.
+-   **Propósito Final**: Que la estadística del usuario (Barras de Rendimiento) se vea bien distribuida y alineada a los ejes oficiales del MINSA, con la latencia mínima posible.

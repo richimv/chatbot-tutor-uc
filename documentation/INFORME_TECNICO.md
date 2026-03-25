@@ -176,7 +176,7 @@ Estrategia costo-eficiente para generar contenido infinito y altamente preciso s
 El sistema migró de reportes estáticos ("Tema general del Quiz") hacia un modelo granular subatómico alimentado por base de datos híbrida (Relacional/NoSQL Documental en PostgreSQL):
 *   **Inyección JSONB:** Al emitir el examen (`submitQuizResult`), el backend recorre cada pregunta iterando Arrays, calculando cuántas preguntas se acertaron y fallaron *por Sub-Tema específico* dentro de un mismo simulacro multidisciplinario. El resultado compreso se guarda en la nueva columna `area_stats (JSONB)` de la tabla `quiz_history`.
 *   **Motor KPI:** El endpoint `getStats` dispara queries analíticas sobre la nube estructurada JSON (`jsonb_object_keys`, `SUM`), lo que entrega agregaciones estadísticas vitales sin sobrecargar la estructura de la base de datos PostgreSQL.
-*   **Dashboard Visual (Radar Chart UX):** El ecosistema Frontend intercepta dicho pipeline mediante la biblioteca `Chart.js`, renderizando un gráfico Poligonal tipo Radar (Spider) responsivo que señala visual y matemáticamente las Fortalezas (ej. Pediatría: 85%) y Fallas (ej. Cirugía: 20%) de un Doctor.
+*   **Dashboard Visual (Bar Chart UX):** El ecosistema Frontend intercepta dicho pipeline mediante el propio motor de renderizado HTML/CSS nativo de la plataforma, dibujando un gráfico de **Barras Horizontales** responsivo que señala visual y matemáticamente las Fortalezas (ej. Pediatría: 85%) y Fallas (ej. Cirugía: 20%) de un Doctor.
 
 #### E. Base de Datos (Schema)
 *   `question_bank`: Repositorio global de preguntas (compartido). Columnas clave: `domain`, `target` (ENAM/SERUMS/RESIDENTADO), `topic`, `difficulty`, `times_used`.
@@ -503,7 +503,7 @@ El sistema garantiza que cada respuesta se asigne a su especialidad real, resolv
     }
     ```
 *   **Desagregación Lateral en PostgreSQL:** Para leer este JSONB de cara al Dashboard, se utiliza la función `jsonb_each()` de manera lateral en el bloque `FROM` (`FROM quiz_history, jsonb_each(area_stats)`). Esto descompone la matriz JSON limpiamente, permitiendo sumar aciertos globales por materia mediante funciones agregadas `SUM()`. (Nota: utilizar `jsonb_object_keys()` directamente dentro de `SUM()` arroja un fatal error SQL al ser una *set-returning function*).
-*   **Visualización en UX (Radar Chart):** El endpoint `/api/quiz/stats` extrae las llaves de este JSONB, suma los valores y calcula la Precisión (Accuracy %). Estos datos se envían de vuelta al Frontend, alimentando el **Gráfico de Radar (Dominio por Áreas)**. Así, el estudiante diagnostica visualmente qué especialidad exacta dentro de su mix de estudio está fallando más y dónde sus fortalezas son sólidas.
+*   **Visualización en UX (Bar Chart):** El endpoint `/api/quiz/stats` extrae las llaves de este JSONB, suma los valores y calcula la Precisión (Accuracy %). Estos datos se envían de vuelta al Frontend, alimentando el **Gráfico de Barras Horizontales (Dominio por Áreas)**. Así, el estudiante diagnostica visualmente qué especialidad exacta dentro de su mix de estudio está fallando más y dónde sus fortalezas son sólidas.
 
 ### 14.4. Análisis de Patrones de Error e Inteligencia Artificial
 Como capa final del dashboard, se cuenta con una herramienta de **Diagnóstico de Rendimiento por IA**:

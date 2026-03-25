@@ -16,7 +16,7 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 ### ⚙️ Backend (Application & Domain)
 - **`QuizController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites.
 - **`TrainingService.js`**: El "cerebro" del módulo. Implementa la lógica híbrida: Banco -> IA Fallback.
-- **`mlService.js`**: Interface con Gemini 2.5 Flash para generación RAG y análisis de rendimiento.
+- **`mlService.js`**: Interface con Gemini 2.5 Flash Lite para generación RAG y análisis de rendimiento.
 
 ### 🗄️ Infraestructura (Persistence)
 - **`TrainingRepository.js`**: Consultas SQL puras para `question_bank` y `quiz_history`.
@@ -33,19 +33,19 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 El usuario puede cruzar 3 variables fundamentales:
 1. **Target**: ENAM, SERUMS (Medicina/Enfermería), Residentado Médico (CONAREME).
 2. **Dificultad**: Básico (Teórico), Intermedio (Casos Clínicos), Avanzado (Gold Standard).
-3. **Áreas**: Multi-selección de 23 especialidades médicas agrupadas por categorías.
+3. **Áreas**: Multi-selección de 22 especialidades médicas agrupadas por categorías.
 
 ### 🧠 Motor Híbrido RAG (AI Agéntica)
 1. **Fase 1 (Balanced Bank First)**: Intenta llenar el buffer de 5 preguntas desde el banco local balanceadamente (Max 2 por área).
 2. **Fase 2 (Pro-Active AI Replenishment)**: Si el banco devuelve < 5 preguntas o no puede cumplir la cuota de balanceo (área agotada), se considera el stock como insuficiente.
-3. **Fase 3 (RAG Maestro Flow)**: Invoca a Gemini 2.5 Flash inyectando:
+3. **Fase 3 (RAG Maestro Flow)**: Invoca a Gemini 2.5 Flash Lite inyectando:
    - **Muestreo Aleatorio**: Máximo 5 áreas por lote para optimizar el contexto RAG.
    - **Guías Clínicas (RAG)**: Contexto extraído de Normas Técnicas/GPCs mediante búsqueda SQL ILIKE local.
    - **Deduplicación Semántica**: Scaneo de los últimos 200 temas generados.
    - **Estilo de Examen**: Adaptación al Target (ENAM, SERUMS, Residentado).
 
 ### 📊 Real-Feel Analytics (JSONB Intelligence)
-- Al finalizar, el sistema calcula el desempeño por cada una de las 23 áreas.
+- Al finalizar, el sistema calcula el desempeño por cada una de las 22 áreas.
 - Estos datos se inyectan en una columna **JSONB** (`area_stats`).
 - El dashboard lee esta estructura para renderizar un diagrama semántico ultra-rápido en barras HTML/CSS, permitiendo identificar fortalezas y debilidades subatómicas. A su vez, el **Motor IA Fallback** simula la presencia de Inteligencia Artificial para cuentas "Guest/Demo" imprimiendo evaluaciones y diagnósticos extendidos de la casuística particular de cada alumno.
 
