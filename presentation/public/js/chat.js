@@ -282,7 +282,7 @@ class ChatComponent {
                         // Validar campos camelCase o snake_case
                         const status = user.subscriptionStatus || user.subscription_status;
                         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
 
                         // Lógica de Bloqueo
                         if (status === 'pending' && usage >= limit) {

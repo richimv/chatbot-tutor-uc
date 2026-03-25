@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 role: 'student',
                                 subscriptionStatus: 'pending',
                                 usage_count: 0,
-                                max_free_limit: 3
+                                max_free_limit: 50
                             };
 
                             // Guardamos en el Manager
@@ -225,7 +225,7 @@ function updateHeaderUI(user) {
                         <span class="user-menu-email">${user.email}</span>
                          ${user.subscriptionStatus !== 'active' ? `
                             <div class="user-usage-badge">
-                                🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 3) - (user.usage_count || 0))}
+                                🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 50) - (user.usage_count || 0))}
                             </div>` : ''}
                     </div>
                     

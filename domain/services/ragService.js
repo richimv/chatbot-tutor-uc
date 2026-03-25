@@ -27,7 +27,7 @@ class RagService {
 
         // Inyectamos términos clave según el target
         if (target === "SERUMS") words.push("Resolucion_Ministerial", "ley", "nts", "rm");
-        if (target === "ENAM") words.push("guia", "clinica", "gpc", "rm", "nts", "cto");
+        if (target === "ENAM") words.push("gpc", "washington", "harrison", "cto", "nts", "rm");
         if (target === "RESIDENTADO") words.push("harrison", "washington", "amir", "cto");
 
         // Quitamos duplicados y limitamos a 6 términos para mantener el query rápido

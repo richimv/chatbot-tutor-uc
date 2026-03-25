@@ -587,7 +587,7 @@ function createUnifiedResourceCardHTML(item) {
             } else {
                 // Freemium (no active). Solo bloquear si ya no tiene usos
                 const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
                 if (usage >= limit) {
                     isLocked = true;
                 } else {
@@ -796,7 +796,7 @@ window.createVideoCardHTML = function (item) {
             const status = user.subscriptionStatus || user.subscription_status;
             if (status !== 'active' && user.role !== 'admin') {
                 const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
                 if (usage >= limit) isLocked = true;
             }
         }

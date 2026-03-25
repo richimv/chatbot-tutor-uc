@@ -86,13 +86,13 @@ const checkAILimits = (type) => {
             }
 
             // 3. MATRIZ DE LÍMITES POR TIER (Calculado en base a matemática del doc MD)
-            // Flashcards: Las tarjetas se generan de 5 en 5. 
-            // - Básico: 20 tarjetas/mes = 4 llamadas.
-            // - Avanzado: 100 tarjetas/mes = 20 llamadas.
+            // 🧠 FLASHCARDS (Mensual): Se mide por INTENTOS de generación (Adaptativos 1-15 tjs/int).
+            // - Básico: 10 intentos/mes.
+            // - Avanzado: 30 intentos/mes.
             const LIMITS = {
                 free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1 },
-                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 4 },
-                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 20 }
+                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10 },
+                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30 }
             };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
@@ -101,7 +101,7 @@ const checkAILimits = (type) => {
             // Por regla de negocio, los límites "Diarios" solo aplican a los usuarios activos (Planes pagados).
             // Los usuarios "Pending" o Inactivos están gobernados puramente por sus Vidas Globales.
             const isActiveAccount = user.subscription_status === 'active';
-            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 3);
+            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 50);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
             if (type === 'chat_standard') {
@@ -142,7 +142,7 @@ const checkAILimits = (type) => {
                     }
                 } else {
                     if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
-                        return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${LIMITS[user.subscription_tier].monthly_flashcards * 5} tarjetas). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
+                        return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
                     }
                     req.usageType = 'monthly_flashcards_usage';
                 }

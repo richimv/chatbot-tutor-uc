@@ -91,7 +91,7 @@ function renderSubscriptionDetails(user) {
                     <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Beneficios del Plan:</h4>
                     <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-gamepad" style="color: #4ade80; width: 20px;"></i> Quiz Arena (${tier === 'advanced' ? '10' : '5'} partidas diarias)</li>
-                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-clone" style="color: #60a5fa; width: 20px;"></i> Flashcards ${tier === 'advanced' ? 'Manuales + 100/mes con IA' : 'Manuales + 20/mes con IA'}</li>
+                        <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-clone" style="color: #60a5fa; width: 20px;"></i> Flashcards ${tier === 'advanced' ? 'Manuales + IA(30 pedidos/mes)' : 'Manuales + IA(10 pedidos/mes)'}</li>
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-chart-line" style="color: #a78bfa; width: 20px;"></i> Estadísticas ${tier === 'advanced' ? 'Avanzadas (IA)' : 'Básicas'}</li>
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-book-medical" style="color: #f472b6; width: 20px;"></i> Biblioteca Completa (DRIVE)</li>
                         <li style="font-size: 0.85rem; color: #e2e8f0;"><i class="fas fa-robot" style="color: #f472b6; width: 20px;"></i> Simulador Examenes (${tier === 'advanced' ? 'Banco Generativo con IA' : 'Banco con stock'})</li>

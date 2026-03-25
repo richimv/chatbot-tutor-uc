@@ -360,7 +360,7 @@ El sistema ofrece dos niveles de pago procesados por MercadoPago, con beneficios
 | **Tutor IA (Chat)** | Estándar (15 mensajes/día) | Pro con Biblioteca Médica RAG (50 mensajes/día) |
 | **Quiz Arena (IA)** | 5 partidas/día | 10 partidas/día |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico IA (Consume chat_standard) |
-| **Flashcards (IA)** | 20 tarjetas / mes | 100 tarjetas / mes |
+| **Flashcards (IA)** | 10 intentos / mes | 30 intentos / mes |
 | **Simulador Médico** | Banco Local (ILIMITADO) | Banco Local + Generación RAG (ILIMITADO) |
 
 *   **Conversión:** Se activa mediante Webhook de MercadoPago. El servidor actualiza `subscription_tier` ('basic' o 'advanced') y establece `subscription_expires_at = NOW() + INTERVAL 'X months'`.

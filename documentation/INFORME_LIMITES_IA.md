@@ -16,7 +16,7 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | **Tutor IA (Chat)** | Estándar + Lite (20 msg/día) | Biblioteca RAG + Lite (30 msg/día) |
 | **Quiz Arena (IA)** | 5 partidas/día (Modelo Lite) | 10 partidas/día (Modelo Lite) |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
-| **Flashcards (IA)** | 20 tarjetas / mes (Lite) | 100 tarjetas / mes (Lite) |
+| **Flashcards (IA)** | 10 intentos / mes (1-15 tjs/int) | 30 intentos / mes (1-15 tjs/int) |
 | **Simulador Médico (Repuesto IA)** | **BLOQUEADO (Solo Banco)** | **ILIMITADO (Modelo Lite)** |
 
 ---
@@ -50,8 +50,8 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
 - **El Problema Anterior:** Estaba midiendo en el backend usando contadores de "Chat". Por esto, generarlas iba a afectar injustamente al chat y a chocar con la meta mensual del pago de S/ 9.90.
 - **La Solución Implementada:**
   - Se estructuró y desplegó una columna en BD exclusivamente para cobrar Flashcards llamada: `monthly_flashcards_usage`.
-  - Integrado a `deckController.js`. Siendo de Plan Básico, si al generador le pides hacer 4 bloques seguidos de 5 Tarjetas (total=20 al mes), el backend automáticamente devolverá `HTTP 403 Forbidden - Límite Mensual` en la petición siguiente. 
-  - Si tu plan es avanzado, tienes una bolsa de 100 flashcards automatizadas (20 bloqueos de generación profunda en base).
+  - Integrado a `deckController.js`. Siendo de Plan Básico, tienes **10 intentos** al mes. Cada intento genera de **1 a 15 tarjetas** según la complejidad del tema.
+  - Si tu plan es avanzado, tienes **30 intentos** mensuales, permitiendo un volumen de hasta 450 tarjetas inteligentes al mes si se explota el máximo.
 
 ### 2.5 Módulo: Quiz Arena
 - Integrado bajo la propiedad estricta `daily_arena_usage` consumiendo 1 contador de API por intento de juego, sin afectar el resto del ecosistema ni los tokens directos de IAs complejas.
@@ -100,7 +100,8 @@ En el Simulador (`api/quiz/start` y `api/quiz/next-batch`), la generación de pr
 - **Costo Cero de Razonamiento**: Al usar el motor Lite, HubAcademia deja de pagar por los "pasos de pensamiento" de la IA, permitiendo que esta función sea el motor de venta del Plan Pro sin riesgo financiero.
 
 ### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
-Las tarjetas generadas con IA estipulan **20 tarjetas al mes** para Basic y **100 tarjetas al mes** para Advanced.
-El middleware extrae directamente de PostgreSQL la entidad `monthly_flashcards_usage`. 
-Al saturar las cuotas (4 o 20 llamadas), el backend escupe rígidamente un 403.
+Las tarjetas generadas con IA estipulan **10 intentos al mes** para Basic y **30 intentos al mes** para Advanced.
+- Cada pedido es **Adaptativo**: La IA genera de **1 a 15 tarjetas** según la densidad de la materia solicitada.
+- El middleware extrae directamente de PostgreSQL la entidad `monthly_flashcards_usage`. 
+- Al saturar las cuotas (10 o 30 intentos), el backend escupe rígidamente un 403 con el mensaje del límite alcanzado.
 El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- un bloque DOM `custom-limit-modal` con posición absoluta `fixed` que bloquea y empapela toda la pantalla. Es imposible de romper o saltar mediante CSS de otros módulos y blinda tajantemente la base de datos de usuarios aprovechados.
