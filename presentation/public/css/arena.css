@@ -74,52 +74,53 @@ body {
     overflow: hidden;
 }
 
-.input-label {
-    display: block;
+.topic-header {
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.topic-sub {
     color: #94a3b8;
-    margin-bottom: 0.8rem;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    margin: 4px 0 0 0;
 }
 
-.custom-input {
-    width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #334155;
-    color: white;
-    padding: 1rem;
-    border-radius: 10px;
-    font-size: 1rem;
-    margin-bottom: 0.5rem; /* Reduced to leave space for tags */
-    font-family: inherit;
-    transition: all 0.3s ease;
+.badge-senior {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    color: #1a1a1a;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+    animation: gold-pulse 2s infinite;
 }
 
-.custom-input:focus {
-    outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+@keyframes gold-pulse {
+    0% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
+    50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.7); }
+    100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
 }
 
 .quick-tags-container {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
     overflow-x: auto;
-    padding: 0.5rem 0.2rem;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-    scroll-snap-type: x proximity;
+    padding: 1rem 0.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    
-    /* FIX: Ensure it doesn't stretch the card */
     max-width: 100%;
     width: 100%;
     position: relative;
-    
-    /* Premium Fading Effect */
     -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
 }
 
 .quick-tags-container::-webkit-scrollbar {
@@ -127,21 +128,45 @@ body {
 }
 
 .quick-tag {
-    flex: 0 0 auto;
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex: 0 0 130px;
+    height: 140px;
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: #94a3b8;
-    padding: 0.6rem 1.2rem;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    padding: 1.5rem 1rem;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    scroll-snap-align: center;
+    text-align: center;
+}
+
+.tag-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    scroll-snap-align: start;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.tag-icon i {
+    font-size: 1.5rem !important;
+    color: #8b5cf6;
+}
+
+.quick-tag span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 .quick-tag i {
@@ -150,17 +175,28 @@ body {
 }
 
 .quick-tag:hover {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
     color: white;
-    transform: translateY(-2px);
+    transform: translateY(-5px);
+}
+
+.quick-tag:hover .tag-icon {
+    background: rgba(139, 92, 246, 0.2);
+    transform: scale(1.1);
 }
 
 .quick-tag.active {
-    background: var(--gradient-btn);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     border-color: transparent;
     color: white;
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+    transform: translateY(-5px) scale(1.02);
+}
+
+.quick-tag.active .tag-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
 .quick-tag.active i {

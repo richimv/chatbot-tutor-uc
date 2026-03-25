@@ -21,8 +21,7 @@ window.DemoBank = {
             "topic": "Cuidado Integral De Salud",
             "subtopic": "Programa Ampliado de Inmunizaciones (PAI)",
             "target": "SERUMS",
-            "career": "Medicina Humana",
-            "difficulty": "Básico"
+            "career": "Medicina Humana"
         },
         {
             "question_text": "¿Qué tipo de notificación epidemiológica corresponde a un caso confirmado de cólera?",
@@ -39,7 +38,6 @@ window.DemoBank = {
             "subtopic": "Vigilancia Epidemiológica",
             "target": "SERUMS",
             "career": "Medicina Humana",
-            "difficulty": "Básico"
         },
         {
             "question_text": "¿Cuál es un derecho fundamental de las personas usuarias de servicios de salud, según la normativa peruana?",
@@ -56,7 +54,6 @@ window.DemoBank = {
             "subtopic": "Derechos del Paciente",
             "target": "SERUMS",
             "career": "Medicina Humana",
-            "difficulty": "Básico"
         },
         {
             "question_text": "¿Cuál es la frecuencia de notificación epidemiológica para un caso confirmado de tuberculosis pulmonar?",
@@ -73,7 +70,6 @@ window.DemoBank = {
             "subtopic": "Vigilancia Epidemiológica de TB",
             "target": "SERUMS",
             "career": "Medicina Humana",
-            "difficulty": "Básico"
         },
         {
             "question_text": "¿Cuántos controles prenatales mínimos se recomiendan según la Norma Técnica de Salud Materna?",
@@ -90,11 +86,9 @@ window.DemoBank = {
             "subtopic": "Salud Materno-Perinatal",
             "target": "SERUMS",
             "career": "Medicina Humana",
-            "difficulty": "Básico"
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
                 "Dirección de Gestión de Establecimientos",
@@ -111,7 +105,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "Una obstetra administra metamizol intramuscular a una gestante. Minutos después, la paciente presenta rash y náuseas. ¿A qué comité debe reportarse obligatoriamente esta sospecha?",
             "options": [
                 "Comité de control interno",
@@ -128,7 +121,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "En el análisis FODA de un puesto de salud, el comportamiento negativo de la población y sus hábitos difíciles de modificar se identifican como:",
             "options": [
                 "Debilidades",
@@ -145,7 +137,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "Para medir el riesgo de enfermedad en una comunidad, se utiliza la incidencia para evaluar la _____ y la prevalencia para la _____.",
             "options": [
                 "Gravedad / Frecuencia",
@@ -162,7 +153,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "Se define como transición epidemiológica al proceso caracterizado por el paso del predominio de enfermedades _____ a la preponderancia de enfermedades _____.",
             "options": [
                 "Agudas / Infecciosas",
@@ -179,7 +169,6 @@ window.DemoBank = {
         },
         {
             "topic": "Investigación",
-            "difficulty": "Intermedio",
             "question_text": "Se le encarga realizar un estudio descriptivo sobre depresión adolescente en su comunidad. ¿Cuál constituye la principal limitante de este diseño?",
             "options": [
                 "Elevados costos económicos",
@@ -196,7 +185,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "Según el Código de Ética de la Función Pública, el servidor tiene el deber de _____ y _____ los bienes del Estado asignados para sus funciones.",
             "options": [
                 "Usar / Cuidar",
@@ -213,7 +201,6 @@ window.DemoBank = {
         },
         {
             "topic": "Investigación",
-            "difficulty": "Intermedio",
             "question_text": "Desea investigar los factores asociados a la baja adherencia a lactancia materna en su comunidad. ¿Qué acción debe realizar en primer lugar?",
             "options": [
                 "Elegir los objetivos de estudio",
@@ -230,7 +217,6 @@ window.DemoBank = {
         },
         {
             "topic": "Cuidado Integral De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Acude gestante de 19 años con 34 semanas y anemia sever (Hb: 9 g/dL). ¿Qué tipo de anemia tiene mayor riesgo de presentar el recién nacido?",
             "options": [
                 "Megaloblástica",
@@ -247,7 +233,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "El POI es un instrumento de gestión que establece metas físicas y financieras de vigencia anual, las cuales deben estar alineadas con el:",
             "options": [
                 "Manual de Organización y Funciones",
@@ -264,7 +249,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "En un puesto I-2 de Loreto, frascos abiertos y cerrados de vacuna pentavalente estuvieron expuestos a 15 °C durante 6 días tras jornada extramural. ¿Qué medida corresponde?",
             "options": [
                 "Congelar los frascos para su recuperación técnica.",
@@ -281,7 +265,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "Médico de un I-3 organiza talleres para que la población elimine criaderos de Aedes aegypti y reporte signos de alarma de Dengue. ¿Cómo se denomina esta intervención?",
             "options": [
                 "Prevención secundaria dirigida al control de daño.",
@@ -298,7 +281,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "Paciente de 80 años con cáncer decide no aceptar quimioterapia tras ser informada de riesgos y beneficios. ¿Qué registro es obligatorio en este escenario?",
             "options": [
                 "El alta por retiro voluntario del establecimiento.",
@@ -315,7 +297,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Durante su guardia en un puesto de salud I-2 en Sullana, evalúa a un joven con diagnóstico de dengue y signos de alarma. Debido a la gravedad del caso, ¿cuál es el nivel del establecimiento receptor obligatorio para garantizar el monitoreo clínico continuo?",
             "options": [
                 "Establecimiento de nivel I-4 o II-1",
@@ -332,7 +313,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "En un centro materno infantil I-3 de Lima Metropolitana, se identifica a un niño de 4 años, contacto intradomiciliario de un paciente con tuberculosis pulmonar confirmada. En este nivel de atención, la actividad primordial a garantizar de inmediato para el niño es ____.",
             "options": [
                 "Hospitalización preventiva en pabellón aislado",
@@ -349,7 +329,6 @@ window.DemoBank = {
         },
         {
             "topic": "Cuidado Integral De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Neonato de 2 días nacido en domicilio es traído a un puesto de salud I-1 de una comunidad aymara en Puno. Presenta hipoactividad, rechazo al pecho y temperatura de 35.5 °C. Como parte de los cuidados primarios, ¿cuál es la medida obligatoria antes y durante su traslado?",
             "options": [
                 "Iniciar infusión de antibióticos de amplio espectro",
@@ -366,7 +345,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Al retornar de una campaña extramural, el enfermero de un centro de salud I-3 en Ucayali reporta que el termo registró temperaturas entre +10 °C y +15 °C durante 6 días. ¿Qué indica la normativa técnica sobre los viales cerrados de vacuna combinada pentavalente expuestos?",
             "options": [
                 "Deben recongelarse durante unas veinticuatro horas",
@@ -383,7 +361,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "Para reducir la prevalencia de anemia infantil en la jurisdicción de un centro I-2 de Ayacucho, usted organiza talleres que involucran a la municipalidad, agricultura local y escuelas. Esta intervención comunitaria y multisectorial se clasifica específicamente como ____.",
             "options": [
                 "Abordaje de los determinantes sociales en salud",
@@ -400,7 +377,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "En un centro de salud I-3 de Madre de Dios, una mujer de 22 años acude tras ser víctima de violencia sexual. Como parte de la prevención combinada, ¿cuál es la pauta obligatoria para iniciar la profilaxis post exposición (PPE) para VIH?",
             "options": [
                 "Antes de 72 horas sin requerir denuncia policial",
@@ -417,7 +393,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "En un puesto de salud I-2 de San Martín, evalúa a un joven con fiebre, mialgias y dolor retroocular. Ante la sospecha clínica de un brote de dengue, ¿qué acción epidemiológica es obligatoria respecto a la ficha de investigación?",
             "options": [
                 "Esperar el resultado serológico confirmatorio para llenar la ficha",
@@ -434,7 +409,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Avanzado",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
                 "Dirección de Servicios de Salud",
@@ -451,7 +425,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Avanzado",
             "question_text": "Es el documento de gestión que comprende la programación de actividades operativas e inversiones alineadas al PEI, permitiendo el ejercicio del rol rector anual.",
             "options": [
                 "ROF",
@@ -468,7 +441,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Avanzado",
             "question_text": "Dada la necesidad de optimizar la atención de pacientes crónicos en un hospital III-1, se decide implementar seguimiento domiciliario. ¿Qué componente es prioritario para el éxito?",
             "options": [
                 "Incrementar camas hospitalarias.",
@@ -485,7 +457,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Avanzado",
             "question_text": "Ante una alta incidencia de IAAS en una UCI de Hospital III-2, se decide implementar vigilancia intensiva. ¿Qué componente es CRUCIAL para la efectividad?",
             "options": [
                 "Capacitación de personal de limpieza.",
@@ -502,7 +473,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Avanzado",
             "question_text": "Todo servidor público debe proteger y conservar los bienes del Estado asignados para sus funciones, evitando abuso o derroche. ¿A qué deber alude?",
             "options": [
                 "Ejecución eficiente",
@@ -519,7 +489,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "¿Cuál es el valor del indicador de una prueba diagnóstica que mide la probabilidad de que un paciente esté enfermo dado que el resultado fue positivo?",
             "options": [
                 "Sensibilidad",
@@ -536,7 +505,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "En el marco de las Redes Integradas de Salud (RIS), ¿qué atributo se refiere a la capacidad de la red para garantizar que el paciente reciba atenciones coordinadas a lo largo de los diferentes niveles?",
             "options": [
                 "Accesibilidad",
@@ -553,7 +521,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "El médico serumista es consultado por la policía sobre el diagnóstico de una paciente víctima de agresión. ¿En qué caso el secreto profesional NO es obligatorio?",
             "options": [
                 "Solicitud del cónyuge",
@@ -570,7 +537,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "Usted atiende a un varón que fallece por herida de arma de fuego. ¿Cuál es la conducta médico-legal correcta respecto al cadáver?",
             "options": [
                 "Certificar la defunción",
@@ -587,7 +553,6 @@ window.DemoBank = {
         },
         {
             "topic": "Investigación",
-            "difficulty": "Intermedio",
             "question_text": "En un estudio sobre anemia se desea que todos los sectores de la comunidad (rural, urbano, periurbano) estén representados proporcionalmente. ¿Qué muestreo utilizaría?",
             "options": [
                 "Aleatorio simple",
@@ -604,7 +569,6 @@ window.DemoBank = {
         },
         {
             "topic": "Cuidado Integral De Salud",
-            "difficulty": "Intermedio",
             "question_text": "En el control prenatal de una gestante sin factores de riesgo, ¿a partir de qué semana se debe iniciar la suplementación con Calcio para prevenir la preeclampsia?",
             "options": [
                 "14 semanas",
@@ -621,7 +585,6 @@ window.DemoBank = {
         },
         {
             "topic": "Salud Pública",
-            "difficulty": "Intermedio",
             "question_text": "Niño de 15 meses acude al establecimiento de salud para su inmunización de rutina. ¿Qué vacuna le corresponde recibir según el esquema nacional?",
             "options": [
                 "Antiamarílica",
@@ -638,7 +601,6 @@ window.DemoBank = {
         },
         {
             "topic": "Gestión De Servicios De Salud",
-            "difficulty": "Intermedio",
             "question_text": "La dimensión de la calidad de atención que busca minimizar los riesgos y daños para el paciente durante el proceso de atención se denomina:",
             "options": [
                 "Eficacia",
@@ -655,7 +617,6 @@ window.DemoBank = {
         },
         {
             "topic": "Ética E Interculturalidad",
-            "difficulty": "Intermedio",
             "question_text": "En la cosmovisión andina, el concepto de salud no solo implica la ausencia de enfermedad, sino la armonía con el entorno y la comunidad. Esto se denomina:",
             "options": [
                 "Allin Kawsay",
@@ -672,7 +633,6 @@ window.DemoBank = {
         },
         {
             "topic": "Cuidado Integral De Salud",
-            "difficulty": "Intermedio",
             "question_text": "Para evaluar la capacidad de un adulto mayor para realizar actividades instrumentales como usar el teléfono, ir de compras o cocinar, ¿qué escala debe aplicar?",
             "options": [
                 "Índice de Katz",

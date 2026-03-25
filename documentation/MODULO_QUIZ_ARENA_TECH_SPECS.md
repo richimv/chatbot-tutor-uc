@@ -1,6 +1,6 @@
 # 🎮 Documentación Técnica: Módulo Quiz Arena (Battle Mode)
 
-El **Quiz Arena** es el componente gamificado de HubAcademia, diseñado para ofrecer una experiencia de trivia rápida y competitiva sobre cultura general o temas específicos, alejada del rigor clínico del simulador médico principal.
+El **Quiz Arena** es el componente gamificado y universal de HubAcademia. Está diseñado para ofrecer una experiencia de trivia rápida, competitiva y relajada sobre **Cultura General, Ciencia, Matemática y otros temas**, alejándose del rigor estrictamente clínico del simulador médico para enfocarse en el aprendizaje lúdico y el entretenimiento inteligente.
 
 ---
 
@@ -36,9 +36,14 @@ El módulo sigue una estructura desacoplada:
 - **50/50**: Elimina dos opciones incorrectas. Solo disponible una vez por partida.
 - **Skip**: Salta la pregunta actual sin costo de vida. Solo disponible una vez por partida.
 
-### 📊 Nivelación
-- El "Nivel" se calcula cada 5 preguntas: `Math.floor(currIdx / 5) + 1`.
-- Sirve como marcador visual de progreso y dificultad percibida.
+---
+
+## 3. Estándar "Senior" (Unificación de Calidad)
+
+A diferencia de los niveles tradicionales (Básico/Intermedio), en la Arena el término **"Senior"** representa el **Sello de Calidad Unificado**:
+- **Precisión**: Información veraz y redactada profesionalmente.
+- **Accesibilidad**: A pesar de ser "Senior", el tono es de **Trivia Master** (ágil, curioso y divertido), evitando el estrés de un examen oficial.
+- **Pool Extenso**: Al unificar todas las dificultades previas bajo este estándar, se garantiza un banco de **+900 preguntas** aleatorias, minimizando la repetición.
 
 ---
 

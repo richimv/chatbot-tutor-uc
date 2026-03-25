@@ -21,7 +21,7 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 ### 🗄️ Infraestructura (Persistence)
 - **`TrainingRepository.js`**: Consultas SQL puras para `question_bank` y `quiz_history`.
 - **Tablas Críticas:**
-  - `question_bank`: Repositorio global indexado por `target`, `topic` y `difficulty`.
+  - `question_bank`: Repositorio global indexado por `target` y `topic`.
   - `quiz_history`: Almacena puntajes y el objeto **JSONB `area_stats`**.
   - `user_question_history`: Tabla de anti-repetición (seen_at, times_seen).
 
@@ -29,11 +29,9 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 
 ## 3. Sistemas Core
 
-### 🎯 Configuración Dinámica (Matrix Mode)
-El usuario puede cruzar 3 variables fundamentales:
-1. **Target**: ENAM, SERUMS (Medicina/Enfermería), Residentado Médico (CONAREME).
-2. **Dificultad**: Básico (Teórico), Intermedio (Casos Clínicos), Avanzado (Gold Standard).
-3. **Áreas**: Multi-selección de 22 especialidades médicas agrupadas por categorías.
+El usuario puede cruzar variables fundamentales:
+1. **Target**: ENAM, SERUMS (Medicina/Enfermería/Obstetricia), Residentado Médico (CONAREME).
+2. **Áreas**: Multi-selección de 22 especialidades médicas agrupadas por categorías.
 
 ### 🧠 Motor Híbrido RAG (AI Agéntica)
 1. **Fase 1 (Balanced Bank First)**: Intenta llenar el buffer de 5 preguntas desde el banco local balanceadamente (Max 2 por área).

@@ -11,7 +11,7 @@ class QuizController {
      */
     async startQuiz(req, res) {
         try {
-            const { target, areas, difficulty, round = 1, limit = 5, topic, career } = req.body;
+            const { target, areas, round = 1, limit = 5, topic, career } = req.body;
             const user = req.user;
 
             const finalTarget = target || 'SERUMS';
@@ -62,15 +62,11 @@ class QuizController {
                 });
             }
 
-            // 2. MODO ESTRICTO: Respetar la dificultad seleccionada por el usuario
-            // Ya no forzamos "Básico" en rondas bajas si el usuario eligió "Experto".
-            let aiDifficulty = difficulty || 'Básico';
-
-            console.log(`🎮 Generando Ronda ${round} [Nivel ${aiDifficulty}] de ${finalTarget} para ${user.name}. Limit: ${limit}`);
+            console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
             // 3. Generar el Quiz Balanceado (Pasamos subscriptionTier para control de IA)
             const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer };
-            const quizData = await TrainingService.generateQuiz(categoryOptions, aiDifficulty, user.id, limit, user.subscriptionTier);
+            const quizData = await TrainingService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier);
 
             // 💡 FIX: Devolver el tema ESPECÍFICO (ej: "CARDIOLOGIA") rotado por el servicio,
             // en lugar del genérico "Medicina General".
@@ -83,7 +79,6 @@ class QuizController {
                 success: true,
                 topic: returnedTopic,
                 areas: finalAreas, 
-                difficulty: aiDifficulty,
                 round: round,
                 questions: quizData.questions,
                 isPremium: isPremium,
@@ -123,7 +118,6 @@ class QuizController {
                 areas, // Pasamos al servicio
                 target, // Pasamos al servicio
                 career, // Pasamos al servicio
-                difficulty,
                 score,
                 totalQuestions: total_questions || 10,
                 questions: questions || []
@@ -299,11 +293,11 @@ class QuizController {
             if (context === 'MEDICINA') {
                 if (target) {
                     params.push(target);
-                    // Match exams explicitly marked with this target OR legacy exams where difficulty held the valid target
-                    topicFilter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
+                    // Match exams explicitly marked with this target
+                    topicFilter = `AND target = $2`;
                 } else {
                     // Fallback para todo el ecosistema (todas las dificultades antiguas y modernas unificadas)
-                    topicFilter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'RESIDENTADO', 'Básico', 'Intermedio', 'Avanzado')`;
+                    topicFilter = ``; 
                 }
             } else if (context) {
                 // Generic fallback
@@ -516,11 +510,9 @@ class QuizController {
                 console.log(`📡 Fallback Controller [Batch]: Aplicando 5 ejes MINSA.`);
             }
 
-            // 🎯 OBTENCIÓN DE BANCO: Usar el repositorio para obtener preguntas no vistas.
             // TrainingService.generateQuiz ahora solo consulta la DB para Simulacros Médicos.
             const result = await TrainingService.generateQuiz(
                 { target: finalTarget, areas: finalAreas, career: finalCareer },
-                difficulty || 'Intermedio',
                 userId,
                 5,
                 req.user.subscriptionTier,

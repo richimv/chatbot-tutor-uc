@@ -22,9 +22,7 @@ Para proteger la economía del proyecto, el sistema ha sido auditado y re-estruc
 
 ### Paso 1: Solicitud desde el Chat / Admin
 El usuario define los parámetros en el frontend o vía chat:
-- **Básico:** Evaluación de memoria directa (Definiciones, Triadas) o datos normativos (Dosis, Plazos). Explicación: **2 párrafos**.
-- **Intermedio:** Razonamiento clínico simple o aplicación de normas en comunidad (I-1 al I-4). Explicación: **2 párrafos detallados**.
-- **Avanzado:** Manejo terapéutico de 2da línea, complicaciones raras o gestión de brotes. Explicación: **3 párrafos analíticos**.
+- **Estilo de Generación**: Evaluación integral centrada en el rigor clínico-normativo. Explicación de **3 párrafos analíticos** con sustento bibliográfico detallado.
 
 ### Paso 2: Escaneo de Duplicidad (SQL Local)
 En `mlService.js`, antes de llamar a la IA, el sistema ejecuta:
@@ -59,7 +57,7 @@ La IA actúa como un redactor experto. Lee los fragmentos y redacta la pregunta 
 ```json
 {
   "topic": "Área de estudio",
-  "difficulty": "Nivel",
+  "difficulty": "Senior",
   "question_text": "Cuerpo de la pregunta...",
   "options": ["Opción A", "Opción B", ...],
   "correct_option_index": 0,
@@ -122,9 +120,7 @@ Es óptimo agrupar áreas que comparten bibliografía para que los fragmentos re
 *   **Grupo Clínico Adulto:** Medicina Interna + Farmacología + Fisiología. (Inyecta automáticamente GPC/Harrison).
 *   **Grupo Especialidades:** Pediatría + Obstetricia + Cirugía. (Inyecta automáticamente GPC/Guías).
 
-### 6.3 Flujo de Citas (Auditado)
-*   **Nivel Básico/Intermedio:** Exigencia de al menos 2 fuentes.
-*   **Nivel Avanzado:** Exigencia de 3-4 fuentes con análisis de casos complejos.
+*   **Sustento de Citas**: Exigencia obligatoria de citar al menos **DOS (2) fuentes** oficiales (NTS, GPC o Tratados) por cada pregunta, con análisis profundo de la casuística.
 
 ### 6.4 Escenarios de Búsqueda y Palabras Clave
 Para entender cómo el sistema "piensa" al buscar fragmentos, aquí tienes los tres escenarios principales basados en el motor de inyección automática:
@@ -167,7 +163,7 @@ Se han establecido restricciones inviolables en el prompt maestro:
 
 Tras la última actualización, se certifica el cumplimiento del estándar **MINSA 2025**:
 
-### 9.1 Auditoría SERUMS (Medicina Humana - Avanzado)
+### 9.1 Auditoría SERUMS (Medicina Humana)
 *   **Resultado:** Generación de preguntas sobre **Gestión de Brotes** y **Medicina Legal**.
 *   **Estilo:** Opciones breves (ej: "Inmediata (menos de 24 horas)").
 *   **Precisión:** Cita exacta de la **Ley 26842** y **NTS 161**.

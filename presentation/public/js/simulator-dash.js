@@ -10,7 +10,7 @@ const SimulatorDash = (() => {
         'MEDICINA': {
             title: 'Ciencias de la Salud',
             icon: '<i class="fas fa-heartbeat"></i>',
-            quizParams: '?target=SERUMS&career=Medicina%20Humana&difficulty=Básico'
+            quizParams: '?target=SERUMS&career=Medicina%20Humana'
         },
         'INGLES': {
             title: 'Inglés Técnico',
@@ -200,7 +200,7 @@ const SimulatorDash = (() => {
                     
                     summaryBox.innerHTML = `
                         <i class="fas fa-filter"></i> 
-                        <span><strong>Filtro Recuperado:</strong> ${targetDisplay} | ${activeConfig.difficulty} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
+                        <span><strong>Filtro Recuperado:</strong> ${targetDisplay} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
                     `;
                 }
             } catch (e) {
@@ -292,7 +292,7 @@ const SimulatorDash = (() => {
                 }
             </style>
             <i class="fas fa-lightbulb tip-icon"></i>
-            <strong>Tip:</strong> Tu simulador está configurado por defecto para el SERUMS. Personaliza tu meta, áreas clínicas y dificultad aquí.
+            <strong>Tip:</strong> Tu simulador está configurado por defecto para el SERUMS. Personaliza tu meta y áreas clínicas aquí.
         `;
 
         btn.parentElement.style.position = 'relative';
@@ -317,7 +317,7 @@ const SimulatorDash = (() => {
 
         // Append Custom Config if active
         if (activeConfig) {
-            baseParams = `?target=${encodeURIComponent(activeConfig.target)}&difficulty=${encodeURIComponent(activeConfig.difficulty)}&areas=${encodeURIComponent(activeConfig.areas.join(','))}&context=${currentContext}`;
+            baseParams = `?target=${encodeURIComponent(activeConfig.target)}&areas=${encodeURIComponent(activeConfig.areas.join(','))}&context=${currentContext}`;
             if (activeConfig.target === 'SERUMS' && activeConfig.career) {
                 baseParams += `&career=${encodeURIComponent(activeConfig.career)}`;
             }
@@ -475,15 +475,8 @@ const SimulatorDash = (() => {
                 if (activeConfig) {
                     activeTarget = activeConfig.target || 'ENAM';
 
-                    // Set Target Radio
                     const targetRadio = document.querySelector(`.exam-target-option input[value="${activeTarget}"]`);
                     if (targetRadio) targetRadio.checked = true;
-
-                    // Set Difficulty Select
-                    const diffSelect = document.getElementById('config-difficulty');
-                    if (diffSelect && activeConfig.difficulty) {
-                        diffSelect.value = activeConfig.difficulty;
-                    }
                 } else {
                     const checkedEl = document.querySelector('.exam-target-option input:checked');
                     if (checkedEl) activeTarget = checkedEl.value;
@@ -532,16 +525,11 @@ const SimulatorDash = (() => {
                     if (t === 'ENAM') {
                         // Grupos B, C, D
                         defaultAreas = examAreasGrouped.filter(g => g.label !== 'Ciencias Básicas').flatMap(g => g.areas);
-                        document.getElementById('config-difficulty').value = 'Intermedio';
                     } else if (t === 'SERUMS') {
                         // Solo Grupo D
                         defaultAreas = examAreasGrouped.find(g => g.label === 'Salud Pública y Gestión').areas;
-                        document.getElementById('config-difficulty').value = 'Básico'; // Sugerido
                     } else if (t === 'RESIDENTADO') {
-                        // [NOTA] Residentado actualmente desactivado en HTML/CSS por falta de stock.
-                        // Cuando se reactive, este bloque asegurará la configuración correcta.
                         defaultAreas = examAreasGrouped.flatMap(g => g.areas);
-                        document.getElementById('config-difficulty').value = 'Avanzado';
                     }
 
                     if (activeConfig) {
@@ -559,7 +547,6 @@ const SimulatorDash = (() => {
         if (btnSave) {
             btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
-                const difficulty = document.getElementById('config-difficulty').value;
                 const selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
                 const careerSelectEl = document.getElementById('config-career');
                 const career = target === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
@@ -574,7 +561,7 @@ const SimulatorDash = (() => {
                 btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                 btnSave.disabled = true;
 
-                activeConfig = { target, difficulty, areas: selectedAreas, career };
+                activeConfig = { target, areas: selectedAreas, career };
                 localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig)); // Persist locally
 
                 const token = localStorage.getItem('authToken');
@@ -608,7 +595,7 @@ const SimulatorDash = (() => {
 
                 summaryBox.innerHTML = `
                     <i class="fas fa-filter"></i> 
-                    <span><strong>Filtro Activo:</strong> ${targetDisplay} | ${difficulty} | ${selectedAreas.length} áreas seleccionadas</span>
+                    <span><strong>Filtro Activo:</strong> ${targetDisplay} | ${selectedAreas.length} áreas seleccionadas</span>
                 `;
 
                 // Update Links

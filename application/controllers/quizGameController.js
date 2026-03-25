@@ -11,7 +11,7 @@ class QuizGameController {
      */
     async startGame(req, res) {
         try {
-            const { topic, difficulty } = req.body;
+            const { topic } = req.body;
             const user = req.user;
 
             if (!user || !user.id) {
@@ -22,7 +22,7 @@ class QuizGameController {
             console.log(`⚔️ Iniciando Quiz Battle: ${topic || 'Aleatorio'} para ${user.name} (ID: ${user.id})`);
 
             // 1. Generar Preguntas (Modo Rápido: General / Arcade)
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', difficulty || 'Intermedio', user.id, user.subscriptionTier);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', user.id, user.subscriptionTier);
 
             // 2. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
             // 💡 IMPORTANTE: Aquí se hace efectivo el cobro de "1 Vida" para usuarios Free (1/1), Basic (5/5) o Advanced (10/10).
@@ -75,14 +75,14 @@ class QuizGameController {
      */
     async getQuestions(req, res) {
         try {
-            const { topic, difficulty } = req.body;
+            const { topic } = req.body;
             const user = req.user;
 
             // No se descuenta vida aquí — solo en startGame.
             // Las preguntas adicionales son parte del mismo juego.
 
             // Generar nuevo lote
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', difficulty || 'Intermedio', user.id, user.subscriptionTier);
+            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', user.id, user.subscriptionTier);
 
             res.json({
                 success: true,
@@ -116,11 +116,9 @@ class QuizGameController {
     async submitScore(req, res) {
         try {
             const { score, totalQuestions, maxCombo, topic } = req.body;
-            let { difficulty } = req.body; // Recibir dificultad del cliente
             const userId = req.user.id;
 
-            // Fallback si no llega
-            if (!difficulty) difficulty = 'Profesional';
+            const difficulty = 'Senior'; // Estándar Unificado para Ranking
 
             // Validación básica
             if (!score && score !== 0) return res.status(400).json({ error: 'Score required' });

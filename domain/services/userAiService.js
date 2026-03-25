@@ -23,7 +23,7 @@ class UserAiService {
     /**
      * Generador de Preguntas para Usuarios (Modo Fast - Sin RAG)
      */
-    static async generateQuestions(target, difficulty, studyAreas, career, amount = 5, tier = 'basic', reqDomain = 'medicine') {
+    static async generateQuestions(target, studyAreas, career, amount = 5, tier = 'basic', reqDomain = 'medicine') {
         const domain = reqDomain || 'medicine';
         console.log(`⚡ [UserAiService] Generación "Fast Mode" p/ ${target} - Áreas: ${studyAreas}`);
         try {
@@ -35,7 +35,7 @@ class UserAiService {
                 areasArray = studyAreas;
             }
 
-            let sampledAreas = areasArray.length >= 5 
+            let sampledAreas = areasArray.length >= 5
                 ? areasArray.sort(() => 0.5 - Math.random()).slice(0, 5)
                 : (areasArray.length > 0 ? areasArray : ['General']);
 
@@ -48,7 +48,7 @@ class UserAiService {
                 const currentBatchSize = Math.min(currentBatchLimit, requestedAmount - i);
                 let areaForThisBatch = (currentBatchLimit === 1) ? sampledAreas[i % sampledAreas.length] : sampledAreas.join(', ');
 
-                let batchQuestions = await this._generateBatchInternal(target, difficulty, areaForThisBatch, career, allQuestions, currentBatchSize, tier, domain);
+                let batchQuestions = await this._generateBatchInternal(target, areaForThisBatch, career, allQuestions, currentBatchSize, tier, domain);
 
                 if (batchQuestions && batchQuestions.length > 0) {
                     batchQuestions.forEach((q) => { if (currentBatchLimit === 1) q.topic = areaForThisBatch; });
@@ -69,39 +69,24 @@ class UserAiService {
     /**
      * @private Lógica de generación con el "PROMPT MAESTRO" (Version Fast - Sin RAG)
      */
-    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions = [], amount = 1, tier = 'basic', domain = 'medicine') {
+    static async _generateBatchInternal(target, studyAreas, career, previousBatchQuestions = [], amount = 1, tier = 'basic', domain = 'medicine') {
         try {
-            const careerStr = String(career || "Medicina");
-            const careerLower = careerStr.toLowerCase();
+            const careerLower = String(career || "Medicina humana").toLowerCase();
 
             // 0. PREVENIR DUPLICIDAD (Escaneo de Historial en DB)
             let recentQuestionsText = "";
             try {
-                const db = require('../../infrastructure/database/db'); 
-                const areasArray = String(studyAreas || '').split(',').map(a => a.trim()).filter(a => a);
+                const { query } = require('../../infrastructure/database/db');
+                // ✅ MEMORIA ENRIQUECIDA: Extraer texto, tema y subtema para evitar solapamientos temáticos.
+                const result = await query(
+                    "SELECT question_text, topic, subtopic FROM question_bank ORDER BY created_at DESC LIMIT 40"
+                );
 
-                const recentQ = await db.query(`
-                    SELECT topic, question_text 
-                    FROM question_bank 
-                    WHERE target = $1 
-                      AND domain = $2 
-                      AND (career = $3 OR $3 IS NULL)
-                      AND (topic = ANY($4) OR $4 IS NULL)
-                      AND difficulty = $5
-                    ORDER BY created_at DESC 
-                    LIMIT 100
-                `, [target, domain, careerLower || null, areasArray.length > 0 ? areasArray : null, difficulty]);
-
-                const allPreviousTexts = [
-                    ...recentQ.rows.map(r => r.topic + ": " + r.question_text),
-                    ...previousBatchQuestions.map(q => q.topic + ": " + q.question_text)
-                ];
-
-                if (allPreviousTexts.length > 0) {
-                    recentQuestionsText = "\n🚨 RESTRICCIÓN DE NO-REPETICIÓN 🚨\n" +
-                        "Temas y enfoques que YA existen (PROHIBIDO REPETIR EXACTAMENTE):\n" +
-                        allPreviousTexts.slice(-15).map((txt, idx) => `- ${txt.substring(0, 120)}...`).join('\n') +
-                        "\n🎯 Genera un escenario DISTINTO.\n";
+                if (result.rows.length > 0) {
+                    recentQuestionsText = "\n🚨 RESTRICCIÓN DE NO-REPETICIÓN (MEMORIA PROFUNDA) 🚨\n" +
+                        "Temas y escenarios que YA existen. ESTÁ TERMINANTEMENTE PROHIBIDO REPETIR O CLONAR ESTOS CASOS:\n" +
+                        result.rows.map((r, idx) => `- [${r.topic} | ${r.subtopic}]: ${r.question_text.substring(0, 100)}...`).join('\n') +
+                        "\n🎯 DESAFÍO: Identifica el patrón de arriba y ROMPE con él. Si ya hay casos en 'Loreto' o '45 años', cambia radicalmente de geografía y edad.\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en User Service:", e);
@@ -125,9 +110,7 @@ class UserAiService {
                   * ACCIÓN: "Usted se encuentra en emergencia...", "Durante el control prenatal...", "Al atender un parto..."
                   * DIRECTA: "¿Cuál es el diagnóstico más probable?", "¿Qué tratamiento de elección...?", "¿Cuál es la complicación...?"`;
 
-                if (difficulty === "Básico") levelInstruction = "Evalúa MEMORIA DIRECTA (Definiciones, Triadas). Explicación: 2 párrafos extensos y detallados.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa RAZONAMIENTO CLÍNICO SIMPLE. Explicación: 2 párrafos técnicos y detallados.";
-                else levelInstruction = "Evalúa MANEJO INICIAL Y REFERENCIAS. Explicación: 3 párrafos analíticos y robustos.";
+                levelInstruction = "Nivel Senior ENAM. Evalúa Diagnóstico y Manejo. Explicación: 2 párrafos técnicos.";
             } else if (target === "SERUMS") {
                 targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). 
                 VINCULACION COMUNITARIA: El nivel del establecimiento (I-1 al I-4) y la geografía peruana deben integrarse de forma natural y VARIADA.
@@ -135,15 +118,12 @@ class UserAiService {
                 REGLA DE ORO: Mínimo 2 fuentes diferentes + Un TIP SERUMS`;
 
                 starterGallery = `
-                  * LOCALIDAD: "EESS nivel I-4 en la sierra...", "C.S. en zona amazónica...", "Puesto de salud I-1 reporta..."
-                  * ACCIÓN/GESTIÓN: "Se le encarga evaluar...", "Como jefe del EESS usted...", "Durante la visita domiciliaria..."
-                  * PACIENTE (Rural): "Comunero de 40 años...", "Madre de familia acude...", "Escolar de 8 años..."
-                  * ENTIDAD/NORMA: "El Ministerio de Salud...", "La DIRIS reporta...", "Según el PAI..."
-                  * DIRECTA: "¿Qué nivel de prevención...?", "¿Quién integra el equipo...?", "¿Cuál es el plazo de...?"`;
+                  * ESTRUCTURA DIRECTA (50%): Empieza de frente con la pregunta. (Ej: "¿Cuál es el valor límite de...?", "¿Qué norma técnica regula...?", "¿Cómo se clasifica...?")
+                  * ESTRUCTURA DATO (30%): Empieza con el sujeto o dato clínico (Ej: "La gestante de 19 años con Hb: 9...", "Un trabajador sexual con úlceras...")
+                  * ESTRUCTURA COMPLETAR (20%): Usa el formato de espacios en blanco ____ (Ej: "Todo servidor público debe ______ y ______ los bienes...").
+                  * PROHIBICIÓN ABSOLUTA: Prohibido iniciar preguntas con "Usted es...", "Usted, como serumista...", "En un/una...", "El personal de salud...". Máximo 1 de cada 10 permitidas. Rompe la Inercia Narrativa ya.`;
 
-                if (difficulty === "Básico") levelInstruction = "Evalúa DATOS NORMATIVOS. Explicación: 2 párrafos extensos.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa APLICACIÓN DE NORMAS. Explicación: 2 párrafos técnicos y detallados.";
-                else levelInstruction = "Evalúa GESTIÓN DE BROTES. Explicación: 3 párrafos profundos y robustos.";
+                levelInstruction = "Estándar SERUMS. Evalúa Normativa, Gestión y Casos de Salud Pública. Explicación: 2 párrafos profundos con fuente oficial.";
             } else if (target === "RESIDENTADO") {
                 targetRules = `PERFIL RESIDENTADO: ENFOQUE EN LIBROS Y EVIDENCIA CLÍNICA.
                 JERARQUÍA ESTRICTA: 1. LIBROS DE REFERENCIA (Harrison, Washington, Nelson, Williams) > 2. MANUALES (AMIR, CTO) > 3. NORMAS/LEYES.
@@ -156,60 +136,69 @@ class UserAiService {
                   * HALLAZGO AVANZADO: "El signo de (Epónimo) se asocia a...", "En el frotis de sangre periférica...", "La RM de encéfalo muestra..."
                   * DIRECTA: "¿Qué marcador tumoral...?", "¿Cuál es el Gold Standard para...?", "¿Qué gen está mutado en...?"`;
 
-                if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Explicación: 2 o 3 párrafos robustos.";
-                else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Explicación: 2 o 3 párrafos robustos.";
-                else levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Explicación: 3 párrafos analíticos extensos.";
+                levelInstruction = "Nivel Senior Residentado. Evalúa Fisiopatología, Manejo Avanzado y Especialización. Explicación: 2 párrafos analíticos y robustos.";
             }
 
             // 2. PROMPT MAESTRO (Versión FAST - Sin RAG)
             const prompt = `
             Eres un Redactor Senior de Exámenes Médicos Nacionales (SERUMS, ENAM, RESIDENTADO).
-
-            MISIÓN CRÍTICA: Generar ${amount} pregunta(s) INÉDITA(S) de nivel ${difficulty}.
+            
+            MISIÓN CRÍTICA: Generar ${amount} pregunta(s) INÉDITA(S) de Nivel Senior.
             ÁREA DE ESTUDIO ESTRICTA: **${studyAreas}**.
 
-            [REGLAS PARA LAS OPCIONES DE RESPUESTA (INQUEBRANTABLES)]:
-            1. TEXTO LIMPIO (SIN LETRAS): PROHIBIDO prefijos como "A.", "B.", "C.", etc. Escribe SOLO el texto de la respuesta.
-            2. BREVEDAD EXTREMA: OBLIGATORIO mantener las opciones entre 1 y un MÁXIMO de 12 palabras.
-            3. SIMETRÍA VISUAL: La respuesta correcta y los distractores deben tener casi la misma cantidad de palabras.
-            4. PROHIBIDO SOBRE-EXPLICAR: No justifiques la respuesta correcta dentro de la opción.
-            5. ALEATORIEDAD: Coloca la respuesta correcta en una posición aleatoria en el array.
+            [REGLAS DE ORO DE VARIABILIDAD (INQUEBRANTABLES)]
+            1. PROHIBICIÓN DE PLAGIO: Está terminantemente prohibido copiar o parafrasear los ejemplos de la "Starter Gallery" o de las instrucciones. Úsalos SOLO para entender la ESTRUCTURA.
+            2. ROTACIÓN DE SUJETOS: Alterna entre: Gestante (fórmula G_P____), Escolar, Adulto Mayor, Reo, Trabajador sexual, Autoridad local, Personal de Salud, Paciente con comorbilidades.
+            3. ESCENARIOS DIVERSOS: No todo es "Puesto I-1". Usa: C.S. Urbano marginal, Brigada de selva alta, Campamento minero, Auditoría de farmacia, Sala de Situación, Institución Educativa, Visita domiciliaria.
+            4. RIGOR TÉCNICO: Incluye SIEMPRE datos de laboratorio o signos vitales específicos (Ej: "SatO2: 84%", "Hb: 9 g/dL", "Fe sérico: 30").
 
-            [ESTILO DEL ENUNCIADO]
-            - Estilo Directo, Operativo y Seco (Estilo Telegrama).
-            - Rota los inicios (Ej: "Mujer de 45 años...", "Durante la guardia...").
-            - Alterna entre preguntas directas ("¿Cuál es...?") y enunciados para completar espacios (____).
+            [ESTILO DEL ENUNCIADO (SEQUEDAD TÉCNICA)]
+            - ESTILO TELEGRAMA MINSA: Elimina preámbulos literarios. No cuentes historias. Entrega datos y pregunta.
+            - LA LÁPIDA DE LOS PREFIJOS: Banea el inicio "Usted, como [Rol]...". Es una muletilla inaceptable.
+            - PROHIBICIÓN DE RECICLAJE: Si un escenario (Geografía + Edad + Sujeto) aparece en el historial anterior, cámbialo al 100%. Ejemplo: Si ya usaste "Loreto/45 años", ahora usa "Andahuaylas/G3P2/34 años".
+            - RESILIENCIA DE MEMORIA: Si una pregunta en el historial está marcada como "[Sin Subtema]", analiza su texto clínico para deducir el escenario evaluado y evítalo activamente (ej: cambia la patología, edad del paciente o entorno geográfico).
+            - VARIEDAD GRAMATICAL: Si la pregunta anterior empezó con un sujeto, la actual debe ser una pregunta directa (¿Cuál...?).
+            - REGLA DE SIGNOS VITALES: Mandatorio incluir FC, FR, T°, PA, SatO2 en casos clínicos.
+            - REGLA GEOCLÍNICA: Si usas una ciudad, el tema clínico debe ser coherente con ella.
+            - PROHIBICIÓN: No uses "En...", "Desde...", "Durante...", "Usted..." al inicio de más de una pregunta por batch.
 
-            [EXPLICACIÓN (FUNDAMENTACIÓN)]
-            - ${levelInstruction}
-            - Usa CITACIÓN EN NEGRITA al inicio (Ej: "*Según la NTS 123-MINSA*: ...").
-            - PROHIBIDO mencionar letras de opciones (Ej: "La opción A es correcta"). Refiérete a los conceptos por nombre.
+            [REGLAS PARA LAS OPCIONES]
+            - TEXTO LIMPIO: Sin letras ni prefijos (A., B., C.).
+            - BREVEDAD: 1 a 12 palabras máximo.
+            - SIMETRÍA VISUAL: Longitud similar en todas las opciones.
 
-            [JERARQUÍA DE FUENTES (RESPETA ESTO)]:
+            [EXPLICACIÓN (REGISTRO TÉCNICO)]
+            - Que no sea tan extenso, ni tan breve, lo necesario para fundamentar la respuesta.
+            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente (Ej: "**Según la NTS 123-MINSA**:").
+            - SECCIÓN OBLIGATORIA (Solo para SERUMS): Finaliza SIEMPRE con el texto "💡 **TIP SERUMS:** [Consejo práctico sobre gestión o vida en comunidad]".
+
+            [JERARQUÍA DE FUENTES Y ESTILO BASE]:
             ${targetRules}
-
-            [DATOS DE APOYO (CONOCIMIENTO EXPERTO)]:
-            Usa tu base de conocimiento médico experto coherente con la jerarquía de fuentes peruanas e internacionales citada arriba. 
-            No utilices RAG externo, confía en tu entrenamiento para dar respuestas precisas.
-
-            [ESTILO REAL DE EXAMEN (IMITA EL ENUNCIADO Y LA BREVEDAD DE SUS OPCIONES)]:
             ${starterGallery}
 
-            [FORMATO DE SALIDA JSON (ARRAY DE OBJETOS)]:
+            [RESTRICCIONES DE NO-REPETICIÓN]:
+            ${recentQuestionsText}
+
+            [FORMATO DE SALIDA JSON (ARRAY)]:
             [{
                 "topic": "${studyAreas}",
-                "difficulty": "${difficulty}",
-                "question_text": "Texto Directo (Estilo Telegrama).",
-                "options": ${(target === 'RESIDENTADO') ? '["Opcion A", "Opcion B", "Opcion C", "Opcion D", "Opcion E"]' : '["Opcion A", "Opcion B", "Opcion C", "Opcion D"]'},
+                "difficulty": "Senior",
+                "question_text": "...",
+                "options": ${(target === 'RESIDENTADO') ? '["O1", "O2", "O3", "O4", "O5"]' : '["O1", "O2", "O3", "O4"]'},
                 "correct_option_index": 0,
-                "explanation": "2-3 párrafos detallados con citado en negrita.",
+                "explanation": "2-3 párrafos técnicos con citado en negrita.",
                 "domain": "${domain}",
                 "target": "${target}",
                 "career": "${career}",
-                "subtopic": "Subtema específico"
+                "subtopic": "..."
             }]
 
-            DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. NADA DE TEXTO ANTES NI DESPUÉS. PROHIBIDO USAR MARKDOWN.
+            [REGLA DE ORO DE DIVERSIDAD INTERNA]:
+            - Cada una de las ${amount} preguntas de este JSON debe ser TOTALMENTE diferente a las demás en el mismo lote.
+            - Prohibido repetir el mismo subtema o la misma norma técnica dentro de este grupo de preguntas.
+            - Alterna entre (Niño / Mujer / Adulto Mayor / Gestante / Trabajador) y entre (Costa / Sierra / Selva).
+
+            DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. PROHIBIDO USAR MARKDOWN.
             `;
 
             const result = await modelLite.generateContent(prompt);

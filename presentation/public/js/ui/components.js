@@ -524,7 +524,6 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
     } else if (type === 'question') {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
-        subtitle = `Dificultad: ${item.difficulty || 'Intermedio'}`;
     }
 
     // Subtitulo formateado

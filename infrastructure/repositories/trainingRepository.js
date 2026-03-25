@@ -11,7 +11,7 @@ class TrainingRepository {
      * @param {number} limit - Cantidad requerida
      * @param {string} excludeIds - Array de IDs a excluir (ya vistos por el usuario)
      */
-    async findQuestionsInBank(topic, domain, difficulty, limit = 5, userId) {
+    async findQuestionsInBank(topic, domain, limit = 5, userId) {
         // 1. Obtener IDs que el usuario ya vio (solo en las últimas 24 horas)
         // Lógica de "Olvido Saludable": Si hace más de 1 día que la vio, se puede reutilizar para ahorrar tokens.
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
@@ -25,12 +25,11 @@ class TrainingRepository {
             SELECT id, question_text, options, correct_option_index, explanation, domain, topic
             FROM question_bank
             WHERE topic = $1 
-            AND domain = $2 
-            AND difficulty = $3
+            AND domain = $2
         `;
 
-        const params = [topic, domain, difficulty];
-        let paramIdx = 4;
+        const params = [topic, domain];
+        let paramIdx = 3;
 
         if (seenIds.length > 0) {
             // NOTA: Usamos != ALL para excluir arrays en Postgres
@@ -66,48 +65,46 @@ class TrainingRepository {
      * @param {string} userId - ID del usuario para excluir vistas recientes
      * @param {string} career - Carrera seleccionada para filtrado específico (Opcional, mayormente SERUMS)
      */
-    async findQuestionsInBankBatch(domain, target, topics, difficulty, limit = 5, userId, career = null) {
-        // 1. Obtener IDs que el usuario ya vio (últimas 24 horas - Olvido Saludable)
+    async findQuestionsInBankBatch(domain, target, topics, limit = 5, userId, career = null) {
+        // 1. Obtener IDs que el usuario ya vio (últimas 24 horas)
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
         const seenIds = seenRes.rows.map(r => r.question_id);
 
         console.log(`🔎 [Repo] Usuario ${userId} ha visto ${seenIds.length} preguntas cruzadas en las últimas 24h.`);
 
-        // 2. Query Dinámico con Exclusión y Balanceo de Áreas (Inteligencia Natural)
-        // Usamos ROW_NUMBER() para asegurar que traemos preguntas de todas las áreas si existen.
-        let query = `
-            WITH BalancedPool AS (
-                SELECT id, question_text, options, correct_option_index, explanation, domain, topic,
-                       ROW_NUMBER() OVER(PARTITION BY topic ORDER BY RANDOM()) as rn
-                FROM question_bank
-                WHERE UPPER(topic) = ANY($1::text[]) 
-                AND domain = $2 
-                AND ($3::text IS NULL OR target = $3)
-                AND difficulty = $4
-        `;
-
-        const params = [topics, domain, target, difficulty];
-        let paramIdx = 5;
+        // 2. Construcción Dinámica de Cláusulas WHERE
+        let whereClauses = `WHERE UPPER(topic) = ANY($1::text[]) 
+                            AND domain = $2 
+                            AND ($3::text IS NULL OR target = $3)`;
+        
+        const params = [topics, domain, target];
+        let paramIdx = 4;
 
         // Filtro de Carrera (SERUMS)
         if (target === 'SERUMS' && career) {
-            query += ` AND (career IS NULL OR career = $${paramIdx}) `;
+            whereClauses += ` AND (career IS NULL OR career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
         }
 
-        // Exclusión de Vistas
+        // Exclusión de Vistas Recientes
         if (seenIds.length > 0) {
-            query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
+            whereClauses += ` AND id <> ALL($${paramIdx}::uuid[]) `;
             params.push(seenIds);
             paramIdx++;
         }
 
-        // Finalización del CTE y Selección Final
-        query += `
+        // 3. Query Final con Balanceo de Áreas (rn <= 3 asegura diversidad)
+        const query = `
+            WITH BalancedPool AS (
+                SELECT id, question_text, options, correct_option_index, explanation, domain, topic,
+                       ROW_NUMBER() OVER(PARTITION BY topic ORDER BY RANDOM()) as rn
+                FROM question_bank
+                ${whereClauses}
             )
-            SELECT * FROM BalancedPool 
+            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
+            FROM BalancedPool 
             WHERE rn <= 3
             ORDER BY RANDOM() 
             LIMIT $${paramIdx}
@@ -143,7 +140,7 @@ class TrainingRepository {
      * Optimizado para agotar el banco local antes de usar IA.
      * Elimina el sub-muestreo restrictivo (rn <= 3) del Simulador.
      */
-    async findArenaQuestions(domain, target, topic, difficulty, limit = 5, userId) {
+    async findArenaQuestions(domain, target, topic, limit = 5, userId) {
         // 1. IDs vistos (24h)
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
@@ -159,11 +156,10 @@ class TrainingRepository {
             WHERE TRIM(UPPER(topic)) = TRIM(UPPER($1)) 
               AND domain = $2 
               AND (target IS NULL OR target = $3)
-              AND (UPPER(difficulty) = UPPER($4) OR difficulty IS NULL)
         `;
 
-        const params = [topic, domain, target, difficulty];
-        let paramIdx = 5;
+        const params = [topic, domain, target];
+        let paramIdx = 4;
 
         // Exclusión
         if (seenIds.length > 0) {
@@ -204,7 +200,7 @@ class TrainingRepository {
      * @param {number} limit Cuántas preguntas de contexto traer (ej: 15)
      * @returns {Promise<string[]>} Array de strings con el texto de la pregunta original.
      */
-    async getRandomQuestionsContext(domain, target, topics, limit = 15, difficulty = null, career = null) {
+    async getRandomQuestionsContext(domain, target, topics, limit = 15, career = null) {
         try {
             let query = `
                 SELECT question_text 
@@ -215,12 +211,6 @@ class TrainingRepository {
             `;
             const params = [domain, target, topics];
             let paramIdx = 4;
-
-            if (difficulty) {
-                query += ` AND difficulty = $${paramIdx} `;
-                params.push(difficulty);
-                paramIdx++;
-            }
 
             if (career) {
                 query += ` AND (career IS NULL OR career = $${paramIdx}) `;
@@ -234,7 +224,7 @@ class TrainingRepository {
             const res = await db.query(query, params);
 
             if (res.rows.length > 0) {
-                console.log(`🧠 [Deduplication] Extraídas ${res.rows.length} preguntas aleatorias para contexto (Filtro: ${target} - ${difficulty} - ${career}).`);
+                console.log(`🧠 [Deduplication] Extraídas ${res.rows.length} preguntas aleatorias para contexto (Filtro: ${target} - ${career}).`);
                 return res.rows.map(r => r.question_text);
             }
             return [];
@@ -248,7 +238,7 @@ class TrainingRepository {
      * Guarda un lote de nuevas preguntas en el question_bank.
      * @returns {Promise<string[]>} Array de IDs insertados
      */
-    async saveQuestionBankBatch(questions, defaultTopic, domain, target, difficulty, defaultCareer = null) {
+    async saveQuestionBankBatch(questions, defaultTopic, domain, target, defaultCareer = null) {
         if (!questions || questions.length === 0) return [];
 
         console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} | C: ${defaultCareer} - ${domain} - ${target})...`);
@@ -265,12 +255,10 @@ class TrainingRepository {
         const newIds = [];
 
         for (const q of questions) {
-            // Usar el topic exacto generado por la IA, o el defaultTopic si la IA falló en generarlo
             const exactTopic = q.topic || defaultTopic;
             const exactCareer = q.career || defaultCareer;
+            const difficulty = 'Senior'; // Hardcoded standard
 
-            // Generar Hash ÚNICO basado en Topic + Pregunta + Opciones (para diferenciar mismas preguntas con mismas opciones)
-            // Usamos un hash MD5 o SHA256 corto para indexación eficiente
             const rawString = `${exactTopic}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
@@ -316,12 +304,7 @@ class TrainingRepository {
              * Normalizamos al valor canónico estricto para evitar violaciones de VARCHAR en PostgreSQL.
              */
             const canonicalDifficulty = (val) => {
-                if (!val) return 'Básico';
-                const v = String(val).toLowerCase();
-                if (v.includes('ásico') || v.includes('asico') || v.includes('basic')) return 'Básico';
-                if (v.includes('edio') || v.includes('intermed')) return 'Intermedio';
-                if (v.includes('vanzado') || v.includes('advanc') || v.includes('expert')) return 'Avanzado';
-                return String(val).substring(0, 50); // Fallback: truncar a 50 chars
+                return 'Senior'; // Unificado
             };
 
             /**
@@ -441,20 +424,18 @@ class TrainingRepository {
             RETURNING id;
         `;
 
-        // Calcular puntos débiles (simple: si falló, el tema del quiz es punto débil)
-        // En futuro: extraer subtemas de las preguntas falladas
         const weakPoints = quizData.score < quizData.totalQuestions ? [quizData.topic] : [];
 
         const values = [
             userId,
             quizData.topic,
-            quizData.difficulty || 'ENAM',
+            'Senior',
             quizData.score,
             quizData.totalQuestions,
             weakPoints,
-            quizData.areaStats || '{}', // ✅ NUEVO: JSONB precalculado
-            quizData.target || 'ENAM',  // ✅ NUEVO: Guardar target explícito
-            quizData.career || null     // ✅ NUEVO: Guardar carrera explícita
+            quizData.areaStats || '{}', 
+            quizData.target || 'ENAM',  
+            quizData.career || null     
         ];
 
         const res = await db.query(query, values);

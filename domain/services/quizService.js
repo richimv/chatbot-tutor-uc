@@ -29,53 +29,21 @@ class QuizService {
     /**
      * Genera un batch de preguntas de trivia usando Vertex AI (Motor Dual).
      * @param {string} topic 
-     * @param {string} difficulty 
      * @param {number} roundNumber
      * @param {string} tier
      */
-    async generateRound(topic, difficulty, roundNumber = 1, tier = 'free') {
+    async generateRound(topic, roundNumber = 1, tier = 'free') {
         const activeModel = (tier === 'admin') ? modelStandard : modelLite;
         console.log(`🎲 [Trivia IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
         
         try {
-            // Matriz de Dificultad ACADÉMICA (Nivel Universitario a Doctorado)
-            const difficultyMatrix = {
-                'Básico': {
-                    1: 'Nivel Pregrado (1er Año): Definiciones y conceptos fundamentales.',
-                    2: 'Nivel Pregrado (2do Año): Relación básica de conceptos.',
-                    3: 'Nivel Pregrado (Final): Aplicación directa de teoría.',
-                    4: 'Nivel Pregrado: Casos de estudio simples.',
-                    5: 'Nivel Licenciatura: Integración de conocimientos básicos.'
-                },
-                'Profesional': {
-                    1: 'Nivel Maestría: Análisis crítico de teorías estándar.',
-                    2: 'Nivel Maestría: Aplicación en escenarios laborales reales.',
-                    3: 'Nivel Especialización: Resolución de conflictos técnicos.',
-                    4: 'Nivel Docente: Explicación de fenoménos complejos.',
-                    5: 'Nivel Experto Técnico: Casos de borde y excepciones.'
-                },
-                'Experto': {
-                    1: 'Nivel Doctorado (PhD): Evaluación de evidencia contradictoria.',
-                    2: 'Nivel Investigación: Metodologías avanzadas y estado del arte.',
-                    3: 'Nivel Consultor Senior: Estrategia y toma de decisiones bajo incertidumbre.',
-                    4: 'Nivel Eminencia: Innovación y crítica de paradigmas actuales.',
-                    5: 'Nivel "Pesadilla Académica": Detalles oscuros, historia profunda o casos clínicos únicos.'
-                }
-            };
-
-            // Selección de dificultad segura
-            let selectedDiff = difficulty || 'Básico';
-            if (!difficultyMatrix[selectedDiff]) selectedDiff = 'Básico';
-
-            const complexityGuide = difficultyMatrix[selectedDiff][Math.min(roundNumber, 5)] || difficultyMatrix['Básico'][1];
-
             // --- FLUJO TRIVIA GENERAL ---
             const basePrompt = `
                 Actúa como un experto en trivia y educación dinámica de alto nivel.
                 
                 CONTEXTO:
                 - Tema: ${JSON.stringify(topic)}
-                - Nivel Seleccionado: ${selectedDiff}
+                - Nivel: Profesional / Senior
 
                 TU MISIÓN:
                 Genera 5 preguntas de opción múltiple de alta calidad.
@@ -85,6 +53,7 @@ class QuizService {
                 2. DIVERSIDAD: No repitas conceptos básicos.
                 3. PRECISIÓN: Las respuestas deben ser técnicamente correctas.
                 4. SIN LÍMITES DE CARACTERES: Prioriza la calidad y profundidad sobre la brevedad.
+                5. COMPLEXIDAD: ${roundNumber > 2 ? 'Aumenta la profundidad técnica y casos de borde.' : 'Enfócate en conceptos clave y aplicaciones prácticas.'}
 
                 FORMATO DE SALIDA (JSON Array Puro):
                 [

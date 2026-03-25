@@ -1,0 +1,487 @@
+--- PREGUNTA 1 ---
+ID/Fecha: Wed Mar 25 2026 10:00:22 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Ética E Interculturalidad | Básico
+Pregunta: Comunero de 65 años, hablante de quechua, acude a C.S. nivel I-3 en zona andina con dolencia crónica. El personal de salud solo habla castellano. ¿Qué principio ético se prioriza para garantizar la atención?
+Opciones: [
+  "Justicia en la distribución equitativa de recursos.",
+  "Respeto a la autonomía del paciente y su cultura.",
+  "No maleficencia evitando cualquier daño.",
+  "Beneficencia asegurando el mejor tratamiento posible."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Ley General de Salud (Ley N° 26842)*, el Estado garantiza el derecho a la protección de la salud, promoviendo la equidad y el respeto a las diversas culturas. En contextos de interculturalidad, la comunicación efectiva y el respeto a las creencias y lengua del paciente son fundamentales para una atención de calidad y ética. Ignorar estas barreras lingüísticas y culturales contraviene el principio de respeto a la persona y su autonomía, impidiendo una relación médico-paciente de confianza y una toma de decisiones informada.
+
+*El Modelo de Atención Integral de Salud (MAIS) del MINSA* enfatiza la necesidad de adecuar los servicios a las particularidades culturales de las poblaciones. El principio de respeto a la autonomía implica reconocer y valorar la cosmovisión del paciente, sus costumbres y su idioma, permitiéndole participar activamente en su cuidado. El principio de beneficencia, aunque importante, no puede desvincularse del respeto cultural; un tratamiento impuesto sin considerar la perspectiva del paciente puede no ser percibido como beneficioso y generar rechazo. La justicia y no maleficencia también son relevantes, pero el punto de partida para una atención ética y efectiva en este escenario es el reconocimiento y respeto de la identidad cultural y lingüística del paciente.
+
+
+--- PREGUNTA 2 ---
+ID/Fecha: Wed Mar 25 2026 10:00:21 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Cuidado Integral De Salud | Básico
+Pregunta: Comunero de 50 años, agricultor en zona andina, acude a puesto de salud I-1 por tos persistente. Se le solicita iniciar esquema de tratamiento. ¿Cuál es el primer nivel de atención priorizado para este paciente según la normatividad vigente?
+Opciones: [
+  "Visita domiciliaria por personal de salud para seguimiento.",
+  "Referencia inmediata al hospital regional para diagnóstico.",
+  "Evaluación especializada en centro de atención de alta complejidad.",
+  "Atención ambulatoria en el mismo puesto de salud."
+]
+Respuesta Correcta (Índice): 3
+Explicación: *Según la Guía de Práctica Clínica para la Neumonía Adquirida en la Comunidad (GPC-MINSA)*: El primer nivel de atención, representado por establecimientos como el puesto de salud I-1, es la puerta de entrada del paciente al sistema de salud. Aquí se realizan el diagnóstico inicial, el tratamiento de casos no complicados y la identificación de aquellos que requieren referencia. La priorización del primer nivel asegura la accesibilidad y oportunidad para la mayoría de las patologías comunes.
+
+*La Política Nacional de Salud Escolar (R.M. 546-2011-MINSA)*, aunque enfocada en escolares, refuerza el principio de que los establecimientos de primer nivel son responsables de la atención integral y la prevención. En el contexto de un comunero agricultor con síntomas respiratorios, la atención inicial en su centro de salud más cercano es fundamental para un manejo oportuno y eficiente, evitando la sobrecarga de niveles superiores con casos potencialmente manejables ambulatoriamente.
+
+
+--- PREGUNTA 3 ---
+ID/Fecha: Wed Mar 25 2026 10:00:21 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Investigación | Básico
+Pregunta: Comunero de 45 años en zona andina refiere tos persistente. El Puesto de Salud I-1 requiere iniciar un estudio de prevalencia. ¿Cuál es el primer paso metodológico esencial?
+Opciones: [
+  "Diseñar el instrumento de recolección de datos.",
+  "Obtener la aprobación del comité de ética.",
+  "Definir claramente la población de estudio.",
+  "Calcular el tamaño muestral necesario."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Práctica Clínica para la Vigilancia Epidemiológica del Ministerio de Salud*: La definición precisa de la población de estudio es el pilar fundamental de cualquier investigación epidemiológica. Esto implica especificar las características demográficas, geográficas y temporales de los individuos que conformarán la muestra o el universo del estudio. Sin una definición clara, los resultados no podrán ser generalizados ni interpretados adecuadamente, comprometiendo la validez y confiabilidad de toda la investigación.
+
+*El Manual de Organización y Funciones (MOF) de los Establecimientos de Salud del primer nivel de atención* enfatiza la importancia de la planificación rigurosa en las actividades de investigación y vigilancia. Antes de proceder a cálculos de tamaño muestral, diseño de instrumentos o aprobación ética, es imperativo saber a quiénes se va a estudiar. Este paso asegura que los esfuerzos se dirijan a la población correcta, optimizando recursos y garantizando que la información recolectada sea relevante para el problema de salud pública en cuestión, como la prevalencia de la tos en la comunidad andina.
+
+
+--- PREGUNTA 4 ---
+ID/Fecha: Wed Mar 25 2026 10:00:21 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Salud Pública | Básico
+Pregunta: Puesto de salud I-1 en zona rural amazónica reporta incremento de casos de diarrea aguda en menores de 5 años. ¿Cuál es la intervención prioritaria de enfermería según el PAI para prevenir su transmisión comunitaria?
+Opciones: [
+  "Fortalecimiento de la vigilancia epidemiológica de enfermedades febriles.",
+  "Capacitación a madres sobre higiene y manejo del agua segura.",
+  "Administración masiva de antibióticos de amplio espectro a la población.",
+  "Referencia inmediata de todos los casos al hospital regional."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Norma Técnica de Salud NTS 181-MINSA, "Gestión de la Inmunoprevenibles", la prevención de enfermedades diarreicas en menores de 5 años, especialmente en contextos rurales y de difícil acceso como la Amazonía, recae fuertemente en la promoción de prácticas de higiene y el acceso a agua segura. La capacitación a las madres y cuidadores es fundamental para romper la cadena de transmisión fecal-oral.*
+
+El rol del personal de enfermería en un establecimiento de salud de nivel I-1, como un puesto de salud en zona rural, es crucial en la educación sanitaria. Ante un brote de diarrea aguda, la intervención más costo-efectiva y de mayor impacto preventivo a nivel comunitario es empoderar a las familias con conocimientos sobre medidas básicas de higiene personal (lavado de manos), preparación segura de alimentos y el uso y tratamiento del agua para el consumo. Esto se alinea con los principios de la Atención Primaria de Salud y la estrategia de "Agua, Saneamiento e Higiene" (WASH) promovida por organismos internacionales y el propio Ministerio de Salud del Perú.
+
+
+--- PREGUNTA 5 ---
+ID/Fecha: Wed Mar 25 2026 10:00:21 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Gestión De Servicios De Salud | Básico
+Pregunta: Puesto de salud I-1 en zona rural reporta aumento de casos de parasitosis intestinal. Usted como responsable, ¿qué acción prioritaria debe implementar para la prevención?
+Opciones: [
+  "Distribución masiva de antiparasitarios sin diagnóstico previo.",
+  "Capacitación sobre higiene y saneamiento básico a la comunidad.",
+  "Referencia inmediata de todos los casos sospechosos al hospital.",
+  "Implementar un programa de vigilancia epidemiológica activa."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Norma Técnica de Salud NTS 130-MINSA - Prevención y Control de Enfermedades Metaxénicas y Zoonóticas*: La promoción de la salud y la prevención de enfermedades en establecimientos de salud de primer nivel se basan en intervenciones comunitarias. En el caso de parasitosis intestinal, la educación sanitaria sobre prácticas de higiene, como el lavado de manos, el consumo de agua segura y el manejo adecuado de excretas, es fundamental para romper la cadena de transmisión.
+
+El enfoque de Atención Primaria de Salud (APS) y las directrices del Ministerio de Salud del Perú enfatizan la participación comunitaria y la educación para la salud como pilares para el control de enfermedades prevalentes en zonas rurales. Si bien la vigilancia y la referencia son importantes, la capacitación en higiene aborda la causa raíz y empodera a la comunidad para modificar comportamientos de riesgo, siendo la estrategia más costo-efectiva y de mayor impacto preventivo a nivel de un puesto de salud I-1.
+
+
+--- PREGUNTA 6 ---
+ID/Fecha: Wed Mar 25 2026 09:57:57 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Salud Pública | Básico
+Pregunta: Comunero de 45 años acude a puesto de salud I-1 en zona andina por presentar tos persistente. ¿Qué nivel de prevención se prioriza al iniciar la intervención comunitaria?
+Opciones: [
+  "Prevención terciaria, rehabilitación del paciente.",
+  "Prevención cuaternaria, evitar sobretratamiento innecesario.",
+  "Prevención secundaria, detección temprana de sintomáticos.",
+  "Prevención primaria, promoción de hábitos saludables."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Práctica Clínica para la Tuberculosis del MINSA*: La detección temprana de sintomáticos respiratorios es fundamental en la estrategia de control de la tuberculosis, especialmente en comunidades rurales donde la accesibilidad a servicios de salud puede ser limitada. El objetivo es identificar casos sospechosos lo antes posible para iniciar tratamiento y romper la cadena de transmisión.
+
+En un puesto de salud de nivel I-1, la capacidad resolutiva se enfoca en actividades de promoción, prevención y diagnóstico temprano. La intervención comunitaria en este contexto debe orientarse a identificar activamente a las personas con síntomas sugestivos de tuberculosis (tos > 2 semanas) y referirlas para diagnóstico y tratamiento oportuno. Esto se alinea con el concepto de prevención secundaria, buscando detener el avance de la enfermedad en sus etapas iniciales.
+
+El TIP SERUMS enfatiza la importancia de la búsqueda activa de casos y la participación comunitaria para el control de enfermedades prevalentes como la tuberculosis. La promoción de hábitos saludables (prevención primaria) es importante, pero ante un sintomático, la detección es la acción más inmediata y crucial. La rehabilitación (terciaria) y evitar sobretratamiento (cuaternaria) son etapas posteriores o de manejo específico, no la prioridad inicial en este escenario.
+
+
+--- PREGUNTA 7 ---
+ID/Fecha: Wed Mar 25 2026 09:57:57 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Cuidado Integral De Salud | Básico
+Pregunta: Comunero de 55 años, con antecedentes de diabetes mellitus tipo 2, acude a control en centro de salud I-2 en zona rural andina. El equipo de salud debe priorizar la promoción de hábitos saludables. ¿Cuál es la acción prioritaria de promoción de la salud en este caso?
+Opciones: [
+  "Fomentar la actividad física regular y adaptada.",
+  "Asegurar el acceso a medicamentos antidiabéticos.",
+  "Educar sobre el autocuidado y control de la glucemia.",
+  "Realizar despistaje de retinopatía diabética anualmente."
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Guía de Práctica Clínica para el Manejo de la Diabetes Mellitus (GPC MINSA)*, la promoción de la salud en pacientes con diabetes mellitus tipo 2 abarca estrategias para mejorar el estilo de vida. La actividad física regular, adaptada a las condiciones del paciente y del entorno rural, es fundamental para el control glucémico, el peso corporal y la prevención de complicaciones. Esto se alinea con el enfoque de atención primaria y la estrategia de vida saludable promovida por el Ministerio de Salud.
+
+La educación sobre autocuidado y control de la glucemia (opción C) es crucial, pero se considera parte de la educación terapéutica y el manejo más que una acción de promoción primaria en sí misma. El despistaje de retinopatía (opción B) y el acceso a medicamentos (opción D) corresponden a acciones de prevención secundaria y tratamiento, respectivamente. Por lo tanto, el fomento de la actividad física es la intervención de promoción de la salud más directa y prioritaria en este contexto, integrando el cuidado integral y la corresponsabilidad del paciente en su bienestar.
+
+
+--- PREGUNTA 8 ---
+ID/Fecha: Wed Mar 25 2026 09:57:57 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Ética E Interculturalidad | Básico
+Pregunta: Comunero de la selva acude a EESS nivel I-2 por brote de enfermedad diarreica. Se le indica tratamiento, pero rechaza por creencias ancestrales. ¿Cuál es la acción prioritaria del profesional de salud?
+Opciones: [
+  "Informar a la autoridad sanitaria sobre el brote.",
+  "Derivar al paciente a un centro de mayor complejidad de inmediato.",
+  "Explicar riesgos y negociar alternativas terapéuticas respetando cosmovisión.",
+  "Aplicar el tratamiento indicado sin considerar sus creencias."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Práctica Clínica para la Atención de la Diarrea en Niños (2018)*, el manejo de pacientes con enfermedades prevalentes en zonas rurales, como la diarrea, debe considerar las barreras culturales y las creencias de la comunidad. Es fundamental establecer una relación de confianza y respeto mutuo. La negativa al tratamiento por motivos culturales no debe ser ignorada, sino abordada mediante un diálogo intercultural que permita comprender las razones del paciente y negociar alternativas que sean aceptables para él y efectivas desde el punto de vista clínico.
+
+*La Política Nacional de Salud Intercultural (2016-2021)* enfatiza la importancia de la pertinencia cultural en la prestación de servicios de salud. Esto implica que los profesionales deben estar capacitados para interactuar de manera sensible y respetuosa con personas de diferentes orígenes culturales, reconociendo y validando sus saberes y prácticas. En este caso, el profesional debe dedicar tiempo a escuchar al comunero, explicar la gravedad de la enfermedad y buscar un consenso sobre el tratamiento, integrando, si es posible, prácticas tradicionales que no comprometan la salud del paciente, o proponiendo tratamientos convencionales de forma que se alineen con su sistema de creencias. La derivación o imposición de tratamiento sin este proceso de diálogo puede generar desconfianza y el abandono del paciente.
+
+
+--- PREGUNTA 9 ---
+ID/Fecha: Wed Mar 25 2026 09:57:57 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Gestión De Servicios De Salud | Básico
+Pregunta: Comunidad altoandina, Puesto de Salud I-1. Se prioriza acciones de promoción y prevención. ¿Cuál es el componente esencial del Plan de Salud Familiar y Comunitario?
+Opciones: [
+  "Capacitación continua solo del personal de salud.",
+  "Implementación de telemedicina avanzada para consultas especializadas.",
+  "Participación activa de la comunidad y autoridades locales.",
+  "Focalización exclusiva en tratamiento de enfermedades crónicas."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Planificación de los Servicios de Salud (MINSA)*, el Plan de Salud Familiar y Comunitario se fundamenta en la participación activa de la comunidad. Esto implica involucrar a los líderes comunitarios, autoridades locales y a la población en la identificación de sus problemas de salud, la planificación de intervenciones y la ejecución de actividades. La corresponsabilidad es clave para asegurar la pertinencia y sostenibilidad de las acciones sanitarias.
+
+El nivel de atención primario, especialmente en establecimientos como un Puesto de Salud I-1 en zonas rurales o de difícil acceso, debe priorizar estrategias que fortalezcan el vínculo entre el establecimiento y la comunidad. La promoción de la salud y la prevención de enfermedades se logran de manera más efectiva cuando la población se siente parte del proceso y se empodera para cuidar su propia salud y la de su entorno. La telemedicina avanzada o la focalización exclusiva en tratamiento crónico, si bien pueden tener un rol, no constituyen el componente esencial del enfoque comunitario.
+
+
+--- PREGUNTA 10 ---
+ID/Fecha: Wed Mar 25 2026 09:55:32 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Ética E Interculturalidad | Básico
+Pregunta: Comunero de etnia Asháninka acude a EESS nivel I-2 en zona amazónica por dolencia. El personal de salud habla solo castellano. ¿Qué acción prioriza el respeto a la interculturalidad?
+Opciones: [
+  "Referir al paciente a otro establecimiento cercano.",
+  "Utilizar gestos y señas para la comunicación.",
+  "Comunicar la necesidad de un intérprete presente.",
+  "Pedirle al paciente que aprenda castellano rápidamente."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Práctica Clínica para la Atención de Personas de Comunidades Indígenas (GPC Minsa)*, la comunicación efectiva y respetuosa es fundamental en la atención de salud, especialmente en contextos interculturales. Esto implica superar barreras idiomáticas para garantizar la comprensión mutua y el consentimiento informado.
+
+En un establecimiento de salud de nivel I-2 en la Amazonía peruana, donde se atiende a una población con diversidad lingüística como la Asháninka, es imperativo que el personal de salud implemente estrategias para facilitar la comunicación. La solicitud de un intérprete, ya sea un familiar o miembro de la comunidad capacitado, es la vía más directa y ética para asegurar que el paciente comprenda la información sobre su salud y tratamiento, y que el personal reciba información precisa sobre sus síntomas. Ignorar esta barrera o esperar que el paciente se adapte va en contra de los principios de equidad y pertinencia cultural en salud.
+
+*Tip SERUMS: La empatía y la búsqueda activa de soluciones comunicacionales son claves en la integración y el éxito de la labor en zonas rurales y de alta diversidad cultural.*
+
+
+--- PREGUNTA 11 ---
+ID/Fecha: Wed Mar 25 2026 09:55:32 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Gestión De Servicios De Salud | Básico
+Pregunta: En un Puesto de Salud I-1 en zona rural amazónica, se implementa un programa de vigilancia epidemiológica. ¿Cuál es la principal estrategia para asegurar la participación comunitaria activa en este programa?
+Opciones: [
+  "Establecer convenios con ONGs locales para apoyo logístico.",
+  "Realizar campañas masivas de información en plazas públicas.",
+  "Fomentar la conformación de comités de salud locales.",
+  "Capacitación continua a agentes comunitarios de salud."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Guía de Participación Comunitaria en Salud (MINSA)*: La participación comunitaria activa es fundamental para el éxito de los programas de salud, especialmente en establecimientos de primer nivel como los Puestos de Salud I-1. Fomentar la conformación de comités de salud locales, integrados por miembros de la comunidad, permite una apropiación del programa, la identificación de necesidades locales y la toma de decisiones conjuntas.
+
+*Tip SERUMS*: La estrategia más efectiva para la sostenibilidad y pertinencia de las intervenciones en salud en zonas rurales y de difícil acceso es empoderar a la comunidad a través de sus propias organizaciones. Los comités de salud actúan como un puente entre el establecimiento de salud y la población, facilitando la comunicación, la movilización y la retroalimentación continua, elementos cruciales para la vigilancia epidemiológica.
+
+
+--- PREGUNTA 12 ---
+ID/Fecha: Wed Mar 25 2026 09:55:32 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Salud Pública | Básico
+Pregunta: Comunero de 50 años en zona rural andina acude a posta médica I-1 por tos persistente. ¿Qué nivel de atención prioriza el primer nivel según la organización de establecimientos de salud?
+Opciones: [
+  "Atención especializada y hospitalización.",
+  "Prevención primaria y promoción de la salud.",
+  "Diagnóstico y tratamiento de enfermedades complejas.",
+  "Rehabilitación y cuidados paliativos."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Guía de Práctica Clínica para la Atención Primaria de Salud del MINSA*: El primer nivel de atención, representado por establecimientos como postas médicas y centros de salud de baja complejidad (I-1, I-2), se enfoca primordialmente en acciones de prevención primaria (vacunación, educación sanitaria, control de riesgos) y promoción de la salud (fomento de estilos de vida saludables, saneamiento básico). Su objetivo es mantener a la población sana y detectar precozmente los problemas de salud.
+
+El rol del primer nivel es ser la puerta de entrada al sistema de salud, resolviendo la mayoría de las necesidades de salud de la población y derivando solo los casos que requieran mayor especialización o tecnología. La organización de los establecimientos de salud en el Perú, desde el nivel I-1 hasta el IV, sigue esta lógica de progresividad en la complejidad de la atención y especialización, asegurando que los recursos se utilicen de manera eficiente y que la atención sea accesible y oportuna para la comunidad.
+
+
+--- PREGUNTA 13 ---
+ID/Fecha: Wed Mar 25 2026 09:55:32 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Investigación | Básico
+Pregunta: Puesto de salud I-1 en zona rural amazónica reporta incremento de casos de parasitosis intestinal. ¿Cuál es el primer paso para iniciar una investigación epidemiológica?
+Opciones: [
+  "Definir la hipótesis a investigar",
+  "Formular el problema de salud pública",
+  "Analizar datos de morbilidad",
+  "Realizar búsqueda activa de casos"
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Guía de Investigación de Enfermedades Transmitidas por Alimentos (MINSA)*: El primer paso crucial en cualquier investigación epidemiológica es la formulación clara y precisa del problema de salud pública. Esto implica identificar la enfermedad o evento de interés, la población afectada, la magnitud del problema y las posibles implicaciones para la salud comunitaria. Sin una definición adecuada del problema, los esfuerzos de investigación posteriores carecerán de dirección y enfoque.
+
+En el contexto de un puesto de salud I-1 en una zona rural amazónica, ante un incremento de parasitosis intestinal, es fundamental primero describir y delimitar el problema. Esto puede incluir la recopilación de datos preliminares sobre la incidencia, prevalencia y características de los casos observados. Posteriormente, se podrán formular hipótesis específicas para guiar la recolección de datos más detallada y el análisis causal. La búsqueda activa de casos y el análisis de morbilidad son pasos subsiguientes, una vez que el problema ha sido bien definido y contextualizado.
+
+
+--- PREGUNTA 14 ---
+ID/Fecha: Wed Mar 25 2026 09:55:32 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Cuidado Integral De Salud | Básico
+Pregunta: Puesto de salud I-1 en zona rural andina reporta alta incidencia de parasitosis intestinal. ¿Qué nivel de prevención prioriza el primer nivel de atención para esta problemática?
+Opciones: [
+  "Prevención primaria enfocada en educación sanitaria y saneamiento básico.",
+  "Prevención terciaria para rehabilitación de casos crónicos.",
+  "Prevención secundaria mediante tamizaje y diagnóstico precoz.",
+  "Prevención cuaternaria para evitar sobretratamiento médico."
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Guía de Práctica Clínica para el Manejo Integrado de Enfermedades Diarreicas y Parasitarias (MINSA)*, el primer nivel de atención, especialmente en establecimientos de baja complejidad como un puesto de salud I-1, debe enfocar sus esfuerzos en la prevención primaria. Esto incluye estrategias educativas dirigidas a la comunidad sobre prácticas de higiene personal y manipulación de alimentos, así como la promoción del acceso a agua segura y sistemas de disposición de excretas adecuados para romper la cadena de transmisión de los parásitos.
+
+La promoción de la salud y la prevención de enfermedades son pilares fundamentales del primer nivel de atención, tal como se establece en el Modelo de Atención Integral de Salud (MAIS) del MINSA. En el contexto de parasitosis, la intervención más costo-efectiva y de mayor impacto en un entorno rural es aquella que modifica los determinantes sociales y ambientales que favorecen la infección. Por ello, la educación sanitaria y el fomento de medidas de saneamiento básico son la piedra angular de la estrategia preventiva en este nivel, buscando evitar la aparición de la enfermedad en primer lugar.
+
+
+--- PREGUNTA 15 ---
+ID/Fecha: Wed Mar 25 2026 09:54:29 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Investigación | Básico
+Pregunta: Comunero de 45 años, en posta de salud I-2 en zona rural andina, presenta tos persistente. El personal de salud desea iniciar un estudio piloto para evaluar una intervención comunitaria. ¿Cuál es el primer paso metodológico esencial antes de iniciar la recolección de datos?
+Opciones: [
+  "Definir claramente la pregunta de investigación y objetivos.",
+  "Diseñar y aplicar encuestas a toda la población.",
+  "Obtener financiamiento externo para el proyecto.",
+  "Realizar análisis estadísticos inferenciales preliminares."
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Guía de Investigación en Salud del MINSA*: El primer paso fundamental en cualquier investigación, especialmente en estudios piloto o intervenciones comunitarias en establecimientos de salud de niveles I-1 a I-4, es la formulación precisa de la pregunta de investigación y la definición de los objetivos. Esto asegura que el estudio tenga un propósito claro y una dirección definida, permitiendo posteriormente el diseño adecuado de la metodología, la selección de variables y la planificación de la recolección de datos.
+
+La claridad en la pregunta y los objetivos guiará todas las etapas subsiguientes del proceso investigativo, desde la revisión de la literatura hasta la interpretación de los resultados. Sin esta base sólida, el estudio corre el riesgo de ser desorganizado, irrelevante o incapaz de responder a la problemática planteada, lo cual es crítico en contextos de salud pública y gestión comunitaria donde los recursos pueden ser limitados. La formulación adecuada también facilita la comunicación del proyecto a la comunidad y a otros profesionales de la salud.
+
+
+--- PREGUNTA 16 ---
+ID/Fecha: Wed Mar 25 2026 09:54:29 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Gestión De Servicios De Salud | Básico
+Pregunta: Comunidad altoandina, Puesto de Salud I-1. Se prioriza la prevención de enfermedades infecciosas. ¿Qué nivel de atención es fundamental para esta estrategia comunitaria?
+Opciones: [
+  "Gestión administrativa y financiera",
+  "Atención especializada y referencia",
+  "Atención curativa y rehabilitación",
+  "Promoción de la salud y prevención primaria"
+]
+Respuesta Correcta (Índice): 3
+Explicación: *Según la Política Nacional de Salud al 2030 (Aprobada por D.S. N° 030-2020-SA)*, la promoción de la salud y la prevención primaria son pilares esenciales para el desarrollo de servicios de salud integrales y con enfoque territorial. Estas acciones buscan empoderar a las comunidades, mejorar sus determinantes sociales y ambientales, y reducir la carga de enfermedades prevenibles. En establecimientos de primer nivel como un Puesto de Salud I-1 en zonas rurales, estas actividades son la puerta de entrada para un abordaje proactivo y sostenible de la salud comunitaria.
+
+*El Modelo de Atención Integral de Salud (MAIS) del MINSA* enfatiza la continuidad de la atención y la participación comunitaria, donde la prevención primaria (vacunación, educación sanitaria, saneamiento básico, control de vectores) y la promoción de hábitos saludables son cruciales. En un contexto de sierra, donde las condiciones geográficas y socioeconómicas pueden presentar desafíos, fortalecer estas estrategias permite disminuir la incidencia de enfermedades infecciosas comunes y mejorar la calidad de vida de la población, alineándose con el objetivo de un primer nivel resolutivo y preventivo.
+
+
+--- PREGUNTA 17 ---
+ID/Fecha: Wed Mar 25 2026 09:54:29 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Cuidado Integral De Salud | Básico
+Pregunta: En un Puesto de Salud I-1 en zona rural de la selva, se implementa un programa de vigilancia de crecimiento infantil. ¿Qué indicador clave se debe priorizar para la detección temprana de desnutricción crónica según la normativa vigente?
+Opciones: [
+  "Índice de masa corporal para la edad",
+  "Talla para la edad",
+  "Perímetro cefálico para la edad",
+  "Peso para la edad"
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Norma Técnica de Salud NTS 070-MINSA, "Atención Integral de Salud Materno Perinatal" y la "Guía de Práctica Clínica para el Manejo Integrado de la Desnutrición Infantil", la desnutrición crónica se caracteriza por un retraso en el crecimiento lineal. Por ello, el indicador principal para su detección temprana es la talla para la edad. Este indicador permite evaluar el crecimiento acumulativo y la exposición prolongada a condiciones adversas que afectan el desarrollo estatural del niño.
+
+La vigilancia de la talla para la edad en establecimientos de salud de primer nivel, como un Puesto de Salud I-1, es fundamental para identificar a los niños en riesgo o que ya presentan desnutrición crónica. Los resultados de esta medición deben ser graficados en las curvas de crecimiento y comparados con los patrones de referencia nacionales e internacionales. Una talla baja para la edad, especialmente si se mantiene a lo largo del tiempo, es una señal de alerta que requiere una evaluación más profunda y la implementación de intervenciones nutricionales y de salud específicas para revertir o mitigar sus efectos.
+
+Otras opciones como peso para la edad, que detecta emaciación o bajo peso agudo, o perímetro cefálico, importante en los primeros meses de vida para detectar problemas de desarrollo neurológico, no son los indicadores primordiales para la desnutrición crónica. El índice de masa corporal para la edad es más útil para identificar sobrepeso u obesidad, aunque también puede reflejar bajo peso.
+
+
+--- PREGUNTA 18 ---
+ID/Fecha: Wed Mar 25 2026 09:54:29 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Salud Pública | Básico
+Pregunta: Puesto de salud I-1 en zona rural amazónica reporta aumento de casos de diarrea aguda en niños menores de 5 años. ¿Qué estrategia prioritaria de Salud Pública debe implementar el personal de salud?
+Opciones: [
+  "Implementar un programa de desparasitación masiva a toda la población.",
+  "Distribuir antibióticos de amplio espectro a todas las familias.",
+  "Promover la lactancia materna exclusiva y el lavado de manos.",
+  "Fortalecer la vigilancia epidemiológica y el control de brotes."
+]
+Respuesta Correcta (Índice): 2
+Explicación: *Según la Norma Técnica de Salud NTS 182-MINSA-2020 "Prevención y Control de la Enfermedad Diarreica por Rotavirus en el Perú": Las intervenciones clave para reducir la incidencia de la enfermedad diarreica aguda en niños, especialmente en contextos de bajos recursos y difícil acceso, se centran en la promoción de prácticas saludables. La lactancia materna exclusiva hasta los seis meses y la promoción del lavado de manos con agua y jabón son medidas de prevención primaria de alta efectividad y bajo costo, cruciales para interrumpir la transmisión fecal-oral.
+
+Adicionalmente, la Guía de Práctica Clínica "Manejo Integrado de Enfermedades Prevalentes de la Infancia (GEMI)" del MINSA enfatiza la importancia de la rehidratación oral y la continuación de la alimentación como parte del manejo, pero la pregunta se enfoca en la estrategia de salud pública prioritaria para la prevención. Si bien la vigilancia es importante para detectar brotes (como se menciona en una de las opciones), las medidas de promoción de prácticas de higiene y nutrición son la primera línea de defensa para reducir la incidencia general en la comunidad, lo cual es el objetivo principal en un puesto de salud de nivel I-1.
+
+
+--- PREGUNTA 19 ---
+ID/Fecha: Wed Mar 25 2026 09:54:28 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Ética E Interculturalidad | Básico
+Pregunta: Comunero de 60 años, en Puesto de Salud I-1 amazónico, refiere dolencias ancestrales. ¿Qué acción prioriza el personal de salud?
+Opciones: [
+  "Validar su cosmovisión y buscar apoyo comunitario.",
+  "Derivar inmediatamente a centro de mayor complejidad.",
+  "Ignorar creencias, aplicar tratamiento biomédico estándar.",
+  "Explicar la ineficacia de la medicina tradicional."
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Guía de Práctica Clínica para la Atención de Salud Intercultural del MINSA*: La atención en establecimientos de salud, especialmente en zonas rurales y de difícil acceso como la Amazonía, debe integrar el respeto por las prácticas y cosmovisiones locales. El personal de salud tiene la responsabilidad de reconocer y validar las creencias y conocimientos de los pacientes, buscando activamente la participación de la comunidad y sus líderes para una atención integral y culturalmente pertinente.
+
+*El TIP SERUMS en el Perú enfatiza la importancia de la vinculación comunitaria y el respeto a la diversidad cultural*. En este contexto, ante un comunero que refiere dolencias desde su perspectiva ancestral, la acción prioritaria no es desestimar sus creencias ni aplicar un tratamiento biomédico sin considerar su marco cultural. Por el contrario, se debe establecer un diálogo respetuoso, comprender su narrativa y explorar cómo las prácticas comunitarias o ancestrales pueden complementarse o integrarse con el manejo biomédico, siempre que no contravengan principios éticos o de seguridad. La validación de su cosmovisión y la búsqueda de apoyo comunitario fortalecen la relación médico-paciente y mejoran la adherencia al tratamiento.
+
+
+--- PREGUNTA 20 ---
+ID/Fecha: Wed Mar 25 2026 09:53:39 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Investigación | Básico
+Pregunta: Puesto de salud I-1 en zona rural amazónica reporta brote de enfermedad febril. ¿Qué tipo de estudio epidemiológico es prioritario para describir la historia natural de la enfermedad en la comunidad?
+Opciones: [
+  "Estudio descriptivo de prevalencia y características",
+  "Estudio transversal para medir prevalencia",
+  "Estudio de casos y controles para factores de riesgo",
+  "Estudio de cohortes retrospectivo para seguir casos"
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Norma Técnica de Salud NTS 144-MINSA, Guía de Atención Integral de la Salud Familiar Comunitaria e Intercultural (GAAFCI)*, ante la sospecha de un brote en una comunidad, el primer paso en la investigación epidemiológica es realizar un estudio descriptivo. Este tipo de estudio permite caracterizar la enfermedad en la población, determinando la frecuencia (prevalencia), la distribución (quiénes, cuándo y dónde ocurren los casos) y las características clínicas y sociodemográficas de los afectados. Esta información es fundamental para orientar las siguientes acciones de control y prevención.
+
+La información obtenida en un estudio descriptivo sienta las bases para estudios analíticos posteriores, si fueran necesarios, para identificar causas o factores de riesgo. En un escenario de nivel de atención primario (EESS I-1) y en una zona rural, la prioridad es obtener un panorama claro de la situación actual de salud para poder intervenir de manera efectiva y oportuna, protegiendo a la comunidad. La investigación debe ser pragmática y orientada a la acción inmediata en salud pública.
+
+
+--- PREGUNTA 21 ---
+ID/Fecha: Wed Mar 25 2026 09:53:38 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Cuidado Integral De Salud | Básico
+Pregunta: Puesto de salud I-1 en zona rural andina reporta alta incidencia de parasitosis intestinal. ¿Qué actividad prioriza la estrategia sanitaria para el control?
+Opciones: [
+  "Mejora de la infraestructura de agua y desagüe.",
+  "Focalización de desparasitación masiva comunitaria.",
+  "Vigilancia epidemiológica de casos sospechosos.",
+  "Capacitación a promotores de salud en saneamiento básico."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Norma Técnica de Salud NTS 071-MINSA: Prevención y Control de Enfermedades Metaxénicas y Zoonóticas y Enfermedades Transmitidas por Alimentos y Agua*: La desparasitación masiva es una estrategia clave en áreas endémicas para reducir la carga parasitaria en la población, especialmente en niños. Esto se complementa con acciones de educación sanitaria y mejora del acceso a agua segura y saneamiento.
+
+*La Guía de Práctica Clínica (GPC) para el Manejo Integrado de Enfermedades Diarreicas y Parasitarias en Niños y Adultos* enfatiza la importancia de la desparasitación periódica como medida de control efectiva. En un puesto de salud de nivel bajo (I-1) con recursos limitados, la desparasitación masiva focalizada en la comunidad es la intervención más directa y de mayor impacto para reducir la incidencia de parasitosis intestinal a corto plazo, abordando el problema de raíz en la población expuesta. El TIP SERUMS en este contexto implica la movilización comunitaria para asegurar la adherencia al tratamiento antiparasitario.
+
+
+--- PREGUNTA 22 ---
+ID/Fecha: Wed Mar 25 2026 09:53:38 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Salud Pública | Básico
+Pregunta: Puesto de salud I-1 en zona rural amazónica reporta brote de diarrea aguda. ¿Cuál es la acción prioritaria de vigilancia epidemiológica comunitaria?
+Opciones: [
+  "Investigación de la fuente de agua y alimentos contaminados.",
+  "Notificación inmediata de casos sospechosos al nivel superior.",
+  "Establecimiento de puntos de control sanitario en la comunidad.",
+  "Capacitación a la comunidad sobre higiene y saneamiento básico."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Norma Técnica de Salud NTS 028-MINSA-DIGESA-2007, "Vigilancia Epidemiológica de Enfermedades Transmisibles"*: La notificación inmediata de casos sospechosos es el pilar fundamental de la vigilancia epidemiológica en brotes de enfermedades diarreicas agudas. Permite activar rápidamente los mecanismos de respuesta para contener la propagación y determinar la magnitud del problema.
+
+En un establecimiento de salud de nivel I-1, ubicado en una zona rural amazónica, la capacidad de respuesta se basa en la comunicación efectiva y oportuna con las instancias de salud de mayor nivel (microred, red). La notificación permite que las autoridades competentes inicien acciones de investigación más profundas, como la búsqueda de casos, análisis de laboratorio y la identificación de factores de riesgo asociados, como la contaminación de fuentes de agua o alimentos, y la implementación de medidas de control específicas.
+
+*Tip SERUMS*: La rápida identificación y reporte de casos en niveles periféricos es crucial para la toma de decisiones en salud pública, especialmente en contextos de difícil acceso y alta vulnerabilidad como las zonas rurales amazónicas.
+
+
+--- PREGUNTA 23 ---
+ID/Fecha: Wed Mar 25 2026 09:53:38 GMT-0500 (hora estándar de Perú)
+Contexto: SERUMS | Medicina Humana | Ética E Interculturalidad | Básico
+Pregunta: Comunero de 55 años, en puesto de salud I-1 en zona andina, rechaza transfusión sanguínea por motivos religiosos. ¿Qué acción prioriza el profesional de salud?
+Opciones: [
+  "Respetar su decisión y buscar alternativas terapéuticas.",
+  "Convencerlo de la necesidad vital de la transfusión.",
+  "Solicitar la intervención de líderes religiosos locales.",
+  "Notificar inmediatamente a las autoridades sanitarias."
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según el Código de Ética del Colegio Médico del Perú*: El principio de autonomía del paciente es fundamental, permitiendo al individuo tomar decisiones informadas sobre su salud, incluso si estas difieren de la recomendación médica, siempre que tenga la capacidad de comprender las implicaciones. En contextos interculturales, como el de un puesto de salud en zona andina, el respeto a las creencias y valores del paciente es primordial para establecer una relación de confianza y brindar una atención humanizada y culturalmente pertinente.
+
+*La Norma Técnica de Salud NTS 140-MINSA - "Guía de Atención Integral de Salud de las Personas Adultas Mayores"* (aunque no directamente sobre transfusiones, establece el marco de respeto a la persona y sus decisiones) enfatiza la importancia de la comunicación efectiva y el consentimiento informado. Ante un rechazo basado en convicciones religiosas, la labor del profesional es explorar las razones subyacentes, informar sobre los riesgos y beneficios de las alternativas disponibles, y buscar un curso de acción que honre tanto la autonomía del paciente como el deber de cuidado del profesional. La opción de buscar alternativas terapéuticas es la que mejor refleja este equilibrio ético y práctico.
+
+
+--- PREGUNTA 24 ---
+ID/Fecha: Wed Mar 25 2026 08:54:42 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Anatomía | Básico
+Pregunta: Mujer de 30 años presenta dolor abdominal agudo. El apéndice se ubica embriológicamente en el cuadrante superior derecho, migrando hacia el cuadrante inferior derecho durante el desarrollo. ¿Cuál es la estructura vascular principal que irriga al apéndice vermiforme?
+Opciones: [
+  "Arteria ileocólica",
+  "Arteria gástrica izquierda",
+  "Arteria mesentérica superior",
+  "Arteria hepática común"
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según el Gray's Anatomy for Students*, la irrigación arterial del apéndice vermiforme proviene principalmente de la arteria apendicular, que es una rama de la arteria ileocólica. La arteria ileocólica, a su vez, es una rama de la arteria mesentérica superior. Esta arteria apendicular generalmente discurre posterior al ciego y al íleon terminal para alcanzar la base del apéndice. La arteria mesentérica superior es una arteria de gran calibre que irriga la mayor parte del intestino delgado y el colon ascendente y transverso, por lo que no es la fuente directa de irrigación del apéndice.
+
+La arteria hepática común es parte del tronco celíaco y irriga el hígado, estómago y duodeno. La arteria gástrica izquierda, también rama del tronco celíaco, irriga el estómago y el esófago distal. Por lo tanto, la arteria ileocólica, al dar origen a la arteria apendicular, es la respuesta correcta en cuanto a la irrigación principal del apéndice. Es fundamental conocer esta irrigación para comprender la patogénesis de la apendicitis y la posible extensión de la infección a través de la pared apendicular y el mesenterio adyacente.
+
+
+--- PREGUNTA 25 ---
+ID/Fecha: Wed Mar 25 2026 08:54:42 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Microbiología y Parasitología | Básico
+Pregunta: Gestante de 28 semanas presenta dolor abdominal y sangrado vaginal. Ecografía revela embarazo intrauterino. ¿Cuál es el agente etiológico más frecuente de vaginosis bacteriana, asociado a complicaciones gestacionales?
+Opciones: [
+  "Candida albicans",
+  "Gardnerella vaginalis",
+  "Neisseria gonorrhoeae",
+  "Trichomonas vaginalis"
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Guía de Práctica Clínica para el Diagnóstico y Tratamiento de la Vaginosis Bacteriana del MINSA*, la vaginosis bacteriana (VB) es una alteración de la microbiota vaginal caracterizada por la disminución de lactobacilos y el sobrecrecimiento de bacterias anaerobias y facultativas. El agente etiológico más comúnmente asociado y considerado un marcador importante es *Gardnerella vaginalis*, aunque se reconoce que la VB es un síndrome polimicrobiano. La VB se ha relacionado con un mayor riesgo de complicaciones obstétricas como parto pretérmino, corioamnionitis e infección posparto.
+
+La VB se diagnostica típicamente mediante criterios clínicos (criterios de Amsel) o mediante análisis microscópico (tinción de Gram) que muestra un patrón característico de la flora vaginal. El tratamiento de elección en gestantes sintomáticas suele ser con clindamicina o metronidazol, aunque la elección y el momento del tratamiento pueden variar según la severidad de los síntomas y el trimestre de gestación. Es fundamental diferenciar la VB de otras infecciones vaginales como la tricomoniasis, candidiasis o gonorrea, las cuales tienen agentes etiológicos y tratamientos distintos, y también pueden presentar síntomas similares en el embarazo.
+
+
+--- PREGUNTA 26 ---
+ID/Fecha: Wed Mar 25 2026 08:54:42 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Farmacología | Básico
+Pregunta: Gestante de 28 semanas presenta náuseas y vómitos persistentes. ¿Cuál es el antiemético de elección en este caso?
+Opciones: [
+  "Domperidona",
+  "Dimenhidrinato",
+  "Metoclopramida",
+  "Ondansetrón"
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Guía de Práctica Clínica para el Manejo de las Náuseas y Vómitos en el Embarazo del Ministerio de Salud del Perú*: El dimenhidrinato es considerado un tratamiento de primera línea para las náuseas y vómitos del embarazo (NVP) debido a su perfil de seguridad relativamente favorable en comparación con otros agentes. Se cree que actúa bloqueando los receptores de histamina H1 y muscarínicos en el centro del vómito y la zona quimiorreceptora gatillo. Su uso está respaldado por evidencia clínica y se recomienda su administración oral, pudiendo ajustarse la dosis según la respuesta.
+
+Otras opciones como el ondansetrón (un antagonista del receptor 5-HT3) y la metoclopramida (un antagonista de la dopamina D2) se consideran generalmente como tratamientos de segunda línea o para casos más severos que no responden a las medidas iniciales. Si bien el ondansetrón ha demostrado eficacia, existe cierta preocupación sobre su uso en el primer trimestre, aunque estudios más recientes sugieren un riesgo bajo. La metoclopramida puede ser útil, pero sus efectos extrapiramidales y su potencial para cruzar la placenta requieren una cuidadosa consideración. La domperidona, un antagonista de la dopamina periférica, generalmente no se recomienda debido a preocupaciones sobre la seguridad cardíaca y su potencial para ser transferida a la leche materna, lo que la hace menos ideal para uso durante el embarazo.
+
+
+--- PREGUNTA 27 ---
+ID/Fecha: Wed Mar 25 2026 08:54:41 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Fisiología | Básico
+Pregunta: Mujer de 30 años presenta disnea súbita. La auscultación revela disminución del murmullo vesicular en hemitórax derecho. ¿Cuál es el mecanismo fisiopatológico principal en este caso?
+Opciones: [
+  "Reducción del volumen de cierre pulmonar.",
+  "Alteración de la relación ventilación/perfusión.",
+  "Aumento de la resistencia de la vía aérea.",
+  "Disminución del espacio muerto fisiológico."
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según el principio de Fisiología Pulmonar de West*, la relación ventilación/perfusión (V/Q) es fundamental para el intercambio gaseoso. En condiciones normales, esta relación se mantiene en un equilibrio que permite la oxigenación adecuada de la sangre. Sin embargo, diversas patologías pueden alterar este balance, llevando a hipoxemia.
+
+En un escenario como el de disnea con disminución del murmullo vesicular, se puede inferir una alteración significativa en la distribución del aire (ventilación) o del flujo sanguíneo (perfusión) a nivel pulmonar. Una reducción del murmullo vesicular sugiere una ventilación disminuida en esa área. Si la perfusión permanece constante o se altera de manera diferente, la relación V/Q se verá afectada. Específicamente, una disminución de la ventilación con perfusión normal o aumentada genera un 'shunt' fisiológico o una zona con V/Q bajo, lo que resulta en una oxigenación deficiente de la sangre arterial. Esta alteración es una causa común de hipoxemia en muchas enfermedades pulmonares.
+
+
+--- PREGUNTA 28 ---
+ID/Fecha: Wed Mar 25 2026 08:54:41 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Anatomía | Básico
+Pregunta: Durante la disección de la región glútea, se identifica una estructura vascular superficial que irriga la piel y el tejido subcutáneo de la nalga. ¿Cuál es la arteria principal que da origen a esta rama?
+Opciones: [
+  "Arteria ilíaca interna",
+  "Arteria glútea superior",
+  "Arteria femoral superficial",
+  "Arteria pudenda interna"
+]
+Respuesta Correcta (Índice): 1
+Explicación: *Según la Anatomía de Gray*: La región glútea recibe su principal irrigación sanguínea de la arteria glútea superior y la arteria glútea inferior, ambas ramas de la arteria ilíaca interna. La arteria glútea superior, la más grande de las dos, emerge de la pelvis mayor y se divide en ramas superficiales y profundas. La rama superficial irriga el músculo glúteo mayor, el músculo glúteo medio y la piel suprayacente de la región posterolateral de la nalga y el muslo.
+
+La arteria ilíaca interna es la arteria principal que se ramifica para irrigar la pelvis y sus estructuras adyacentes, incluyendo la región glútea. Sus ramas terminales, la arteria glútea superior y la arteria glútea inferior, son cruciales para el suministro de sangre a los músculos glúteos y la piel de esa área. La arteria femoral superficial y la arteria pudenda interna tienen roles en otras regiones anatómicas y no son la fuente directa de las arterias glúteas principales.
+
+
+--- PREGUNTA 29 ---
+ID/Fecha: Wed Mar 25 2026 08:53:22 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Anatomía | Básico
+Pregunta: Estructura ósea que forma el techo de la órbita ocular.
+Opciones: [
+  "Hueso frontal",
+  "Hueso etmoides",
+  "Hueso cigomático",
+  "Hueso lagrimal"
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según Gray's Anatomy for Students*, el techo de la órbita está formado principalmente por la porción orbitaria del hueso frontal. Esta lámina ósea delgada separa la cavidad orbitaria de las circunvoluciones del lóbulo frontal del cerebro. Cualquier fractura o lesión en esta área puede tener implicaciones neurológicas significativas debido a la proximidad con el encéfalo.
+
+La órbita es una cavidad compleja formada por siete huesos del cráneo y la cara: el frontal, el maxilar, el cigomático, el esfenoides, el etmoides, el lagrimal y el palatino. Cada hueso contribuye a diferentes paredes de la órbita. El hueso frontal es el principal contribuyente al techo, mientras que el suelo está formado por el maxilar y el cigomático, y las paredes mediales por el etmoides, lagrimal y esfenoides. La pared lateral está formada por el esfenoides y el cigomático.
+
+
+--- PREGUNTA 30 ---
+ID/Fecha: Wed Mar 25 2026 08:53:21 GMT-0500 (hora estándar de Perú)
+Contexto: ENAM | Medicina Humana | Microbiología y Parasitología | Básico
+Pregunta: Gestante de 28 semanas presenta dolor abdominal y flujo vaginal maloliente. Al examen, cérvix con epitelio en fresa. ¿Cuál es el agente etiológico más probable?
+Opciones: [
+  "Trichomonas vaginalis",
+  "Candida albicans",
+  "Gardnerella vaginalis",
+  "Neisseria gonorrhoeae"
+]
+Respuesta Correcta (Índice): 0
+Explicación: *Según la Guía de Práctica Clínica para el Manejo de Infecciones de Transmisión Sexual (Minsa)*, la tricomoniasis es una infección causada por el protozoo flagelado *Trichomonas vaginalis*. Se caracteriza clásicamente en mujeres por flujo vaginal espumoso, amarillo-verdoso, maloliente, asociado a prurito vulvar y disuria. El hallazgo de un cérvix con aspecto de "fresa" o "punto rojo" es patognomónico de esta infección, aunque no siempre está presente. La transmisión es principalmente sexual.
+
+El diagnóstico se basa en la visualización del parásito en fresco (movimiento de flagelos) o mediante pruebas de amplificación de ácidos nucleicos (NAATs). El tratamiento de elección en gestantes es el metronidazol oral, aunque se prefiere el uso de clindamicina tópica si hay coinfección con vaginosis bacteriana. Es importante tratarla para reducir el riesgo de parto pretérmino y otras complicaciones maternas y neonatales.
+

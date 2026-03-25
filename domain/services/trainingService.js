@@ -70,7 +70,7 @@ class TrainingService {
      * Obtiene Preguntas (Banco Local).
      * Soporta tanto Modo Legacy (String) como Modo Multi-Area (Objeto).
      */
-    async getQuestions(categoryOptions, difficulty, limit = 5, userId, subscriptionTier = 'free', seenIds = []) {
+    async getQuestions(categoryOptions, limit = 5, userId, subscriptionTier = 'free', seenIds = []) {
         // 1. Parsear opciones
         let target = 'MEDICINA';
         let areas = ['Medicina General'];
@@ -82,7 +82,7 @@ class TrainingService {
             career = categoryOptions.career || null;
         } else {
             // Modo Legacy
-            target = 'MEDICINA'; // We assumed domain was 'MEDICINA' for QuizController before
+            target = 'MEDICINA'; 
             areas = [this.normalizeTopic(categoryOptions)];
         }
 
@@ -90,19 +90,8 @@ class TrainingService {
             areas = ['MEDICINA GENERAL'];
         }
 
-        // 🛠️ DB MAPPER FIX: 'target' holds the exam type (ENAM, SERUMS, RESIDENTADO) or 'GENERAL_TRIVIA' from Arena.
         const dbDomain = target === 'GENERAL_TRIVIA' ? 'GENERAL_TRIVIA' : 'medicine';
         const dbTarget = target === 'GENERAL_TRIVIA' ? null : target;
-
-        // 🛡️ OVERRIDE DE DIFICULTAD OFICIAL (Simulacro Real)
-        if (limit >= 100) {
-            console.log(`⚖️ [Simulacro Real Detectado] Ignorando dificultad del usuario (${difficulty}). Aplicando Estándar Oficial...`);
-            if (target === 'RESIDENTADO') {
-                difficulty = 'Avanzado'; // Especialidad compleja
-            } else {
-                difficulty = 'Intermedio'; // Nivel troncal ENAM/SERUMS
-            }
-        }
 
         // 🔄 FALLBACK DE ÁREAS (SERUMS POR DEFECTO)
         // Si no hay áreas o son genéricas, inyectamos el bloque oficial del SERUMS.
@@ -117,21 +106,21 @@ class TrainingService {
                 'Investigación',
                 'Cuidado Integral De Salud'
             ];
-            console.log(`📡 Fallback Activado: Usando 6 áreas oficiales de SERUMS para configuración inicial.`);
+            console.log(`📡 Fallback Activado: Usando 5 áreas oficiales de SERUMS para configuración inicial.`);
         }
+
+        // 🎯 NORMALIZACIÓN DE ÁREAS (Necesario para Repo y IA)
+        const normalizedAllAreas = areas.map(a => a.trim().toUpperCase());
+        const areaMap = new Map();
+        areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
 
         // ---------------------------------------------------------
         // A. FLUJO MÉDICO (ENAM, SERUMS, RESIDENTADO)
         // ---------------------------------------------------------
         if (dbDomain === 'medicine') {
-            // 1. ESCANEO DE STOCK GLOBAL (Prioridad: Banco Real)
-            const areaMap = new Map(); // Para preservar el Title Case original (ej: "Ginecología")
-            areas.forEach(a => areaMap.set(a.toUpperCase(), a));
-            const normalizedAllAreas = Array.from(areaMap.keys());
-
             console.log(`\n🧠 [TrainingService] Analizando stock en ${normalizedAllAreas.length} áreas para ${dbTarget}...`);
 
-            const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, difficulty, 50, userId, career, seenIds);
+            const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, 50, userId, career, seenIds);
 
             const questionsByArea = {};
             rawBankQuestions.forEach(q => {
@@ -216,17 +205,17 @@ class TrainingService {
 
                 if (isAdmin) {
                     console.log(`🚀 [Replenish-Admin] Calling MLService (RAG) for ${target}`);
-                    aiQuestions = await MLService.generateRAGQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
+                    aiQuestions = await MLService.generateRAGQuestions(target, areaPrompt, career, 5, subscriptionTier);
                 } else {
                     console.log(`⚡ [Replenish-User] Calling UserAiService (Fast) for ${target}`);
-                    aiQuestions = await UserAiService.generateQuestions(target, difficulty, areaPrompt, career, 5, subscriptionTier);
+                    aiQuestions = await UserAiService.generateQuestions(target, areaPrompt, career, 5, subscriptionTier);
                 }
 
                 if (aiQuestions && aiQuestions.length > 0) {
                     source = 'HYBRID';
                     aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
                     // 🎯 FIX: Pasar el parámetro 'career' para que el repositorio lo guarde en la BD.
-                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, difficulty, career);
+                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, career);
                     if (newIds && newIds.length > 0) {
                         await repository.markQuestionsAsSeen(userId, newIds);
                         aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
@@ -251,9 +240,8 @@ class TrainingService {
         // ---------------------------------------------------------
         // SI ES QUIZ ARENA (GENERAL_TRIVIA / OTROS)
         // ---------------------------------------------------------
-        // 🚨 SENIOR REFACTOR: Normalizar tema a UPPERCASE y usar método exclusivo para agotar stock real
         const normalizedTopic = String(areas[0] || 'Cultura General').trim().toUpperCase();
-        const questions = await repository.findArenaQuestions(dbDomain, dbTarget, normalizedTopic, difficulty, limit, userId);
+        const questions = await repository.findArenaQuestions(dbDomain, dbTarget, normalizedTopic, limit, userId);
 
         // SI ES QUIZ ARENA (GENERAL_TRIVIA), Conservamos la IA (Bajo temperatura creativa y sin RAG)
         if (questions.length < limit) {
@@ -272,7 +260,7 @@ class TrainingService {
             }
 
             console.log(`🧠 [Arena-IA] Reponiendo ${limit - questions.length} faltantes con IA... [Tema: ${areas[0]}]`);
-            let newQuestions = await this.generateGeneralQuestionsAI(areas, difficulty, limit - questions.length, subscriptionTier);
+            let newQuestions = await this.generateGeneralQuestionsAI(areas, limit - questions.length, subscriptionTier);
 
             // 🔀 Shuffle de opciones para nuevas preguntas IA
             newQuestions = newQuestions.map(q => this.shuffleOptions(q));
@@ -280,7 +268,7 @@ class TrainingService {
             // 3. Guardar las nuevas en el Banco Y OBTENER IDs
             let newIds = [];
             if (newQuestions.length > 0) {
-                newIds = await repository.saveQuestionBankBatch(newQuestions, areas[0], dbDomain, dbTarget, difficulty, career);
+                newIds = await repository.saveQuestionBankBatch(newQuestions, areas[0], dbDomain, dbTarget, career);
             }
 
             // 4. Marcar como vistas las nuevas y FILTRAR REPETIDAS
@@ -314,7 +302,7 @@ class TrainingService {
     /**
      * Generador Puro IA (GENERAL) - Lógica interna y Deduplicación
      */
-    async generateGeneralQuestionsAI(areas, difficulty, count, tier = 'free') {
+    async generateGeneralQuestionsAI(areas, count, tier = 'free') {
         try {
             const activeModel = (tier === 'admin') ? modelCreative : modelCreativeLite;
             console.log(`🤖 [Arena IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
@@ -336,24 +324,28 @@ class TrainingService {
             const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
 
             const prompt = `
-            Actúa como un Quiz Master experto en educación de alto nivel. 
-            Tema: "${areaString}". Dificultad: ${difficulty}.
-            Enfoque: ${randomSeed}.
+            Actúa como un Quiz Master dinámico para una App de Trivia Premium. 
+            Tema: "${areaString}". 
+            
+            🚨 VISIÓN DE JUEGO (GAMIFICATION):
+            - No generes preguntas extremadamente técnicas, aburridas o estresantes.
+            - Genera "Trivias Inteligentes": Preguntas directas, datos curiosos, conceptos clave y cultura general.
+            - El tono debe ser profesional pero ágil, relajado y divertido (Gamified).
+            - Estándar Interno: Senior (Alta calidad de redacción y veracidad), pero accesible para el aprendizaje lúdico y el relax.
             
             🚨 REGLA DE ORO DE DEDUPLICACIÓN (CONTEXTO NEGATIVO):
-            ABSOLUTAMENTE PROHIBIDO evaluar los siguientes conceptos exactos, ya que ya existen en nuestro banco. DEBES generar preguntas DIFERENTES a estas:
+            ABSOLUTAMENTE PROHIBIDO evaluar los siguientes conceptos exactos:
             -- INICIO PREGUNTAS PROHIBIDAS --
             ${deduplicationText}
             -- FIN PREGUNTAS PROHIBIDAS --
 
-            Instrucciones CRÍTICAS de Calidad:
-            1. IDIOMA: ESPAÑOL (Neutro). Todas las preguntas y respuestas en español.
-            2. FORMATO: Genera EXACTAMENTE 4 opciones de respuesta para cada pregunta.
-            3. LONGITUD: Preguntas claras y directas, pero con contenido educativo rico.
-            4. CALIDAD DE OPCIONES: Queda TOTALMENTE PROHIBIDO usar opciones de una sola letra ("A", "X", "J"). Las respuestas deben ser conceptos, nombres, fechas o descripciones completas y plausibles.
-            5. TONO: Profesional pero dinámico.
+            Instrucciones de Calidad:
+            1. IDIOMA: ESPAÑOL (Neutro).
+            2. FORMATO: Genera EXACTAMENTE 4 opciones.
+            3. DINAMISMO: Preguntas que inviten a la curiosidad (Ej: "¿Sabías que...?", "¿Cuál es el principal responsable de...?", "¿Qué hito marcó...?").
+            4. CALIDAD DE OPCIONES: Sin letras ("A", "B"). Conceptos crudos.
             
-            Genera ${count} preguntas de trivia interesantes y NO repetitivas.
+            Genera ${count} preguntas de trivia interesantes y retadoras pero NO estresantes.
             
             JSON ESTRICTO:
             [{"question_text":"¿Cuál es el principal factor...?","options":["Concepto A detallado", "Concepto B detallado", "Concepto C detallado", "Concepto D detallado"],"correct_option_index":0,"explanation":"Explicación educativa de 1-2 líneas.","topic":"${areas[0]}"}]
@@ -445,14 +437,14 @@ class TrainingService {
     // --- MÉTODOS LEGACY (Wrappers para compatibilidad) ---
 
     // Usado por QuizController (ENAM/SERUMS/RESIDENTADO)
-    async generateQuiz(categoryOptions, difficulty = 'ENAM', userId, limit = 5, subscriptionTier = 'free', seenIds = []) {
-        const result = await this.getQuestions(categoryOptions, difficulty, limit, userId, subscriptionTier, seenIds);
+    async generateQuiz(categoryOptions, userId, limit = 5, subscriptionTier = 'free', seenIds = []) {
+        const result = await this.getQuestions(categoryOptions, limit, userId, subscriptionTier, seenIds);
         return { questions: result.questions, topic: result.topic };
     }
 
     // Usado por QuizGameController (Arena)
-    async generateGeneralQuiz(topic, difficulty = 'Intermedio', userId, tier = 'free') {
-        const result = await this.getQuestions({ target: 'GENERAL_TRIVIA', areas: [topic] }, difficulty, 5, userId, tier);
+    async generateGeneralQuiz(topic, userId, tier = 'free') {
+        const result = await this.getQuestions({ target: 'GENERAL_TRIVIA', areas: [topic] }, 5, userId, tier);
         return result.questions;
     }
 

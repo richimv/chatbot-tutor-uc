@@ -20,10 +20,6 @@ La configuración se divide en los siguientes apartados críticos:
     *   **Medicina Humana:** Estilo MINSA Medicina.
     *   **Enfermería:** Estilo MINSA Enfermería (Tipos A y B).
     *   **Obstetricia:** Estilo MINSA Obstetricia.
-*   **Dificultad (`difficulty`):**
-    *   **Básico:** Preguntas directas, teoría pura y definiciones.
-    *   **Intermedio:** Casos clínicos centrados en el diagnóstico inicial.
-    *   **Avanzado:** Casos complejos de tratamiento, complicaciones y gestión de salud (ASIS/Normas).
 *   **Áreas de Estudio (`topics`):** El sistema agrupa **22+ áreas académicas** en 4 bloques funcionales:
     1.  **CIENCIAS BÁSICAS:** Anatomía, Fisiología, Farmacología, Microbiología y Parasitología.
     2.  **LAS 4 GRANDES:** Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía General.
@@ -32,7 +28,7 @@ La configuración se divide en los siguientes apartados críticos:
 
 ### 0.2 Bindeo con el Motor de IA
 Cuando el usuario presiona "Configurar Simulacro" o el administrador "Generar con IA", estos parámetros se encapsulan en un objeto JSON que viaja a `mlService.js`. Este servicio utiliza el **Target** para elegir los recursos vectorizados y la **Carrera** para inyectar los ejemplos de estilo (Few-Shot) recuperados por el RAG.
-Ojo: No se debe cambiar el estilo title-case de topic, subtopic, difficulty y career. Target en mayuscula.
+Ojo: No se debe cambiar el estilo title-case de topic, subtopic y career. Target en mayuscula.
 ---
 
 ## 1. Arquitectura de Reposición (Trigger < 5)

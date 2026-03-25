@@ -586,11 +586,6 @@ class AdminManager {
                     { id: 'english', name: 'Inglés' },
                     { id: 'general_trivia', name: 'Cultura General' }
                 ];
-                const diffs = [
-                    { id: 'Básico', name: 'Básico' },
-                    { id: 'Intermedio', name: 'Intermedio' },
-                    { id: 'Avanzado', name: 'Avanzado' }
-                ];
 
                 fieldsHTML = `
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', currentItem?.question_text || '', true)}
@@ -638,9 +633,6 @@ class AdminManager {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', currentItem?.topic || '', true)}
                         ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', currentItem?.subtopic || '', false)}
-                    </div>
-                    <div style="margin-top: 0;">
-                        ${this.createSelect('generic-difficulty', 'Dificultad (*)', diffs, currentItem?.difficulty || 'Intermedio', false)}
                     </div>
                     <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">Opciones y Respuesta</legend>
@@ -755,12 +747,6 @@ class AdminManager {
                             <option value="Obstetricia">Obstetricia</option>
                         </select>
                     </div>
-                    <h4 style="margin-bottom:0.5rem;">Dificultad</h4>
-                    <select id="ai-difficulty" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
-                        <option value="Básico">Básico</option>
-                        <option value="Intermedio" selected>Intermedio</option>
-                        <option value="Avanzado">Avanzado</option>
-                    </select>
                     <h4 style="margin-bottom:0.5rem;">Áreas de Estudio</h4>
                     <div id="ai-domain-container" style="min-height: 200px; max-height: 250px; overflow-y: scroll; display: block; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: var(--bg-secondary); margin-bottom: 15px;">
                         <div class="ai-study-group" data-group="A" style="margin-bottom: 15px;">
@@ -1459,8 +1445,8 @@ class AdminManager {
                         target: qTarget,
                         career: (qTarget.toUpperCase() === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
-                        subtopic: document.getElementById('generic-subtopic')?.value || null, // Subtema clínico específico
-                        difficulty: document.getElementById('generic-difficulty').value,
+                        subtopic: document.getElementById('generic-subtopic')?.value || null, // Subtema clínicos específico
+                        difficulty: 'Senior',
                         options: (qTarget.toUpperCase() === 'RESIDENTADO')
                             ? [
                                 document.getElementById('generic-opt0').value,
@@ -1503,7 +1489,7 @@ class AdminManager {
                         const reqBody = {
                             target: targetVal,
                             career: careerVal,
-                            difficulty: document.getElementById('ai-difficulty').value,
+                            difficulty: 'Senior',
                             domain: domainVal,                       // Dominio global de la BD
                             studyAreas: selectedStudyAreas.join(', ') // Áreas de estudio para el prompt de la IA
                         };
@@ -1565,7 +1551,7 @@ class AdminManager {
                                             target: cols[2] ? String(cols[2]).trim() : null,
                                             career: cols[3] ? String(cols[3]).trim() : null,
                                             topic: String(cols[4] || 'General').trim(),
-                                            difficulty: String(cols[5] || 'Intermedio').trim(),
+                                            difficulty: 'Senior',
                                             options: (String(cols[2] || '').trim().toUpperCase() === 'RESIDENTADO') ? [
                                                 String(cols[6] || 'Opción A').trim(),
                                                 String(cols[7] || 'Opción B').trim(),

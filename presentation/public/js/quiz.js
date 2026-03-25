@@ -12,7 +12,6 @@ const state = {
     answers: [], // { questionId, userAnswer, isCorrect }
     startTime: null,
     topic: '',
-    difficulty: '',
     maxQuestions: 20, // 🎯 Study Mode Limit
     isLoadingBatch: false
 };
@@ -46,7 +45,7 @@ async function init() {
     // Obtener parámetros de URL
     const urlParams = new URLSearchParams(window.location.search);
     state.topic = urlParams.get('topic') || '';
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Básico';
+    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Senior';
     // Custom Exam Builder params
     let savedConfig = null;
     try {
@@ -55,7 +54,6 @@ async function init() {
     } catch (e) { console.warn("No active config found"); }
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig ? savedConfig.difficulty : 'Básico');
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
 
@@ -142,7 +140,6 @@ async function startQuiz() {
             topic: state.topic,
             target: state.targetExam,
             areas: state.areas,
-            difficulty: state.difficulty,
             career: state.career,
             limit: Math.min(5, state.maxQuestions)
         })
@@ -330,7 +327,6 @@ async function fetchNextBatch() {
                 topic: state.topic, // Legacy compatibility
                 target: state.targetExam,
                 areas: state.areas,
-                difficulty: state.difficulty,
                 career: state.career,
                 seenIds: seenIds
             })
@@ -662,7 +658,6 @@ async function finishQuiz() {
                 topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic, // Enviar etiqueta "Multi-Área" si hay más de 1
                 areas: state.areas, // Extra metadata
                 target: state.targetExam,
-                difficulty: state.difficulty,
                 career: state.career,
                 score: state.score,
                 total_questions: state.currentQuestionIndex, // Send actual total answered

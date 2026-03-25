@@ -204,10 +204,12 @@ class AdminController {
              * studyAreas: Áreas de estudio médicas seleccionadas con checkboxes (Pediatría, Cardiología...).
              *             Se pasan como string al prompt de la IA para indicar sobre qué generar.
              */
-            const { target, difficulty, domain, studyAreas, career } = req.body;
-            if (!target || !difficulty || !studyAreas) {
-                return res.status(400).json({ error: 'Faltan parámetros: target, difficulty y studyAreas son requeridos.' });
+            const { target, domain, studyAreas, career } = req.body;
+            if (!target || !studyAreas) {
+                return res.status(400).json({ error: 'Faltan parámetros: target y studyAreas son requeridos.' });
             }
+
+            const difficulty = 'Senior';
 
             const resolvedDomain = domain || 'medicine'; // Fallback seguro si el front no envía domain
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
@@ -286,8 +288,8 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
-                q.subtopic || null, // Subtema clínico específico (nullable)
-                q.difficulty || 'Intermedio',
+                q.subtopic || null, 
+                'Senior',
                 q.image_url || null,
                 hash
             ];
@@ -333,8 +335,8 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
-                q.subtopic || null, // Subtema clínico específico (nullable)
-                q.difficulty || 'Intermedio',
+                q.subtopic || null, 
+                'Senior',
                 q.image_url || null,
                 hash,
                 id

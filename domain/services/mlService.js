@@ -485,9 +485,9 @@ class MLService {
      * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)
      * Exclusivo para Administradores (Motor High-Fidelity).
      */
-    static async generateRAGQuestions(target, difficulty, studyAreas, career, amount = 10, tier = 'advanced', reqDomain = 'medicine') {
+    static async generateRAGQuestions(target, studyAreas, career, amount = 10, tier = 'advanced', reqDomain = 'medicine') {
         const domain = reqDomain || 'medicine';
-        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Diff: ${difficulty}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount} (Tier: ${tier}, Domain: ${domain})`);
+        console.log(`🤖 MLService: RAG Admin -> Target: ${target}, Áreas: ${studyAreas}, Carrera: ${career}, Amount: ${amount} (Tier: ${tier}, Domain: ${domain})`);
         try {
             const requestedAmount = amount;
 
@@ -536,7 +536,7 @@ class MLService {
 
                 while (attempts < maxAttempts) {
                     try {
-                        batchQuestions = await this._generateBatchInternal(target, difficulty, areaForThisBatch, career, allQuestions, currentBatchSize, tier, domain);
+                        batchQuestions = await this._generateBatchInternal(target, areaForThisBatch, career, allQuestions, currentBatchSize, tier, domain);
                         break; // Éxito, salir del loop de reintentos
                     } catch (err) {
                         attempts++;
@@ -580,7 +580,7 @@ class MLService {
     /**
      * @private Lógica de generación atómica para un lote pequeño (Prompt Maestro)
      */
-    static async _generateBatchInternal(target, difficulty, studyAreas, career, previousBatchQuestions = [], amount = 1, tier = 'advanced', domain = 'medicine') {
+    static async _generateBatchInternal(target, studyAreas, career, previousBatchQuestions = [], amount = 1, tier = 'advanced', domain = 'medicine') {
         try {
             const modelName = "gemini-2.5-flash-lite"; // ✅ TODO LITE
             const careerStr = String(career || "Medicina");
@@ -593,30 +593,29 @@ class MLService {
                 const db = require('../../infrastructure/database/db'); // Carga dinámica del Pool
                 const areasArray = String(studyAreas || '').split(',').map(a => a.trim()).filter(a => a);
 
-                // 🎯 REFINAMIENTO: Historial Exacto
+                // 🎯 REFINAMIENTO: Historial Exacto con Subtemas
                 const recentQ = await db.query(`
-                    SELECT topic, question_text 
+                    SELECT topic, subtopic, question_text 
                     FROM question_bank 
                     WHERE target = $1 
                       AND domain = $2 
                       AND (career = $3 OR $3 IS NULL)
                       AND (topic = ANY($4) OR $4 IS NULL)
-                      AND difficulty = $5
                     ORDER BY created_at DESC 
                     LIMIT 200
-                `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null, difficulty]);
+                `, [target, domain, careerParam, areasArray.length > 0 ? areasArray : null]);
 
                 const allPreviousTexts = [
-                    ...recentQ.rows.map(r => r.topic + ": " + r.question_text),
-                    ...previousBatchQuestions.map(q => q.topic + ": " + q.question_text)
+                    ...recentQ.rows.map(r => `[${r.topic} | ${r.subtopic || 'General'}]: ${r.question_text}`),
+                    ...previousBatchQuestions.map(q => `[${q.topic} | ${q.subtopic || 'General'}]: ${q.question_text}`)
                 ];
 
                 if (allPreviousTexts.length > 0) {
-                    recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE NO-REPETICIÓN (ESTILO Y ENFOQUE) 🚨\n" +
-                        "A continuación se listan temas y enfoques que YA existen. ÚSALOS SOLO COMO REFERENCIA PARA NO REPETIR.\n" +
-                        "⚠️ PROHIBICIÓN: No imites el estilo narrativo ni los inicios (ej: 'En un...', 'Un...') de estas preguntas si ya son mayoría. DEBES romper el patrón.\n" +
-                        allPreviousTexts.slice(-20).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') +
-                        "\n🎯 OBJETIVO: Generar un escenario TOTALMENTE DISTINTO en tono, inicio y estructura.\n";
+                    recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE NO-REPETICIÓN (MEMORIA PROFUNDA) 🚨\n" +
+                        "A continuación se listan subtemas y escenarios que YA existen. ÚSALOS PARA NO REPETIR.\n" +
+                        "⚠️ PROHIBICIÓN: No evalúes el mismo subtema si ya aparece abajo. DEBES romper el patrón gramatical y temático.\n" +
+                        allPreviousTexts.slice(-50).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') +
+                        "\n🎯 OBJETIVO: Generar un subtema TOTALMENTE DISTINTO en tono, inicio y sujeto.\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
@@ -675,7 +674,6 @@ class MLService {
             if (target === "ENAM") {
                 targetRules = `PERFIL ENAM: Médico General - Enfoque Clínico y Diagnóstico.
                 ENFOQUE: Clínica general, diagnóstico diferencial y manejo inicial basado en evidencia.
-                
                 JERARQUÍA DE FUENTES (DATA INTERNA): 1. GPC Oficiales (Minsa/EsSalud) > 2. Libros Clínicos (Harrison/Nelson/Williams) > 3. Manuales de Especialidad (AMIR/CTO) > 4. NTS/RM/Leyes.
                 REGLA DE ORO: Mínimo 2 fuentes distintas en la explicación.`;
 
@@ -686,37 +684,27 @@ class MLService {
                   * ACCIÓN: "Usted se encuentra en emergencia...", "Durante el control prenatal...", "Al atender un parto..."
                   * DIRECTA: "¿Cuál es el diagnóstico más probable?", "¿Qué tratamiento de elección...?", "¿Cuál es la complicación...?"`;
 
-                if (difficulty === "Básico") levelInstruction = "Evalúa MEMORIA DIRECTA (Definiciones, Triadas). Explicación: 2 párrafos extensos y detallados.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa RAZONAMIENTO CLÍNICO SIMPLE. Explicación: 2 párrafos técnicos y detallados.";
-                else if (difficulty === "Avanzado") levelInstruction = "Evalúa MANEJO INICIAL Y REFERENCIAS. Explicación: 3 párrafos analíticos y robustos.";
+                levelInstruction = "Nivel Senior ENAM. Evalúa Diagnóstico y Manejo. Explicación: 2 párrafos técnicos.";
             } else if (target === "SERUMS") {
                 targetRules = `Enfoque: Salud Pública y Gestión Comunitaria (ENCAPS). 
-                VINCULACION COMUNITARIA: El nivel del establecimiento (I-1 al I-4) y la geografía peruana deben integrarse de forma natural y VARIADA (no siempre al inicio del enunciado).
-                
-                JERARQUÍA DE FUENTES (ESTRICTA):
-                1. LEY (NTS/RM): Cadena de Frío, Dengue, VIH, TB, PAI, NTS 169, Cáncer, etc.
-                2. OFICIAL: GPC del Minsa.
-                3. SOPORTE: Manuales y Libros del RAG.
+                VINCULACION COMUNITARIA: El nivel del establecimiento (I-1 al I-4) y la geografía peruana deben integrarse de forma natural y VARIADA.
+                JERARQUÍA DE FUENTES (ESTRICTA): 1. LEY (NTS/RM) > 2. OFICIAL (GPC Minsa) > 3. SOPORTE (Libros).
                 REGLA DE ORO: Mínimo 2 fuentes diferentes + Un TIP SERUMS`;
 
                 starterGallery = `
-                  * LOCALIDAD: "EESS nivel I-4 en la sierra...", "C.S. en zona amazónica...", "Puesto de salud I-1 reporta..."
-                  * ACCIÓN/GESTIÓN: "Se le encarga evaluar...", "Como jefe del EESS usted...", "Durante la visita domiciliaria..."
-                  * PACIENTE (Rural): "Comunero de 40 años...", "Madre de familia acude...", "Escolar de 8 años..."
-                  * ENTIDAD/NORMA: "El Ministerio de Salud...", "La DIRIS reporta...", "Según el PAI..."
-                  * DIRECTA: "¿Qué nivel de prevención...?", "¿Quién integra el equipo...?", "¿Cuál es el plazo de...?"`;
+                  * ESCENARIO OPERATIVO: "Usted se encuentra en Iñapari realizando visita domiciliaria...", "Como jefe del EESS se percata que hay productos vencidos...", "Se le encarga implementar servicios con pertinencia cultural..."
+                  * GESTIÓN/NORMA: "El responsable del establecimiento recibe el stock...", "Según el PAI, la actividad de vigilancia...", "Dentro del marco del MCI, usted indica la prueba de..."
+                  * PACIENTE DIVERSO: "Paciente joven de 30 años con tratamiento anti-TB...", "Mujer de 85 años hipertensa con antecedente de caída...", "Varón de 4 años procedente de Ucayali..."
+                  * ENTORNO: "En una comunidad Aymara...", "En un establecimiento de la comunidad andina...", "Establecimiento de salud I-1 en Loreto..."
+                  * DIRECTA: "¿Cuál es el procedimiento a seguir?", "¿Qué determinante de salud es más importante?", "¿Cuál es el plazo máximo...?"`;
 
-                if (difficulty === "Básico") levelInstruction = "Evalúa DATOS NORMATIVOS. Explicación: 2 párrafos extensos.";
-                else if (difficulty === "Intermedio") levelInstruction = "Evalúa APLICACIÓN DE NORMAS. Explicación: 2 párrafos técnicos y detallados.";
-                else if (difficulty === "Avanzado") levelInstruction = "Evalúa GESTIÓN DE BROTES. Explicación: 3 párrafos profundos y robustos.";
+                levelInstruction = "Estándar SERUMS. Evalúa Normativa, Gestión y Casos Clínicos de Comunidad. Explicación: 2 párrafos profundos con fuente oficial.";
             } else if (target === "RESIDENTADO") {
                 targetRules = `PERFIL RESIDENTADO (ESPECIALIDAD): ENFOQUE EN LIBROS Y EVIDENCIA CLÍNICA.
-                
-                JERARQUÍA ESTRICTA (DATOS INTERNOS): 
-                1. LIBROS DE REFERENCIA (Harrison, Washington, Nelson, Williams, etc.) y GPC Clínicas.
+                JERARQUÍA ESTRICTA (DATOS INTERNOS): 1. LIBROS DE REFERENCIA (Harrison, Washington, Nelson, Williams, etc.) y GPC Clínicas.
                 2. MANUALES DE ESPECIALIDAD (AMIR, CTO).
-                3. NORMAS (NTS) Y LEYES - Imprescindibles si el tema es Salud Pública, Gestión o Medicina Legal.
-                REGLA DE ORO: La fundamentación DEBE priorizar el sustento clínico/fisiopatológico de los LIBROS en temas médicos. Si el contexto RAG interno es insuficiente para cumplir la extensión pedida, ENRIQUECE con fuentes externas oficiales.`;
+                3. NORMAS (NTS) Y LEYES.
+                REGLA DE ORO: La fundamentación DEBE priorizar el sustento clínico/fisiopatológico de los LIBROS en temas médicos.`;
 
                 starterGallery = `
                   * PACIENTE (Complejo): "Varón con antecedente de cirrosis...", "Paciente polimedicado que...", "Mujer con clínica de..."
@@ -725,48 +713,40 @@ class MLService {
                   * HALLAZGO AVANZADO: "El signo de (Epónimo) se asocia a...", "En el frotis de sangre periférica...", "La RM de encéfalo muestra..."
                   * DIRECTA: "¿Qué marcador tumoral...?", "¿Cuál es el Gold Standard para...?", "¿Qué gen está mutado en...?"`;
 
-                if (difficulty === "Básico") levelInstruction = "CIENCIAS BÁSICAS Y FISIOPATOLOGÍA aplicadas a la clínica. Explicación: 2 o 3 párrafos robustos.";
-                else if (difficulty === "Intermedio") levelInstruction = "CASOS CLÍNICOS de especialidad con enfoque en diagnóstico diferencial. Explicación: 2 o 3 párrafos robustos.";
-                else if (difficulty === "Avanzado") levelInstruction = "MANEJO TERAPÉUTICO de 2da/3ra línea y complicaciones raras. Explicación: 3 párrafos analíticos extensos.";
+                levelInstruction = "Nivel Senior Residentado. Evalúa Fisiopatología, Manejo Avanzado y Especialidad. Explicación: 2 párrafos analíticos basados en bibliografía oficial.";
             }
             // 5. Prompt Maestro (Enfoque: Redactor de Exámenes Oficiales)
             const prompt = `
             Eres un Redactor Senior de Exámenes Médicos Nacionales (SERUMS, ENAM, RESIDENTADO).
 
-            MISIÓN CRÍTICA: Generar ${amount} pregunta(s) INÉDITA(S) de nivel ${difficulty}.
+            MISIÓN CRÍTICA: Generar ${amount} pregunta(s) INÉDITA(S) de Nivel Senior.
             ÁREA DE ESTUDIO ESTRICTA: **${studyAreas}**.
 
-            El escenario DEBE evaluar un concepto central de esta área. Prohibido desviar el tema hacia otras especialidades.
-
-            [MIMETISMO TOTAL DE LOS EJEMPLOS REALES]
-            Se te proporcionarán ejemplos reales de exámenes en la sección "ESTILO REAL DE EXAMEN".
-            Tu obligación absoluta es analizar y REPLICAR exactamente la longitud y estilo de sus opciones de respuesta.
-            Notarás que las opciones reales suelen tener entre 1 y 10 palabras. ¡CÓPIALES ESE ESTILO CORTO Y DIRECTO!
-
-            [REGLAS PARA LAS OPCIONES DE RESPUESTA (INQUEBRANTABLES)]:
-            1. TEXTO LIMPIO (SIN LETRAS): PROHIBIDO colocar prefijos como "A.", "B.", "C.", "a)", "b)", "-" o números al inicio de las opciones. Escribe SOLO el texto de la respuesta (Ej: "Parto vertical", NO "A. Parto vertical").
-            2. BREVEDAD EXTREMA: OBLIGATORIO mantener las opciones entre 1 y un MÁXIMO de 12 palabras.
-            3. SIMETRÍA VISUAL: La respuesta correcta y los distractores deben tener casi la misma cantidad de palabras.
-            4. PROHIBIDO SOBRE-EXPLICAR: No justifiques la respuesta correcta dentro de la opción.
-            5. ALEATORIEDAD: Coloca la respuesta correcta en una posición aleatoria en el array.
+            [REGLAS DE ORO DE VARIABILIDAD (INQUEBRANTABLES)]
+            1. PROHIBIDO iniciar más de 1 de cada 5 preguntas con "Comunero". 
+            2. ROTACIÓN DE SUJETOS: Alterna entre: Gestante (incluye fórmula G_P____), Escolar, Adulto Mayor frágil, Reo en penal, Trabajador sexual, Autoridad local (Alcalde), Personal del EESS (Farmacéutico, Jefe de Puesto, Enfermera), Paciente con comorbilidades (Obeso, Alcohólico, Fumador).
+            3. ESCENARIOS DIVERSOS: No todo es "Puesto I-1". Usa: C.S. Urbano marginal, Brigada de selva alta, Campamento minero, Auditoría de farmacia, Sala de Situación, Institución Educativa, Visita domiciliaria.
+            4. RIGOR TÉCNICO: Incluye SIEMPRE datos de laboratorio o signos vitales específicos (Ej: "SatO2: 84%", "Hb: 9 g/dL", "Fe sérico: 30").
 
             [ESTILO DEL ENUNCIADO]
-            - Estilo Directo, Operativo y Seco (Estilo Telegrama).
-            - Rota los inicios (Ej: "Mujer de 45 años...", "Durante la guardia...").
-            - Alterna entre preguntas directas ("¿Cuál es...?") y enunciados para completar espacios (____).
+            - Estilo Directo y Seco (Estilo MINSA). 
+            - Inicia con la situación antes que con el sujeto (Ej: "Durante la auditoría...", "Usted se encuentra en Iñapari...", "En la comunidad se observa...").
+            - RESILIENCIA DE MEMORIA: Si una pregunta en el historial está marcada como "[Sin Subtema]", analiza su texto clínico para deducir el escenario evaluado y evítalo activamente (ej: cambia la patología, edad del paciente o entorno geográfico).
+            - Alterna entre preguntas directas y enunciados para completar espacios (____).
+
+            [REGLAS PARA LAS OPCIONES]
+            - TEXTO LIMPIO: Sin letras ni prefijos (A., B., C.).
+            - BREVEDAD: 1 a 12 palabras máximo.
+            - SIMETRÍA VISUAL: Longitud similar en todas las opciones.
 
             [EXPLICACIÓN (FUNDAMENTACIÓN)]
             - ${levelInstruction}
-            - Usa CITACIÓN EN NEGRITA al inicio (Ej: "*Según la NTS 123-MINSA*: ...").
-            
-            [PROHIBICIÓN ABSOLUTA EN LA EXPLICACIÓN]
-            - PROHIBIDO mencionar letras de opciones (Ej: "La opción A es correcta", "Como dice la B...").
-            - PROHIBIDO mencionar números de opciones (Ej: "La 1 es falsa").
-            - Debido a que las opciones se barajan (shuffle), debes referirte a los conceptos por su NOMBRE. 
-            - MAL: "La opción A es la dosis correcta".
-            - BIEN: "La dosis de 500mg es la correcta porque...".
-            [JERARQUÍA DE FUENTES (RESPETA ESTO)]:
+            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente (Ej: "**Según la NTS 123-MINSA**:").
+            - SECCIÓN OBLIGATORIA (Solo para SERUMS): Finaliza SIEMPRE con el texto "💡 **TIP SERUMS:** [Consejo práctico sobre gestión o vida en comunidad]".
+
+            [JERARQUÍA DE FUENTES Y ESTILO BASE]:
             ${targetRules}
+            ${starterGallery}
 
             [DATOS DE APOYO RAG LOCAL (FUNDAMENTACIÓN)]:
             ${ragContext || "Usa tu base experta coherente con la jerarquía."}
@@ -776,21 +756,21 @@ class MLService {
             
             ${recentQuestionsText}
 
-            [FORMATO DE SALIDA JSON (ARRAY DE OBJETOS - SIN MARKDOWN)]:
+            [FORMATO DE SALIDA JSON (ARRAY)]:
             [{
                 "topic": "${studyAreas}",
-                "difficulty": "${difficulty}",
-                "question_text": "Texto Directo (Estilo Telegrama).",
-                "options": ${(target === 'RESIDENTADO') ? '["Opcion A", "Opcion B", "Opcion C", "Opcion D", "Opcion E"]' : '["Opcion A", "Opcion B", "Opcion C", "Opcion D"]'},
-                "correct_option_index": "Número entero (0, 1, 2...) indicando dónde pusiste la correcta aleatoriamente",
-                "explanation": "2-3 párrafos detallados con citado en negrita.",
+                "subtopic": "...",
+                "difficulty": "Senior",
+                "question_text": "...",
+                "options": ${(target === 'RESIDENTADO') ? '["O1", "O2", "O3", "O4", "O5"]' : '["O1", "O2", "O3", "O4"]'},
+                "correct_option_index": 0,
+                "explanation": "2-3 párrafos técnicos con citado en negrita.",
                 "domain": "${domain}",
                 "target": "${target}",
-                "career": "${career}",
-                "subtopic": "Subtema específico"
+                "career": "${career}"
             }]
 
-            DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. NADA DE TEXTO ANTES NI DESPUÉS. NO USES ETIQUETAS DE MARKDOWN (\`\`\`json).
+            DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. PROHIBIDO USAR MARKDOWN.
             `;
 
             const result = await activeModel.generateContent({

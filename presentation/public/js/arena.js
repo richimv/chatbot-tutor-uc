@@ -7,7 +7,7 @@ const Arena = (function () {
         lives: 3,
         timer: null,
         timeLeft: 20,
-        difficulty: 'Básico'
+        timeLeft: 20
     };
 
     const ui = {
@@ -37,11 +37,6 @@ const Arena = (function () {
         }
     };
 
-    function selectDiff(btn, diff) {
-        state.difficulty = diff;
-        document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
-        btn.classList.add('selected');
-    }
 
     async function startMatch() {
         const token = localStorage.getItem('authToken');
@@ -63,7 +58,7 @@ const Arena = (function () {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ topic, difficulty: state.difficulty })
+                body: JSON.stringify({ topic })
             });
 
             const data = await res.json();
@@ -180,7 +175,7 @@ const Arena = (function () {
             const res = await fetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ topic: ui.lobby.topic.value, difficulty: state.difficulty })
+                body: JSON.stringify({ topic: ui.lobby.topic.value })
             });
             const data = await res.json();
             if (data.success && data.questions.length > 0) {
@@ -303,7 +298,7 @@ const Arena = (function () {
             
             if (data.success && data.leaderboard.length > 0) {
                 tbody.innerHTML = data.leaderboard.map((u, i) => `
-                    <tr><td>${i + 1}</td><td>${u.name}</td><td>${u.score}</td><td>${u.difficulty}</td></tr>
+                    <tr><td>${i + 1}</td><td>${u.name}</td><td>${u.score}</td><td>Profesional</td></tr>
                 `).join('');
             } else {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">¡Sé el primero en calificar!</td></tr>`;
@@ -322,7 +317,7 @@ const Arena = (function () {
             await fetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ score: state.score, totalQuestions: state.questions.length, topic: ui.lobby.topic.value, difficulty: state.difficulty })
+                body: JSON.stringify({ score: state.score, totalQuestions: state.questions.length, topic: ui.lobby.topic.value })
             });
         } catch (e) { console.error("Submit Error:", e); }
         alert(`Juego Terminado. Score: ${state.score}`);
@@ -396,5 +391,5 @@ const Arena = (function () {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { console.log("Arena JS v1.1 Loaded"); init(); });
     else { console.log("Arena JS v1.1 Loaded"); init(); }
 
-    return { selectDiff, startMatch, nextQ, useWildcard, selectQuickTag };
+    return { startMatch, nextQ, useWildcard, selectQuickTag };
 })();
