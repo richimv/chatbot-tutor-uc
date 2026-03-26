@@ -263,14 +263,35 @@ class AdminController {
      */
     async addSingleQuestion(req, res) {
         try {
-            const q = req.body;
+            // ✅ DEFENSA: FormData envía "null" o "undefined" como strings.
+            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '') ? null : val;
+            
+            const q = {
+                ...req.body,
+                career: sanitize(req.body.career),
+                subtopic: sanitize(req.body.subtopic),
+                target: sanitize(req.body.target),
+                topic: sanitize(req.body.topic) || 'General',
+                explanation: sanitize(req.body.explanation) || ''
+            };
+            
+            if (typeof q.options === 'string') {
+                try { q.options = JSON.parse(q.options); } catch (e) { console.error('Error parsing options:', e); }
+            }
+
             // Validaciones básicas
             if (!q.question_text || !q.options || q.correct_answer === undefined || !q.domain) {
                 return res.status(400).json({ error: 'Faltan campos obligatorios' });
             }
 
+            // Validar longitud de opciones según Target
+            const expectedOptions = (q.target === 'RESIDENTADO') ? 5 : 4;
+            if (!Array.isArray(q.options) || q.options.length !== expectedOptions) {
+                return res.status(400).json({ error: `El target ${q.target} requiere exactamente ${expectedOptions} opciones.` });
+            }
+
             // Hash único
-            const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
+            const rawString = `${q.topic}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             // ✅ SUBIDA DE IMÁGENES A GCS (si existen)
@@ -332,14 +353,34 @@ class AdminController {
     async updateSingleQuestion(req, res) {
         try {
             const { id } = req.params;
-            const q = req.body;
+            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '') ? null : val;
+
+            const q = {
+                ...req.body,
+                career: sanitize(req.body.career),
+                subtopic: sanitize(req.body.subtopic),
+                target: sanitize(req.body.target),
+                topic: sanitize(req.body.topic) || 'General',
+                explanation: sanitize(req.body.explanation) || ''
+            };
+
+            if (typeof q.options === 'string') {
+                try { q.options = JSON.parse(q.options); } catch (e) { console.error('Error parsing options:', e); }
+            }
 
             if (!q.question_text || !q.options || q.correct_answer === undefined || !q.domain) {
                 return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar' });
             }
 
+            // Validar longitud de opciones según Target (Nivel Senior)
+            const expectedOptions = (q.target === 'RESIDENTADO') ? 5 : 4;
+            if (!Array.isArray(q.options) || q.options.length !== expectedOptions) {
+                // Si por alguna razón llegan menos, no bloqueamos el update pero avisamos en consola y evitamos romper la integridad
+                console.warn(`⚠️ Mismatch de opciones en update: Expected ${expectedOptions}, got ${q.options.length}`);
+            }
+
             // Hash único (en caso se haya modificado la pregunta u opciones)
-            const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
+            const rawString = `${q.topic}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             // ✅ SUBIDA DE IMÁGENES A GCS (si existen)

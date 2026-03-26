@@ -584,19 +584,17 @@ class AdminManager {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, currentItem?.domain || 'medicine', false)}
                         <div>
-                            <label class="form-label" for="generic-target">Programa/Target (Ej: ENAM, SERUMS, RESIDENTADO)</label>
-                            <input type="text" id="generic-target" class="form-input" value="${currentItem?.target || ''}" oninput="
-                                const targetVal = this.value.toUpperCase();
+                            <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
+                            <select id="generic-target" class="form-input" onchange="
+                                const targetVal = this.value;
                                 const isSerums = targetVal === 'SERUMS';
                                 const isResidentado = targetVal === 'RESIDENTADO';
                                 
                                 const cm = document.getElementById('generic-career-wrapper');
                                 if(cm) cm.style.display = isSerums ? 'block' : 'none';
-                                if(!isSerums) document.getElementById('generic-career').value = '';
 
                                 const optEWrap = document.getElementById('generic-opt4-wrapper');
                                 if(optEWrap) optEWrap.style.display = isResidentado ? 'block' : 'none';
-                                if(!isResidentado) document.getElementById('generic-opt4').value = '';
 
                                 const selectCorrect = document.getElementById('generic-correct-ans');
                                 if(selectCorrect) {
@@ -611,6 +609,10 @@ class AdminManager {
                                     }
                                 }
                             ">
+                                <option value="ENAM" ${currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
+                                <option value="SERUMS" ${currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
+                                <option value="RESIDENTADO" ${currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
+                            </select>
                         </div>
                     </div>
                     <div id="generic-career-wrapper" style="display: ${currentItem?.target?.toUpperCase() === 'SERUMS' ? 'block' : 'none'}; margin-top: 15px;">
@@ -942,17 +944,6 @@ class AdminManager {
                         };
                     }
 
-                    // Listener para mostrar feedback de archivo seleccionado
-                    const _fileInput = document.getElementById('generic-image-file');
-                    const _fileInfo = document.getElementById('generic-image-file-info');
-                    if (_fileInput && _fileInfo) {
-                        _fileInput.onchange = () => {
-                            if (_fileInput.files.length > 0) {
-                                _fileInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> Archivo listo: <b>${_fileInput.files[0].name}</b> (Se ignorará el texto)`;
-                                _fileInfo.style.color = 'var(--success-color)';
-                            }
-                        };
-                    }
 
                     // Resource Type Toggle Logic (simplified since metadata fields are removed)
                     const typeSelect = document.getElementById('generic-type');
@@ -998,6 +989,27 @@ class AdminManager {
         this._liveSearchFilter('search-generic-related-courses', 'fieldset[data-name="generic-related-courses"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-section-career-select', 'fieldset[data-name="section-career-select"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-generic-courses', 'div[data-name="generic-courses"] .checkbox-list', '.checkbox-item', 'label');
+
+        // ✅ FEEDBACK UNIVERSAL DE ARCHIVOS: Inicializar listeners para cualquier grupo de carga de imagen presente
+        const setupFileInputFeedback = (inputId, infoId) => {
+            const _input = document.getElementById(inputId);
+            const _info = document.getElementById(infoId);
+            if (_input && _info) {
+                // Eliminar listener previo si existe para evitar duplicados
+                _input.onchange = null; 
+                _input.onchange = () => {
+                    if (_input.files.length > 0) {
+                        _info.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> Archivo listo: <b>${_input.files[0].name}</b> (Se ignorará el texto)`;
+                        _info.style.color = 'var(--success-color)';
+                    }
+                };
+            }
+        };
+
+        // Escanear y activar para los IDs estándar usados en los modales
+        setupFileInputFeedback('generic-image-file', 'generic-image-file-info');
+        setupFileInputFeedback('generic-explanation-image-file', 'generic-explanation-image-file-info');
+        setupFileInputFeedback('generic-bulk-file', 'generic-bulk-file-info'); // Para importación masiva también
     }
 
     _setupSearchableSelect(inputId, selectId) {
@@ -1527,11 +1539,12 @@ class AdminManager {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
                         target: qTarget,
-                        career: (qTarget.toUpperCase() === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
+                        // ✅ Mejora: Solo sobrescribir career si el target es SERUMS; de lo contrario, mantener nulo.
+                        career: (qTarget === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
                         subtopic: document.getElementById('generic-subtopic')?.value || null,
                         difficulty: 'Senior',
-                        options: (qTarget.toUpperCase() === 'RESIDENTADO')
+                        options: (qTarget === 'RESIDENTADO')
                             ? [
                                 document.getElementById('generic-opt0').value,
                                 document.getElementById('generic-opt1').value,
@@ -1558,28 +1571,40 @@ class AdminManager {
                         }
                     });
 
-                    // ✅ Lógica Dual para Imagen de ENUNCIADO (id: generic-image)
+                    // ✅ Lógica de Imagen de ENUNCIADO
                     const qImageFile = document.getElementById('generic-image-file');
                     const qImageUrl = document.getElementById('generic-image-url');
+                    
                     if (qImageFile && qImageFile.files[0]) {
                         questionFormData.append('questionImage', qImageFile.files[0]);
                     } else if (qImageUrl && qImageUrl.value.trim()) {
                         questionFormData.append('image_url', qImageUrl.value.trim());
-                    } else {
-                        questionFormData.append('image_url', '');
-                        questionFormData.append('deleteQuestionImage', 'true');
+                    } else if (method === 'PUT') {
+                        // IMPORTANTE: Mantener la URL actual si no hay cambios y no se pidió borrar
+                        if (document.getElementById('generic-delete-image')?.value === 'true') {
+                            questionFormData.append('deleteQuestionImage', 'true');
+                            questionFormData.append('image_url', '');
+                        } else {
+                            // Enviar la URL que ya estaba (está en el placeholder o valor inicial del input)
+                            questionFormData.append('image_url', qImageUrl.value || '');
+                        }
                     }
 
-                    // ✅ Lógica Dual para Imagen de EXPLICACIÓN (id: generic-explanation-image)
+                    // ✅ Lógica de Imagen de EXPLICACIÓN
                     const explImageFile = document.getElementById('generic-explanation-image-file');
                     const explImageUrl = document.getElementById('generic-explanation-image-url');
+                    
                     if (explImageFile && explImageFile.files[0]) {
                         questionFormData.append('explanationImage', explImageFile.files[0]);
                     } else if (explImageUrl && explImageUrl.value.trim()) {
                         questionFormData.append('explanation_image_url', explImageUrl.value.trim());
-                    } else {
-                        questionFormData.append('explanation_image_url', '');
-                        questionFormData.append('deleteExplanationImage', 'true');
+                    } else if (method === 'PUT') {
+                        if (document.getElementById('generic-delete-explanation-image')?.value === 'true') {
+                            questionFormData.append('deleteExplanationImage', 'true');
+                            questionFormData.append('explanation_image_url', '');
+                        } else {
+                            questionFormData.append('explanation_image_url', explImageUrl.value || '');
+                        }
                     }
 
                     body = questionFormData;

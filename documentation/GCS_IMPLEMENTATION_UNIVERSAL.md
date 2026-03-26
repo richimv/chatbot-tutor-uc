@@ -13,38 +13,33 @@ Para evitar la exposición de buckets públicos y gestionar la autenticación, s
 ## 2. Resolución Inteligente de URLs (Frontend) 🧠
 En `config.js`, la función `window.resolveImageUrl(path)` actúa como el orquestador universal:
 
-- **Activos Locales**: Si el path comienza con `assets/`, la función devuelve la ruta relativa, sirviendo el archivo desde el servidor web local (Render/Vercel).
-- **Activos en la Nube**: Si el path no es local ni una URL absoluta (http/https), se transforma automáticamente en una petición autenticada al proxy de GCS.
-
-```javascript
-// Lógica simplificada en config.js
-window.resolveImageUrl = function(path) {
-    if (path.startsWith('assets/')) return path; // Servir local
-    return `${API_URL}/api/media/gcs?path=${encodeURIComponent(path)}&token=${jwt}`; // Servir GCS
-}
-```
-
-## 3. Visor de Medios Maestro (`MediaViewer`) 🩺
-Implementado en `uiManager.js`, el `MediaViewer` es un componente premium para la visualización de recursos:
-
-- **Compatibilidad**: Soporta imágenes de alta resolución, infografías y mapas médicos.
-- **Funcionalidades**: Controles de Zoom, desplazamiento infinito y botón de descarga directa.
-- **Activación**: Se dispara automáticamente en tarjetas de recursos, buscador y biblioteca privada cuando se detecta un formato de imagen.
-
-## 4. Integración en Administración 🛠️
-El panel de control (`admin.js`) ha sido optimizado para simplificar el flujo de trabajo:
-
-- **Modo Dual**: Permite subir un archivo local (que el backend subirá a GCS o Local Assets) o referenciar una URL manual.
-- **Fallback Automático**: Si un administrador sube una imagen pero deja el campo "URL del Recurso" vacío, el sistema asigna automáticamente la ruta de la imagen como el enlace del recurso.
-- **Live Preview**: Validación visual inmediata antes de persistir los cambios.
-
-## 5. Verificación de Uso (UsageService) 🔍
-Cada vez que se accede a un recurso premium, el sistema realiza una verificación en terminal:
-`🔍 [UsageService] Verificando: [USER_ID]`
-
-### Preguntas Frecuentes:
-- **¿Por qué verifica si soy Advanced?**: Por seguridad y trazabilidad. El sistema valida que la sesión sea activa y el token válido antes de servir el recurso.
-- **¿Consume "vidas" o pases?**: **NO.** Para usuarios con planes `Basic` o `Advanced`, el controlador `UsageService.js` detecta el *Tier* y concede acceso inmediato sin incrementar el contador `usageCount`. Solo los usuarios con plan `Free` descuentan un pase diario al abrir recursos premium.
+- **Activos Locales (Legacy)**: Si el path comienza con `assets/`, la función devuelve la ruta relativa, sirviendo el archivo desde el servidor web local. Estos archivos aún existen para dar soporte a contenido antiguo.
+- **Activos en la Nube (Estándar)**: Si el path no es local ni una URL absoluta (http/https), se transforma automáticamente en una petición al proxy de GCS.
 
 ---
-*Ultima edición: Marzo 2026 - Implementación de Acceso Universal a Medios.*
+
+## 3. Flujo de Administración (Carga a la Nube) ☁️
+A partir de la actualización de Marzo 2026, el flujo de trabajo ha sido centralizado:
+
+### **Botón "Subir Local" (Icono 📤)**
+> [!IMPORTANT]
+> **Todo archivo cargado mediante este botón ahora se sube EXCLUSIVAMENTE a Google Cloud Storage**. El sistema ya no guarda archivos físicamente en la carpeta `/assets` del servidor, garantizando escalabilidad infinita y persistencia ante reinicios del cloud (Render/Vercel).
+
+### **Asignación Manual**
+- Puedes escribir una ruta de GCS (ej: `my-internal-file.jpg`) o una URL externa.
+- **Legacy**: Aún es posible escribir `assets/imagen.png` si el archivo ya existe físicamente en el servidor, pero este método está **depreciado** para contenido nuevo.
+
+## 4. Integración en Administración 🛠️
+El panel de control (`admin.js`) ha sido blindado para la integridad de datos:
+- **Protección de Datos**: Los campos como `career`, `subtopic` y las 5 opciones de Residentado están protegidos contra sobreescrituras accidentales con `null`.
+- **Selector Seguro**: El examen objetivo (Target) es ahora un selector fijo para evitar errores de tipeo que corrompan el banco de preguntas.
+- **Feedback Visual Inmediato**: Un check verde ✅ y el nombre del archivo confirman que la imagen está lista antes de guardar.
+
+---
+
+## 5. Costos y Capa Gratuita (Free Tier) 📊💰
+- **Almacenamiento**: 5 GB gratis al mes.
+- **Operaciones**: 5,000 (A) y 50,000 (B) gratuitas. El sistema usa caché para minimizar estas operaciones.
+
+---
+*Estado del Sistema: Infraestructura de medios 100% profesional en la nube.* 🚀✨

@@ -2,6 +2,7 @@ const SearchService = require('../../domain/services/searchService');
 const AdminService = require('../../domain/services/adminService'); // Importar el nuevo servicio
 const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ IMPORTAR CLIENTE SUPABASE
+const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida centralizada a GCS
 const fs = require('fs');
 const path = require('path');
 
@@ -225,34 +226,25 @@ class CoursesController {
             // ✅ LÓGICA REHECHA: La creación de una entidad ahora solo se encarga de crearla.
             // Se ha eliminado por completo la llamada a GeminiService desde aquí, ya que era incorrecta.
 
-            // ✅ MANEJO DE ARCHIVOS: SUBIDA A SUPABASE (Creación)
-            // ✅ MANEJO DE ARCHIVOS: SUBIDA A LOCAL (Creación)
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS
             if (req.file) {
                 const folderMap = {
-                    'book': 'recursos', // ✅ RENOMBRADO: Antes 'libros'
+                    'book': 'recursos',
                     'course': 'cursos',
                     'career': 'carreras',
-                    'resource': 'recursos', // ✅ FIX: Mapear recursos genéricos
-                    'other': 'recursos'     // ✅ FIX: Mapear recursos genéricos
+                    'resource': 'recursos',
+                    'other': 'recursos'
                 };
-                const subFolder = folderMap[entityType] || 'recursos'; // Default seguro a recursos
+                const subFolder = folderMap[entityType] || 'recursos';
 
                 if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
-                    // Asegurar directorio
-                    const uploadDir = path.join(__dirname, '../../presentation/public/assets', subFolder);
-                    if (!fs.existsSync(uploadDir)) {
-                        fs.mkdirSync(uploadDir, { recursive: true });
+                    try {
+                        // Usar el controlador de medios para subir a Google Cloud Storage
+                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
+                    } catch (err) {
+                        console.error('❌ Error subiendo a GCS en creación:', err);
+                        // No bloqueamos la creación por una imagen, pero informamos en consola
                     }
-
-                    const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
-                    const fullPath = path.join(uploadDir, fileName);
-
-                    fs.writeFileSync(fullPath, req.file.buffer);
-
-                    // URL Relativa
-                    req.body.image_url = `assets/${subFolder}/${fileName}`;
-                } else {
-                    // Fallback
                 }
             }
 
@@ -324,57 +316,28 @@ class CoursesController {
                 ? req.params.id
                 : parseInt(req.params.id, 10);
 
-            // ✅ MANEJO DE ARCHIVOS: SUBIDA A SUPABASE
-            // ✅ MANEJO DE ARCHIVOS: SUBIDA A SISTEMA DE ARCHIVOS LOCAL (Assets)
-            // Reemplaza la lógica anterior de Supabase para ahorrar ancho de banda.
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS (Update)
             if (req.file) {
-                // Mapeo de Entidad a Carpeta
-                // Mapeo de Entidad a Carpeta
                 const folderMap = {
-                    'book': 'recursos', // ✅ FIX: Renombrado de 'libros'
+                    'book': 'recursos',
                     'course': 'cursos',
                     'career': 'carreras',
-                    'resource': 'recursos', // ✅ FIX: Soporte
-                    'other': 'recursos'     // ✅ FIX: Soporte
+                    'resource': 'recursos',
+                    'other': 'recursos'
                 };
-                const subFolder = folderMap[entityType] || 'recursos'; // Default seguro
+                const subFolder = folderMap[entityType] || 'recursos';
 
-                // CASO 1: Subida de nueva imagen
                 if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
-                    const oldItem = await this.adminService.getById(entityType, entityId);
-
-                    // Borrar imagen anterior (Local o Supabase)
-                    if (oldItem && oldItem.image_url) {
-                        try {
-                            const oldUrl = oldItem.image_url;
-                            if (oldUrl.includes('supabase.co')) {
-                                // Borrar de Supabase legacy
-                                const oldPath = oldUrl.split('/portadas/')[1];
-                                await supabase.storage.from('portadas').remove([oldPath]);
-                            } else if (!oldUrl.startsWith('http')) {
-                                // Borrar archivo local
-                                // Asumimos URL relativa como "assets/cursos/foto.jpg"
-                                const oldLocalPath = path.join(__dirname, '../../presentation/public', oldUrl);
-                                if (fs.existsSync(oldLocalPath)) {
-                                    fs.unlinkSync(oldLocalPath);
-                                }
-                            }
-                        } catch (err) { console.error('Error deleting old image:', err); }
+                    try {
+                        // 1. Obtener item actual para limpieza (opcional si se desea borrar el anterior de GCS)
+                        // Por simplicidad en versión 1, dejamos los archivos antiguos (history), 
+                        // pero marcamos el nuevo en la base de datos.
+                        
+                        // 2. Subir nueva versión a GCS
+                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
+                    } catch (err) {
+                        console.error('❌ Error subiendo a GCS en actualización:', err);
                     }
-
-                    // Guardar nueva imagen localmente
-                    const uploadDir = path.join(__dirname, '../../presentation/public/assets', subFolder);
-                    if (!fs.existsSync(uploadDir)) {
-                        fs.mkdirSync(uploadDir, { recursive: true });
-                    }
-
-                    const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
-                    const fullPath = path.join(uploadDir, fileName);
-
-                    fs.writeFileSync(fullPath, req.file.buffer);
-
-                    // Guardar URL relativa en BD (accesible via http://domain/assets/...)
-                    req.body.image_url = `assets/${subFolder}/${fileName}`;
                 }
             } else if (['book', 'course', 'career'].includes(entityType) && req.body.deleteImage === 'true') {
                 // CASO 2: Solicitud explícita de borrar imagen
