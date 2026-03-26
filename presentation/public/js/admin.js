@@ -652,7 +652,8 @@ class AdminManager {
                         </div>
                     </fieldset>
                     ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', currentItem?.explanation || '', false)}
-                    ${this.createFormGroup('text', 'generic-image-url', 'URL de Imagen Externa Github (Opcional)', currentItem?.image_url || '', false)}
+                    ${this.createFormGroup('text', 'generic-image-url', 'URL de Imagen de Enunciado (Opcional)', currentItem?.image_url || '', false)}
+                    ${this.createFormGroup('text', 'generic-explanation-image-url', 'URL de Imagen de EXPLICACIÓN (GCS/Proxy)', currentItem?.explanation_image_url || '', false)}
                 `;
 
                 setTimeout(() => {
@@ -1463,7 +1464,8 @@ class AdminManager {
                             ],
                         correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
                         explanation: document.getElementById('generic-explanation').value,
-                        image_url: document.getElementById('generic-image-url').value
+                        image_url: document.getElementById('generic-image-url').value,
+                        explanation_image_url: document.getElementById('generic-explanation-image-url').value
                     };
                     break;
                 case 'ai-question': {
@@ -1567,7 +1569,8 @@ class AdminManager {
                                             correct_answer: parseInt(cols[11] || 0, 10),
                                             explanation: cols[12] ? String(cols[12]).trim() : null,
                                             image_url: cols[13] ? String(cols[13]).trim() : null,
-                                            subtopic: cols[14] ? String(cols[14]).trim() : null
+                                            subtopic: cols[14] ? String(cols[14]).trim() : null,
+                                            explanation_image_url: cols[15] ? String(cols[15]).trim() : null
                                         };
                                     }).filter(Boolean);
 

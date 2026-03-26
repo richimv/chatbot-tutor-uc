@@ -244,7 +244,7 @@ class AdminController {
     async getAllQuestions(req, res) {
         try {
             const result = await db.query(`
-                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, image_url
+                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url
                 FROM question_bank 
                 ORDER BY created_at DESC 
                 LIMIT 500
@@ -274,9 +274,9 @@ class AdminController {
 
             const insertQuery = `
                 INSERT INTO question_bank (
-                    question_text, options, correct_option_index, explanation, 
+                    question_text, options, correct_option_index, explanation, explanation_image_url, 
                     domain, target, career, topic, subtopic, difficulty, image_url, question_hash
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING id;
             `;
             const values = [
@@ -284,6 +284,7 @@ class AdminController {
                 JSON.stringify(q.options),
                 q.correct_answer,
                 q.explanation || '',
+                q.explanation_image_url || null,
                 q.domain,
                 q.target || null,
                 q.career || null,
@@ -321,9 +322,9 @@ class AdminController {
 
             const updateQuery = `
                 UPDATE question_bank 
-                SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4,
-                    domain = $5, target = $6, career = $7, topic = $8, subtopic = $9, difficulty = $10, image_url = $11, question_hash = $12
-                WHERE id = $13
+                SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4, explanation_image_url = $5,
+                    domain = $6, target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13
+                WHERE id = $14
                 RETURNING id;
             `;
             const values = [
@@ -331,6 +332,7 @@ class AdminController {
                 JSON.stringify(q.options),
                 q.correct_answer,
                 q.explanation || '',
+                q.explanation_image_url || null,
                 q.domain,
                 q.target || null,
                 q.career || null,

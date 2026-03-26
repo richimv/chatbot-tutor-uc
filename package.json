@@ -9,6 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google-cloud/vertexai": "^1.10.0",
     "@supabase/supabase-js": "^2.83.0",
     "axios": "^1.13.2",

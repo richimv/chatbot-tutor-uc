@@ -22,7 +22,7 @@ class TrainingRepository {
 
         // 2. Query Dinámico con Exclusión
         let query = `
-            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, domain, topic
             FROM question_bank
             WHERE topic = $1 
             AND domain = $2
@@ -52,6 +52,7 @@ class TrainingRepository {
             options: row.options,
             correct_option_index: row.correct_option_index,
             explanation: row.explanation,
+            explanation_image_url: row.explanation_image_url, // ✅ NUEVO
             topic: row.topic // ✅ NUEVO: Preservar tema para estadísticas y flashcards
         }));
     }
@@ -98,12 +99,12 @@ class TrainingRepository {
         // 3. Query Final con Balanceo de Áreas (rn <= 3 asegura diversidad)
         const query = `
             WITH BalancedPool AS (
-                SELECT id, question_text, options, correct_option_index, explanation, domain, topic,
+                SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, domain, topic,
                        ROW_NUMBER() OVER(PARTITION BY topic ORDER BY RANDOM()) as rn
                 FROM question_bank
                 ${whereClauses}
             )
-            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, domain, topic
             FROM BalancedPool 
             WHERE rn <= 3
             ORDER BY RANDOM() 
@@ -131,6 +132,7 @@ class TrainingRepository {
             options: row.options,
             correct_option_index: row.correct_option_index,
             explanation: row.explanation,
+            explanation_image_url: row.explanation_image_url, // ✅ NUEVO
             topic: row.topic 
         }));
     }
@@ -151,7 +153,7 @@ class TrainingRepository {
         // 2. Query Directo (Prioridad Absoluta al Stock Local)
         // 🚨 NORMALIZACIÓN: Usamos TRIM/UPPER y permitimos target NULL para trivia
         let query = `
-            SELECT id, question_text, options, correct_option_index, explanation, domain, topic
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, domain, topic
             FROM question_bank
             WHERE TRIM(UPPER(topic)) = TRIM(UPPER($1)) 
               AND domain = $2 
@@ -189,6 +191,7 @@ class TrainingRepository {
             options: row.options,
             correct_option_index: row.correct_option_index,
             explanation: row.explanation,
+            explanation_image_url: row.explanation_image_url, // ✅ NUEVO
             topic: row.topic
         }));
     }
@@ -244,11 +247,12 @@ class TrainingRepository {
         console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} | C: ${defaultCareer} - ${domain} - ${target})...`);
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, question_hash, times_used, career)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, $10)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, question_hash, times_used, career)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
             ON CONFLICT (question_hash) DO UPDATE SET 
                 times_used = question_bank.times_used + 1,
-                career = EXCLUDED.career
+                career = EXCLUDED.career,
+                explanation_image_url = EXCLUDED.explanation_image_url
             RETURNING id;
         `;
 
@@ -272,6 +276,7 @@ class TrainingRepository {
                     JSON.stringify(q.options),
                     q.correct_option_index,
                     q.explanation,
+                    q.explanation_image_url || null,
                     hash,
                     exactCareer
                 ]);
@@ -320,12 +325,13 @@ class TrainingRepository {
             };
 
             const query = `
-                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, image_url, question_hash, career)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 ON CONFLICT (question_hash) DO UPDATE SET 
                     target = EXCLUDED.target,
                     image_url = EXCLUDED.image_url,
                     explanation = EXCLUDED.explanation,
+                    explanation_image_url = EXCLUDED.explanation_image_url,
                     options = EXCLUDED.options,
                     career = EXCLUDED.career,
                     subtopic = EXCLUDED.subtopic
@@ -352,6 +358,7 @@ class TrainingRepository {
                 const optionsStr = JSON.stringify(q.options || []);
                 const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correctAnswerIndex || 0);
                 const explanation = q.explanation || '';
+                const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
                 const image_url = q.image_url || null;
                 const career = q.career || null;
 
@@ -361,7 +368,7 @@ class TrainingRepository {
 
                 await client.query(query, [
                     domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr,
-                    correct_option_index, explanation, image_url, hash, career
+                    correct_option_index, explanation, explanation_image_url, image_url, hash, career
                 ]);
                 insertedCount++;
             }

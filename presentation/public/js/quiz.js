@@ -34,7 +34,9 @@ const elements = {
     resultsOverlay: document.getElementById('resultsOverlay'),
     scoreCircle: document.getElementById('scoreCircle'),
     svgScoreProgress: document.getElementById('svgScoreProgress'),
-    finalScore: document.getElementById('finalScore')
+    finalScore: document.getElementById('finalScore'),
+    explanationImageContainer: document.getElementById('explanationImageContainer'),
+    explanationImage: document.getElementById('explanationImage')
 };
 
 // Configuración
@@ -534,6 +536,20 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // Mostrar Feedback (Explicación)
     elements.explanationText.textContent = q.explanation || "Respuesta correcta basada en guías clínicas.";
+    
+    // ✅ NUEVO: Mostrar Imagen de Explicación (si existe)
+    if (q.explanation_image_url) {
+        // Si es un ID de UUID, usamos el proxy. Si es URL externa, la dejamos tal cual.
+        const isExternal = q.explanation_image_url.startsWith('http');
+        const imgUrl = isExternal ? q.explanation_image_url : `${window.AppConfig.API_URL}/api/media/explanation/${q.id}`;
+        
+        elements.explanationImage.src = imgUrl;
+        elements.explanationImageContainer.classList.remove('hidden');
+    } else {
+        elements.explanationImageContainer.classList.add('hidden');
+        elements.explanationImage.src = '';
+    }
+
     elements.feedbackBox.style.display = 'block';
 
     // Configurar Botón Siguiente
@@ -851,7 +867,18 @@ window.showExamReview = async function () {
         // Explicación
         const expDiv = document.createElement('div');
         expDiv.className = 'review-explanation';
-        expDiv.innerHTML = `<strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
+        
+        let explanationHTML = `<strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>`;
+        
+        // ✅ NUEVO: Imagen en Revisión
+        if (q.explanation_image_url) {
+            const isExternal = q.explanation_image_url.startsWith('http');
+            const imgUrl = isExternal ? q.explanation_image_url : `${window.AppConfig.API_URL}/api/media/explanation/${q.id}`;
+            explanationHTML += `<div style="text-align:center; margin-bottom:1rem;"><img src="${imgUrl}" style="max-width:100%; max-height:200px; border-radius:8px;"></div>`;
+        }
+        
+        explanationHTML += `${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
+        expDiv.innerHTML = explanationHTML;
         card.appendChild(expDiv);
 
         feed.appendChild(card);

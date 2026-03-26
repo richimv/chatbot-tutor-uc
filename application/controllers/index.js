@@ -39,5 +39,6 @@ module.exports = {
     usageController: new UsageController(usageService), // ✅ NUEVO
     adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
     quizController: require('./quizController'), // ✅ NUEVO: QuizController
-    userPreferencesController: require('./userPreferencesController') // ✅ NUEVO: Multi-Domain Simulator
+    userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
+    mediaController: require('./mediaController') // ✅ NUEVO: Proxy de imágenes GCS
 };

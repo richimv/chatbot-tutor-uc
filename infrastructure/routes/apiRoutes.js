@@ -3,7 +3,7 @@ const router = express.Router();
 
 // --- Importar Controladores ---
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController, mediaController
 } = require('../../application/controllers');
 
 // --- Importar Middleware ---
@@ -30,6 +30,10 @@ router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSing
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
 router.use('/payment', paymentRoutes);
+
+// ✅ NUEVO: PROXY DE MEDIOS (Google Cloud Storage)
+router.get('/media/explanation/:id', optionalAuth, mediaController.serveExplanationImage.bind(mediaController));
+router.get('/media/resource/:id', optionalAuth, mediaController.serveResourceImage.bind(mediaController));
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');
