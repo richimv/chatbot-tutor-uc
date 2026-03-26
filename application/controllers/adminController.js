@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const AnalyticsService = require('../../domain/services/analyticsService'); // ✅ NUEVO
 const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
 const MLService = require('../../domain/services/mlService');
+const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida de imágenes a GCS
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -272,6 +273,27 @@ class AdminController {
             const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
+            // ✅ SUBIDA DE IMÁGENES A GCS (si existen)
+            if (req.files) {
+                // 1. Imagen del ENUNCIADO
+                if (req.files['questionImage'] && req.files['questionImage'][0]) {
+                    try {
+                        q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
+                    } catch (err) {
+                        console.error('Error uploading question image:', err);
+                    }
+                }
+
+                // 2. Imagen de la EXPLICACIÓN
+                if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
+                    try {
+                        q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
+                    } catch (err) {
+                        console.error('Error uploading explanation image:', err);
+                    }
+                }
+            }
+
             const insertQuery = `
                 INSERT INTO question_bank (
                     question_text, options, correct_option_index, explanation, explanation_image_url, 
@@ -320,10 +342,40 @@ class AdminController {
             const rawString = `${q.topic || 'General'}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
+            // ✅ SUBIDA DE IMÁGENES A GCS (si existen)
+            if (req.files) {
+                // 1. Imagen del ENUNCIADO
+                if (req.files['questionImage'] && req.files['questionImage'][0]) {
+                    try {
+                        q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
+                    } catch (err) {
+                        console.error('Error updating question image:', err);
+                    }
+                } else if (q.deleteQuestionImage === 'true') {
+                    q.image_url = null;
+                }
+
+                // 2. Imagen de la EXPLICACIÓN
+                if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
+                    try {
+                        q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
+                    } catch (err) {
+                        console.error('Error updating explanation image:', err);
+                    }
+                } else if (q.deleteExplanationImage === 'true') {
+                    q.explanation_image_url = null;
+                }
+            } else {
+                // Si no hay archivos, procesar eliminaciones manuales (si vienen en body)
+                if (q.deleteQuestionImage === 'true') q.image_url = null;
+                if (q.deleteExplanationImage === 'true') q.explanation_image_url = null;
+            }
+
             const updateQuery = `
                 UPDATE question_bank 
-                SET question_text = $1, options = $2, correct_option_index = $3, explanation = $4, explanation_image_url = $5,
-                    domain = $6, target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13
+                SET question_text = $1, options = $2, correct_option_index = $3, 
+                    explanation = $4, explanation_image_url = $5, domain = $6, 
+                    target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13
                 WHERE id = $14
                 RETURNING id;
             `;

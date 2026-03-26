@@ -19,6 +19,7 @@ class AdminManager {
             'tab-books': 'date-desc',
             'tab-questions': 'date-desc'
         };
+        this.previewTimer = null; // ✅ Debounce para previsualización
 
         // Elementos del DOM
         this.genericModal = document.getElementById('generic-modal');
@@ -540,23 +541,10 @@ class AdminManager {
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', currentItem?.name || '', true) +
                     this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false);
 
-                // ✅ NUEVO: Previsualización de imagen para Carrera
-                let careerImagePreview = '';
-                if (currentItem?.image_url) {
-                    careerImagePreview = `
-                        <div class="form-group" id="current-cover-preview">
-                            <label>Portada Actual:</label>
-                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
-                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
-                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
-                            </div>
-                        </div>
-                    `;
-                }
+                // Imagen de Carreras (Unificado)
 
-                fieldsHTML += careerImagePreview +
-                    `<input type="hidden" id="generic-delete-image" value="false">` +
-                    this.createFormGroup('file', 'generic-image', 'Portada (Imagen Horizontal 16:9)', '', false);
+                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
 
                 // Inicializar lógica de eliminación de imagen (reutilizada)
                 setTimeout(() => {
@@ -564,8 +552,12 @@ class AdminManager {
                     if (removeBtn) {
                         removeBtn.onclick = () => {
                             document.getElementById('generic-delete-image').value = 'true';
-                            document.getElementById('current-cover-preview').style.display = 'none';
-                            document.getElementById('generic-image').value = '';
+                            const preview = document.getElementById('current-cover-preview');
+                            if (preview) preview.style.display = 'none';
+                            const urlInput = document.getElementById('generic-image-url');
+                            if (urlInput) urlInput.value = '';
+                            const fileInput = document.getElementById('generic-image-file');
+                            if (fileInput) fileInput.value = '';
                         };
                     }
                 }, 0);
@@ -652,8 +644,8 @@ class AdminManager {
                         </div>
                     </fieldset>
                     ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', currentItem?.explanation || '', false)}
-                    ${this.createFormGroup('text', 'generic-image-url', 'URL de Imagen de Enunciado (Opcional)', currentItem?.image_url || '', false)}
-                    ${this.createFormGroup('text', 'generic-explanation-image-url', 'URL de Imagen de EXPLICACIÓN (GCS/Proxy)', currentItem?.explanation_image_url || '', false)}
+                    ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', currentItem?.image_url || '')}
+                    ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', currentItem?.explanation_image_url || '')}
                 `;
 
                 setTimeout(() => {
@@ -830,23 +822,10 @@ class AdminManager {
                     // Se crea una copia [...Array] para no mutar el original desordenadamente.
                     this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
 
-                // ✅ NUEVO: Previsualización de imagen para Curso
-                let courseImagePreview = '';
-                if (currentItem?.image_url) {
-                    courseImagePreview = `
-                        <div class="form-group" id="current-cover-preview">
-                            <label>Portada Actual:</label>
-                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
-                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
-                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
-                            </div>
-                        </div>
-                `;
-                }
+                // Imagen de Curso (Unificado)
 
-                fieldsHTML += courseImagePreview +
-                    `<input type="hidden" id="generic-delete-image" value="false">` +
-                    this.createFormGroup('file', 'generic-image', 'Portada (Imagen Horizontal 16:9)', '', false);
+                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
 
                 // Inicializar lógica de eliminación de imagen
                 setTimeout(() => {
@@ -854,8 +833,12 @@ class AdminManager {
                     if (removeBtn) {
                         removeBtn.onclick = () => {
                             document.getElementById('generic-delete-image').value = 'true';
-                            document.getElementById('current-cover-preview').style.display = 'none';
-                            document.getElementById('generic-image').value = '';
+                            const preview = document.getElementById('current-cover-preview');
+                            if (preview) preview.style.display = 'none';
+                            const urlInput = document.getElementById('generic-image-url');
+                            if (urlInput) urlInput.value = '';
+                            const fileInput = document.getElementById('generic-image-file');
+                            if (fileInput) fileInput.value = '';
                         };
                     }
                 }, 0);
@@ -881,18 +864,7 @@ class AdminManager {
                 title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
                 if (id) currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
 
-                let imagePreview = '';
-                if (currentItem?.image_url) {
-                    imagePreview = `
-                        <div class="form-group" id="current-cover-preview">
-                            <label>Portada/Miniatura Actual:</label>
-                            <div class="image-preview-ref" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; border-radius: 8px; display: inline-block; position: relative;">
-                                <img src="${currentItem.image_url}" alt="Portada Actual" style="max-height: 150px; border-radius: 4px;">
-                                <button type="button" id="remove-cover-btn" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;" title="Eliminar imagen">×</button>
-                            </div>
-                        </div>
-                `;
-                }
+                // Definir tipos de recurso acordes al nuevo enfoque EdTech
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
                 const resourceTypes = [
@@ -944,13 +916,15 @@ class AdminManager {
                     </div>
 
                     <div style="grid-column: 1 / -1;">
-                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (*)', currentItem?.url || '', true)}
-                        <small style="display:block; color:var(--text-muted); margin-top:2px;">Enlaces YouTube se mostraran como miniatura en plataforma. Otros enlaces se abren en web.</small>
+                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (Opcional)', currentItem?.url || '', false)}
+                        <small style="display:block; color:var(--text-muted); margin-top:2px;">
+                            <i class="fas fa-magic"></i> <b>Tip:</b> Si se deja vacío, se usará la <b>imagen de portada</b> como recurso (ideal para infografías/mapas).
+                        </small>
                     </div>
                 </div>
-            ` + imagePreview +
-                    `<input type="hidden" id="generic-delete-image" value="false">` +
-                    this.createFormGroup('file', 'generic-image', 'Portada/Miniatura (Imagen)', '', false);
+                `;
+                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', currentItem?.image_url || '');
 
                 // Initialize Logic
                 setTimeout(() => {
@@ -959,8 +933,24 @@ class AdminManager {
                     if (removeBtn) {
                         removeBtn.onclick = () => {
                             document.getElementById('generic-delete-image').value = 'true';
-                            document.getElementById('current-cover-preview').style.display = 'none';
-                            document.getElementById('generic-image').value = '';
+                            const preview = document.getElementById('current-cover-preview');
+                            if (preview) preview.style.display = 'none';
+                            const urlInput = document.getElementById('generic-image-url');
+                            if (urlInput) urlInput.value = '';
+                            const fileInput = document.getElementById('generic-image-file');
+                            if (fileInput) fileInput.value = '';
+                        };
+                    }
+
+                    // Listener para mostrar feedback de archivo seleccionado
+                    const _fileInput = document.getElementById('generic-image-file');
+                    const _fileInfo = document.getElementById('generic-image-file-info');
+                    if (_fileInput && _fileInfo) {
+                        _fileInput.onchange = () => {
+                            if (_fileInput.files.length > 0) {
+                                _fileInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> Archivo listo: <b>${_fileInput.files[0].name}</b> (Se ignorará el texto)`;
+                                _fileInfo.style.color = 'var(--success-color)';
+                            }
                         };
                     }
 
@@ -1096,6 +1086,85 @@ class AdminManager {
             ? `<textarea id="${id}" name="${id}" ${req}>${value}</textarea>`
             : `<input type="${type}" id="${id}" name="${id}" value="${value}" ${req}>`;
         return `<div class="form-group"><label for="${id}">${label}</label>${inputHTML}</div>`;
+    }
+
+    createImageUploadGroup(id, label, value = '') {
+        const isExternal = value.startsWith('http');
+        const token = localStorage.getItem('authToken');
+        const previewUrl = value ? (isExternal ? value : `${window.AppConfig.API_URL}/api/media/preview?path=${value}&token=${token}`) : '';
+        
+        return `
+            <div class="form-group image-upload-group" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
+                <label for="${id}-url" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                    <i class="fas fa-image" style="color: var(--accent-color);"></i> ${label}
+                </label>
+                
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <input type="text" id="${id}-url" name="${id}-url" value="${value}" 
+                        placeholder="Ruta GCS (ej: test.png) o URL externa" 
+                        style="flex: 1;"
+                        oninput="window.adminManager.updateLivePreview('${id}')">
+                    
+                    <input type="file" id="${id}-file" name="${id}-file" style="display: none;" accept="image/*">
+                    <button type="button" class="btn-secondary btn-small" onclick="document.getElementById('${id}-file').click()" 
+                        style="white-space: nowrap; height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 15px; border-radius: 8px;">
+                        <i class="fas fa-upload"></i> Subir Local
+                    </button>
+                </div>
+
+                <!-- Contenedor de Previsualización en Tiempo Real -->
+                <div id="${id}-preview-container" style="display: ${value ? 'block' : 'none'}; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                    <small style="display: block; color: var(--text-muted); margin-bottom: 5px;">Vista Previa:</small>
+                    <img id="${id}-preview-img" src="${previewUrl}" alt="Preview" 
+                        style="max-width: 100%; max-height: 180px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
+                        onerror="this.parentElement.style.display='none'">
+                </div>
+
+                <small id="${id}-file-info" style="display: block; margin-top: 8px; color: var(--text-muted); font-size: 0.85em; opacity: 0.8;">
+                    <i class="fas fa-info-circle"></i> <b>Tip:</b> Si subes un archivo local, este tendrá prioridad sobre el texto.
+                </small>
+            </div>
+        `;
+    }
+
+    /**
+     * ✅ Actualiza la previsualización en tiempo real mientras el usuario escribe.
+     */
+    updateLivePreview(id) {
+        if (this.previewTimer) clearTimeout(this.previewTimer);
+        this.previewTimer = setTimeout(() => {
+            const urlInput = document.getElementById(`${id}-url`);
+            const previewContainer = document.getElementById(`${id}-preview-container`);
+            const previewImg = document.getElementById(`${id}-preview-img`);
+            
+            if (!urlInput || !previewImg || !previewContainer) return;
+
+            const value = urlInput.value.trim();
+            // ✅ Optimización Anti-Ruido: Solo buscar si tiene al menos 4 caracteres y un punto (ej: a.png)
+            if (!value || value.length < 4 || !value.includes('.')) {
+                previewContainer.style.display = 'none';
+                return;
+            }
+
+            const isExternal = value.startsWith('http');
+            const previewUrl = window.resolveImageUrl(value);
+            
+            // ✅ Carga Asíncrona: Validar éxito antes de mostrar para evitar parpadeos y 404s visuales
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                // Sincronía: Verificar que el valor del input no haya cambiado durante la carga
+                if (urlInput.value.trim() === value) {
+                    previewImg.src = previewUrl;
+                    previewContainer.style.display = 'block';
+                }
+            };
+            tempImg.onerror = () => {
+                if (urlInput.value.trim() === value) {
+                    previewContainer.style.display = 'none';
+                }
+            };
+            tempImg.src = previewUrl;
+        }, 750); // ✅ Aumentado a 750ms para permitir escribir nombres completos sin spam de consola
     }
 
     createSelect(id, label, options, selectedValue, optional = false) {
@@ -1331,9 +1400,13 @@ class AdminManager {
                     const deleteCareerImage = document.getElementById('generic-delete-image')?.value;
                     if (deleteCareerImage === 'true') careerFormData.append('deleteImage', 'true');
 
-                    const careerFileInput = document.getElementById('generic-image');
+                    const careerFileInput = document.getElementById('generic-image-file');
+                    const careerUrlInput = document.getElementById('generic-image-url');
+
                     if (careerFileInput && careerFileInput.files[0]) {
                         careerFormData.append('coverImage', careerFileInput.files[0]);
+                    } else if (careerUrlInput && careerUrlInput.value.trim()) {
+                        careerFormData.append('image_url', careerUrlInput.value.trim());
                     }
 
                     body = careerFormData;
@@ -1361,9 +1434,13 @@ class AdminManager {
                     const deleteCourseImage = document.getElementById('generic-delete-image')?.value;
                     if (deleteCourseImage === 'true') courseFormData.append('deleteImage', 'true');
 
-                    const courseFileInput = document.getElementById('generic-image');
+                    const courseFileInput = document.getElementById('generic-image-file');
+                    const courseUrlInput = document.getElementById('generic-image-url');
+
                     if (courseFileInput && courseFileInput.files[0]) {
                         courseFormData.append('coverImage', courseFileInput.files[0]);
+                    } else if (courseUrlInput && courseUrlInput.value.trim()) {
+                        courseFormData.append('image_url', courseUrlInput.value.trim());
                     }
 
                     body = courseFormData;
@@ -1425,9 +1502,15 @@ class AdminManager {
                         formData.append('deleteImage', 'true');
                     }
 
-                    const fileInput = document.getElementById('generic-image');
+                    // ✅ Prioridad: 1. Archivo Local | 2. URL/Texto Manual
+                    const fileInput = document.getElementById('generic-image-file');
+                    const urlInput = document.getElementById('generic-image-url');
+
                     if (fileInput && fileInput.files[0]) {
                         formData.append('coverImage', fileInput.files[0]);
+                    } else if (urlInput && urlInput.value.trim()) {
+                        // Si no hay archivo pero hay texto, el backend lo tratará como la nueva image_url
+                        formData.append('image_url', urlInput.value.trim());
                     }
                     if (method === 'PUT' && id) {
                         // Pasar ID si es update, aunque en FormData suele ir mejor en URL, el controlador espera el ID en URL.
@@ -1440,13 +1523,13 @@ class AdminManager {
                 case 'question':
                     const qTarget = document.getElementById('generic-target').value;
                     const qCareerEl = document.getElementById('generic-career');
-                    body = {
+                    const qData = {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
                         target: qTarget,
                         career: (qTarget.toUpperCase() === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
-                        subtopic: document.getElementById('generic-subtopic')?.value || null, // Subtema clínicos específico
+                        subtopic: document.getElementById('generic-subtopic')?.value || null,
                         difficulty: 'Senior',
                         options: (qTarget.toUpperCase() === 'RESIDENTADO')
                             ? [
@@ -1463,10 +1546,43 @@ class AdminManager {
                                 document.getElementById('generic-opt3').value
                             ],
                         correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
-                        explanation: document.getElementById('generic-explanation').value,
-                        image_url: document.getElementById('generic-image-url').value,
-                        explanation_image_url: document.getElementById('generic-explanation-image-url').value
+                        explanation: document.getElementById('generic-explanation').value
                     };
+
+                    const questionFormData = new FormData();
+                    Object.keys(qData).forEach(key => {
+                        if (key === 'options') {
+                            questionFormData.append(key, JSON.stringify(qData[key]));
+                        } else {
+                            questionFormData.append(key, qData[key]);
+                        }
+                    });
+
+                    // ✅ Lógica Dual para Imagen de ENUNCIADO (id: generic-image)
+                    const qImageFile = document.getElementById('generic-image-file');
+                    const qImageUrl = document.getElementById('generic-image-url');
+                    if (qImageFile && qImageFile.files[0]) {
+                        questionFormData.append('questionImage', qImageFile.files[0]);
+                    } else if (qImageUrl && qImageUrl.value.trim()) {
+                        questionFormData.append('image_url', qImageUrl.value.trim());
+                    } else {
+                        questionFormData.append('image_url', '');
+                        questionFormData.append('deleteQuestionImage', 'true');
+                    }
+
+                    // ✅ Lógica Dual para Imagen de EXPLICACIÓN (id: generic-explanation-image)
+                    const explImageFile = document.getElementById('generic-explanation-image-file');
+                    const explImageUrl = document.getElementById('generic-explanation-image-url');
+                    if (explImageFile && explImageFile.files[0]) {
+                        questionFormData.append('explanationImage', explImageFile.files[0]);
+                    } else if (explImageUrl && explImageUrl.value.trim()) {
+                        questionFormData.append('explanation_image_url', explImageUrl.value.trim());
+                    } else {
+                        questionFormData.append('explanation_image_url', '');
+                        questionFormData.append('deleteExplanationImage', 'true');
+                    }
+
+                    body = questionFormData;
                     break;
                 case 'ai-question': {
                     const aiBtn = document.getElementById('generic-save-btn');

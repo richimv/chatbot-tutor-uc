@@ -597,10 +597,10 @@ class TrainingRepository {
             const correctOption = q.options[q.correct_option_index];
             const back = `${correctOption}\n\n💡 ${q.explanation || ''}`;
 
-            // ($1, $2, $3, $4, $5, $6) ...
-            const offset = insertCount * 6;
-            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
-            values.push(userId, front, back, q.topic || topic, attemptId, deckId);
+            // ($1, $2, $3, $4, $5, $6, $7, $8) ...
+            const offset = insertCount * 8;
+            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
+            values.push(userId, front, back, q.topic || topic, attemptId, deckId, q.image_url || null, q.explanation_image_url || null);
             insertCount++;
         });
 
@@ -610,7 +610,7 @@ class TrainingRepository {
         }
 
         const query = `
-            INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id)
+            INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id, image_url, explanation_image_url)
             VALUES ${placeholders.join(', ')}
         `;
 

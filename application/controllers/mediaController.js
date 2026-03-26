@@ -120,6 +120,82 @@ class MediaController {
             res.status(500).send('Error interno.');
         }
     }
+
+    /**
+     * Sube un archivo a GCS y retorna su ruta relativa (ej: 'explanations/nombre.png')
+     */
+    async uploadFile(file, folder = 'explanations') {
+        try {
+            const bucket = this.storage.bucket(this.bucketName);
+            const fileName = `${Date.now()}-${file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+            const gcsPath = `${folder}/${fileName}`;
+            const gcsFile = bucket.file(gcsPath);
+
+            await gcsFile.save(file.buffer, {
+                metadata: { contentType: file.mimetype }
+            });
+
+            console.log(`✅ Archivo subido a GCS: ${gcsPath}`);
+            return gcsPath;
+        } catch (error) {
+            console.error('❌ Error subiendo a GCS:', error);
+            throw new Error('Error al subir el archivo al almacenamiento en la nube.');
+        }
+    }
+
+    /**
+     * Proxy de previsualización para el Administrador.
+     */
+    async serveGCSPreview(req, res) {
+        return this._serveGCSByPath(req, res, true);
+    }
+
+    /**
+     * Proxy general para servir imágenes de GCS por ruta (Capa de Usuarios).
+     * GET /api/media/gcs?path=...
+     */
+    async serveGCSGeneral(req, res) {
+        return this._serveGCSByPath(req, res, false);
+    }
+
+    /**
+     * Lógica interna compartida para servir archivos de GCS por ruta.
+     */
+    async _serveGCSByPath(req, res, isAdminOnly = false) {
+        try {
+            const { path: gcsPath } = req.query;
+            if (!gcsPath) return res.status(400).send('Falta el parámetro "path".');
+            if (gcsPath.startsWith('http')) return res.redirect(gcsPath);
+
+            const bucket = this.storage.bucket(this.bucketName);
+            const file = bucket.file(gcsPath);
+
+            const [exists] = await file.exists();
+            if (!exists) {
+                // Silencioso o 404 estándar
+                return res.status(404).send('Archivo no encontrado en GCS.');
+            }
+
+            const ext = path.extname(gcsPath).toLowerCase();
+            const contentTypes = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif',
+                '.svg': 'image/svg+xml'
+            };
+
+            res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
+            res.setHeader('Content-Disposition', 'inline');
+            res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=86400'); // Cache 24h para usuarios
+            
+            file.createReadStream().pipe(res);
+        } catch (error) {
+            console.error('❌ Error sirviendo GCS por ruta:', error);
+            res.status(500).send('Error interno.');
+        }
+    }
 }
 
 module.exports = new MediaController();

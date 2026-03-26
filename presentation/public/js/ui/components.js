@@ -172,9 +172,10 @@ function createBrowseCardHTML(item, type) {
     if (type === 'career') {
         // Opción 1: Diseño Full Image (Si tiene imagen)
         if (item.image_url) {
+            const finalImage = window.resolveImageUrl(item.image_url);
             return `
                 <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     <div class="browse-card-overlay">
                         <div class="browse-card-content overlay-content">
@@ -223,9 +224,10 @@ function createBrowseCardHTML(item, type) {
 
         // Si hay imagen, usamos el diseño "Full Cover"
         if (item.image_url) {
+            const finalImage = window.resolveImageUrl(item.image_url);
             return `
                 <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${item.image_url}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     ${actionButtons}
 
@@ -639,7 +641,8 @@ function createUnifiedResourceCardHTML(item) {
     const hasImage = Boolean(rawImage && rawImage.trim() !== '');
 
     if (hasImage) {
-        visualHTML = `<img src="${rawImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='https://placehold.co/200x260/1e293b/ffffff?text=Material'">`;
+        const finalImage = window.resolveImageUrl(rawImage);
+        visualHTML = `<img src="${finalImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='https://placehold.co/200x260/1e293b/ffffff?text=Material'">`;
     } else {
         visualHTML = `
             <div class="urc-icon-fallback ${typeColorClass}">
@@ -664,7 +667,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
-            <div class="urc-visual-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})`}" title="Abrir ${title}">
+            <div class="urc-visual-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium}, '${title.replace(/'/g, "\\'")}')`}" title="Abrir ${title}">
                 ${visualHTML}
                 
                 <!-- Overlay Oscuro y Candado -->
@@ -674,7 +677,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Inferior: Información (Clicable) -->
-            <div class="urc-info-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium})`}" title="Abrir ${title}">
+            <div class="urc-info-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium}, '${title.replace(/'/g, "\\'")}')`}" title="Abrir ${title}">
                 <div class="urc-meta">
                     <span class="urc-badge ${typeColorClass}"><i class="fas ${iconClass}"></i> ${typeLabel}</span>
                     ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
@@ -774,8 +777,9 @@ window.createVideoCardHTML = function (item) {
     };
 
     const videoId = getYouTubeID(url);
+    const resolvedImage = window.resolveImageUrl(item.image_url);
     const thumbnail = item.image_url && !item.image_url.includes('unsplash') 
-        ? item.image_url 
+        ? resolvedImage 
         : (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
 
     if (url && url !== '#') {

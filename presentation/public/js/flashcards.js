@@ -23,7 +23,9 @@ const FlashcardManager = (() => {
         backText: document.getElementById('back-text'),
         topic: document.getElementById('card-topic'),
         controls: document.getElementById('controls'),
-        pendingCount: document.getElementById('pending-count')
+        pendingCount: document.getElementById('pending-count'),
+        frontImage: document.getElementById('front-image-container'),
+        backImage: document.getElementById('back-image-container')
     };
 
     // --- State Machine ---
@@ -158,6 +160,10 @@ const FlashcardManager = (() => {
         ui.frontText.textContent = card.front_content;
         ui.backText.textContent = card.back_content;
 
+        // --- Render Images if they exist ---
+        renderMedia(ui.frontImage, card.image_url);
+        renderMedia(ui.backImage, card.explanation_image_url);
+
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
         // We use a timeout to let the DOM render the content first (even if microseconds)
         // actually not needed if synchronous, but better for layout reflow calc.
@@ -277,6 +283,24 @@ const FlashcardManager = (() => {
 
     function updatePendingCount() {
         ui.pendingCount.textContent = queue.length;
+    }
+
+    /**
+     * Helper to render media in flashcard containers
+     */
+    function renderMedia(container, imageUrl) {
+        if (!container) return;
+        container.innerHTML = '';
+        container.classList.remove('visible');
+
+        if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = window.resolveImageUrl(imageUrl);
+            img.className = 'card-image';
+            img.onerror = () => container.classList.remove('visible');
+            container.appendChild(img);
+            container.classList.add('visible');
+        }
     }
 
     // --- Event Listeners ---

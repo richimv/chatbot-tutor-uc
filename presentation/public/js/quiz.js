@@ -434,7 +434,7 @@ function renderQuestion() {
     const imgContainer = document.getElementById('questionImageContainer');
     const imgElement = document.getElementById('questionImage');
     if (q.image_url) {
-        imgElement.src = q.image_url;
+        imgElement.src = window.resolveImageUrl(q.image_url);
         imgContainer.classList.remove('hidden');
     } else {
         imgContainer.classList.add('hidden');
@@ -539,11 +539,8 @@ function handleAnswer(selectedIndex, btnElement) {
     
     // ✅ NUEVO: Mostrar Imagen de Explicación (si existe)
     if (q.explanation_image_url) {
-        // Si es un ID de UUID, usamos el proxy. Si es URL externa, la dejamos tal cual.
-        const isExternal = q.explanation_image_url.startsWith('http');
-        const imgUrl = isExternal ? q.explanation_image_url : `${window.AppConfig.API_URL}/api/media/explanation/${q.id}`;
-        
-        elements.explanationImage.src = imgUrl;
+        // ✅ Usar el resolutor universal (Soporta GCS, ID-Proxy y URLs Externas)
+        elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
         elements.explanationImageContainer.classList.remove('hidden');
     } else {
         elements.explanationImageContainer.classList.add('hidden');
@@ -829,7 +826,7 @@ window.showExamReview = async function () {
             imgContainer.style.textAlign = 'center';
             imgContainer.style.marginBottom = '1.25rem';
             const img = document.createElement('img');
-            img.src = q.image_url;
+            img.src = window.resolveImageUrl(q.image_url);
             img.style.maxHeight = '200px';
             img.style.borderRadius = '8px';
             imgContainer.appendChild(img);
@@ -872,8 +869,7 @@ window.showExamReview = async function () {
         
         // ✅ NUEVO: Imagen en Revisión
         if (q.explanation_image_url) {
-            const isExternal = q.explanation_image_url.startsWith('http');
-            const imgUrl = isExternal ? q.explanation_image_url : `${window.AppConfig.API_URL}/api/media/explanation/${q.id}`;
+            const imgUrl = window.resolveImageUrl(q.explanation_image_url);
             explanationHTML += `<div style="text-align:center; margin-bottom:1rem;"><img src="${imgUrl}" style="max-width:100%; max-height:200px; border-radius:8px;"></div>`;
         }
         

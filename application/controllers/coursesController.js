@@ -275,6 +275,14 @@ class CoursesController {
             if (req.body.is_premium !== undefined) {
                 req.body.is_premium = req.body.is_premium === 'true';
             }
+            
+            // ✅ NUEVO: Fallback para recursos visuales (infografías)
+            // Si no hay URL pero hay imagen, la imagen ES el recurso.
+            if (entityType === 'book' && (!req.body.url || req.body.url.trim() === '')) {
+                if (req.body.image_url) {
+                    req.body.url = req.body.image_url;
+                }
+            }
 
             const newItem = await this.adminService.create(entityType, req.body);
             res.status(201).json(newItem);
@@ -428,6 +436,13 @@ class CoursesController {
             // ✅ NUEVO: Parsear is_premium (FormData envía strings)
             if (req.body.is_premium !== undefined) {
                 req.body.is_premium = req.body.is_premium === 'true';
+            }
+
+            // ✅ NUEVO: Fallback para recursos visuales (infografías) en UPDATE
+            if (entityType === 'book' && (!req.body.url || req.body.url.trim() === '')) {
+                if (req.body.image_url) {
+                    req.body.url = req.body.image_url;
+                }
             }
 
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);

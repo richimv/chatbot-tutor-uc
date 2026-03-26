@@ -13,6 +13,24 @@ const checkAILimits = require('../../application/middlewares/checkLimitsMiddlewa
 const { authLimiter } = require('../config/rateLimiters');
 
 // ======================
+// 🔗 CONFIGURACIÓN DE CARGA (Multer)
+// ======================
+const multer = require('multer');
+const path = require('path');
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) return cb(null, true);
+        cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP)'));
+    }
+});
+
+// ======================
 // 🔗 RUTAS API
 // ======================
 
@@ -21,19 +39,22 @@ router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboa
 
 router.post('/admin/run-ai', auth, adminOnly, adminController.runAiAnalysis);
 router.post('/admin/questions/bulk', auth, adminOnly, adminController.bulkInjectQuestions); // ✅ NUEVO: Inyección Masiva
-router.post('/admin/questions/generate-ai', auth, adminOnly, adminController.generateAiQuestions); // ✅ NUEVO: Generador IA Masivo
+router.post('/admin/questions/generate-ai', auth, adminOnly, adminController.generateAiQuestions); // --- Gestión de Banco de Preguntas (Admin) ---
 router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions);
-router.post('/admin/question', auth, adminOnly, adminController.addSingleQuestion);
-router.put('/admin/question/:id', auth, adminOnly, adminController.updateSingleQuestion);
+router.post('/admin/question', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.addSingleQuestion);
+router.put('/admin/question/:id', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.updateSingleQuestion);
 router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSingleQuestion);
 
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
 router.use('/payment', paymentRoutes);
 
-// ✅ NUEVO: PROXY DE MEDIOS (Google Cloud Storage)
-router.get('/media/explanation/:id', optionalAuth, mediaController.serveExplanationImage.bind(mediaController));
-router.get('/media/resource/:id', optionalAuth, mediaController.serveResourceImage.bind(mediaController));
+// ✅ NUEVO: PROXY DE MEDIOS (Google// Proxy de Medios (GCS)
+router.get('/media/explanation/:id', optionalAuth, (req, res) => mediaController.serveExplanationImage(req, res));
+router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.serveResourceImage(req, res));
+router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
+router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res)); // ✅ Nueva ruta pública/opcional
+//diaController)); // ✅ NUEVO: Solo Admins
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');
@@ -94,27 +115,6 @@ router.get('/topics/:id', coursesController.getTopicById);
 
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);
-// --- Configuración de Multer para Carga de Imágenes ---
-const multer = require('multer');
-const path = require('path'); // Necesario para path.extname
-// ✅ CONFIGURACIÓN MULTER: Usar memoria en lugar de disco
-// Para Supabase, necesitamos el buffer en memoria, no un archivo en disco.
-const storage = multer.memoryStorage();
-
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // ✅ AUMENTADO: 50MB límite para evitar errores con imágenes grandes
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|webp/;
-        const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-        if (mimetype && extname) {
-            return cb(null, true);
-        }
-        cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP)'));
-    }
-});
 
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);

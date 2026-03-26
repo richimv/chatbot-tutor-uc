@@ -215,22 +215,28 @@ class LibraryUI {
 
     _createDrawerItemHTML(item) {
         const typeLabel = item._uiType === 'course' ? 'Curso' : 'Recurso';
-        const img = item.image_url || 'https://via.placeholder.com/60';
+        const title = item.title || item.name || 'Sin título';
+        
+        // Resolver imagen con fallback a ui-avatars
+        const resolvedImg = item.image_url ? window.resolveImageUrl(item.image_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random&color=fff`;
+        const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=6366f1&color=fff`;
 
         // Acción al hacer clic en el item del drawer
         let clickAttr = '';
         if (item._uiType === 'course') {
             clickAttr = `onclick="window.location.href='course?id=${item.id}'"`;
         } else {
-            // Libro -> Abrir URL externa
-            clickAttr = `onclick="window.open('${item.url || '#'}', '_blank')"`;
+            // Recurso (Libro, Paper, Otro) -> Usar UIManager para manejo inteligente (Visor vs Link)
+            const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
+            const titleEscaped = title.replace(/'/g, "\\'");
+            clickAttr = `onclick="window.uiManager.unlockResource('${item.id}', '${item.type || 'book'}', ${isPremium}, '${titleEscaped}')"`;
         }
 
         return `
             <div class="library-item" ${clickAttr}>
-                <img src="${img}" alt="${item.title || item.name}" onerror="this.src='https://via.placeholder.com/60'">
+                <img src="${resolvedImg}" alt="${title}" onerror="this.src='${fallbackImg}'">
                 <div class="library-item-info">
-                    <div class="library-item-title">${item.title || item.name}</div>
+                    <div class="library-item-title">${title}</div>
                     <div class="library-item-type">${typeLabel}</div>
                 </div>
             </div>

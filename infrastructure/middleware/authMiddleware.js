@@ -31,14 +31,10 @@ async function getUserWithRetry(token, retries = MAX_RETRIES) {
 
 async function auth(req, res, next) {
     const authHeader = req.header('Authorization');
+    let token = authHeader ? authHeader.split(' ')[1] : req.query.token;
 
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
-    }
-
-    const token = authHeader.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ error: 'Formato de token inválido.' });
+        return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
     }
 
     try {
@@ -84,9 +80,7 @@ async function auth(req, res, next) {
 
 async function optionalAuth(req, res, next) {
     const authHeader = req.header('Authorization');
-    if (!authHeader) return next();
-
-    const token = authHeader.split(' ')[1];
+    const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
     if (!token) return next();
 
     try {

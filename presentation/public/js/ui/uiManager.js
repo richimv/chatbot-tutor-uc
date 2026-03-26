@@ -4,6 +4,8 @@ class UIManager {
         this.injectModalHTML();
         // ✅ NUEVO: Inyectar Modal de Video
         this.injectVideoModalHTML();
+        // ✅ NUEVO: Inyectar Visor de Medios (Imágenes)
+        this.injectMediaViewerHTML();
         // ✅ NUEVO: Registro seguro de URLs para ofuscación
         this.materialRegistry = new Map();
 
@@ -146,9 +148,10 @@ class UIManager {
      * @param {string} id - ID del recurso.
      * @param {string} type - Tipo ('video', 'book', 'article').
      * @param {boolean} isPremium - Si el recurso requiere autenticación y vidas/suscripción.
+     * @param {string} title - (Opcional) Título del recurso para el visor.
      * @param {string} videoContainerId - (Opcional) ID del contenedor DOM para inyectar video.
      */
-    async unlockResource(id, type = 'book', isPremium = false, videoContainerId = null) {
+    async unlockResource(id, type = 'book', isPremium = false, title = '', videoContainerId = null) {
         const url = this.materialRegistry.get(String(id));
         if (!url) {
             console.error('Material no encontrado o acceso denegado.');
@@ -159,7 +162,9 @@ class UIManager {
         // Si el recurso es gratuito (isPremium = false), se accede directamente sin descontar vidas ni pedir login.
         if (!isPremium) {
             if (type === 'video') {
-                this.openVideoModal(url, ''); // ✅ Eliminado "Video Gratuito"
+                this.openVideoModal(url, title); 
+            } else if (this.isImage(url)) {
+                this.showMediaViewer(url, title); 
             } else {
                 window.open(url, '_blank');
             }
@@ -221,7 +226,9 @@ class UIManager {
 
                     // 👉 ACCIÓN SEGÚN TIPO
                     if (type === 'video') {
-                        this.openVideoModal(url, data.title || ''); // ✅ Eliminado "Video Premium"
+                        this.openVideoModal(url, data.title || ''); 
+                    } else if (this.isImage(url)) {
+                        this.showMediaViewer(url, data.title || '');
                     } else {
                         // Artículos y Libros se abren en nueva pestaña
                         window.open(url, '_blank');
@@ -253,8 +260,8 @@ class UIManager {
     /**
      * Alias para compatibilidad con código existente de libros.
      */
-    openMaterial(id, isPremium = false) {
-        this.unlockResource(id, 'book', isPremium);
+    openMaterial(id, isPremium = false, title = '') {
+        this.unlockResource(id, 'book', isPremium, title);
     }
 
     /**
@@ -355,6 +362,146 @@ class UIManager {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Inicia el Visor de Medios (Imágenes).
+     */
+    showMediaViewer(url, title) {
+        const modal = document.getElementById('media-viewer-modal');
+        const img = document.getElementById('media-viewer-img');
+        const titleEl = document.getElementById('media-viewer-title');
+        const downloadBtn = document.getElementById('media-viewer-download');
+
+        if (modal && img) {
+            // Resolver URL si es GCS (aunque ya debería venir resuelta o registrarse resuelta)
+            const finalUrl = window.resolveImageUrl(url);
+            
+            img.src = finalUrl;
+            if (titleEl) titleEl.innerText = title || 'Visualizando Recurso';
+            if (downloadBtn) {
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = finalUrl;
+                    a.download = title ? `${title.replace(/\s+/g, '_')}.png` : 'recurso_hub.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+            }
+
+            modal.style.display = 'flex';
+            this.pushModalState('media-viewer-modal');
+        }
+    }
+
+    closeMediaViewer() {
+        const modal = document.getElementById('media-viewer-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            this.popModalState('media-viewer-modal');
+        }
+    }
+
+    injectMediaViewerHTML() {
+        if (document.getElementById('media-viewer-modal')) return;
+
+        const modalHTML = `
+            <div id="media-viewer-modal" class="modal media-viewer-overlay" onclick="if(event.target === this) window.uiManager.closeMediaViewer()">
+                <div class="media-viewer-container">
+                    <div class="media-viewer-header">
+                        <span id="media-viewer-title" class="media-viewer-title-text">Visualizando Recurso</span>
+                        <div class="media-viewer-actions">
+                            <button id="media-viewer-download" class="media-btn-download" title="Descargar"><i class="fas fa-download"></i></button>
+                            <button class="media-btn-close" onclick="window.uiManager.closeMediaViewer()">&times;</button>
+                        </div>
+                    </div>
+                    <div class="media-viewer-body">
+                        <img id="media-viewer-img" src="" alt="Recurso">
+                    </div>
+                </div>
+            </div>
+            <style>
+                .media-viewer-overlay {
+                    display: none;
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.9);
+                    backdrop-filter: blur(10px);
+                    z-index: 10001;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .media-viewer-container {
+                    width: 90%;
+                    max-width: 1000px;
+                    max-height: 90vh;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .media-viewer-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    color: white;
+                    padding: 0 10px;
+                }
+                .media-viewer-title-text {
+                    font-weight: 600;
+                    font-size: 1.1rem;
+                }
+                .media-viewer-actions {
+                    display: flex;
+                    gap: 15px;
+                    align-items: center;
+                }
+                .media-btn-download, .media-btn-close {
+                    background: rgba(255,255,255,0.1);
+                    border: none;
+                    color: white;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.2rem;
+                    transition: all 0.2s;
+                }
+                .media-btn-download:hover { background: #3b82f6; }
+                .media-btn-close:hover { background: #ef4444; }
+                .media-viewer-body {
+                    flex: 1;
+                    overflow: auto;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background: #111;
+                    border-radius: 12px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                }
+                .media-viewer-body img {
+                    max-width: 100%;
+                    max-height: 75vh;
+                    object-fit: contain;
+                }
+            </style>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    isImage(url) {
+        if (!url) return false;
+        // Limpiar query params si los hay
+        const cleanUrl = url.split('?')[0].toLowerCase();
+        return cleanUrl.endsWith('.png') || 
+               cleanUrl.endsWith('.jpg') || 
+               cleanUrl.endsWith('.jpeg') || 
+               cleanUrl.endsWith('.webp') || 
+               cleanUrl.endsWith('.gif') || 
+               cleanUrl.endsWith('.svg');
     }
 
 

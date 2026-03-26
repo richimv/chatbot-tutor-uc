@@ -23,7 +23,8 @@ const Arena = (function () {
             meta: document.getElementById('q-meta'),
             bar: document.getElementById('timerBar'),
             lives: document.getElementById('livesBox'),
-            score: document.getElementById('gameScore')
+            score: document.getElementById('gameScore'),
+            imageContainer: document.getElementById('q-image-container')
         },
         screens: {
             loading: document.getElementById('loading'),
@@ -138,6 +139,20 @@ const Arena = (function () {
         ui.game.meta.textContent = `NIVEL ${calculateLevel()} | PREGUNTA ${state.currIdx + 1} DE 20`;
         ui.game.text.textContent = q.question;
         ui.game.grid.innerHTML = '';
+
+        // --- Render Image if exists ---
+        if (ui.game.imageContainer) {
+            ui.game.imageContainer.innerHTML = '';
+            ui.game.imageContainer.classList.remove('visible');
+            if (q.image_url) {
+                const img = document.createElement('img');
+                img.src = window.resolveImageUrl(q.image_url);
+                img.className = 'q-image';
+                img.onerror = () => ui.game.imageContainer.classList.remove('visible');
+                ui.game.imageContainer.appendChild(img);
+                ui.game.imageContainer.classList.add('visible');
+            }
+        }
 
         q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');

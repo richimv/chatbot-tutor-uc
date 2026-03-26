@@ -36,6 +36,27 @@
         SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheWp0dXBwcGNiaHpqaXpoYW1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMDEyMDAsImV4cCI6MjA3Nzg3NzIwMH0.BXZOjsUfCbi2_bBw9wglTMBX7WkwcGxlZjfaNwteDD8'
     };
 
+    /**
+     * Resolutor Universal de URLs de Imagen (GCS / Externo)
+     * Detecta si una URL es una ruta relativa de GCS y la redirige al proxy del backend.
+     */
+    window.resolveImageUrl = function (url) {
+        if (!url || url.trim() === '') {
+            return 'https://placehold.co/400x300/1e293b/ffffff?text=Material';
+        }
+
+        // Si ya es una URL absoluta o relativa local conocida, no tocar
+        if (url.startsWith('http') || url.startsWith('/') || url.startsWith('data:') || url.startsWith('assets/')) {
+            return url;
+        }
+
+        // Caso GCS: Es una ruta como "test.png" o "folders/image.jpg"
+        const token = localStorage.getItem('authToken');
+        const tokenParam = token ? `&token=${token}` : '';
+        
+        return `${window.AppConfig.API_URL}/api/media/gcs?path=${encodeURIComponent(url)}${tokenParam}`;
+    };
+
     console.log('✅ Configuración Cargada Exitosamente.');
     console.log('📍 API:', window.AppConfig.API_URL);
 
