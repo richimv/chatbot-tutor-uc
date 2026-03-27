@@ -165,7 +165,8 @@ class UserAiService {
             [REGLAS PARA LAS OPCIONES]
             - TEXTO LIMPIO: Sin letras ni prefijos (A., B., C.).
             - BREVEDAD: 1 a 12 palabras máximo.
-            - SIMETRÍA VISUAL: Longitud similar en todas las opciones.
+            - SIMETRÍA VISUAL (OBLIGATORIO): Todas las opciones deben tener una longitud similar. Prohibido que la correcta sea la más larga.
+            - DISTRACTORES DE ALTO NIVEL: Crea opciones "trampa" que sean técnicamente plausibles y relacionadas con el caso, evitando rellenos obvios.
 
             [EXPLICACIÓN (REGISTRO TÉCNICO)]
             - Que no sea tan extenso, ni tan breve, lo necesario para fundamentar la respuesta.
@@ -197,7 +198,7 @@ class UserAiService {
             [REGLA DE PERTINENCIA VISUAL]:
             - Analiza si la explicación se beneficiaría de un soporte visual para reforzar el aprendizaje (ej: anatomía de órganos, trazados, placas, lesiones, diagramas de flujo, tablas comparativas, procesos fisiológicos, etc.). 
             - NO TE LIMITES a categorías fijas; recomienda cualquier recurso visual que mejore la retención del alumno.
-            - Si es pertinente, coloca una recomendación breve. Si no, coloca null.
+            - Si es pertinente, coloca una recomendación breve. Si no, deja en blanco.
 
             [REGLA DE ORO DE DIVERSIDAD INTERNA]:
             - Cada una de las ${amount} preguntas de este JSON debe ser TOTALMENTE diferente a las demás en el mismo lote.

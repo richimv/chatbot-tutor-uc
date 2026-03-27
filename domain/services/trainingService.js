@@ -82,7 +82,7 @@ class TrainingService {
             career = categoryOptions.career || null;
         } else {
             // Modo Legacy
-            target = 'MEDICINA'; 
+            target = 'MEDICINA';
             areas = [this.normalizeTopic(categoryOptions)];
         }
 
@@ -199,7 +199,7 @@ class TrainingService {
                 }
 
                 const areaPrompt = sampledAreas.join(', ');
-                
+
                 let aiQuestions;
                 const isAdmin = subscriptionTier === 'admin';
 
@@ -276,7 +276,7 @@ class TrainingService {
             }
 
             const combined = [...questions, ...newQuestions].slice(0, limit);
-            
+
             // ✅ ANTI-REPETICIÓN: Marcar TODO el lote entregado como visto
             const finalIds = combined.filter(q => q.id).map(q => q.id);
             if (finalIds.length > 0) {
@@ -291,7 +291,7 @@ class TrainingService {
         }
 
         const bankQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
-        
+
         // ✅ ANTI-REPETICIÓN: Marcar lote del banco como visto
         const finalBankIds = bankQuestions.filter(q => q.id).map(q => q.id);
         if (finalBankIds.length > 0) {
@@ -347,6 +347,11 @@ class TrainingService {
             ${deduplicationText}
             -- FIN PREGUNTAS PROHIBIDAS --
             ⚠️ TU MISIÓN: No solo evites el texto exacto, sino también la temática central de las preguntas anteriores. Sé original, busca escenarios laterales o curiosidades que NO estén en la lista.
+
+            🚨 REGLA DE ORO DE OPCIONES (ANTI-SESGO):
+            - SIMETRÍA VISUAL: Todas las opciones deben tener una longitud similar.
+            - NO AL SESGO DE LONGITUD: Bajo ninguna circunstancia la opción correcta debe ser significativamente más larga o detallada que las demás.
+            - DISTRACTORES REALES (TRAMPAS): Las opciones incorrectas deben ser plausibles y estar relacionadas con el tema; evita rellenos obvios o absurdos.
 
             Instrucciones de Calidad:
             1. IDIOMA: ESPAÑOL (Neutro).
