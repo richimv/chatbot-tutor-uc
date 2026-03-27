@@ -383,33 +383,41 @@ class AdminController {
             const rawString = `${q.topic}-${q.question_text}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
-            // ✅ SUBIDA DE IMÁGENES A GCS (si existen)
-            if (req.files) {
+            // ✅ SUBIDA DE IMÁGENES A GCS (si existen o se eliminan)
+            const shouldDeleteQ = q.deleteQuestionImage === 'true' || (q.image_url === '' && method === 'PUT');
+            const shouldDeleteE = q.deleteExplanationImage === 'true' || (q.explanation_image_url === '' && method === 'PUT');
+
+            if (req.files || shouldDeleteQ || shouldDeleteE) {
+                // Obtener datos actuales para limpieza
+                const oldData = await db.query('SELECT image_url, explanation_image_url FROM question_bank WHERE id = $1', [id]);
+                const currentQuestionImg = oldData.rows[0]?.image_url;
+                const currentExplanationImg = oldData.rows[0]?.explanation_image_url;
+
                 // 1. Imagen del ENUNCIADO
-                if (req.files['questionImage'] && req.files['questionImage'][0]) {
+                if (req.files && req.files['questionImage'] && req.files['questionImage'][0]) {
                     try {
+                        if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
                         q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
                     } catch (err) {
                         console.error('Error updating question image:', err);
                     }
-                } else if (q.deleteQuestionImage === 'true') {
+                } else if (shouldDeleteQ) {
+                    if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
                     q.image_url = null;
                 }
 
                 // 2. Imagen de la EXPLICACIÓN
-                if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
+                if (req.files && req.files['explanationImage'] && req.files['explanationImage'][0]) {
                     try {
+                        if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
                         q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
                     } catch (err) {
                         console.error('Error updating explanation image:', err);
                     }
-                } else if (q.deleteExplanationImage === 'true') {
+                } else if (shouldDeleteE) {
+                    if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
                     q.explanation_image_url = null;
                 }
-            } else {
-                // Si no hay archivos, procesar eliminaciones manuales (si vienen en body)
-                if (q.deleteQuestionImage === 'true') q.image_url = null;
-                if (q.deleteExplanationImage === 'true') q.explanation_image_url = null;
             }
 
             const updateQuery = `
@@ -454,6 +462,15 @@ class AdminController {
     async deleteSingleQuestion(req, res) {
         try {
             const { id } = req.params;
+
+            // ✅ LIMPIEZA DE GCS: Obtener URLs antes de borrar el registro
+            const qData = await db.query('SELECT image_url, explanation_image_url FROM question_bank WHERE id = $1', [id]);
+            if (qData.rows.length > 0) {
+                const { image_url, explanation_image_url } = qData.rows[0];
+                if (image_url) await mediaController.deleteFile(image_url);
+                if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+            }
+
             const result = await db.query('DELETE FROM question_bank WHERE id = $1 RETURNING id', [id]);
             if (result.rowCount === 0) return res.status(404).json({ error: 'Pregunta no encontrada.' });
 

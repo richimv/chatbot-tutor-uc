@@ -523,7 +523,10 @@ class RepasoManager {
                     <i class="fas fa-grip-vertical drag-handle"></i>
                     <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" onclick="event.stopPropagation()">
                 </div>
-                <div class="card-row-front">${this.escapeHtml(c.front_content)}</div>
+                <div class="card-row-front">
+                    ${c.image_url ? '<i class="fas fa-image" style="color:#60a5fa; margin-right:8px;" title="Tiene imagen de contexto"></i>' : ''}
+                    ${this.escapeHtml(c.front_content)}
+                </div>
                 <div class="card-row-back">${this.escapeHtml(c.back_content)}</div>
                 <div class="card-row-actions">
                     <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`)">
@@ -645,11 +648,13 @@ class RepasoManager {
 
         this.isSelectionMode = checked.length > 0;
 
-        if (checked.length > 0) {
-            btn.style.display = 'inline-flex';
-            btn.innerHTML = `<i class="fas fa-trash"></i> Eliminar (${checked.length})`;
-        } else {
-            btn.style.display = 'none';
+        if (btn) {
+            if (checked.length > 0) {
+                btn.style.display = 'inline-flex';
+                btn.innerHTML = `<i class="fas fa-trash"></i> Eliminar (${checked.length})`;
+            } else {
+                btn.style.display = 'none';
+            }
         }
 
         const total = document.querySelectorAll('.card-item-checkbox').length;

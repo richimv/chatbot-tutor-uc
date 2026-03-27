@@ -433,12 +433,16 @@ function renderQuestion() {
     // Imagen (si existe)
     const imgContainer = document.getElementById('questionImageContainer');
     const imgElement = document.getElementById('questionImage');
+    const layout = document.getElementById('questionLayout');
+
     if (q.image_url) {
         imgElement.src = window.resolveImageUrl(q.image_url);
         imgContainer.classList.remove('hidden');
+        if (layout) layout.classList.add('has-image');
     } else {
         imgContainer.classList.add('hidden');
         imgElement.src = '';
+        if (layout) layout.classList.remove('has-image');
     }
 
     // Texto Pregunta
@@ -820,14 +824,15 @@ window.showExamReview = async function () {
 
         card.appendChild(headerDiv);
 
-        // Imagen (si existe)
+        // Imagen de Pregunta (si existe)
         if (q.image_url) {
+            card.classList.add('has-image'); // Para layout responsivo en CSS
             const imgContainer = document.createElement('div');
-            imgContainer.style.textAlign = 'center';
-            imgContainer.style.marginBottom = '1.25rem';
+            imgContainer.className = 'review-q-image-container';
             const img = document.createElement('img');
             img.src = window.resolveImageUrl(q.image_url);
-            img.style.maxHeight = '200px';
+            img.loading = 'lazy';
+            img.style.maxHeight = '250px';
             img.style.borderRadius = '8px';
             imgContainer.appendChild(img);
             card.appendChild(imgContainer);
@@ -851,7 +856,6 @@ window.showExamReview = async function () {
                 optDiv.classList.add('r-correct');
                 textSpan.innerHTML = `<strong>${optText}</strong>`;
             } else if (ans && optIdx === ans.userAnswer) {
-                // El usuario marcó esta y era incorrecta
                 optDiv.classList.add('r-wrong');
                 textSpan.innerHTML = `<strong>${optText}</strong>`;
             }
@@ -866,14 +870,14 @@ window.showExamReview = async function () {
         expDiv.className = 'review-explanation';
         
         let explanationHTML = `<strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>`;
-        
-        // ✅ NUEVO: Imagen en Revisión
+        explanationHTML += `${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
+
+        // ✅ NUEVO: Imagen en Revisión (AHORA ABAJO DEL TEXTO)
         if (q.explanation_image_url) {
             const imgUrl = window.resolveImageUrl(q.explanation_image_url);
-            explanationHTML += `<div style="text-align:center; margin-bottom:1rem;"><img src="${imgUrl}" style="max-width:100%; max-height:200px; border-radius:8px;"></div>`;
+            explanationHTML += `<div style="text-align:center; margin-top:1.5rem;"><img src="${imgUrl}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"></div>`;
         }
         
-        explanationHTML += `${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
         expDiv.innerHTML = explanationHTML;
         card.appendChild(expDiv);
 

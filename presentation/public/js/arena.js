@@ -141,6 +141,7 @@ const Arena = (function () {
         ui.game.grid.innerHTML = '';
 
         // --- Render Image if exists ---
+        const layout = document.getElementById('arenaQuestionLayout');
         if (ui.game.imageContainer) {
             ui.game.imageContainer.innerHTML = '';
             ui.game.imageContainer.classList.remove('visible');
@@ -148,9 +149,16 @@ const Arena = (function () {
                 const img = document.createElement('img');
                 img.src = window.resolveImageUrl(q.image_url);
                 img.className = 'q-image';
-                img.onerror = () => ui.game.imageContainer.classList.remove('visible');
+                img.loading = 'lazy'; // ✅ NUEVO
+                img.onerror = () => {
+                    ui.game.imageContainer.classList.remove('visible');
+                    if (layout) layout.classList.remove('has-image');
+                };
                 ui.game.imageContainer.appendChild(img);
                 ui.game.imageContainer.classList.add('visible');
+                if (layout) layout.classList.add('has-image');
+            } else {
+                if (layout) layout.classList.remove('has-image');
             }
         }
 

@@ -232,8 +232,22 @@ class QuizController {
 
             const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
             
-            // Reutilizamos el batch method enviando un array de 1 elemento
-            await TrainingRepository.createFlashcardsBatch(userId, Array.isArray(question) ? question : [question], topic || 'General', attemptId || null, moduleName);
+            // ✅ ESTRATEGIA "SOLO RESPUESTA": Para optimizar UI y velocidad de repaso,
+            // el dorso solo contendrá el texto de la respuesta correcta.
+            const questionsArray = Array.isArray(question) ? question : [question];
+            const processedQuestions = questionsArray.map(q => {
+                const correctAnswer = (q.options && q.correct_option_index !== undefined) 
+                    ? q.options[q.correct_option_index] 
+                    : q.explanation; // Fallback if no options (unlikely from sim)
+
+                return {
+                    ...q,
+                    explanation: correctAnswer, // Dorso resumido
+                    explanation_image_url: null // Sin imagen en el dorso para evitar desbordes
+                };
+            });
+
+            await TrainingRepository.createFlashcardsBatch(userId, processedQuestions, topic || 'General', attemptId || null, moduleName);
 
             res.json({ success: true, message: 'Flashcard guardada exitosamente.' });
         } catch (error) {

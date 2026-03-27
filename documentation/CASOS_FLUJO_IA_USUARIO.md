@@ -44,7 +44,34 @@ Solo cuando el Escaneo Global detecta que el banco local es insuficiente para co
 
 ## 🛠️ Resumen de Implementación Técnica
 
--   **trainingService.js**: Responsable del Escaneo Global y la reposición IA transparente para todos los usuarios.
--   **userAiService.js**: Responsable de la generación experta (Modo Fast) para usuarios Free, Basic y Advanced.
--   **mlService.js**: Responsable de la orquestación RAG (Modo High-Fidelity) exclusiva para Administradores.
--   **Propósito Final**: Que la estadística del usuario (Barras de Rendimiento) se vea bien distribuida y alineada a los ejes oficiales del MINSA, con la latencia mínima posible.
+- **trainingService.js**: Responsable del Escaneo Global y la reposición IA transparente.
+- **userAiService.js**: Generación experta (Modo Fast) para usuarios Free, Basic y Advanced.
+- **mlService.js**: Orquestación RAG (Modo High-Fidelity) exclusiva para Administradores.
+
+---
+
+## 🚦 Lógica de Activación IA (Triggers)
+
+El sistema activa la IA de reposición **SOLO** en los siguientes casos:
+
+1.  **Déficit de Stock Absoluto**: Cuando el Banco Local tiene menos de 5 preguntas disponibles (no vistas por el usuario en las últimas 24h) para el conjunto de áreas seleccionadas.
+2.  **Déficit de Diversidad Estadística**: Si el usuario selecciona 5 o más áreas (ej: Simulacro ENAM completo), pero el banco solo tiene stock para 4 áreas o menos. Se fuerza la IA para garantizar que el examen tenga al menos una pregunta de cada eje temático.
+3.  **Optimización Post-Fix**: Tras la corrección del "Cuello de Botella (rn <= 3)", el sistema ahora permite que un solo tema agote su stock completo del banco (hasta 5) antes de llamar a la IA.
+
+### 🚫 ¿Cuándo NO se activa la IA?
+- Si el banco tiene stock suficiente (5+ preguntas) y variado para la configuración del usuario.
+- Si el usuario es **Free** y ha agotado sus vidas diarias (bloqueo preventivo en el middleware).
+
+### 💡 Beneficio del Fix
+Se evita la redundancia: Antes, el sistema "cegaba" la búsqueda a solo 3 preguntas por área. Ahora, el sistema es capaz de "ver" hasta 5 preguntas por área, permitiendo que las áreas populares se sirvan 100% del banco sin costo de IA.
+
+---
+
+## 🛠️ Mecanismo de Selección Local (Garantía de No-Sesgo)
+
+Para evitar que las preguntas se "agoten" para todos los usuarios simultáneamente, el sistema implementa **Aislamiento por Usuario**:
+
+1.  **user_question_history**: Las preguntas se marcan como "vistas" **solo** para el usuario que las realizó. Una pregunta respondida por el `Usuario A` sigue estando 100% disponible para el `Usuario B`.
+2.  **Olvido Saludable (24h Window)**: El sistema solo excluye preguntas vistas en las últimas 24 horas. Si el usuario realizó una pregunta hace más de un día, esta vuelve a ser elegible para el banco local, optimizando el stock y reforzando el aprendizaje a largo plazo.
+3.  **times_used (Metadata)**: La columna `times_used` en la tabla `question_bank` es puramente estadística (para saber cuáles son las preguntas más populares). **NO** se utiliza como filtro de exclusión global.
+4.  **rn Adaptive Sampling**: El motor utiliza `ROW_NUMBER()` dinámico. Si eliges pocos temas, te da el stock completo. Si eliges muchos, te obliga a tomar 1 de cada uno para que tus gráficas de rendimiento sean equilibradas y representativas de todas las áreas clínicas.

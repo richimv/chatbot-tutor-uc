@@ -33,32 +33,43 @@ const checkAILimits = (type) => {
 
             let user = result.rows[0];
             const tier = user.subscription_tier || 'free';
-            const todayDate = new Date().toISOString().split('T')[0];
+            
+            // --- LOGICA DE RESETEO ROBUSTA ---
+            const now = new Date();
+            const todayDate = now.toISOString().split('T')[0]; // Hoy en UTC: "YYYY-MM-DD"
 
-            // 1. REVISION DE EXPIRACION DE PLAN
+            let lastResetDateStr = "";
+            if (user.last_usage_reset) {
+                // Si pg devuelve objeto Date, toISOString() es seguro. 
+                // Si devuelve string (depende de config), tomamos solo la parte de la fecha.
+                lastResetDateStr = (user.last_usage_reset instanceof Date) 
+                    ? user.last_usage_reset.toISOString().split('T')[0]
+                    : String(user.last_usage_reset).split('T')[0];
+            }
+
+            // 1. REVISIÓN DE EXPIRACIÓN DE PLAN
             if (tier !== 'free') {
                 if (user.subscription_expires_at) {
                     const expiresAt = new Date(user.subscription_expires_at);
                     if (Date.now() > expiresAt.getTime()) {
-                        // Plan Vencido -> Reducir a 'free' por seguridad
                         await pool.query("UPDATE users SET subscription_tier = 'free' WHERE id = $1", [userId]);
                         user.subscription_tier = 'free';
                     }
                 }
-                // Si subscription_expires_at es nulo (usuarios antiguos de transición), no lo rebajamos automáticamente.
             }
 
-            req.userTier = user.subscription_tier; // Inyectado para que los Controladores sepan el nivel exacto
+            req.userTier = user.subscription_tier;
 
-            // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES POR CAMBIO TEMPORAL)
-            if (!user.last_usage_reset || user.last_usage_reset.toISOString().split('T')[0] !== todayDate) {
-
-                const lastResetDate = user.last_usage_reset ? new Date(user.last_usage_reset) : new Date(0);
-                const currentMonth = new Date().getMonth();
+            // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES)
+            if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
+                console.log(`♻️ [Quota Reset] Iniciando reset para ${user.subscription_tier} (${userId}). De ${lastResetDateStr} a ${todayDate}`);
+                
+                const lastResetDateObj = user.last_usage_reset ? new Date(user.last_usage_reset) : new Date(0);
+                const currentMonth = now.getUTCMonth();
+                const lastResetMonth = lastResetDateObj.getUTCMonth();
 
                 let resetMonthlyFlashcards = false;
-
-                if (!user.last_usage_reset || lastResetDate.getMonth() !== currentMonth) {
+                if (!user.last_usage_reset || lastResetMonth !== currentMonth) {
                     resetMonthlyFlashcards = true;
                 }
 
@@ -87,6 +98,7 @@ const checkAILimits = (type) => {
                 user.daily_ai_usage = 0;
                 user.daily_arena_usage = 0;
                 user.daily_simulator_usage = 0;
+                user.last_usage_reset = todayDate;
             }
 
             // 3. MATRIZ DE LÍMITES POR TIER (Calculado en base a matemática del doc MD)

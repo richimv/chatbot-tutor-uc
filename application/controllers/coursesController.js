@@ -317,47 +317,36 @@ class CoursesController {
                 : parseInt(req.params.id, 10);
 
             // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS (Update)
-            if (req.file) {
-                const folderMap = {
-                    'book': 'recursos',
-                    'course': 'cursos',
-                    'career': 'carreras',
-                    'resource': 'recursos',
-                    'other': 'recursos'
-                };
-                const subFolder = folderMap[entityType] || 'recursos';
+            // ✅ GESTIÓN DE IMÁGENES GCS (si existe archivo o se mandó borrar)
+            const shouldDelete = req.body.deleteImage === 'true' || (req.body.image_url === '' && req.method === 'PUT');
 
-                if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
+            if (req.file || shouldDelete) {
+                // 1. Obtener item actual para limpieza
+                const oldItem = await this.adminService.getById(entityType, entityId);
+                const currentImg = oldItem?.image_url;
+
+                if (req.file) {
                     try {
-                        // 1. Obtener item actual para limpieza (opcional si se desea borrar el anterior de GCS)
-                        // Por simplicidad en versión 1, dejamos los archivos antiguos (history), 
-                        // pero marcamos el nuevo en la base de datos.
+                        // Borrar antigua si existe
+                        if (currentImg) await mediaController.deleteFile(currentImg);
                         
-                        // 2. Subir nueva versión a GCS
+                        // Subir nueva versión a GCS (Auto-optimizada a WebP)
+                        const folderMap = {
+                            'book': 'recursos',
+                            'course': 'cursos',
+                            'career': 'carreras',
+                            'resource': 'recursos'
+                        };
+                        const subFolder = folderMap[entityType] || 'recursos';
                         req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
                     } catch (err) {
-                        console.error('❌ Error subiendo a GCS en actualización:', err);
+                        console.error('❌ Error gestionando imagen GCS en actualización:', err);
                     }
+                } else if (shouldDelete) {
+                    // CASO: Borrado explícito o flag vacío
+                    if (currentImg) await mediaController.deleteFile(currentImg);
+                    req.body.image_url = null;
                 }
-            } else if (['book', 'course', 'career'].includes(entityType) && req.body.deleteImage === 'true') {
-                // CASO 2: Solicitud explícita de borrar imagen
-                const oldItem = await this.adminService.getById(entityType, entityId);
-                if (oldItem && oldItem.image_url) {
-                    try {
-                        const oldUrl = oldItem.image_url;
-                        if (oldUrl.includes('supabase.co')) {
-                            const oldPath = oldUrl.split('/portadas/')[1];
-                            await supabase.storage.from('portadas').remove([oldPath]);
-                        } else if (!oldUrl.startsWith('http')) {
-                            const oldLocalPath = path.join(__dirname, '../../presentation/public', oldUrl);
-                            if (fs.existsSync(oldLocalPath)) fs.unlinkSync(oldLocalPath);
-                        }
-                    } catch (err) { console.error(err); }
-                }
-                req.body.image_url = null; // Enviar NULL para borrar en BD
-                delete req.body.image_url; // Wait, update handles undefined? No, explicit null is better if supported.
-                // adminService.update filters undefined? Let's assume sending null updates it to null.
-                req.body.image_url = null;
             }
 
             // ✅ CRITICAL BUGFIX: Cuando `FormData` envía arrays, los convierte en Strings JSON (e.g. "[1,2]").
@@ -422,24 +411,13 @@ class CoursesController {
                 ? req.params.id
                 : parseInt(req.params.id, 10);
 
-            // ✅ CLEANUP: Borrar imagen de SUPABASE si es un libro
-            // ✅ CLEANUP: Borrar imagen de SUPABASE si es un libro, curso o carrera
-            if (['book', 'course', 'career'].includes(entityType)) {
-                const oldItem = await this.adminService.getById(entityType, entityId);
-                if (oldItem && oldItem.image_url) {
-                    try {
-                        const oldUrl = oldItem.image_url;
-                        if (oldUrl.includes('supabase.co')) {
-                            const oldPath = oldUrl.split('/portadas/')[1];
-                            await supabase.storage.from('portadas').remove([oldPath]);
-                        } else {
-                            // Intento de borrado local legacy por si acaso
-                            const oldPath = path.join(__dirname, '../../presentation/public', oldItem.image_url);
-                            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                        }
-                    } catch (err) {
-                        console.error('Error deleting image on entity delete:', err);
-                    }
+            // ✅ CLEANUP: Borrar imagen de GCS si existe
+            const oldItem = await this.adminService.getById(entityType, entityId);
+            if (oldItem && oldItem.image_url) {
+                try {
+                    await mediaController.deleteFile(oldItem.image_url);
+                } catch (err) {
+                    console.error('Error deleting image on entity delete:', err);
                 }
             }
 

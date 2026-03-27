@@ -557,3 +557,49 @@ body {
         padding: 1.5rem;
     }
 }
+
+/* --- ✅ NUEVO: Estilos para Gestión de Imágenes (Upload/Remove) --- */
+.image-upload-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.remove-img-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-img-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.05);
+}
+
+.upload-img-btn {
+    white-space: nowrap;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 15px;
+    border-radius: 8px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.upload-img-btn:hover {
+    background: #4b5563;
+}

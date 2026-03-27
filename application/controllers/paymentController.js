@@ -94,6 +94,7 @@ exports.handleWebhook = async (req, res) => {
                 const plan = PLANS[planId] || PLANS.basic;
 
                 if (paidAmount >= plan.price - 0.1) { // Tolerancia decimal
+                    const todayDate = new Date().toISOString().split('T')[0];
                     await pool.query(
                         `UPDATE users SET 
                             subscription_status = 'active',
@@ -102,9 +103,11 @@ exports.handleWebhook = async (req, res) => {
                             daily_ai_usage = 0,
                             monthly_flashcards_usage = 0,
                             daily_arena_usage = 0,
+                            daily_simulator_usage = 0,
+                            last_usage_reset = $4,
                             payment_id = $2
                          WHERE id = $3`,
-                        [planId, paymentId, userId]
+                        [planId, paymentId, userId, todayDate]
                     );
                     console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
                 } else {

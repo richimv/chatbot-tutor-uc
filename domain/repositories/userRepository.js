@@ -15,11 +15,14 @@ class UserRepository {
             row.name,
             row.subscription_status,
             row.payment_id,
-            row.usage_count,    // DB envía snake_case
-            row.max_free_limit,  // DB envía snake_case
+            row.usage_count,
+            row.max_free_limit,
             row.subscription_tier,
             row.subscription_expires_at,
-            row.daily_simulator_usage
+            row.daily_simulator_usage,
+            row.daily_ai_usage,
+            row.daily_arena_usage,
+            row.last_usage_reset
         );
     }
 
@@ -95,6 +98,15 @@ class UserRepository {
 
         const simUsage = userData.dailySimulatorUsage !== undefined ? userData.dailySimulatorUsage : userData.daily_simulator_usage;
         if (simUsage !== undefined) { fields.push(`daily_simulator_usage = $${idx++}`); values.push(simUsage); }
+
+        const aiUsage = userData.dailyAiUsage !== undefined ? userData.dailyAiUsage : userData.daily_ai_usage;
+        if (aiUsage !== undefined) { fields.push(`daily_ai_usage = $${idx++}`); values.push(aiUsage); }
+
+        const arenaUsage = userData.dailyArenaUsage !== undefined ? userData.dailyArenaUsage : userData.daily_arena_usage;
+        if (arenaUsage !== undefined) { fields.push(`daily_arena_usage = $${idx++}`); values.push(arenaUsage); }
+
+        const lastReset = userData.lastUsageReset !== undefined ? userData.lastUsageReset : userData.last_usage_reset;
+        if (lastReset !== undefined) { fields.push(`last_usage_reset = $${idx++}`); values.push(lastReset); }
 
         if (fields.length === 0) return this.findById(id);
 

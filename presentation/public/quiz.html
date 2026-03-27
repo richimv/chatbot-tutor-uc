@@ -47,13 +47,15 @@
             </div>
         </div>
 
-        <div id="questionImageContainer" class="hidden" style="margin-bottom: 2rem; text-align: center;">
-            <img id="questionImage" src="" alt="Imagen de contexto"
-                style="max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-        </div>
+        <div id="questionLayout" class="question-layout-grid">
+            <div id="questionImageContainer" class="hidden" style="text-align: center;">
+                <img id="questionImage" src="" alt="Imagen de contexto" loading="lazy"
+                    style="max-width: 100%; max-height: 450px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            </div>
 
-        <div class="question-text" id="questionText">
-            Cargando pregunta...
+            <div class="question-text" id="questionText">
+                Cargando pregunta...
+            </div>
         </div>
 
         <div class="options-grid" id="optionsGrid">
@@ -64,11 +66,11 @@
             <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                 <i class="fas fa-info-circle"></i> Explicación Médica
             </h4>
-            <div id="explanationImageContainer" class="hidden" style="margin-bottom: 1rem; text-align: center;">
-                <img id="explanationImage" src="" alt="Imagen explicativa" 
-                    style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <p id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 1.5rem;"></p>
+            <div id="explanationImageContainer" class="hidden" style="margin-top: 1rem; margin-bottom: 1.5rem; text-align: center;">
+                <img id="explanationImage" src="" alt="Imagen explicativa" loading="lazy"
+                    style="max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             </div>
-            <p id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #cbd5e1;"></p>
             <button id="nextBtn"
                 style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: none; padding: 0.5rem 1.5rem; border-radius: 8px; color: white; cursor: pointer;">
                 Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>

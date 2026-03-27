@@ -539,28 +539,8 @@ class AdminManager {
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', currentItem?.name || '', true) +
-                    this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false);
-
-                // Imagen de Carreras (Unificado)
-
-                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false) +
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
-
-                // Inicializar lógica de eliminación de imagen (reutilizada)
-                setTimeout(() => {
-                    const removeBtn = document.getElementById('remove-cover-btn');
-                    if (removeBtn) {
-                        removeBtn.onclick = () => {
-                            document.getElementById('generic-delete-image').value = 'true';
-                            const preview = document.getElementById('current-cover-preview');
-                            if (preview) preview.style.display = 'none';
-                            const urlInput = document.getElementById('generic-image-url');
-                            if (urlInput) urlInput.value = '';
-                            const fileInput = document.getElementById('generic-image-file');
-                            if (fileInput) fileInput.value = '';
-                        };
-                    }
-                }, 0);
                 break;
             case 'question':
                 title.textContent = id ? 'Editar Pregunta' : 'Añadir Pregunta';
@@ -822,28 +802,8 @@ class AdminManager {
 
                     // ✅ OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
                     // Se crea una copia [...Array] para no mutar el original desordenadamente.
-                    this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book');
-
-                // Imagen de Curso (Unificado)
-
-                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
+                    this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book') +
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
-
-                // Inicializar lógica de eliminación de imagen
-                setTimeout(() => {
-                    const removeBtn = document.getElementById('remove-cover-btn');
-                    if (removeBtn) {
-                        removeBtn.onclick = () => {
-                            document.getElementById('generic-delete-image').value = 'true';
-                            const preview = document.getElementById('current-cover-preview');
-                            if (preview) preview.style.display = 'none';
-                            const urlInput = document.getElementById('generic-image-url');
-                            if (urlInput) urlInput.value = '';
-                            const fileInput = document.getElementById('generic-image-file');
-                            if (fileInput) fileInput.value = '';
-                        };
-                    }
-                }, 0);
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
@@ -925,30 +885,7 @@ class AdminManager {
                     </div>
                 </div>
                 `;
-                fieldsHTML += `<input type="hidden" id="generic-delete-image" value="false">` +
-                    this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', currentItem?.image_url || '');
-
-                // Initialize Logic
-                setTimeout(() => {
-                    // Remove Image Button Logic
-                    const removeBtn = document.getElementById('remove-cover-btn');
-                    if (removeBtn) {
-                        removeBtn.onclick = () => {
-                            document.getElementById('generic-delete-image').value = 'true';
-                            const preview = document.getElementById('current-cover-preview');
-                            if (preview) preview.style.display = 'none';
-                            const urlInput = document.getElementById('generic-image-url');
-                            if (urlInput) urlInput.value = '';
-                            const fileInput = document.getElementById('generic-image-file');
-                            if (fileInput) fileInput.value = '';
-                        };
-                    }
-
-
-                    // Resource Type Toggle Logic (simplified since metadata fields are removed)
-                    const typeSelect = document.getElementById('generic-type');
-
-                }, 0);
+                fieldsHTML += this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', currentItem?.image_url || '');
                 break;
         }
 
@@ -1111,20 +1048,25 @@ class AdminManager {
                     <i class="fas fa-image" style="color: var(--accent-color);"></i> ${label}
                 </label>
                 
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <input type="hidden" id="${id}-delete-flag" value="false">
+
+                <div class="image-upload-actions">
                     <input type="text" id="${id}-url" name="${id}-url" value="${value}" 
-                        placeholder="Ruta GCS (ej: test.png) o URL externa" 
+                        placeholder="Ruta GCS o URL externa" 
                         style="flex: 1;"
                         oninput="window.adminManager.updateLivePreview('${id}')">
                     
+                    <button type="button" class="remove-img-btn" title="Eliminar Imagen" onclick="window.adminManager.removeImage('${id}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+
                     <input type="file" id="${id}-file" name="${id}-file" style="display: none;" accept="image/*">
-                    <button type="button" class="btn-secondary btn-small" onclick="document.getElementById('${id}-file').click()" 
-                        style="white-space: nowrap; height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 15px; border-radius: 8px;">
-                        <i class="fas fa-upload"></i> Subir Local
+                    <button type="button" class="upload-img-btn" onclick="document.getElementById('${id}-file').click()">
+                        <i class="fas fa-upload"></i> <span class="hide-mobile">Subir Local</span>
                     </button>
                 </div>
 
-                <!-- Contenedor de Previsualización en Tiempo Real -->
+                <!-- Contenedor de Previsualización -->
                 <div id="${id}-preview-container" style="display: ${value ? 'block' : 'none'}; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
                     <small style="display: block; color: var(--text-muted); margin-bottom: 5px;">Vista Previa:</small>
                     <img id="${id}-preview-img" src="${previewUrl}" alt="Preview" 
@@ -1133,10 +1075,31 @@ class AdminManager {
                 </div>
 
                 <small id="${id}-file-info" style="display: block; margin-top: 8px; color: var(--text-muted); font-size: 0.85em; opacity: 0.8;">
-                    <i class="fas fa-info-circle"></i> <b>Tip:</b> Si subes un archivo local, este tendrá prioridad sobre el texto.
+                    <i class="fas fa-info-circle"></i> <b>Tip:</b> Si subes un archivo local, este tendrá prioridad.
                 </small>
             </div>
         `;
+    }
+
+    /**
+     * ✅ NUEVO: Lógica unificada para marcar imagen como eliminada en el frontend.
+     */
+    removeImage(id) {
+        const flag = document.getElementById(`${id}-delete-flag`);
+        const urlInput = document.getElementById(`${id}-url`);
+        const fileInput = document.getElementById(`${id}-file`);
+        const preview = document.getElementById(`${id}-preview-container`);
+        const info = document.getElementById(`${id}-file-info`);
+
+        if (flag) flag.value = 'true';
+        if (urlInput) urlInput.value = '';
+        if (fileInput) fileInput.value = '';
+        if (preview) preview.style.display = 'none';
+        
+        if (info) {
+            info.innerHTML = `<i class="fas fa-trash" style="color: var(--danger-color);"></i> Imagen marcada para eliminar al guardar.`;
+            info.style.color = 'var(--danger-color)';
+        }
     }
 
     /**
@@ -1409,7 +1372,7 @@ class AdminManager {
                     careerFormData.append('area', document.getElementById('generic-area').value);
 
                     // Manejo de imagen
-                    const deleteCareerImage = document.getElementById('generic-delete-image')?.value;
+                    const deleteCareerImage = document.getElementById('generic-image-delete-flag')?.value;
                     if (deleteCareerImage === 'true') careerFormData.append('deleteImage', 'true');
 
                     const careerFileInput = document.getElementById('generic-image-file');
@@ -1443,7 +1406,7 @@ class AdminManager {
                     courseFormData.append('careerIds', JSON.stringify(careerIds));
 
                     // Manejo de imagen
-                    const deleteCourseImage = document.getElementById('generic-delete-image')?.value;
+                    const deleteCourseImage = document.getElementById('generic-image-delete-flag')?.value;
                     if (deleteCourseImage === 'true') courseFormData.append('deleteImage', 'true');
 
                     const courseFileInput = document.getElementById('generic-image-file');
@@ -1509,7 +1472,7 @@ class AdminManager {
                     formData.append('courseIds', JSON.stringify(resourceCourseIds));
 
                     // ✅ NUEVO: Manejo de eliminación de imagen
-                    const deleteImageFlag = document.getElementById('generic-delete-image')?.value;
+                    const deleteImageFlag = document.getElementById('generic-image-delete-flag')?.value;
                     if (deleteImageFlag === 'true') {
                         formData.append('deleteImage', 'true');
                     }
@@ -1574,18 +1537,17 @@ class AdminManager {
                     // ✅ Lógica de Imagen de ENUNCIADO
                     const qImageFile = document.getElementById('generic-image-file');
                     const qImageUrl = document.getElementById('generic-image-url');
+                    const qDeleteFlag = document.getElementById('generic-image-delete-flag');
                     
                     if (qImageFile && qImageFile.files[0]) {
                         questionFormData.append('questionImage', qImageFile.files[0]);
                     } else if (qImageUrl && qImageUrl.value.trim()) {
                         questionFormData.append('image_url', qImageUrl.value.trim());
                     } else if (method === 'PUT') {
-                        // IMPORTANTE: Mantener la URL actual si no hay cambios y no se pidió borrar
-                        if (document.getElementById('generic-delete-image')?.value === 'true') {
+                        if (qDeleteFlag && qDeleteFlag.value === 'true') {
                             questionFormData.append('deleteQuestionImage', 'true');
                             questionFormData.append('image_url', '');
                         } else {
-                            // Enviar la URL que ya estaba (está en el placeholder o valor inicial del input)
                             questionFormData.append('image_url', qImageUrl.value || '');
                         }
                     }
@@ -1593,13 +1555,14 @@ class AdminManager {
                     // ✅ Lógica de Imagen de EXPLICACIÓN
                     const explImageFile = document.getElementById('generic-explanation-image-file');
                     const explImageUrl = document.getElementById('generic-explanation-image-url');
+                    const explDeleteFlag = document.getElementById('generic-explanation-image-delete-flag');
                     
                     if (explImageFile && explImageFile.files[0]) {
                         questionFormData.append('explanationImage', explImageFile.files[0]);
                     } else if (explImageUrl && explImageUrl.value.trim()) {
                         questionFormData.append('explanation_image_url', explImageUrl.value.trim());
                     } else if (method === 'PUT') {
-                        if (document.getElementById('generic-delete-explanation-image')?.value === 'true') {
+                        if (explDeleteFlag && explDeleteFlag.value === 'true') {
                             questionFormData.append('deleteExplanationImage', 'true');
                             questionFormData.append('explanation_image_url', '');
                         } else {

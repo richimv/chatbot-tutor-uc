@@ -164,6 +164,13 @@ const FlashcardManager = (() => {
         renderMedia(ui.frontImage, card.image_url);
         renderMedia(ui.backImage, card.explanation_image_url);
 
+        // Toggle 'has-image' class for responsive layout on front face
+        const frontFace = ui.card.querySelector('.card__face--front');
+        if (frontFace) {
+            if (card.image_url) frontFace.classList.add('has-image');
+            else frontFace.classList.remove('has-image');
+        }
+
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
         // We use a timeout to let the DOM render the content first (even if microseconds)
         // actually not needed if synchronous, but better for layout reflow calc.
