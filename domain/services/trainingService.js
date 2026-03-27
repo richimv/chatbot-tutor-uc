@@ -269,17 +269,20 @@ class TrainingService {
             let newIds = [];
             if (newQuestions.length > 0) {
                 newIds = await repository.saveQuestionBankBatch(newQuestions, areas[0], dbDomain, dbTarget, career);
-            }
-
-            // 4. Marcar como vistas las nuevas y FILTRAR REPETIDAS
-            if (newIds && newIds.length > 0) {
-                await repository.markQuestionsAsSeen(userId, newIds);
-                newQuestions.forEach((q, index) => {
-                    if (newIds[index]) q.id = newIds[index];
+                // ✅ VINCULACIÓN DE IDs: Asignar IDs reales a los objetos en memoria para que el marcado de seen funcione
+                newQuestions.forEach((q, idx) => {
+                    if (newIds[idx]) q.id = newIds[idx];
                 });
             }
 
             const combined = [...questions, ...newQuestions].slice(0, limit);
+            
+            // ✅ ANTI-REPETICIÓN: Marcar TODO el lote entregado como visto
+            const finalIds = combined.filter(q => q.id).map(q => q.id);
+            if (finalIds.length > 0) {
+                await repository.markQuestionsAsSeen(userId, finalIds);
+            }
+
             return {
                 questions: combined,
                 source: questions.length > 0 ? 'HYBRID' : 'IA',
@@ -288,7 +291,12 @@ class TrainingService {
         }
 
         const bankQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
-        await repository.markQuestionsAsSeen(userId, bankQuestions.filter(q => q.id).map(q => q.id));
+        
+        // ✅ ANTI-REPETICIÓN: Marcar lote del banco como visto
+        const finalBankIds = bankQuestions.filter(q => q.id).map(q => q.id);
+        if (finalBankIds.length > 0) {
+            await repository.markQuestionsAsSeen(userId, finalBankIds);
+        }
 
         return {
             questions: bankQuestions,
@@ -312,7 +320,7 @@ class TrainingService {
             // Extraer Contexto de Deduplicación
             let deduplicationText = "No hay contexto previo de deduplicación.";
             try {
-                const pastQuestions = await repository.getRandomQuestionsContext('GENERAL_TRIVIA', null, areas, 15);
+                const pastQuestions = await repository.getRandomQuestionsContext('GENERAL_TRIVIA', null, areas, 30);
                 if (pastQuestions.length > 0) {
                     deduplicationText = pastQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
                 }
@@ -334,10 +342,11 @@ class TrainingService {
             - Estándar Interno: Senior (Alta calidad de redacción y veracidad), pero accesible para el aprendizaje lúdico y el relax.
             
             🚨 REGLA DE ORO DE DEDUPLICACIÓN (CONTEXTO NEGATIVO):
-            ABSOLUTAMENTE PROHIBIDO evaluar los siguientes conceptos exactos:
+            ABSOLUTAMENTE PROHIBIDO evaluar los siguientes conceptos exactos o temas relacionados:
             -- INICIO PREGUNTAS PROHIBIDAS --
             ${deduplicationText}
             -- FIN PREGUNTAS PROHIBIDAS --
+            ⚠️ TU MISIÓN: No solo evites el texto exacto, sino también la temática central de las preguntas anteriores. Sé original, busca escenarios laterales o curiosidades que NO estén en la lista.
 
             Instrucciones de Calidad:
             1. IDIOMA: ESPAÑOL (Neutro).
@@ -347,8 +356,11 @@ class TrainingService {
             
             Genera ${count} preguntas de trivia interesantes y retadoras pero NO estresantes.
             
-            JSON ESTRICTO:
-            [{"question_text":"¿Cuál es el principal factor...?","options":["Concepto A detallado", "Concepto B detallado", "Concepto C detallado", "Concepto D detallado"],"correct_option_index":0,"explanation":"Explicación educativa de 1-2 líneas.","topic":"${areas[0]}"}]
+            JSON ESTRICTO (No incluyas explicaciones fuera del JSON):
+            [{"question_text":"¿Cuál es el principal factor...?","options":["Concepto A", "Concepto B", "Concepto C", "Concepto D"],"correct_option_index":0,"explanation":"Explicación educativa de 1-2 líneas.","topic":"${areas[0]}","visual_support_recommendation":"Recomendación de imagen (ej: Mapa de Europa del siglo XVIII, Diagrama de la fotosíntesis, Retrato de Newton, etc.)"}]
+            
+            🚨 REGLA DE SOPORTE VISUAL:
+            En el campo "visual_support_recommendation", sugiere qué recurso visual ayudaría a reforzar la explicación. Sé creativo y variado (Tablas, Mapas, Diagramas, Pinturas, Fotos históricas).
             
             ⚠️ REGLA DE FORMATO:
             Bajo ninguna circunstancia uses letras ("A)", "B.", "C.-", etc.) al inicio de las opciones.

@@ -21,6 +21,11 @@ class AdminManager {
         };
         this.previewTimer = null; // ✅ Debounce para previsualización
 
+        // Estado de Preguntas (NUEVO)
+        this.currentQuestionDomain = 'all';
+        this.currentQuestionSearch = '';
+        this.searchTimeout = null;
+
         // Elementos del DOM
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
@@ -385,6 +390,9 @@ class AdminManager {
             this.allStudents = await studentsRes.json(); // ✅ NUEVO
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
+
+            // ✅ OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
+            // pero para no romper el flujo actual, cargamos el primer lote.
             this.allQuestions = await questionsRes.json();
 
             // ✅ CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
@@ -480,35 +488,115 @@ class AdminManager {
         container.innerHTML = content;
     }
 
-    // ✅ NUEVO: Interfaz de Preguntas
     displayQuestions() {
         const container = document.getElementById('tab-questions');
-        // ✅ APLICAR ORDENAMIENTO
+        // ✅ APLICAR ORDENAMIENTO (Local sobre lo que ya tenemos cargado)
         const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
         const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
 
-        // Custom header with Bulk Import button
+        const domains = [
+            { id: 'all', name: 'Todos los Dominios' },
+            { id: 'medicine', name: 'Medicina' },
+            { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
+        ];
+
+        // Custom header with Bulk Import button and DOMAIN SELECTOR
         const content = `
-            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
-                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
+            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
+                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px; transition: border-color 0.2s;">
                         <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
-                        <input type="text" class="admin-search-input" placeholder="Buscar preguntas..." data-target-tab="tab-questions" style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                        <input type="text" class="admin-search-input-dynamic" 
+                            placeholder="Buscar preguntas (Servidor)..." 
+                            value="${this.currentQuestionSearch}"
+                            oninput="window.adminManager.handleDynamicSearch(this.value)"
+                            style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                    </div>
+
+                    <select class="form-input" style="width: auto; height: 40px; min-width: 180px;" 
+                        onchange="window.adminManager.handleDomainChange(this.value)">
+                        ${domains.map(d => `<option value="${d.id}" ${this.currentQuestionDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                    </select>
+
+                    <div id="questions-counter" style="font-size: 0.85rem; color: var(--text-muted); margin-left: 10px;">
+                        Mostrando ${this.allQuestions.length} resultados
                     </div>
                 </div>
-                <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                    <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar JSON/CSV</span>
-                </button>
-                <button class="btn-primary" onclick="window.adminManager.openGenericModal('ai-question')" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: transparent; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                    <i class="fas fa-robot"></i> <span class="hide-mobile">Generar con IA (Lite)</span>
-                </button>
-                <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                    <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Pregunta</span>
-                </button>
+
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar</span>
+                    </button>
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('ai-question')" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: transparent; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fas fa-robot"></i> <span class="hide-mobile">Generar IA</span>
+                    </button>
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva</span>
+                    </button>
+                </div>
             </div>
-            ${itemsHTML || '<p class="empty-state">No hay preguntas registradas.</p>'}
+            <div id="questions-list-container">
+                ${itemsHTML || '<p class="empty-state">No hay preguntas que coincidan con los filtros.</p>'}
+            </div>
         `;
         container.innerHTML = content;
+    }
+
+    /**
+     * ✅ NUEVO: Manejador de cambio de dominio
+     */
+    handleDomainChange(domain) {
+        this.currentQuestionDomain = domain;
+        this.refreshQuestions();
+    }
+
+    /**
+     * ✅ NUEVO: Manejador de búsqueda dinámica con Debounce
+     */
+    handleDynamicSearch(val) {
+        this.currentQuestionSearch = val;
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.refreshQuestions();
+        }, 500); // 500ms de espera
+    }
+
+    /**
+     * ✅ NUEVO: Refresca el listado de preguntas desde el servidor con filtros aplicados.
+     */
+    async refreshQuestions() {
+        const listContainer = document.getElementById('questions-list-container');
+        const counter = document.getElementById('questions-counter');
+
+        if (listContainer) listContainer.style.opacity = '0.5';
+
+        try {
+            const url = new URL(`${window.AppConfig.API_URL}/api/admin/questions`);
+            url.searchParams.append('domain', this.currentQuestionDomain);
+            if (this.currentQuestionSearch) {
+                url.searchParams.append('search', this.currentQuestionSearch);
+            }
+
+            const res = await fetch(url, { headers: this._getAuthHeaders() });
+            if (!res.ok) throw new Error('Failed to fetch questions');
+
+            this.allQuestions = await res.json();
+
+            // Volver a renderizar solo la lista y el contador para evitar perder el foco del input
+            const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
+            const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
+
+            if (listContainer) {
+                listContainer.innerHTML = itemsHTML || '<p class="empty-state">No hay preguntas que coincidan con los filtros.</p>';
+                listContainer.style.opacity = '1';
+            }
+            if (counter) {
+                counter.innerText = `Mostrando ${this.allQuestions.length} resultados`;
+            }
+
+        } catch (error) {
+            console.error('❌ Error refrescando preguntas:', error);
+        }
     }
 
     async openGenericModal(type, id = null) {
@@ -555,15 +643,14 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
-                    { id: 'english', name: 'Inglés' },
-                    { id: 'general_trivia', name: 'Cultura General' }
+                    { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
                 ];
 
                 fieldsHTML = `
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', currentItem?.question_text || '', true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, currentItem?.domain || 'medicine', false)}
-                        <div>
+                        <div id="generic-target-container" style="display: ${currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
                             <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
                             <select id="generic-target" class="form-input" onchange="
                                 const targetVal = this.value;
@@ -592,6 +679,7 @@ class AdminManager {
                                 <option value="ENAM" ${currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
                                 <option value="SERUMS" ${currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
                                 <option value="RESIDENTADO" ${currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
+                                <option value="N/A" ${currentItem?.target === 'N/A' || !currentItem?.target ? 'selected' : ''}>N/A (Quiz Arena)</option>
                             </select>
                         </div>
                     </div>
@@ -626,11 +714,27 @@ class AdminManager {
                         </div>
                     </fieldset>
                     ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', currentItem?.explanation || '', false)}
+                    
+                    <!-- ✅ NUEVO: Recomendación Visual de la IA (Solo Informativo) -->
+                    <div id="visual-recommendation-wrapper" style="display: ${currentItem?.visual_support_recommendation ? 'block' : 'none'}; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px dashed #a855f7;">
+                        <label style="display: block; color: #a855f7; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
+                            <i class="fas fa-magic"></i> Sugerencia de la IA para Imagen:
+                        </label>
+                        <p id="visual-recommendation-text" style="margin: 0; font-size: 0.9rem; color: var(--text-primary);">${currentItem?.visual_support_recommendation || ''}</p>
+                        <input type="hidden" id="generic-visual-recommendation" value="${currentItem?.visual_support_recommendation || ''}">
+                    </div>
+
                     ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', currentItem?.image_url || '')}
-                    ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', currentItem?.explanation_image_url || '')}
+                    <div id="generic-explanation-image-upload-group" style="display: ${currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
+                        ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', currentItem?.explanation_image_url || '')}
+                    </div>
                 `;
 
                 setTimeout(() => {
+                    const domainSelect = document.getElementById('generic-domain');
+                    if (domainSelect) {
+                        domainSelect.onchange = (e) => this.handleDomainChangeInModal(e.target.value);
+                    }
                     const txtQ = document.getElementById('generic-question-text');
                     const txtE = document.getElementById('generic-explanation');
                     if (txtQ) txtQ.rows = 3;
@@ -680,8 +784,7 @@ class AdminManager {
                     <h4 style="margin-bottom:0.5rem;">Dominio</h4>
                     <select id="ai-domain-select" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);">
                         <option value="medicine" selected>Medicina</option>
-                        <option value="english">Inglés</option>
-                        <option value="general_trivia">Cultura General</option>
+                        <option value="GENERAL_TRIVIA">Quiz Arena</option>
                     </select>
                     <h4 style="margin-bottom:0.5rem;">Examen Objetivo</h4>
                     <select id="ai-target" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color);" onchange="
@@ -933,7 +1036,7 @@ class AdminManager {
             const _info = document.getElementById(infoId);
             if (_input && _info) {
                 // Eliminar listener previo si existe para evitar duplicados
-                _input.onchange = null; 
+                _input.onchange = null;
                 _input.onchange = () => {
                     if (_input.files.length > 0) {
                         _info.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> Archivo listo: <b>${_input.files[0].name}</b> (Se ignorará el texto)`;
@@ -1041,7 +1144,7 @@ class AdminManager {
         const isExternal = value.startsWith('http');
         const token = localStorage.getItem('authToken');
         const previewUrl = value ? (isExternal ? value : `${window.AppConfig.API_URL}/api/media/preview?path=${value}&token=${token}`) : '';
-        
+
         return `
             <div class="form-group image-upload-group" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
                 <label for="${id}-url" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
@@ -1095,7 +1198,7 @@ class AdminManager {
         if (urlInput) urlInput.value = '';
         if (fileInput) fileInput.value = '';
         if (preview) preview.style.display = 'none';
-        
+
         if (info) {
             info.innerHTML = `<i class="fas fa-trash" style="color: var(--danger-color);"></i> Imagen marcada para eliminar al guardar.`;
             info.style.color = 'var(--danger-color)';
@@ -1111,7 +1214,7 @@ class AdminManager {
             const urlInput = document.getElementById(`${id}-url`);
             const previewContainer = document.getElementById(`${id}-preview-container`);
             const previewImg = document.getElementById(`${id}-preview-img`);
-            
+
             if (!urlInput || !previewImg || !previewContainer) return;
 
             const value = urlInput.value.trim();
@@ -1123,7 +1226,7 @@ class AdminManager {
 
             const isExternal = value.startsWith('http');
             const previewUrl = window.resolveImageUrl(value);
-            
+
             // ✅ Carga Asíncrona: Validar éxito antes de mostrar para evitar parpadeos y 404s visuales
             const tempImg = new Image();
             tempImg.onload = () => {
@@ -1318,6 +1421,23 @@ class AdminManager {
         }
     }
 
+    /**
+     * ✅ NUEVO: Manejador de visibilidad condicional en el modal según Dominio
+     */
+    handleDomainChangeInModal(domain) {
+        const isTrivia = domain === 'GENERAL_TRIVIA';
+        
+        const targetContainer = document.getElementById('generic-target-container');
+        const careerWrapper = document.getElementById('generic-career-wrapper');
+        const explImageWrapper = document.getElementById('generic-explanation-image-upload-group');
+        const targetSelect = document.getElementById('generic-target');
+
+        if (targetContainer) targetContainer.style.display = isTrivia ? 'none' : 'block';
+        if (careerWrapper) careerWrapper.style.display = isTrivia ? 'none' : 'block';
+        if (explImageWrapper) explImageWrapper.style.display = isTrivia ? 'none' : 'block';
+        
+    }
+
     closeGenericModal() {
         // 1. Ocultar el modal
         this.genericModal.style.display = 'none';
@@ -1354,7 +1474,7 @@ class AdminManager {
         }
 
         let body = {};
-        
+
         // ✅ MEJORA UI/UX: Bloquear botón para evitar spam clicks / duplicados
         const saveBtn = document.getElementById('generic-save-btn');
         const originalBtnText = saveBtn ? saveBtn.innerHTML : 'Guardar';
@@ -1502,11 +1622,12 @@ class AdminManager {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
                         target: qTarget,
-                        // ✅ Mejora: Solo sobrescribir career si el target es SERUMS; de lo contrario, mantener nulo.
-                        career: (qTarget === 'SERUMS' && qCareerEl) ? (qCareerEl.value || null) : null,
+                        // ✅ INTEGRIDAD: Solo cambiar career si es SERUMS; si no, mantener lo que ya tenía el objeto original
+                        // para evitar borrar datos accidentalmente en otros dominios.
+                        career: (qTarget === 'SERUMS') ? (qCareerEl?.value || null) : (currentItem?.career || null),
                         topic: document.getElementById('generic-topic').value,
                         subtopic: document.getElementById('generic-subtopic')?.value || null,
-                        difficulty: 'Senior',
+                        difficulty: currentItem?.difficulty || 'Senior',
                         options: (qTarget === 'RESIDENTADO')
                             ? [
                                 document.getElementById('generic-opt0').value,
@@ -1522,7 +1643,8 @@ class AdminManager {
                                 document.getElementById('generic-opt3').value
                             ],
                         correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
-                        explanation: document.getElementById('generic-explanation').value
+                        explanation: document.getElementById('generic-explanation').value,
+                        visual_support_recommendation: document.getElementById('generic-visual-recommendation')?.value || null
                     };
 
                     const questionFormData = new FormData();
@@ -1538,7 +1660,7 @@ class AdminManager {
                     const qImageFile = document.getElementById('generic-image-file');
                     const qImageUrl = document.getElementById('generic-image-url');
                     const qDeleteFlag = document.getElementById('generic-image-delete-flag');
-                    
+
                     if (qImageFile && qImageFile.files[0]) {
                         questionFormData.append('questionImage', qImageFile.files[0]);
                     } else if (qImageUrl && qImageUrl.value.trim()) {
@@ -1556,7 +1678,7 @@ class AdminManager {
                     const explImageFile = document.getElementById('generic-explanation-image-file');
                     const explImageUrl = document.getElementById('generic-explanation-image-url');
                     const explDeleteFlag = document.getElementById('generic-explanation-image-delete-flag');
-                    
+
                     if (explImageFile && explImageFile.files[0]) {
                         questionFormData.append('explanationImage', explImageFile.files[0]);
                     } else if (explImageUrl && explImageUrl.value.trim()) {
@@ -1589,7 +1711,7 @@ class AdminManager {
                         const careerSelectEl = document.getElementById('ai-career');
                         const careerVal = targetVal === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
 
-                        // Dominio global del banco (medicine | english | general_trivia) — campo separado
+                        // Dominio global del banco (medicine | english | GENERAL_TRIVIA) — campo separado
                         const domainVal = document.getElementById('ai-domain-select')?.value || 'medicine';
 
                         const reqBody = {
@@ -1653,7 +1775,7 @@ class AdminManager {
                                         if (!cols[0]) return null;
                                         return {
                                             question_text: String(cols[0] || '').trim(),
-                                            domain: String(cols[1] || 'medicine').trim(),
+                                            domain: String(cols[1] || 'medicine').trim(), // El usuario especificará GENERAL_TRIVIA en el Excel
                                             target: cols[2] ? String(cols[2]).trim() : null,
                                             career: cols[3] ? String(cols[3]).trim() : null,
                                             topic: String(cols[4] || 'General').trim(),

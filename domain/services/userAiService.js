@@ -169,7 +169,7 @@ class UserAiService {
 
             [EXPLICACIÓN (REGISTRO TÉCNICO)]
             - Que no sea tan extenso, ni tan breve, lo necesario para fundamentar la respuesta.
-            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente (Ej: "**Según la NTS 123-MINSA**:").
+            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente. VARÍA EL ESTILO (Ej: "**Según la NTS 123...**", "**De acuerdo a la RM...**", "**La Guía Técnica establece...**", "**Siguiendo lo dispuesto en...**").
             - SECCIÓN OBLIGATORIA (Solo para SERUMS): Finaliza SIEMPRE con el texto "💡 **TIP SERUMS:** [Consejo práctico sobre gestión o vida en comunidad]".
 
             [JERARQUÍA DE FUENTES Y ESTILO BASE]:
@@ -190,8 +190,14 @@ class UserAiService {
                 "domain": "${domain}",
                 "target": "${target}",
                 "career": "${career}",
-                "subtopic": "..."
+                "subtopic": "...",
+                "visual_support_recommendation": "Mensaje corto si es pertinente reforzar con imagen (ej: 'Recomendado: Radiografía de tórax') o null si no es necesario."
             }]
+
+            [REGLA DE PERTINENCIA VISUAL]:
+            - Analiza si la explicación se beneficiaría de un soporte visual para reforzar el aprendizaje (ej: anatomía de órganos, trazados, placas, lesiones, diagramas de flujo, tablas comparativas, procesos fisiológicos, etc.). 
+            - NO TE LIMITES a categorías fijas; recomienda cualquier recurso visual que mejore la retención del alumno.
+            - Si es pertinente, coloca una recomendación breve. Si no, coloca null.
 
             [REGLA DE ORO DE DIVERSIDAD INTERNA]:
             - Cada una de las ${amount} preguntas de este JSON debe ser TOTALMENTE diferente a las demás en el mismo lote.

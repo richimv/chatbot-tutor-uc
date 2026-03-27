@@ -76,8 +76,7 @@ class TrainingRepository {
         console.log(`🔎 [Repo] Usuario ${userId} ha visto ${seenIds.length} preguntas cruzadas en las últimas 24h.`);
 
         // 2. Construcción Dinámica de Cláusulas WHERE
-        let whereClauses = `WHERE UPPER(topic) = ANY($1::text[]) 
-                            AND domain = $2 
+        let whereClauses = `WHERE domain = $2 AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))
                             AND ($3::text IS NULL OR target = $3)`;
         
         const params = [topics, domain, target];
@@ -161,9 +160,9 @@ class TrainingRepository {
         let query = `
             SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic
             FROM question_bank
-            WHERE TRIM(UPPER(topic)) = TRIM(UPPER($1)) 
+            WHERE unaccent(UPPER(topic)) = unaccent(UPPER($1)) 
               AND domain = $2 
-              AND (target IS NULL OR target = $3)
+              AND (target IS NULL OR target = 'N/A' OR target = $3)
         `;
 
         const params = [topic, domain, target];
@@ -210,14 +209,14 @@ class TrainingRepository {
      * @param {number} limit Cuántas preguntas de contexto traer (ej: 15)
      * @returns {Promise<string[]>} Array de strings con el texto de la pregunta original.
      */
-    async getRandomQuestionsContext(domain, target, topics, limit = 15, career = null) {
+    async getRandomQuestionsContext(domain, target, topics, limit = 30, career = null) {
         try {
             let query = `
                 SELECT question_text 
                 FROM question_bank 
                 WHERE domain = $1 
-                AND ($2::text IS NULL OR target = $2)
-                AND UPPER(topic) = ANY($3::text[])
+                AND ($2::text IS NULL OR target = $2 OR target = 'N/A')
+                AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($3::text[]))))
             `;
             const params = [domain, target, topics];
             let paramIdx = 4;
@@ -228,7 +227,7 @@ class TrainingRepository {
                 paramIdx++;
             }
 
-            query += ` ORDER BY RANDOM() LIMIT $${paramIdx} `;
+            query += ` ORDER BY created_at DESC LIMIT $${paramIdx} `;
             params.push(limit);
 
             const res = await db.query(query, params);
@@ -254,13 +253,14 @@ class TrainingRepository {
         console.log(`💾 Guardando ${questions.length} preguntas en el Banco (Fallback T: ${defaultTopic} | C: ${defaultCareer} - ${domain} - ${target})...`);
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 1, $12)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career, visual_support_recommendation)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 1, $12, $13)
             ON CONFLICT (question_hash) DO UPDATE SET 
                 times_used = question_bank.times_used + 1,
                 career = EXCLUDED.career,
                 explanation_image_url = EXCLUDED.explanation_image_url,
-                image_url = EXCLUDED.image_url
+                image_url = EXCLUDED.image_url,
+                visual_support_recommendation = EXCLUDED.visual_support_recommendation
             RETURNING id;
         `;
 
@@ -271,7 +271,10 @@ class TrainingRepository {
             const exactCareer = q.career || defaultCareer;
             const difficulty = 'Senior'; // Hardcoded standard
 
-            const rawString = `${exactTopic}-${q.question_text}-${JSON.stringify(q.options)}`;
+            // ✅ NORMALIZACIÓN DE HASH (Prevenir duplicados semánticos por espacios/mayúsculas)
+            const normTopic = String(exactTopic || 'General').toLowerCase().trim();
+            const normText = String(q.question_text || '').toLowerCase().trim();
+            const rawString = `${normTopic}-${normText}-${JSON.stringify(q.options)}`;
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             try {
@@ -287,7 +290,8 @@ class TrainingRepository {
                     q.explanation_image_url || null,
                     q.image_url || null, // ✅ NUEVO
                     hash,
-                    exactCareer
+                    exactCareer,
+                    q.visual_support_recommendation || null
                 ]);
                 if (res.rows.length > 0) {
                     newIds.push(res.rows[0].id);
@@ -334,8 +338,8 @@ class TrainingRepository {
             };
 
             const query = `
-                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                 ON CONFLICT (question_hash) DO UPDATE SET 
                     target = EXCLUDED.target,
                     image_url = EXCLUDED.image_url,
@@ -343,7 +347,8 @@ class TrainingRepository {
                     explanation_image_url = EXCLUDED.explanation_image_url,
                     options = EXCLUDED.options,
                     career = EXCLUDED.career,
-                    subtopic = EXCLUDED.subtopic
+                    subtopic = EXCLUDED.subtopic,
+                    visual_support_recommendation = EXCLUDED.visual_support_recommendation
                 RETURNING id;
             `;
 
@@ -371,13 +376,16 @@ class TrainingRepository {
                 const image_url = q.image_url || null;
                 const career = q.career || null;
 
-                // Hash único basado en topic + texto + opciones
-                const rawString = `${exactTopic}-${question_text}-${optionsStr}`;
-                const hash = crypto.createHash('md5').update(rawString).digest('hex');
+                // ✅ NORMALIZACIÓN DE HASH (Admin Generator - Prevenir duplicados semánticos)
+                const normTopic = String(exactTopic || 'General').toLowerCase().trim();
+                const normText = String(question_text || '').toLowerCase().trim();
+                const rawStringForHash = `${normTopic}-${normText}-${optionsStr}`;
+                const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
 
                 await client.query(query, [
                     domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr,
-                    correct_option_index, explanation, explanation_image_url, image_url, hash, career
+                    correct_option_index, explanation, explanation_image_url, image_url, hash, career,
+                    q.visual_support_recommendation || null
                 ]);
                 insertedCount++;
             }
@@ -602,9 +610,10 @@ class TrainingRepository {
                 return;
             }
 
-            // Back: La respuesta correcta + explicación
+            // 🎯 ESTRATEGIA "SOLO RESPUESTA": Para optimizar UI y velocidad de repaso,
+            // el dorso solo contiene la respuesta correcta (con emoji para UX).
             const correctOption = q.options[q.correct_option_index];
-            const back = `${correctOption}\n\n💡 ${q.explanation || ''}`;
+            const back = `💡 ${correctOption}`;
 
             // ($1, $2, $3, $4, $5, $6, $7, $8) ...
             const offset = insertCount * 8;

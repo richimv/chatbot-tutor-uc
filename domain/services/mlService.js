@@ -611,11 +611,12 @@ class MLService {
                 ];
 
                 if (allPreviousTexts.length > 0) {
+                    console.log(`🧠 [Deduplication] Extraídas ${allPreviousTexts.length} referencias previas para contexto AI Admin (Filtro: ${target} - ${domain}).`);
                     recentQuestionsText = "\n🚨 RESTRICCIÓN ESTRICTA DE NO-REPETICIÓN (MEMORIA PROFUNDA) 🚨\n" +
-                        "A continuación se listan subtemas y escenarios que YA existen. ÚSALOS PARA NO REPETIR.\n" +
-                        "⚠️ PROHIBICIÓN: No evalúes el mismo subtema si ya aparece abajo. DEBES romper el patrón gramatical y temático.\n" +
-                        allPreviousTexts.slice(-50).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt.substring(0, 150)}...`).join('\n') +
-                        "\n🎯 OBJETIVO: Generar un subtema TOTALMENTE DISTINTO en tono, inicio y sujeto.\n";
+                        "A continuación se listan subtemas y escenarios que YA existen en el banco. ÚSALOS PARA NO REPETIR.\n" +
+                        "⚠️ PROHIBICIÓN: No evalúes el mismo subtema ni la misma pregunta si ya aparece abajo. DEBES romper el patrón gramatical.\n" +
+                        allPreviousTexts.slice(0, 75).map((txt, idx) => `[Bloqueada ${idx + 1}] ${txt}`).join('\n') +
+                        "\n🎯 OBJETIVO: Generar un subtema y enunciado TOTALMENTE DISTINTO en tono, inicio y sujeto.\n";
                 }
             } catch (e) {
                 console.warn("⚠️ No se pudo obtener el historial anti-duplicidad en RAG:", e);
@@ -741,7 +742,7 @@ class MLService {
 
             [EXPLICACIÓN (FUNDAMENTACIÓN)]
             - ${levelInstruction}
-            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente (Ej: "**Según la NTS 123-MINSA**:").
+            - Usa CITACIÓN EN NEGRITA al inicio de cada párrafo fuente. VARÍA EL ESTILO (Ej: "**Según la NTS 123...**", "**De acuerdo a la RM...**", "**La Guía Técnica establece...**", "**Siguiendo lo dispuesto en...**").
             - SECCIÓN OBLIGATORIA (Solo para SERUMS): Finaliza SIEMPRE con el texto "💡 **TIP SERUMS:** [Consejo práctico sobre gestión o vida en comunidad]".
 
             [JERARQUÍA DE FUENTES Y ESTILO BASE]:
@@ -767,8 +768,14 @@ class MLService {
                 "explanation": "2-3 párrafos técnicos con citado en negrita.",
                 "domain": "${domain}",
                 "target": "${target}",
-                "career": "${career}"
+                "career": "${career}",
+                "visual_support_recommendation": "Recomendado: [Descripción corta de la imagen pertinente] o null"
             }]
+
+            [REGLA DE PERTINENCIA VISUAL]:
+            - Analiza si la explicación se beneficiaría de un soporte visual para reforzar el aprendizaje (ej: anatomía de órganos, trazados, placas, lesiones, diagramas de flujo, tablas comparativas, procesos fisiológicos, etc.). 
+            - NO TE LIMITES a categorías fijas; recomienda cualquier recurso visual que mejore la retención del alumno.
+            - Si es pertinente, coloca una recomendación breve. Si no, coloca null.
 
             DEVUELVE ÚNICA Y EXCLUSIVAMENTE EL JSON VÁLIDO. PROHIBIDO USAR MARKDOWN.
             `;

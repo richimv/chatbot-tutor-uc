@@ -45,7 +45,7 @@ Para evitar que el usuario experimente interrupciones por "Banco Agotado", el si
 
 La generación de emergencia sigue estrictamente la `RAG_FLOW_GUIDE` para asegurar fidelidad médica:
 
-1.  **Deduplicación (SQL):** Escanea los últimos 200 temas generados para prohibir repeticiones conceptuales a la IA.
+1.  **Deduplicación (SQL):** Escanea las últimas **30 a 75 preguntas más recientes** (`created_at DESC`) para prohibir repeticiones conceptuales y gramaticales a la IA.
 2.  **Búsqueda RAG (ILIKE):** Realiza búsquedas mecánicas en la base de datos de documentos locales usando `ILIKE` (sin embeddings pagados).
 3.  **Inyección de Jerarquía:**
     *   **SERUMS:** Prioriza NTS y RM (Salud Pública).
@@ -55,6 +55,7 @@ La generación de emergencia sigue estrictamente la `RAG_FLOW_GUIDE` para asegur
     - **Modo High-Fidelity (Admin):** Gestionado por `mlService.js`. Utiliza RAG local para inyectar fragmentos de NTS/GPC y libros originales en la generación de preguntas para el banco oficial.
     - **Modo Fast (Usuario):** Gestionado por `userAiService.js`. Utiliza el mismo "Prompt Maestro" experto pero **sin inyección RAG**, garantizando respuestas inmediatas y ultra-rápidas para el simulador médico.
     - **Modelo Unificado:** Ambos motores usan exclusivamente `gemini-2.5-flash-lite` para ahorro total de costos.
+    - **Sincronización de IDs:** El sistema vincula los IDs de base de datos a los objetos IA en tiempo real para garantizar un marcado de "visto" efectivo e inmediato.
 
 ---
 
@@ -81,5 +82,18 @@ Para asegurar que el simulador sea indistinguible del examen real, se ha impleme
 *   **Formatos Híbridos:** Alternancia entre casos, definiciones y "completar espacios".
 *   **Generación 1-a-1 (Expert Mode):** Solo disponible para el **Administrador** o en el **Chat Advanced**, el sistema permite opcionalmente un barrido RAG de 8 fragmentos por pregunta para garantizar fundamento bibliográfico máximo en casos de alta complejidad. Los simulacros de usuario omiten este paso para priorizar la fluidez.
 
+## 6. Soporte Visual Inteligente (IA) 🩺📸
+
+Como evolución pedagógica, el sistema ahora ayuda al administrador a identificar qué preguntas requieren refuerzo visual para mejorar la retención del alumno.
+
+### 6.1 Lógica de Pertinencia
+Tanto el motor **Fast** como el **High-Fidelity RAG** incluyen ahora una capa de "Análisis de Imagen" que evalúa la explicación generada:
+*   **Criterios de Activación**: Se activa cuando el tema involucra anatomía, procesos fisiológicos complejos, lesiones visibles, trazados, placas, o cualquier concepto que se beneficie de un refuerzo visual para el aprendizaje.
+*   **Salida**: El campo `visual_support_recommendation` devuelve una sugerencia técnica (ej: *"Diagrama de la cascada de coagulación"*) o `null` si la pregunta es puramente teórica o de gestión.
+
+### 6.2 Privacidad y Gestión (Admin Hub)
+*   **Visibilidad**: Este campo es **estrictamente de gestión**. El estudiante nunca verá la recomendación; solo se muestra al administrador en el modal de edición del Banco de Preguntas.
+*   **Propósito**: Funciona como un "To-Do" inteligente para el equipo de contenido, indicando exactamente qué imagen buscar y cargar en GCS para maximizar el valor educativo de la pregunta.
+
 ---
-**Certificado como Estándar de Oro - 18 de Marzo, 2026**
+**Certificado como Estándar de Oro - 27 de Marzo, 2026** ✨🛡️

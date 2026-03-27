@@ -49,7 +49,9 @@ class QuizGameController {
                     question: q.question_text,
                     options: q.options,
                     correctAnswer: q.correct_option_index,
-                    explanation: q.explanation // ✅ FEEDBACK IMPORTANTE
+                    explanation: q.explanation,
+                    image_url: q.image_url,
+                    explanation_image_url: q.explanation_image_url
                 }))
             });
 
@@ -91,7 +93,9 @@ class QuizGameController {
                     question: q.question_text,
                     options: q.options,
                     correctAnswer: q.correct_option_index,
-                    explanation: q.explanation
+                    explanation: q.explanation,
+                    image_url: q.image_url,
+                    explanation_image_url: q.explanation_image_url
                 }))
             });
         } catch (error) {

@@ -236,13 +236,8 @@ class QuizController {
             // el dorso solo contendrá el texto de la respuesta correcta.
             const questionsArray = Array.isArray(question) ? question : [question];
             const processedQuestions = questionsArray.map(q => {
-                const correctAnswer = (q.options && q.correct_option_index !== undefined) 
-                    ? q.options[q.correct_option_index] 
-                    : q.explanation; // Fallback if no options (unlikely from sim)
-
                 return {
                     ...q,
-                    explanation: correctAnswer, // Dorso resumido
                     explanation_image_url: null // Sin imagen en el dorso para evitar desbordes
                 };
             });

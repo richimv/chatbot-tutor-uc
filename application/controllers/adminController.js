@@ -240,16 +240,35 @@ class AdminController {
 
     /**
      * GET /api/admin/questions
-     * Obtiene una lista paginada o completa de preguntas para el panel.
+     * Obtiene una lista filtrada por dominio y búsqueda para el panel.
      */
     async getAllQuestions(req, res) {
         try {
-            const result = await db.query(`
-                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url
+            const { domain, search } = req.query;
+            let query = `
+                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url, visual_support_recommendation
                 FROM question_bank 
-                ORDER BY created_at DESC 
-                LIMIT 500
-            `);
+            `;
+            const params = [];
+            const conditions = [];
+
+            if (domain && domain !== 'all') {
+                params.push(domain);
+                conditions.push(`domain = $${params.length}`);
+            }
+
+            if (search) {
+                params.push(`%${search}%`);
+                conditions.push(`(question_text ILIKE $${params.length} OR topic ILIKE $${params.length} OR subtopic ILIKE $${params.length})`);
+            }
+
+            if (conditions.length > 0) {
+                query += ` WHERE ` + conditions.join(' AND ');
+            }
+
+            query += ` ORDER BY created_at DESC LIMIT 1000`; // Aumentamos límite para búsquedas profundas
+
+            const result = await db.query(query, params);
             res.json(result.rows);
         } catch (error) {
             console.error('Error fetching questions:', error);
@@ -264,7 +283,7 @@ class AdminController {
     async addSingleQuestion(req, res) {
         try {
             // ✅ DEFENSA: FormData envía "null" o "undefined" como strings.
-            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '') ? null : val;
+            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '' || val === 'N/A') ? null : val;
             
             const q = {
                 ...req.body,
@@ -318,8 +337,8 @@ class AdminController {
             const insertQuery = `
                 INSERT INTO question_bank (
                     question_text, options, correct_option_index, explanation, explanation_image_url, 
-                    domain, target, career, topic, subtopic, difficulty, image_url, question_hash
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                    domain, target, career, topic, subtopic, difficulty, image_url, question_hash, visual_support_recommendation
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                 RETURNING id;
             `;
             const values = [
@@ -333,9 +352,10 @@ class AdminController {
                 q.career || null,
                 q.topic || 'General',
                 q.subtopic || null, 
-                'Senior',
+                q.difficulty || 'Senior',
                 q.image_url || null,
-                hash
+                hash,
+                q.visual_support_recommendation || null
             ];
 
             const result = await db.query(insertQuery, values);
@@ -353,7 +373,7 @@ class AdminController {
     async updateSingleQuestion(req, res) {
         try {
             const { id } = req.params;
-            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '') ? null : val;
+            const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '' || val === 'N/A') ? null : val;
 
             const q = {
                 ...req.body,
@@ -361,6 +381,7 @@ class AdminController {
                 subtopic: sanitize(req.body.subtopic),
                 target: sanitize(req.body.target),
                 topic: sanitize(req.body.topic) || 'General',
+                difficulty: sanitize(req.body.difficulty) || 'Senior',
                 explanation: sanitize(req.body.explanation) || ''
             };
 
@@ -384,8 +405,8 @@ class AdminController {
             const hash = crypto.createHash('md5').update(rawString).digest('hex');
 
             // ✅ SUBIDA DE IMÁGENES A GCS (si existen o se eliminan)
-            const shouldDeleteQ = q.deleteQuestionImage === 'true' || (q.image_url === '' && method === 'PUT');
-            const shouldDeleteE = q.deleteExplanationImage === 'true' || (q.explanation_image_url === '' && method === 'PUT');
+            const shouldDeleteQ = q.deleteQuestionImage === 'true' || q.image_url === '';
+            const shouldDeleteE = q.deleteExplanationImage === 'true' || q.explanation_image_url === '';
 
             if (req.files || shouldDeleteQ || shouldDeleteE) {
                 // Obtener datos actuales para limpieza
@@ -424,8 +445,8 @@ class AdminController {
                 UPDATE question_bank 
                 SET question_text = $1, options = $2, correct_option_index = $3, 
                     explanation = $4, explanation_image_url = $5, domain = $6, 
-                    target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13
-                WHERE id = $14
+                    target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13, visual_support_recommendation = $14
+                WHERE id = $15
                 RETURNING id;
             `;
             const values = [
@@ -439,9 +460,10 @@ class AdminController {
                 q.career || null,
                 q.topic || 'General',
                 q.subtopic || null, 
-                'Senior',
+                q.difficulty || 'Senior',
                 q.image_url || null,
                 hash,
+                q.visual_support_recommendation || null,
                 id
             ];
 
