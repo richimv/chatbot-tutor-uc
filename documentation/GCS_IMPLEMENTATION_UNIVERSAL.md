@@ -34,12 +34,26 @@ El panel de control (`admin.js`) ha sido blindado para la integridad de datos:
 - **Protección de Datos**: Los campos como `career`, `subtopic` y las 5 opciones de Residentado están protegidos contra sobreescrituras accidentales con `null`.
 - **Selector Seguro**: El examen objetivo (Target) es ahora un selector fijo para evitar errores de tipeo que corrompan el banco de preguntas.
 - **Feedback Visual Inmediato**: Un check verde ✅ y el nombre del archivo confirman que la imagen está lista antes de guardar.
+- **Gestión Dual**: El banco de preguntas ahora soporta imágenes independientes para el Enunciado y la Explicación, ambas con gestión automatizada de GCS.
 
----
+## 5. Optimización y Procesamiento WebP (High-Fidelity) 🖼️⚡
+Para garantizar un equilibrio entre rendimiento y calidad visual (crítica en contenido médico), el sistema procesa todas las imágenes cargadas mediante `sharp`:
 
-## 5. Costos y Capa Gratuita (Free Tier) 📊💰
+- **Formato**: Conversión forzada a **WebP**.
+- **Dimensiones**: Redimensionamiento inteligente con un ancho máximo de **1600px**.
+- **Calidad**: Factor del **85%** con *Smart Subsampling* y preservación de metadatos (`.withMetadata()`).
+
+## 6. Gestión del Ciclo de Vida y Limpieza Proactiva 🗑️🛡️
+El sistema implementa una política de "Zero-Orphan" para optimizar costos:
+
+- **Borrado por Reemplazo**: Al actualizar una imagen, el archivo antiguo se elimina físicamente de GCS antes de subir el nuevo.
+- **Borrado Explícito (UI)**: Botones de papelera en la administración activan el borrado físico (`deleteImage: true`).
+- **Fail-Safe**: Si se vacea manualmente el campo de URL, el backend dispara la limpieza de GCS automáticamente.
+- **Cascada**: Al borrar una entidad, sus archivos asociados en GCS son eliminados de forma atómica.
+
+## 7. Costos y Capa Gratuita (Free Tier) 📊💰
 - **Almacenamiento**: 5 GB gratis al mes.
-- **Operaciones**: 5,000 (A) y 50,000 (B) gratuitas. El sistema usa caché para minimizar estas operaciones.
+- **Operaciones**: 5,000 (A) y 50,000 (B) gratuitas. El sistema usa caché para minimizar transacciones.
 
 ---
-*Estado del Sistema: Infraestructura de medios 100% profesional en la nube.* 🚀✨
+*Estado del Sistema: Infraestructura de medios 100% profesional, optimizada y auto-limpiable.* 🚀✨

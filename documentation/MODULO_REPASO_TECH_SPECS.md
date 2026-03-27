@@ -30,14 +30,15 @@ El sistema utiliza una variante del algoritmo SM-2 para calcular cuándo debe re
 2. **Intervalo de Repetición**: Se calcula basado en el `easiness_factor` y el número de repasos exitosos consecutivos.
 3. **Olvido Saludable**: Integrado con el sistema global para asegurar que el usuario no se abrume con repasos acumulados.
 
-### ✨ Generación Agéntica de Tarjetas
+### ✨ Generación Agéntica y UI Premium
 1. **Generación Manual por Usuario**: Al finalizar un simulacro, el alumno selecciona qué preguntas convertir en Flashcards.
-    - **Estrategia "Solo Respuesta"**: Para optimizar la velocidad de repaso y evitar desbordamientos de UI, las tarjetas derivadas de simulacros solo almacenan la **respuesta correcta** en el dorso, omitiendo explicaciones extensas e imágenes de resolución.
+    - **Estrategia "Solo Respuesta"**: Para optimizar la velocidad de estudio y evitar desbordamientos, las tarjetas derivadas de simulacros solo almacenan la **respuesta correcta** en el dorso, omitiendo explicaciones extensas.
+    - **Layout Responsivo (Side-by-Side)**: El frente de la tarjeta utiliza un diseño de dos columnas en PC (Imagen izquierda / Texto derecha) para maximizar el uso del espacio, similar al simulador.
 2. **Generación IA por Tema**: Permite al usuario crear un mazo completo sobre un tema específico usando Gemini 2.5 Flash Lite.
 
-### 📁 Organización Jerárquica
-- Soporte para sub-mazos (carpetas) para organizar el estudio por especialidades médicas siguiendo la lógica de los simuladores.
-- Iconografía vibrante y mapeo de emojis a FontAwesome para una UX premium.
+### 📁 Organización y Visualización
+- Soporte para sub-mazos (carpetas) con iconografía vibrante y mapeo de emojis.
+- Las imágenes en flashcards se sirven mediante el proxy de GCS, asegurando carga rápida y optimización WebP activa.
 
 ---
 
