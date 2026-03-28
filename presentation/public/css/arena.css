@@ -127,6 +127,56 @@ body {
     display: none; /* Chrome/Safari */
 }
 
+/* NAVIGATION ARROWS */
+.topic-selector-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.scroll-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.scroll-arrow:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #8b5cf6;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.scroll-arrow.prev { left: -22px; }
+.scroll-arrow.next { right: -22px; }
+
+/* Hide arrows on mobile */
+@media (max-width: 768px) {
+    .scroll-arrow {
+        display: none !important;
+    }
+    .topic-selector-wrapper .quick-tags-container {
+        margin-bottom: 0;
+    }
+}
+
 .quick-tag {
     flex: 0 0 130px;
     height: 140px;

@@ -353,6 +353,19 @@ const Arena = (function () {
         btn.classList.add('active');
     }
 
+    /**
+     * ✅ NUEVO: Desplazamiento por flechas para Escritorio
+     */
+    function scrollTopics(direction) {
+        const slider = document.getElementById('topics-slider');
+        if (!slider) return;
+        const scrollAmount = 300; // Desplazar aprox 2 tarjetas
+        slider.scrollBy({
+            left: direction * scrollAmount,
+            behavior: 'smooth'
+        });
+    }
+
     async function fetchUser() {
         try {
             const token = localStorage.getItem('authToken');
@@ -382,8 +395,21 @@ const Arena = (function () {
         fetchUserStats(); 
         
         // --- MOUSE DRAG SCROLL HELPER ---
-        const slider = document.querySelector('.quick-tags-container');
+        const slider = document.getElementById('topics-slider');
         if (slider) {
+            // ✅ NUEVO: Efecto "Scroll Peek" REAL para celulares (Hint de desplazamiento)
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    // Desplazamiento inicial suave hacia la derecha
+                    slider.scrollTo({ left: 80, behavior: 'smooth' });
+                    
+                    // Regreso suave tras la pequeña pausa para que el usuario capte el "peek"
+                    setTimeout(() => {
+                        slider.scrollTo({ left: 0, behavior: 'smooth' });
+                    }, 800);
+                }, 1000);
+            }
+            
             let isDown = false;
             let startX;
             let scrollLeft;
@@ -414,5 +440,5 @@ const Arena = (function () {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { console.log("Arena JS v1.1 Loaded"); init(); });
     else { console.log("Arena JS v1.1 Loaded"); init(); }
 
-    return { startMatch, nextQ, useWildcard, selectQuickTag };
+    return { startMatch, nextQ, useWildcard, selectQuickTag, scrollTopics };
 })();

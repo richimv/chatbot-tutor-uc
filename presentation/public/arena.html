@@ -66,54 +66,64 @@
                 <!-- Hidden input to maintain compatibility with arena.js -->
                 <input type="hidden" id="topicInput" value="Cultura General">
                 
-                <div class="quick-tags-container topic-selector-premium">
-                    <button class="quick-tag active" onclick="Arena.selectQuickTag(this, 'Cultura General')">
-                        <div class="tag-icon"><i class="fas fa-globe"></i></div>
-                        <span>Cultura General</span>
+                <div class="topic-selector-wrapper">
+                    <button class="scroll-arrow prev" onclick="Arena.scrollTopics(-1)" title="Anterior">
+                        <i class="fas fa-chevron-left"></i>
                     </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Medicina')">
-                        <div class="tag-icon"><i class="fas fa-user-md"></i></div>
-                        <span>Medicina</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Matemáticas')">
-                        <div class="tag-icon"><i class="fas fa-calculator"></i></div>
-                        <span>Matemáticas</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Química')">
-                        <div class="tag-icon"><i class="fas fa-flask"></i></div>
-                        <span>Química</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Ciencias')">
-                        <div class="tag-icon"><i class="fas fa-atom"></i></div>
-                        <span>Ciencias</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Informática')">
-                        <div class="tag-icon"><i class="fas fa-code"></i></div>
-                        <span>Informática</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Tecnología')">
-                        <div class="tag-icon"><i class="fas fa-microchip"></i></div>
-                        <span>Tecnología</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Actualidad')">
-                        <div class="tag-icon"><i class="fas fa-newspaper"></i></div>
-                        <span>Actualidad</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Historia')">
-                        <div class="tag-icon"><i class="fas fa-landmark"></i></div>
-                        <span>Historia</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Geografía')">
-                        <div class="tag-icon"><i class="fas fa-map-marked-alt"></i></div>
-                        <span>Geografía</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Deportes')">
-                        <div class="tag-icon"><i class="fas fa-running"></i></div>
-                        <span>Deportes</span>
-                    </button>
-                    <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Cine')">
-                        <div class="tag-icon"><i class="fas fa-film"></i></div>
-                        <span>Cine</span>
+                    
+                    <div class="quick-tags-container topic-selector-premium" id="topics-slider">
+                        <button class="quick-tag active" onclick="Arena.selectQuickTag(this, 'Cultura General')">
+                            <div class="tag-icon"><i class="fas fa-globe"></i></div>
+                            <span>Cultura General</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Medicina')">
+                            <div class="tag-icon"><i class="fas fa-user-md"></i></div>
+                            <span>Medicina</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Matemáticas')">
+                            <div class="tag-icon"><i class="fas fa-calculator"></i></div>
+                            <span>Matemáticas</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Química')">
+                            <div class="tag-icon"><i class="fas fa-flask"></i></div>
+                            <span>Química</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Ciencias')">
+                            <div class="tag-icon"><i class="fas fa-atom"></i></div>
+                            <span>Ciencias</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Informática')">
+                            <div class="tag-icon"><i class="fas fa-code"></i></div>
+                            <span>Informática</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Tecnología')">
+                            <div class="tag-icon"><i class="fas fa-microchip"></i></div>
+                            <span>Tecnología</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Actualidad')">
+                            <div class="tag-icon"><i class="fas fa-newspaper"></i></div>
+                            <span>Actualidad</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Historia')">
+                            <div class="tag-icon"><i class="fas fa-landmark"></i></div>
+                            <span>Historia</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Geografía')">
+                            <div class="tag-icon"><i class="fas fa-map-marked-alt"></i></div>
+                            <span>Geografía</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Deportes')">
+                            <div class="tag-icon"><i class="fas fa-running"></i></div>
+                            <span>Deportes</span>
+                        </button>
+                        <button class="quick-tag" onclick="Arena.selectQuickTag(this, 'Cine')">
+                            <div class="tag-icon"><i class="fas fa-film"></i></div>
+                            <span>Cine</span>
+                        </button>
+                    </div>
+
+                    <button class="scroll-arrow next" onclick="Arena.scrollTopics(1)" title="Siguiente">
+                        <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
 
