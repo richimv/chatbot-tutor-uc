@@ -28,8 +28,9 @@ const systemInstruction = {
     
     TU MISIÓN TIENE 3 PILARES:
     1.  **TUTOR CLÍNICO:** Explicar conceptos médicos basándote estrictamente en las Normas Técnicas, Guías de Práctica Clínica (GPC) y el marco legal del MINSA/EsSalud provistos en el contexto.
-    2.  **CURADOR DE RECURSOS:** Conectar al usuario con material "Open Source", Papers de libre acceso, y guías oficiales que estén en nuestra BD. Presenta siempre estos recursos como enlaces Markdown directos: [Título del Recurso](URL).
-    3.  **GUÍA ACADÉMICO:** Orientar sobre qué Cursos, Módulos de Entrenamiento y Flashcards están disponibles en Hub Academia. Cuando menciones un curso, genera SIEMPRE un enlace en formato Markdown: [Nombre del Curso](/course?id=ID).
+    2.  **CURADOR DE RECURSOS:** Conectar al usuario con material "Open Source", Papers, y guías oficiales. Presenta siempre estos recursos como enlaces Markdown directos: [Título](URL).
+    3.  **EXPERTO VISUAL:** Si el material es una Infografía o Imagen (Tipo: "other"), descríbelo como material visual de apoyo (ej: "He seleccionado esta infografía para ilustrar el concepto...").
+    4.  **GUÍA ACADÉMICO:** Orientar sobre qué Cursos, Módulos y Flashcards están disponibles. Cuando menciones un curso, usa SIEMPRE: [Nombre](/course?id=ID).
 
     --- DIRECTRICES DE COMPORTAMIENTO ---
 
@@ -111,6 +112,25 @@ class MLService {
     }
 
     /**
+     * Resolutor Universal de URLs de Recursos (GCS / Externos)
+     * @private
+     */
+    static _resolveResourceUrl(url, type = 'book') {
+        if (!url || url.trim() === '') return '#';
+        
+        // Si ya es una URL absoluta o relativa local conocida, no tocar
+        const u = url.trim();
+        if (u.startsWith('http') || u.startsWith('/') || u.startsWith('data:') || u.startsWith('assets/')) {
+            return u;
+        }
+
+        // Caso GCS: Es una ruta relativa (ej: "recursos/infografia.png")
+        // No inyectamos el token aquí porque la IA lo entrega como Markdown y el cliente lo procesará, 
+        // o el proxy /api/media/gcs lo manejará (el middleware checkAuth lo validará al clic).
+        return `/api/media/gcs?path=${encodeURIComponent(u)}`;
+    }
+
+    /**
      * Procesa un mensaje de usuario usando un Modelo de Lenguaje Grande (LLM).
      */
     static async classifyIntent(message, conversationHistory, dependencies) {
@@ -171,8 +191,9 @@ class MLService {
                 contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS]\n` +
                     topMatches.map(b =>
                         `* Título: "${b.title}"
+                           Tipo: ${b.resource_type || 'Desconocido'}
                            Autor: ${b.author || 'Anónimo'}
-                           URL: ${b.url}`
+                           URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
                     ).join('\n---\n') +
                     `\n[FIN RECURSOS]\n`;
                 console.log(`🚀 Pre-fetching Inteligente: ${topMatches.length} recursos inyectados (Keywords: ${msgTokens.join(', ')}).`);
@@ -195,12 +216,12 @@ class MLService {
 
                     contextInjection += `\n[BIBLIOTECA: RECURSOS DEL TEMA "${topic.name}"]\n` +
                         `Descripción: ${topic.description || "No disponible"}\n` +
-                        `Libros relacionados (${limitedBooks.length} de ${topicBooks.length} mostrados):\n` +
+                        `Material Relacionado (${limitedBooks.length} de ${topicBooks.length} mostrados):\n` +
                         limitedBooks.map(b =>
-                            `* Título: "${b.title}" | Autor: ${b.author} | URL: ${b.url}`
+                            `* [Tipo: ${b.resource_type || 'Material'}] Título: "${b.title}" | Autor: ${b.author} | URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
                         ).join('\n') +
-                        (remaining > 0 ? `\n... y ${remaining} recursos más disponibles en la biblioteca.` : '') +
-                        `\n[Enlace para ver todos: /?q=${encodeURIComponent(topic.name)}]` + // Instrucción para el LLM
+                        (remaining > 0 ? `\n... y ${remaining} recursos más disponibles.` : '') +
+                        `\n[Ver todos: /?q=${encodeURIComponent(topic.name)}]` +
                         `\n[FIN RECURSOS TEMA]\n`;
                 }
             }
@@ -221,11 +242,11 @@ class MLService {
                     contextInjection += `\n[BIBLIOTECA: CURSO "${course.name}"]\n` +
                         `Descripción: ${course.description || "No disponible"}\n` +
                         `ENLACE AL CURSO: /course?id=${course.id}\n` +
-                        `Bibliografía (${limitedBooks.length} de ${courseBooks.length} mostrados):\n` +
+                        `Materiales (${limitedBooks.length} de ${courseBooks.length} mostrados):\n` +
                         limitedBooks.map(b =>
-                            `* Título: "${b.title}" | Autor: ${b.author} | URL: ${b.url}`
+                            `* [Tipo: ${b.resource_type || 'Material'}] Título: "${b.title}" | Autor: ${b.author} | URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
                         ).join('\n') +
-                        (remaining > 0 ? `\n... y ${remaining} libros más.` : '') +
+                        (remaining > 0 ? `\n... y ${remaining} recursos más.` : '') +
                         `\n[FIN INFO CURSO]\n`;
                 }
             }

@@ -275,7 +275,8 @@ class TrainingService {
                 });
             }
 
-            const combined = [...questions, ...newQuestions].slice(0, limit);
+            // 🔀 SHUFFLE TOTAL: Asegurar que tanto las del banco como las de la IA tengan opciones barajeadas
+            const combined = [...questions.map(q => this.shuffleOptions(q)), ...newQuestions].slice(0, limit);
 
             // ✅ ANTI-REPETICIÓN: Marcar TODO el lote entregado como visto
             const finalIds = combined.filter(q => q.id).map(q => q.id);
