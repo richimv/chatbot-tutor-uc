@@ -343,13 +343,17 @@ body {
 /* --- FLASHCARD IMAGES --- */
 .card-image-container {
     width: 100%;
-    max-height: 200px;
     margin-bottom: 1rem;
     display: none;
     justify-content: center;
     align-items: center;
     overflow: hidden;
     transition: all 0.3s ease;
+    aspect-ratio: 1 / 1; /* ✅ Relación 1:1 Estándar */
+    max-width: 250px; /* Tamaño controlado en tarjetas */
+    border-radius: 12px;
+    background: #000;
+    cursor: pointer;
 }
 
 .card-image-container.visible {
@@ -357,10 +361,9 @@ body {
 }
 
 .card-image {
-    max-height: 200px;
-    max-width: 100%;
-    border-radius: 12px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ✅ Cubre el cuadrado sin deformar */
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -384,12 +387,15 @@ body {
 
     .card__face--front.has-image .card-image-container {
         margin-bottom: 0;
-        max-height: 300px;
+        max-width: 300px; /* ✅ Más grande en desktop side-by-side */
         display: flex !important;
+        aspect-ratio: 1 / 1;
     }
 
     .card__face--front.has-image .card-image {
-        max-height: 280px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .card__face--front.has-image .content-text {
@@ -409,10 +415,14 @@ body {
 /* Mobile Tweak for has-image */
 @media (max-width: 768px) {
     .card__face--front.has-image .card-image-container {
-        max-height: 160px;
+        max-width: 180px;
+        aspect-ratio: 1 / 1;
+        margin-bottom: 1rem;
     }
     .card__face--front.has-image .card-image {
-        max-height: 150px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .card__face--front.has-image .content-text {
         font-size: 1.1rem;

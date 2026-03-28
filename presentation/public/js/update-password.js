@@ -30,13 +30,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabase v2 parsea automáticamente el #access_token de la URL. No lo hagamos manualmente.
     let isRecoverySession = false;
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('🔄 Estado de Autenticación:', event);
 
-        // Estos eventos significan que el usuario está listo para cambiar su contraseña
-        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
             isRecoverySession = true;
-            // Ya puede usar el formulario
+
+            // 🛡️ PROTECCIÓN PREVENTIVA GOOGLE
+            const user = session?.user;
+            const isGoogleProvider = user?.app_metadata?.provider === 'google';
+
+            if (isGoogleProvider) {
+                // Notificar de inmediato y ocultar formulario
+                const form = document.getElementById('update-password-form');
+                if (form) form.style.display = 'none';
+
+                errorDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fab fa-google" style="font-size: 3rem; color: #4285F4; margin-bottom: 15px;"></i>
+                        <h3 style="color: #f8fafc; margin-bottom: 10px;">Cuenta Vinculada a Google</h3>
+                        <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6;">
+                            Tu seguridad se gestiona directamente desde Google Account. <br>
+                            No es necesario establecer una contraseña local.
+                        </p>
+                        <button onclick="window.location.href='/'" class="btn-secondary" style="margin-top: 20px; width: 100%;">
+                            Volver al Inicio
+                        </button>
+                    </div>
+                `;
+                errorDiv.style.display = 'block';
+                errorDiv.style.background = 'rgba(30, 41, 59, 0.5)';
+                errorDiv.style.border = '1px solid rgba(66, 133, 244, 0.3)';
+            }
         }
     });
 

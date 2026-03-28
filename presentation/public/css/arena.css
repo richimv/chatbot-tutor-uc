@@ -521,14 +521,18 @@ body {
 .q-image-container {
     margin: 0 auto 1.5rem;
     width: 100%;
-    height: 450px; /* ✅ BOX FIJO: Inamovible para estabilidad del layout */
+    max-width: 450px; /* ✅ Control de tamaño máximo en PC */
+    aspect-ratio: 1 / 1; /* ✅ Relación 1:1 Cuadrada Perfecta */
     display: none;
     justify-content: center;
-    align-items: center; /* ✅ Centrado vertical interno */
-    background: rgba(0, 0, 0, 0.2); 
-    border-radius: 12px;
-    padding: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+    background: #000; /* Fondo negro sólido para evitar fugas visuales */
+    border-radius: 16px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    position: relative;
+    cursor: pointer; /* Indicar que es interactiva (Zoom) */
 }
 
 .q-image-container.visible {
@@ -536,28 +540,35 @@ body {
 }
 
 .q-image {
-    max-height: 100%; /* ✅ Se adapta a la caja de 450px */
-    max-width: 100%;
-    border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    object-fit: contain; 
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ✅ Cubre el cuadrado sin dejar franjas */
+    object-position: center;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 @media (max-width: 900px) {
     .arena-question-layout-grid.has-image {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
     }
     
     .q-image-container {
-        height: auto; /* ✅ Responsivo: En móvil la caja se relaja */
-        max-height: 350px;
+        max-width: 100%; /* ✅ Aprovechar todo el ancho en móvil */
+        aspect-ratio: 1 / 1;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .q-image {
+        object-fit: cover;
+        object-position: center;
     }
 
     .arena-question-layout-grid.has-image .q-text {
         text-align: center;
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+        padding: 0 0.5rem;
     }
 }
 

@@ -162,9 +162,9 @@ class UIManager {
         // Si el recurso es gratuito (isPremium = false), se accede directamente sin descontar vidas ni pedir login.
         if (!isPremium) {
             if (type === 'video') {
-                this.openVideoModal(url, title); 
+                this.openVideoModal(url, title);
             } else if (this.isImage(url)) {
-                this.showMediaViewer(url, title); 
+                this.showMediaViewer(url, title);
             } else {
                 window.open(url, '_blank');
             }
@@ -226,7 +226,7 @@ class UIManager {
 
                     // 👉 ACCIÓN SEGÚN TIPO
                     if (type === 'video') {
-                        this.openVideoModal(url, data.title || ''); 
+                        this.openVideoModal(url, data.title || '');
                     } else if (this.isImage(url)) {
                         this.showMediaViewer(url, data.title || '');
                     } else {
@@ -243,7 +243,7 @@ class UIManager {
                     // ⛔ Límite alcanzado o suscripción inactiva
                     // Actualizar estado local si el backend reporta límite
                     if (user && window.sessionManager) {
-                        user.usageCount = data.usage || 3;
+                        user.usageCount = data.usage || 50; // Sincronizar con el límite real
                         window.sessionManager.notifyStateChange();
                     }
                     this.showPaywallModal();
@@ -305,7 +305,7 @@ class UIManager {
                 titleEl.innerText = title || '';
                 titleEl.style.display = title ? 'block' : 'none';
             }
-            
+
             modal.style.display = 'flex';
             this.pushModalState('video-player-modal');
 
@@ -376,7 +376,7 @@ class UIManager {
         if (modal && img) {
             // Resolver URL si es GCS (aunque ya debería venir resuelta o registrarse resuelta)
             const finalUrl = window.resolveImageUrl(url);
-            
+
             img.src = finalUrl;
             if (titleEl) titleEl.innerText = title || 'Visualizando Recurso';
             if (downloadBtn) {
@@ -496,17 +496,17 @@ class UIManager {
         if (!url) return false;
         // Limpiar query params si los hay
         const cleanUrl = url.split('?')[0].toLowerCase();
-        return cleanUrl.endsWith('.png') || 
-               cleanUrl.endsWith('.jpg') || 
-               cleanUrl.endsWith('.jpeg') || 
-               cleanUrl.endsWith('.webp') || 
-               cleanUrl.endsWith('.gif') || 
-               cleanUrl.endsWith('.svg');
+        return cleanUrl.endsWith('.png') ||
+            cleanUrl.endsWith('.jpg') ||
+            cleanUrl.endsWith('.jpeg') ||
+            cleanUrl.endsWith('.webp') ||
+            cleanUrl.endsWith('.gif') ||
+            cleanUrl.endsWith('.svg');
     }
 
 
     /**
-     * ✅ Valida límites para acciones (Simulador, Arena, o acciones secundarias como Citar).
+     * ✅ Valida límites para acciones (Simulador, Arena, o Asistente IA).
      * Retorna FALSE si el usuario está bloqueado, TRUE si puede proceder.
      */
     validateFreemiumAction(event, type = 'arena') {
@@ -519,7 +519,7 @@ class UIManager {
         // 🛡️ DETECCIÓN DE TIER Y PROPIEDADES (Robusto: camelCase o snake_case)
         const userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
         const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
         const dailySimUsage = user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0);
 
         // 1. Lógica para Usuarios FREE (Vidas Globales)
@@ -801,6 +801,9 @@ class UIManager {
                     display: flex;
                     align-items: center;
                     gap: 15px;
+                    width: 100%;
+                    max-width: 1200px;
+                    justify-content: center;
                 }
                 .usage-pill {
                     background: rgba(255, 255, 255, 0.1);
@@ -811,6 +814,7 @@ class UIManager {
                     display: flex;
                     align-items: center;
                     gap: 5px;
+                    white-space: nowrap;
                 }
                 .upgrade-btn-small {
                     background: linear-gradient(45deg, #ffd700, #ffa500);
@@ -823,10 +827,38 @@ class UIManager {
                     color: #000;
                     text-transform: uppercase;
                     transition: transform 0.2s;
+                    white-space: nowrap;
                 }
                 .upgrade-btn-small:hover {
                     transform: scale(1.05);
                 }
+
+                /* 📱 MOBILE RESPONSIVE OPTIMIZATION */
+                @media (max-width: 600px) {
+                    .freemium-status-bar {
+                        padding: 0 10px;
+                    }
+                    .status-content {
+                        gap: 8px;
+                        justify-content: space-between;
+                    }
+                    .hide-mobile {
+                        display: none !important;
+                    }
+                    .usage-pill {
+                        padding: 4px 8px;
+                        font-size: 0.85rem;
+                    }
+                    .upgrade-btn-small {
+                        padding: 4px 10px;
+                        font-size: 0.75rem;
+                    }
+                    .probation-text {
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                    }
+                }
+
                 @keyframes slideDown {
                     from { transform: translateY(-100%); }
                     to { transform: translateY(0); }
@@ -859,13 +891,13 @@ class UIManager {
             </style>
             <div id="freemium-status-bar" class="freemium-status-bar">
                 <div class="status-content">
-                    <span>⚡ MODO PRUEBA</span>
+                    <span class="probation-text">⚡ <span class="hide-mobile">MODO </span>PRUEBA</span>
                     <div class="usage-pill">
                         <i class="fas fa-bolt"></i> <span id="free-usage-count">--/--</span>
                     </div>
-                    <span>restantes</span>
+                    <span class="hide-mobile">restantes</span>
                     <button class="upgrade-btn-small" onclick="window.location.href='/pricing'">
-                         💎 Activar Ilimitado
+                         💎 <span class="hide-mobile">Activar </span>Ilimitado
                     </button>
                 </div>
             </div>
@@ -908,7 +940,7 @@ class UIManager {
         }
 
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 3);
+        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
         const remaining = Math.max(0, limit - usage);
 
         if (countSpan) {
@@ -989,8 +1021,8 @@ class UIManager {
                                 <li style="margin-bottom: 10px; display: flex; align-items: start; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
                                     <div>
-                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">3 Pases de Vidas Globales</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Desbloquea simulacros, retos de Arena, Asistente y más.</div>
+                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">50 Pases de Vidas Globales</strong>
+                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Para simulacros, Quiz Arena, Asistente y más.</div>
                                     </div>
                                 </li>
                                 <li style="margin-bottom: 0; display: flex; align-items: start; gap: 10px;">

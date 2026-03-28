@@ -247,18 +247,9 @@ class TrainingService {
         if (questions.length < limit) {
             const tier = String(subscriptionTier || 'free').toLowerCase();
 
-            // 🛡️ RESTRICCIÓN DE IA EN ARENA: Solo Basic/Advanced/Admin pueden generar nuevas de cultura general
-            // ✅ CORRECCIÓN: 'basic' tiene 5 partidas/día permitidas con IA Lite según INFORME_LIMITES_IA.
-            if (tier !== 'basic' && tier !== 'advanced' && tier !== 'admin') {
-                console.log(`🚫 [Arena Limit] Usuario '${tier}' alcanzó agotamiento de banco de trivia. Bloqueando IA.`);
-                if (questions.length === 0) throw new Error("BANCO_AGOTADO_TIER");
-
-                const finalQuestions = questions.slice(0, limit).map(q => this.shuffleOptions(q));
-                await repository.markQuestionsAsSeen(userId, finalQuestions.filter(q => q.id).map(q => q.id));
-
-                return { questions: finalQuestions, source: 'BANK', topic: areas[0] };
-            }
-
+            // 🛡️ RESTRICCIÓN DE IA EN ARENA: Se permite a todos los usuarios (incluyendo 'free')
+            // si el banco se agota, para no interrumpir la experiencia de juego.
+            // Los límites de cuota diaria (UsageService) se validan en el controlador.
             console.log(`🧠 [Arena-IA] Reponiendo ${limit - questions.length} faltantes con IA... [Tema: ${areas[0]}]`);
             let newQuestions = await this.generateGeneralQuestionsAI(areas, limit - questions.length, subscriptionTier);
 
