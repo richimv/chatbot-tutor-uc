@@ -514,15 +514,21 @@ body {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     gap: 3rem;
-    align-items: flex-start;
+    align-items: center; /* ✅ MEJORA: Centrado vertical del texto */
     text-align: left;
 }
 
 .q-image-container {
     margin: 0 auto 1.5rem;
-    max-width: 100%;
+    width: 100%;
+    height: 450px; /* ✅ BOX FIJO: Inamovible para estabilidad del layout */
     display: none;
     justify-content: center;
+    align-items: center; /* ✅ Centrado vertical interno */
+    background: rgba(0, 0, 0, 0.2); 
+    border-radius: 12px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .q-image-container.visible {
@@ -530,12 +536,29 @@ body {
 }
 
 .q-image {
-    max-height: 400px; /* Aumentado para mejor visualización */
+    max-height: 100%; /* ✅ Se adapta a la caja de 450px */
     max-width: 100%;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    object-fit: contain;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    object-fit: contain; 
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (max-width: 900px) {
+    .arena-question-layout-grid.has-image {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .q-image-container {
+        height: auto; /* ✅ Responsivo: En móvil la caja se relaja */
+        max-height: 350px;
+    }
+
+    .arena-question-layout-grid.has-image .q-text {
+        text-align: center;
+        font-size: 1.3rem;
+    }
 }
 
 .arena-question-layout-grid.has-image .q-image-container {
