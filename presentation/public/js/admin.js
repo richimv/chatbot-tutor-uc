@@ -608,14 +608,14 @@ class AdminManager {
         const fieldsContainer = document.getElementById('generic-form-fields');
         fieldsContainer.innerHTML = '';
         let fieldsHTML = '';
-        let currentItem = null;
+        this.currentItem = null; // ✅ SOLUCIÓN: Usar propiedad de clase para acceso global
 
         // Definimos los endpoints de la API para cada tipo
         switch (type) {
             // ... (el resto del switch case permanece igual)
             case 'career':
                 title.textContent = id ? 'Editar Carrera' : 'Añadir Carrera';
-                if (id) currentItem = this.allCareers.find(c => c.id === parseInt(id, 10));
+                if (id) this.currentItem = this.allCareers.find(c => c.id === parseInt(id, 10));
 
                 const areas = [
                     { id: 'Ciencias de la Salud', name: 'Ciencias de la Salud' },
@@ -626,20 +626,20 @@ class AdminManager {
                     { id: 'Ciencias Exactas', name: 'Ciencias Exactas' }
                 ];
 
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', currentItem?.name || '', true) +
-                    this.createSelect('generic-area', 'Área Académica (*)', areas, currentItem?.area || '', false) +
-                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', this.currentItem?.name || '', true) +
+                    this.createSelect('generic-area', 'Área Académica (*)', areas, this.currentItem?.area || '', false) +
+                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
                 break;
             case 'question':
                 title.textContent = id ? 'Editar Pregunta' : 'Añadir Pregunta';
-                if (id) currentItem = this.allQuestions.find(q => String(q.id) === String(id));
+                if (id) this.currentItem = this.allQuestions.find(q => String(q.id) === String(id));
 
-                let optA = currentItem?.options?.[0] || '';
-                let optB = currentItem?.options?.[1] || '';
-                let optC = currentItem?.options?.[2] || '';
-                let optD = currentItem?.options?.[3] || '';
-                let optE = currentItem?.options?.[4] || ''; // Añadida 5ta opción
-                let correctAns = currentItem?.correct_answer ?? 0;
+                let optA = this.currentItem?.options?.[0] || '';
+                let optB = this.currentItem?.options?.[1] || '';
+                let optC = this.currentItem?.options?.[2] || '';
+                let optD = this.currentItem?.options?.[3] || '';
+                let optE = this.currentItem?.options?.[4] || ''; // Añadida 5ta opción
+                let correctAns = this.currentItem?.correct_answer ?? 0;
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
@@ -647,10 +647,10 @@ class AdminManager {
                 ];
 
                 fieldsHTML = `
-                    ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', currentItem?.question_text || '', true)}
+                    ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.currentItem?.question_text || '', true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        ${this.createSelect('generic-domain', 'Dominio (*)', domains, currentItem?.domain || 'medicine', false)}
-                        <div id="generic-target-container" style="display: ${currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
+                        ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'medicine', false)}
+                        <div id="generic-target-container" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
                             <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
                             <select id="generic-target" class="form-input" onchange="
                                 const targetVal = this.value;
@@ -676,25 +676,25 @@ class AdminManager {
                                     }
                                 }
                             ">
-                                <option value="ENAM" ${currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
-                                <option value="SERUMS" ${currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
-                                <option value="RESIDENTADO" ${currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
-                                <option value="N/A" ${currentItem?.target === 'N/A' || !currentItem?.target ? 'selected' : ''}>N/A (Quiz Arena)</option>
+                                <option value="ENAM" ${this.currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
+                                <option value="SERUMS" ${this.currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
+                                <option value="RESIDENTADO" ${this.currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
+                                <option value="N/A" ${this.currentItem?.target === 'N/A' || !this.currentItem?.target ? 'selected' : ''}>N/A (Quiz Arena)</option>
                             </select>
                         </div>
                     </div>
-                    <div id="generic-career-wrapper" style="display: ${currentItem?.target?.toUpperCase() === 'SERUMS' ? 'block' : 'none'}; margin-top: 15px;">
+                    <div id="generic-career-wrapper" style="display: ${this.currentItem?.target?.toUpperCase() === 'SERUMS' ? 'block' : 'none'}; margin-top: 15px;">
                         <label class="form-label" for="generic-career">Carrera Profesional (Sólo SERUMS)</label>
                         <select id="generic-career" class="form-input" style="outline: none;">
                             <option value="">Selecciona una carrera...</option>
-                            <option value="Medicina Humana" ${currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
-                            <option value="Enfermería" ${currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
-                            <option value="Obstetricia" ${currentItem?.career === 'Obstetricia' ? 'selected' : ''}>Obstetricia</option>
+                            <option value="Medicina Humana" ${this.currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
+                            <option value="Enfermería" ${this.currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
+                            <option value="Obstetricia" ${this.currentItem?.career === 'Obstetricia' ? 'selected' : ''}>Obstetricia</option>
                         </select>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', currentItem?.topic || '', true)}
-                        ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', currentItem?.subtopic || '', false)}
+                        ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', this.currentItem?.topic || '', true)}
+                        ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', this.currentItem?.subtopic || '', false)}
                     </div>
                     <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">Opciones y Respuesta</legend>
@@ -703,30 +703,30 @@ class AdminManager {
                             ${this.createFormGroup('text', 'generic-opt1', 'Opción B (*)', optB, true)}
                             ${this.createFormGroup('text', 'generic-opt2', 'Opción C (*)', optC, true)}
                             ${this.createFormGroup('text', 'generic-opt3', 'Opción D (*)', optD, true)}
-                            <div id="generic-opt4-wrapper" style="display: ${currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? 'block' : 'none'};">
+                            <div id="generic-opt4-wrapper" style="display: ${this.currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? 'block' : 'none'};">
                                 ${this.createFormGroup('text', 'generic-opt4', 'Opción E (* Solo Residentado)', optE, false)}
                             </div>
                         </div>
                         <div style="margin-top: 10px;">
                             ${this.createSelect('generic-correct-ans', 'Definir Respuesta Correcta (*)', [
-                    { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }, ...(currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? [{ id: 4, name: 'Opción E' }] : [])
+                    { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }, ...(this.currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? [{ id: 4, name: 'Opción E' }] : [])
                 ], correctAns, false)}
                         </div>
                     </fieldset>
-                    ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', currentItem?.explanation || '', false)}
+                    ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', this.currentItem?.explanation || '', false)}
                     
                     <!-- ✅ NUEVO: Recomendación Visual de la IA (Solo Informativo) -->
-                    <div id="visual-recommendation-wrapper" style="display: ${currentItem?.visual_support_recommendation ? 'block' : 'none'}; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px dashed #a855f7;">
+                    <div id="visual-recommendation-wrapper" style="display: ${this.currentItem?.visual_support_recommendation ? 'block' : 'none'}; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px dashed #a855f7;">
                         <label style="display: block; color: #a855f7; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
                             <i class="fas fa-magic"></i> Sugerencia de la IA para Imagen:
                         </label>
-                        <p id="visual-recommendation-text" style="margin: 0; font-size: 0.9rem; color: var(--text-primary);">${currentItem?.visual_support_recommendation || ''}</p>
-                        <input type="hidden" id="generic-visual-recommendation" value="${currentItem?.visual_support_recommendation || ''}">
+                        <p id="visual-recommendation-text" style="margin: 0; font-size: 0.9rem; color: var(--text-primary);">${this.currentItem?.visual_support_recommendation || ''}</p>
+                        <input type="hidden" id="generic-visual-recommendation" value="${this.currentItem?.visual_support_recommendation || ''}">
                     </div>
 
-                    ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', currentItem?.image_url || '')}
-                    <div id="generic-explanation-image-upload-group" style="display: ${currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
-                        ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', currentItem?.explanation_image_url || '')}
+                    ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', this.currentItem?.image_url || '')}
+                    <div id="generic-explanation-image-upload-group" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
+                        ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', this.currentItem?.explanation_image_url || '')}
                     </div>
                 `;
 
@@ -887,47 +887,47 @@ class AdminManager {
                     try {
                         const res = await fetch(`${window.AppConfig.API_URL}/api/courses/${id}`, { headers: this._getAuthHeaders() });
                         if (res.ok) {
-                            currentItem = await res.json();
+                            this.currentItem = await res.json();
                         } else {
                             console.error('Error fetching course details');
-                            currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
+                            this.currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
                         }
                     } catch (error) {
                         console.error('Error fetching course details:', error);
-                        currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
+                        this.currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
                     }
                 }
 
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', currentItem?.name || '', true) +
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', this.currentItem?.name || '', true) +
                     // ✅ NUEVO: Selector de Carreras
-                    this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, currentItem?.careerIds || [], 'career') +
+                    this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, this.currentItem?.careerIds || [], 'career') +
                     // this.createUnitManager(...) Eliminado
 
                     // ✅ OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
                     // Se crea una copia [...Array] para no mutar el original desordenadamente.
-                    this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), currentItem?.materials?.map(m => m.id) || currentItem?.bookIds || [], 'book') +
-                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', currentItem?.image_url || '');
+                    this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), this.currentItem?.materials?.map(m => m.id) || this.currentItem?.bookIds || [], 'book') +
+                    this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
                 break;
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
-                if (id) currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', currentItem?.name || '', true) +
+                if (id) this.currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', this.currentItem?.name || '', true) +
                     // Descripción eliminada
                     // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, currentItem?.bookIds || [], 'book') +
+                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, this.currentItem?.bookIds || [], 'book') +
                     '<div id="resources-container"></div>';
                 break;
 
 
             case 'student': // ✅ NUEVO
                 title.textContent = id ? 'Editar Alumno' : 'Añadir Alumno';
-                if (id) currentItem = this.allStudents.find(i => i.id === id);
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', currentItem?.name || '', true) +
-                    this.createFormGroup('email', 'generic-email', 'Email (*)', currentItem?.email || '', true);
+                if (id) this.currentItem = this.allStudents.find(i => i.id === id);
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', this.currentItem?.name || '', true) +
+                    this.createFormGroup('email', 'generic-email', 'Email (*)', this.currentItem?.email || '', true);
                 break;
             case 'book':
                 title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
-                if (id) currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
+                if (id) this.currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
 
@@ -943,12 +943,12 @@ class AdminManager {
 
                 fieldsHTML = `
                 <div style="margin-bottom: 15px;">
-                    ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, currentItem?.resource_type || 'book', false)}
+                    ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, this.currentItem?.resource_type || 'book', false)}
                 </div>
 
                 <!-- ✅ Checkbox Premium -->
                 <div class="form-group" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="generic-is-premium" style="width: 20px; height: 20px; cursor: pointer;" ${currentItem?.is_premium ? 'checked' : ''}>
+                    <input type="checkbox" id="generic-is-premium" style="width: 20px; height: 20px; cursor: pointer;" ${this.currentItem?.is_premium ? 'checked' : ''}>
                     <label for="generic-is-premium" style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                         <i class="fas fa-crown" style="color: var(--warning-color);"></i> Recurso Premium (Requiere suscripción o vidas)
                     </label>
@@ -956,24 +956,24 @@ class AdminManager {
 
                 <!-- ✅ NUEVO: Asignación de Temas (Topics) al Recurso -->
                 <div style="margin-bottom: 15px;">
-                    ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, currentItem?.topics?.map(t => t.id) || currentItem?.topicIds || [], 'topic')}
+                    ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, this.currentItem?.topics?.map(t => t.id) || this.currentItem?.topicIds || [], 'topic')}
                 </div>
 
                 <!-- ✅ NUEVO: Asignación Directa de Curso(s) -->
                 <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
-                    ${this.createCheckboxList('Cursos Asociados', 'generic-courses', this.allCourses, currentItem?.courseIds || [], 'course')}
+                    ${this.createCheckboxList('Cursos Asociados', 'generic-courses', this.allCourses, this.currentItem?.courseIds || [], 'course')}
                     <small style="color:var(--text-muted); display:block; margin-top:4px;">Asigna directamente a la biblioteca de los cursos este material sin tener que navegar a editarlos.</small>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div style="grid-column: 1 / -1;">
-                        ${this.createFormGroup('text', 'generic-title', 'Título (*)', currentItem?.title || '', true)}
+                        ${this.createFormGroup('text', 'generic-title', 'Título (*)', this.currentItem?.title || '', true)}
                     </div>
                     <div style="grid-column: 1 / -1;">
                         <!-- ✅ UX MEJORA: Campo Autor Validado -->
                         <div class="form-group">
                             <label for="generic-author">Autor/Creador (*)</label>
-                            <input type="text" id="generic-author" name="generic-author" value="${currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
+                            <input type="text" id="generic-author" name="generic-author" value="${this.currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
                                 <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
                                     <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
                                 </small>
@@ -981,14 +981,14 @@ class AdminManager {
                     </div>
 
                     <div style="grid-column: 1 / -1;">
-                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (Opcional)', currentItem?.url || '', false)}
+                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (Opcional)', this.currentItem?.url || '', false)}
                         <small style="display:block; color:var(--text-muted); margin-top:2px;">
                             <i class="fas fa-magic"></i> <b>Tip:</b> Si se deja vacío, se usará la <b>imagen de portada</b> como recurso (ideal para infografías/mapas).
                         </small>
                     </div>
                 </div>
                 `;
-                fieldsHTML += this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', currentItem?.image_url || '');
+                fieldsHTML += this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', this.currentItem?.image_url || '');
                 break;
         }
 
@@ -1013,7 +1013,7 @@ class AdminManager {
 
 
 
-        if (type === 'topic' && currentItem) this.renderTopicResources(currentItem.resources);
+        if (type === 'topic' && this.currentItem) this.renderTopicResources(this.currentItem.resources);
 
         // Activar filtros de búsqueda en vivo y listeners de selección
         this._setupSearchableSelect('search-section-course-select', '#section-course-select');
@@ -1624,10 +1624,10 @@ class AdminManager {
                         target: qTarget,
                         // ✅ INTEGRIDAD: Solo cambiar career si es SERUMS; si no, mantener lo que ya tenía el objeto original
                         // para evitar borrar datos accidentalmente en otros dominios.
-                        career: (qTarget === 'SERUMS') ? (qCareerEl?.value || null) : (currentItem?.career || null),
+                        career: (qTarget === 'SERUMS') ? (qCareerEl?.value || null) : (this.currentItem?.career || null),
                         topic: document.getElementById('generic-topic').value,
                         subtopic: document.getElementById('generic-subtopic')?.value || null,
-                        difficulty: currentItem?.difficulty || 'Senior',
+                        difficulty: this.currentItem?.difficulty || 'Senior',
                         options: (qTarget === 'RESIDENTADO')
                             ? [
                                 document.getElementById('generic-opt0').value,
