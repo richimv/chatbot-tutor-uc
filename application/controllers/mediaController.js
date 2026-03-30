@@ -150,44 +150,32 @@ class MediaController {
     }
 
     /**
-     * ✅ NUEVO: Sirve una miniatura de Google Drive actuando como proxy.
-     * GET /api/media/drive-thumbnail?fileId=...
+     * ✅ NUEVO: Recibe un Buffer de imagen, lo optimiza y lo sube a GCS.
+     * Ideal para miniaturas descargadas de fuentes externas (Drive).
      */
-    async serveDriveThumbnail(req, res) {
+    async uploadBuffer(buffer, originalName, mimeType, folder = 'thumbnails') {
         try {
-            const { fileId } = req.query;
-            console.log(`📡 [MediaController] Solicitando miniatura para: ${fileId}`);
+            const bucket = this.storage.bucket(this.bucketName);
             
-            if (!fileId) return res.status(400).send('Falta el ID del archivo.');
-
-            // 1. Obtener el enlace de la miniatura desde Google Drive API
-            const driveData = await driveService.getThumbnailLink(fileId);
+            // 1. Optimización forzada a WebP
+            const optimizedBuffer = await this._optimizeImage(buffer);
             
-            if (!driveData || !driveData.thumbnailUrl) {
-                console.warn(`⚠️ [MediaController] No se pudo obtener el link de Google para: ${fileId}`);
-                return res.status(404).send('No se pudo obtener la miniatura de Drive.');
-            }
+            // 2. Preparar metadatos
+            const baseName = path.parse(originalName).name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+            const fileName = `${Date.now()}-${baseName}.webp`;
+            const gcsPath = `${folder}/${fileName}`;
+            const gcsFile = bucket.file(gcsPath);
 
-            // 2. Hacer la petición a la URL temporal de Google y pipear la respuesta
-            const thumbUrl = driveData.thumbnailUrl.split('=')[0] + '=s800'; 
-            console.log(`🔗 [MediaController] Descargando desde Google: ${thumbUrl.substring(0, 60)}...`);
-
-            const response = await axios({
-                method: 'get',
-                url: thumbUrl,
-                responseType: 'stream'
+            // 3. Guardar en GCS
+            await gcsFile.save(optimizedBuffer, {
+                metadata: { contentType: 'image/webp' }
             });
 
-            // 3. Establecer cabeceras y servir
-            res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
-            res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 24h
-            res.setHeader('Content-Disposition', 'inline');
-
-            response.data.pipe(res);
-
+            console.log(`✅ Buffer subido y optimizado a GCS: ${gcsPath}`);
+            return gcsPath;
         } catch (error) {
-            console.error(`❌ [MediaController] Error FATAL (${req.query.fileId}):`, error.message);
-            res.status(500).send('Error al procesar la miniatura de Drive.');
+            console.error('❌ Error subiendo buffer a GCS:', error.message);
+            return null;
         }
     }
 }

@@ -66,6 +66,31 @@ class DriveService {
     }
 
     /**
+     * ✅ NUEVO: Descarga el contenido binario de una miniatura de Drive.
+     * Útil para persistencia en GCS Bucket.
+     */
+    async downloadThumbnailBuffer(fileId) {
+        try {
+            const data = await this.getThumbnailLink(fileId);
+            if (!data || !data.thumbnailUrl) return null;
+
+            // Solicitar versión de alta resolución (800px)
+            const highResUrl = data.thumbnailUrl.split('=')[0] + '=s800';
+            console.log(`📥 [DriveService] Descargando Buffer de miniatura (800px): ${fileId}`);
+
+            const response = await axios.get(highResUrl, { responseType: 'arraybuffer' });
+            return {
+                buffer: Buffer.from(response.data),
+                mimeType: response.headers['content-type'] || 'image/jpeg',
+                name: data.name
+            };
+        } catch (error) {
+            console.error(`❌ [DriveService] Fallo descarga Buffer (${fileId}):`, error.message);
+            return null;
+        }
+    }
+
+    /**
      * Obtiene todos los archivos dentro de una carpeta específica
      * @param {string} folderId - ID de la carpeta de Google Drive
      */

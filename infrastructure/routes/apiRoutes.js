@@ -55,7 +55,6 @@ router.get('/media/explanation/:id', optionalAuth, (req, res) => mediaController
 router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.serveResourceImage(req, res));
 router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
 router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res));
-router.get('/media/drive-thumbnail', optionalAuth, (req, res) => mediaController.serveDriveThumbnail(req, res)); // ✅ Nuevo proxy Drive
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');

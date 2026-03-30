@@ -578,11 +578,10 @@ class UIManager {
         if (path.startsWith('http')) {
             // ✅ DETECCIÓN DE DRIVE
             if (this.isDriveLink(path)) {
-                // Si es una CARPETA, no solicitamos miniatura (Google no las genera para carpetas)
-                if (this.isDriveFolder(path)) return '';
-
-                const fileId = this.extractDriveFileId(path);
-                return fileId ? `/api/media/drive-thumbnail?fileId=${fileId}` : path;
+                // Ya no usamos el proxy temporal /api/media/drive-thumbnail.
+                // Ahora dependemos de la miniatura persistente en GCS.
+                // Si llegamos aquí con un link de Drive, es que no hay miniatura generada aún.
+                return ''; 
             }
             return path; // Es una URL externa directa
         }

@@ -529,25 +529,42 @@ class AdminController {
             let updatedCount = 0;
 
             for (const file of files) {
-                // Generar URL estándar: https://drive.google.com/open?id=FILE_ID
                 const driveUrl = `https://drive.google.com/open?id=${file.id}`;
-
-                // Limpiar nombre (quitar extensión)
                 const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
 
-                // Verificar si ya existe por URL (o FileID contenido en la URL)
-                const existing = await db.query('SELECT id FROM resources WHERE url = $1 LIMIT 1', [driveUrl]);
+                // ⚡️ NUEVO: Lógica de Persistencia de Miniatura en GCS
+                let persistentThumbnailUrl = null;
+                try {
+                    const thumbData = await DriveService.downloadThumbnailBuffer(file.id);
+                    if (thumbData && thumbData.buffer) {
+                        persistentThumbnailUrl = await mediaController.uploadBuffer(
+                            thumbData.buffer, 
+                            `${file.id}.jpg`, 
+                            thumbData.mimeType, 
+                            'thumbnails'
+                        );
+                    }
+                } catch (thumbErr) {
+                    console.warn(`⚠️ No se pudo persistir miniatura para ${file.name}:`, thumbErr.message);
+                }
+
+                const existing = await db.query('SELECT id, image_url FROM resources WHERE url = $1 LIMIT 1', [driveUrl]);
 
                 if (existing.rows.length > 0) {
-                    // Actualizar si ya existe (opcional, solo título por ahora)
-                    await db.query('UPDATE resources SET title = $1, resource_type = $2 WHERE id = $3', [cleanTitle, resourceType, existing.rows[0].id]);
+                    // Actualizar si ya existe (incluyendo miniatura si la anterior era nula)
+                    const oldThumb = existing.rows[0].image_url;
+                    const finalThumb = persistentThumbnailUrl || oldThumb;
+
+                    await db.query(
+                        'UPDATE resources SET title = $1, resource_type = $2, image_url = $3 WHERE id = $4', 
+                        [cleanTitle, resourceType, finalThumb, existing.rows[0].id]
+                    );
                     updatedCount++;
                 } else {
-                    // Crear nuevo recurso
                     const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
                     await db.query(
-                        'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium) VALUES ($1, $2, $3, $4, $5, $6)',
-                        [resourceId, cleanTitle, author || 'Admin Hub', driveUrl, resourceType, false]
+                        'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                        [resourceId, cleanTitle, author || 'Admin Hub', driveUrl, resourceType, false, persistentThumbnailUrl]
                     );
                     insertedCount++;
                 }
