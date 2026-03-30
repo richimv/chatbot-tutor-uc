@@ -417,9 +417,9 @@ El proyecto utiliza una arquitectura distribuida para maximizar la velocidad de 
 *   **Render (Backend):** Aloja el servidor Node.js en `https://tutor-ia-backend.onrender.com`.
 
 **Configuración de Rewrites (vercel.json):**
-Para que las llamadas a `/api/*` lleguen correctamente al backend, se utiliza una regla de **Rewrite**. 
+Para que las llamadas a `/api/*` lleguen correctamente al backend, se utiliza una regla de **Rewrite** con la sintaxis de comodines de Vercel. 
 > [!IMPORTANT]
-> La regla `/api/(.*)` debe ser la **primera** en el array de `rewrites` para evitar que Vercel intente servir rutas de la API como si fueran archivos estáticos (causando errores 404).
+> La regla `/api/:path*` debe ser la **primera** en el array de `rewrites`. Esta sintaxis garantiza que tanto la ruta como los parámetros de consulta (`?fileId=...`) se transfieran íntegramente de Vercel a Render.
 
 ---
 

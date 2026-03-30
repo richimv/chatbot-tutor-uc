@@ -4,8 +4,8 @@
     "cleanUrls": true,
     "rewrites": [
         {
-            "source": "/api/(.*)",
-            "destination": "https://tutor-ia-backend.onrender.com/api/$1"
+            "source": "/api/:path*",
+            "destination": "https://tutor-ia-backend.onrender.com/api/:path*"
         },
         {
             "source": "/google9e7db62b59fd1348.html",
