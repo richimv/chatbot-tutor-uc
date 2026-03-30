@@ -1,27 +1,23 @@
-const db = require('../../infrastructure/database/db');
+// const db = require('../../infrastructure/database/db'); // ❌ REMOVED: Clean Architecture enforcement
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { spawn } = require('child_process');
-const AnalyticsService = require('../../domain/services/analyticsService'); // ✅ NUEVO
-const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
+const AnalyticsService = require('../../domain/services/analyticsService');
+const trainingRepository = require('../../domain/repositories/trainingRepository');
 const MLService = require('../../domain/services/mlService');
-const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida de imágenes a GCS
+const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
+const mediaController = require('./mediaController'); 
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
 // ==========================================
 const isWindows = process.platform === 'win32';
-// process.cwd() obtiene la carpeta raíz donde ejecutas "npm run dev"
 const ROOT_DIR = process.cwd();
 const DATA_DIR = path.join(ROOT_DIR, 'data_dump');
 const ML_SCRIPT = path.join(ROOT_DIR, 'ml_service', 'run_batch.py');
 const PREDICTIONS_FILE = path.join(DATA_DIR, 'ai_predictions.json');
-const PYTHON_PATH = isWindows
-    ? 'C:/Python313/python.exe'  // Tu ruta local
-    : 'python3';
+const PYTHON_PATH = isWindows ? 'C:/Python313/python.exe' : 'python3';
 
-// Asegurar carpeta temporal
 if (!fs.existsSync(DATA_DIR)) {
     console.log('📁 Creando carpeta data_dump en:', DATA_DIR);
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -29,60 +25,27 @@ if (!fs.existsSync(DATA_DIR)) {
 
 class AdminController {
     constructor() {
-        this.analyticsService = new AnalyticsService(); // ✅ Instancia para KPIs de tráfico
+        this.analyticsService = new AnalyticsService(); 
     }
 
-    /**
-     * Helper para exportar tablas a CSV para que Python las lea
-     */
-    async _exportTableToCSV(tableName, fileName, columns = '*') {
-        const res = await db.query(`SELECT ${columns} FROM ${tableName}`);
-        if (res.rows.length === 0) return;
-
-        const headers = Object.keys(res.rows[0]).join(',');
-        const rows = res.rows.map(row =>
-            Object.values(row).map(val => {
-                if (val === null) return '';
-
-                // NUEVO: Si es fecha, convertir a ISO (formato universal)
-                if (val instanceof Date) {
-                    return `"${val.toISOString()}"`;
-                }
-                // Limpiar saltos de línea y comillas para CSV simple
-                const cleanVal = String(val).replace(/"/g, '""').replace(/\n/g, ' ');
-                return `"${cleanVal}"`;
-            }).join(',')
-        ).join('\n');
-
-        fs.writeFileSync(path.join(DATA_DIR, fileName), headers + "\n" + rows);
-
+    async _exportTableToCSV(tableName, fileName, dataStr) {
+        if (!dataStr) return;
+        fs.writeFileSync(path.join(DATA_DIR, fileName), dataStr);
     }
 
-    /**
-     * 🧠 Endpoint: Trigger para ejecutar el análisis de IA
-     * Genera CSVs -> Ejecuta Python -> Python guarda JSON
-     */
     async runAiAnalysis(req, res) {
         try {
-            // --- 🚨 INICIO DE DEBUGGING 🚨 ---
-            console.log('📍 [DEBUG] Controlador runAiAnalysis activado');
-            console.log('📍 [DEBUG] Directorio actual del archivo (__dirname):', __dirname);
-            console.log('📍 [DEBUG] Ruta calculada para ROOT_DIR:', ROOT_DIR);
-            console.log('📍 [DEBUG] Ruta calculada para DATA_DIR:', DATA_DIR);
-            console.log('📍 [DEBUG] ¿Existe DATA_DIR?:', fs.existsSync(DATA_DIR));
-            // ---------------------------------
-
             console.log('🤖 Iniciando proceso Batch de IA...');
 
-            // 1. Exportar datos frescos a CSV
-            // Exportamos Search History (Querys) y Courses (Nombres)
-            await this._exportTableToCSV('search_history', 'search_history.csv', 'query, created_at');
-            await this._exportTableToCSV('courses', 'courses.csv', 'id, name');
-            await this._exportTableToCSV('resources', 'resources.csv', 'id, title');
+            // 1. Obtener CSVs preparados desde la capa de Dominio (AdminService)
+            const exportData = await adminService.generateExportData();
+            
+            await this._exportTableToCSV('search_history', 'search_history.csv', exportData.search_history);
+            await this._exportTableToCSV('courses', 'courses.csv', exportData.courses);
+            await this._exportTableToCSV('resources', 'resources.csv', exportData.resources);
 
             console.log(`🐍 Ejecutando script: ${ML_SCRIPT}`);
 
-            // 2. Spawn Python
             const pythonProcess = spawn(PYTHON_PATH, [ML_SCRIPT], { cwd: ROOT_DIR });
 
             pythonProcess.stdout.on('data', (data) => console.log(`[PY]: ${data}`));
@@ -95,44 +58,18 @@ class AdminController {
                     res.status(500).json({ error: 'El script de IA terminó con errores.' });
                 }
             });
-
         } catch (error) {
             console.error('Error ejecutando IA:', error);
             res.status(500).json({ error: 'Error interno ejecutando IA' });
         }
     }
 
-    /**
-     * 📊 Obtiene estadísticas maestras para el Dashboard.
-     * Lee SQL + JSON de IA
-     */
     async getDashboardStats(req, res) {
         try {
-            // console.log('⚡ Dashboard Stats solicitados...');
+            // Se invoca métricas robustamente abstraidas
+            const dbStats = await adminService.getDashboardStats();
+            const uniqueVisitorsCount = await this.analyticsService.getUniqueVisitorsCount(1);
 
-            const [usersRes, premiumRes, searchesRes, chatsRes, topCoursesRes, topBooksRes, uniqueVisitorsCount] = await Promise.all([
-                db.query('SELECT COUNT(*) as count FROM users'),
-                db.query("SELECT COUNT(*) as count FROM users WHERE subscription_status = 'active'"),
-                db.query('SELECT COUNT(*) as count FROM search_history'),
-                db.query('SELECT COUNT(*) as count FROM chat_messages'),
-                // Top 5 Cursos Reales (Page Views)
-                db.query(`SELECT c.name, COUNT(*) as visits FROM page_views pv JOIN courses c ON pv.entity_id = c.id WHERE pv.entity_type = 'course' GROUP BY c.name ORDER BY visits DESC LIMIT 5`),
-                // Top 5 Recursos (Desglosado por tipo y filtrado por entidad)
-                db.query(`
-                    SELECT 
-                        r.title || ' (' || r.resource_type || ')' as name, 
-                        COUNT(*) as visits 
-                    FROM page_views pv 
-                    JOIN resources r ON pv.entity_id = r.id 
-                    WHERE pv.entity_type = r.resource_type
-                    GROUP BY r.title, r.resource_type 
-                    ORDER BY visits DESC 
-                    LIMIT 5
-                `),
-                this.analyticsService.getUniqueVisitorsCount(1) // ✅ NUEVO: Visitas de hoy
-            ]);
-
-            // 📥 Leer predicciones de IA desde el archivo JSON (si existe)
             let aiTrends = null;
             if (fs.existsSync(PREDICTIONS_FILE)) {
                 try {
@@ -145,32 +82,27 @@ class AdminController {
 
             const stats = {
                 kpi: {
-                    totalUsers: parseInt(usersRes.rows[0].count),
-                    premiumUsers: parseInt(premiumRes.rows[0].count),
-                    estimatedRevenue: parseInt(premiumRes.rows[0].count) * 9.90, // KPI Financiero
-                    totalSearches: parseInt(searchesRes.rows[0].count),
-                    totalChatMessages: parseInt(chatsRes.rows[0].count),
+                    totalUsers: dbStats.usersCount,
+                    premiumUsers: dbStats.premiumCount,
+                    estimatedRevenue: dbStats.premiumCount * 9.90,
+                    totalSearches: dbStats.searchesCount,
+                    totalChatMessages: dbStats.chatsCount,
                     uniqueVisitors: uniqueVisitorsCount
                 },
                 charts: {
-                    topCourses: topCoursesRes.rows,
-                    topResources: topBooksRes.rows // ✅ RENOMBRADO: De topBooks a topResources
+                    topCourses: dbStats.topCourses,
+                    topResources: dbStats.topResources 
                 },
                 ai: aiTrends
             };
 
             res.json(stats);
-
         } catch (error) {
             console.error('❌ Error crítico en Dashboard:', error);
             res.status(500).json({ error: 'Error interno.' });
         }
     }
 
-    /**
-     * POST /api/admin/questions/bulk
-     * Endpoint para importar preguntas masivas vía JSON
-     */
     async bulkInjectQuestions(req, res) {
         try {
             const questions = req.body;
@@ -194,37 +126,23 @@ class AdminController {
         }
     }
 
-    /**
-     * POST /api/admin/questions/generate-ai
-     * Endpoint para generar un set de 5 preguntas empleando Retrieval Augmented Generation (RAG)
-     */
     async generateAiQuestions(req, res) {
         try {
-            /**
-             * domain:     Dominio global del banco (medicine | english | general_trivia).
-             *             Seleccionado por el admin en el dropdown "Dominio" del modal.
-             * studyAreas: Áreas de estudio médicas seleccionadas con checkboxes (Pediatría, Cardiología...).
-             *             Se pasan como string al prompt de la IA para indicar sobre qué generar.
-             */
             const { target, domain, studyAreas, career } = req.body;
             if (!target || !studyAreas) {
                 return res.status(400).json({ error: 'Faltan parámetros: target y studyAreas son requeridos.' });
             }
 
             const difficulty = 'Senior';
-
-            const resolvedDomain = domain || 'medicine'; // Fallback seguro si el front no envía domain
+            const resolvedDomain = domain || 'medicine'; 
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
-            // 1. Generar preguntas con Gemini 2.5 Flash Lite — studyAreas para el contexto, domain para la BD
-            // Pasamos: target, difficulty, studyAreas, career, amount=5, tier='lite', domain=resolvedDomain
             const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, studyAreas, career, 5, 'lite', resolvedDomain);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
             }
 
-            // 2. Inyectar masivamente en base de datos
             const result = await trainingRepository.saveBulkQuestionBankAdmin(generatedQuestions);
 
             if (result.success) {
@@ -232,58 +150,25 @@ class AdminController {
             } else {
                 res.status(500).json({ error: 'Fallo al inyectar el lote generado por la IA en la BD.' });
             }
-
         } catch (error) {
             console.error('❌ Error en generador RAG Masivo Admin:', error);
             res.status(500).json({ error: error.message || 'Error del servidor procesando el RAG.' });
         }
     }
 
-    /**
-     * GET /api/admin/questions
-     * Obtiene una lista filtrada por dominio y búsqueda para el panel.
-     */
     async getAllQuestions(req, res) {
         try {
             const { domain, search } = req.query;
-            let query = `
-                SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url, visual_support_recommendation
-                FROM question_bank 
-            `;
-            const params = [];
-            const conditions = [];
-
-            if (domain && domain !== 'all') {
-                params.push(domain);
-                conditions.push(`domain = $${params.length}`);
-            }
-
-            if (search) {
-                params.push(`%${search}%`);
-                conditions.push(`(question_text ILIKE $${params.length} OR topic ILIKE $${params.length} OR subtopic ILIKE $${params.length})`);
-            }
-
-            if (conditions.length > 0) {
-                query += ` WHERE ` + conditions.join(' AND ');
-            }
-
-            query += ` ORDER BY created_at DESC LIMIT 1000`; // Aumentamos límite para búsquedas profundas
-
-            const result = await db.query(query, params);
-            res.json(result.rows);
+            const rows = await adminService.getAllQuestions(domain, search);
+            res.json(rows);
         } catch (error) {
             console.error('Error fetching questions:', error);
             res.status(500).json({ error: 'Error interno obteniendo preguntas.' });
         }
     }
 
-    /**
-     * POST /api/admin/question
-     * Añade una sola pregunta.
-     */
     async addSingleQuestion(req, res) {
         try {
-            // ✅ DEFENSA: FormData envía "null" o "undefined" como strings.
             const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '' || val === 'N/A') ? null : val;
 
             const q = {
@@ -299,78 +184,30 @@ class AdminController {
                 try { q.options = JSON.parse(q.options); } catch (e) { console.error('Error parsing options:', e); }
             }
 
-            // Validaciones básicas
             if (!q.question_text || !q.options || q.correct_answer === undefined || !q.domain) {
                 return res.status(400).json({ error: 'Faltan campos obligatorios' });
             }
 
-            // Validar longitud de opciones según Target
-            const expectedOptions = (q.target === 'RESIDENTADO') ? 5 : 4;
-            if (!Array.isArray(q.options) || q.options.length !== expectedOptions) {
-                return res.status(400).json({ error: `El target ${q.target} requiere exactamente ${expectedOptions} opciones.` });
-            }
-
-            // Hash único
-            const rawString = `${q.topic}-${q.question_text}-${JSON.stringify(q.options)}`;
-            const hash = crypto.createHash('md5').update(rawString).digest('hex');
-
-            // ✅ SUBIDA DE IMÁGENES A GCS (si existen)
             if (req.files) {
-                // 1. Imagen del ENUNCIADO
                 if (req.files['questionImage'] && req.files['questionImage'][0]) {
-                    try {
-                        q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
-                    } catch (err) {
-                        console.error('Error uploading question image:', err);
-                    }
+                    try { q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions'); } 
+                    catch (err) { console.error('Error uploading question image:', err); }
                 }
 
-                // 2. Imagen de la EXPLICACIÓN
                 if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
-                    try {
-                        q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
-                    } catch (err) {
-                        console.error('Error uploading explanation image:', err);
-                    }
+                    try { q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations'); } 
+                    catch (err) { console.error('Error uploading explanation image:', err); }
                 }
             }
 
-            const insertQuery = `
-                INSERT INTO question_bank (
-                    question_text, options, correct_option_index, explanation, explanation_image_url, 
-                    domain, target, career, topic, subtopic, difficulty, image_url, question_hash, visual_support_recommendation
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-                RETURNING id;
-            `;
-            const values = [
-                q.question_text,
-                JSON.stringify(q.options),
-                q.correct_answer,
-                q.explanation || '',
-                q.explanation_image_url || null,
-                q.domain,
-                q.target || null,
-                q.career || null,
-                q.topic || 'General',
-                q.subtopic || null,
-                q.difficulty || 'Senior',
-                q.image_url || null,
-                hash,
-                q.visual_support_recommendation || null
-            ];
-
-            const result = await db.query(insertQuery, values);
-            res.json({ success: true, message: 'Pregunta añadida existosamente', id: result.rows[0].id });
+            const rowId = await adminService.addSingleQuestion(q);
+            res.json({ success: true, message: 'Pregunta añadida existosamente', id: rowId });
         } catch (error) {
             console.error('Error adding single question:', error);
-            res.status(500).json({ error: 'Error del servidor al añadir pregunta.' });
+            res.status(500).json({ error: error.message || 'Error del servidor al añadir pregunta.' });
         }
     }
 
-    /**
-     * PUT /api/admin/question/:id
-     * Actualiza una pregunta existente.
-     */
     async updateSingleQuestion(req, res) {
         try {
             const { id } = req.params;
@@ -394,82 +231,37 @@ class AdminController {
                 return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar' });
             }
 
-            // Validar longitud de opciones según Target (Nivel Senior)
-            const expectedOptions = (q.target === 'RESIDENTADO') ? 5 : 4;
-            if (!Array.isArray(q.options) || q.options.length !== expectedOptions) {
-                // Si por alguna razón llegan menos, no bloqueamos el update pero avisamos en consola y evitamos romper la integridad
-                console.warn(`⚠️ Mismatch de opciones en update: Expected ${expectedOptions}, got ${q.options.length}`);
-            }
-
-            // Hash único (en caso se haya modificado la pregunta u opciones)
-            const rawString = `${q.topic}-${q.question_text}-${JSON.stringify(q.options)}`;
-            const hash = crypto.createHash('md5').update(rawString).digest('hex');
-
-            // ✅ SUBIDA DE IMÁGENES A GCS (si existen o se eliminan)
             const shouldDeleteQ = q.deleteQuestionImage === 'true' || q.image_url === '';
             const shouldDeleteE = q.deleteExplanationImage === 'true' || q.explanation_image_url === '';
 
             if (req.files || shouldDeleteQ || shouldDeleteE) {
-                // Obtener datos actuales para limpieza
-                const oldData = await db.query('SELECT image_url, explanation_image_url FROM question_bank WHERE id = $1', [id]);
-                const currentQuestionImg = oldData.rows[0]?.image_url;
-                const currentExplanationImg = oldData.rows[0]?.explanation_image_url;
+                const oldData = await adminService.getQuestionImages(id);
+                const currentQuestionImg = oldData?.image_url;
+                const currentExplanationImg = oldData?.explanation_image_url;
 
-                // 1. Imagen del ENUNCIADO
                 if (req.files && req.files['questionImage'] && req.files['questionImage'][0]) {
                     try {
                         if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
                         q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
-                    } catch (err) {
-                        console.error('Error updating question image:', err);
-                    }
+                    } catch (err) { console.error('Error updating question image:', err); }
                 } else if (shouldDeleteQ) {
                     if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
                     q.image_url = null;
                 }
 
-                // 2. Imagen de la EXPLICACIÓN
                 if (req.files && req.files['explanationImage'] && req.files['explanationImage'][0]) {
                     try {
                         if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
                         q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
-                    } catch (err) {
-                        console.error('Error updating explanation image:', err);
-                    }
+                    } catch (err) { console.error('Error updating explanation image:', err); }
                 } else if (shouldDeleteE) {
                     if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
                     q.explanation_image_url = null;
                 }
             }
 
-            const updateQuery = `
-                UPDATE question_bank 
-                SET question_text = $1, options = $2, correct_option_index = $3, 
-                    explanation = $4, explanation_image_url = $5, domain = $6, 
-                    target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13, visual_support_recommendation = $14
-                WHERE id = $15
-                RETURNING id;
-            `;
-            const values = [
-                q.question_text,
-                JSON.stringify(q.options),
-                q.correct_answer,
-                q.explanation || '',
-                q.explanation_image_url || null,
-                q.domain,
-                q.target || null,
-                q.career || null,
-                q.topic || 'General',
-                q.subtopic || null,
-                q.difficulty || 'Senior',
-                q.image_url || null,
-                hash,
-                q.visual_support_recommendation || null,
-                id
-            ];
-
-            const result = await db.query(updateQuery, values);
-            if (result.rowCount === 0) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+            const isUpdated = await adminService.updateSingleQuestion(id, q);
+            if (!isUpdated) return res.status(404).json({ error: 'Pregunta no encontrada.' });
 
             res.json({ success: true, message: 'Pregunta actualizada exitosamente.' });
         } catch (error) {
@@ -478,24 +270,19 @@ class AdminController {
         }
     }
 
-    /**
-     * DELETE /api/admin/question/:id
-     * Elimina una pregunta.
-     */
     async deleteSingleQuestion(req, res) {
         try {
             const { id } = req.params;
 
-            // ✅ LIMPIEZA DE GCS: Obtener URLs antes de borrar el registro
-            const qData = await db.query('SELECT image_url, explanation_image_url FROM question_bank WHERE id = $1', [id]);
-            if (qData.rows.length > 0) {
-                const { image_url, explanation_image_url } = qData.rows[0];
+            const qData = await adminService.getQuestionImages(id);
+            if (qData) {
+                const { image_url, explanation_image_url } = qData;
                 if (image_url) await mediaController.deleteFile(image_url);
                 if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
             }
 
-            const result = await db.query('DELETE FROM question_bank WHERE id = $1 RETURNING id', [id]);
-            if (result.rowCount === 0) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+            const isDeleted = await adminService.deleteSingleQuestion(id);
+            if (!isDeleted) return res.status(404).json({ error: 'Pregunta no encontrada.' });
 
             res.json({ success: true, message: 'Pregunta eliminada exitosamente.' });
         } catch (error) {
@@ -504,10 +291,6 @@ class AdminController {
         }
     }
 
-    /**
-     * POST /api/admin/drive/sync-folder
-     * Sincroniza archivos de una carpeta de Drive a la tabla resources.
-     */
     async syncDriveFolder(req, res) {
         try {
             const { folderId, resourceType, author } = req.body;
@@ -532,7 +315,6 @@ class AdminController {
                 const driveUrl = `https://drive.google.com/open?id=${file.id}`;
                 const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
 
-                // ⚡️ NUEVO: Lógica de Persistencia de Miniatura en GCS
                 let persistentThumbnailUrl = null;
                 try {
                     const thumbData = await DriveService.downloadThumbnailBuffer(file.id);
@@ -548,26 +330,9 @@ class AdminController {
                     console.warn(`⚠️ No se pudo persistir miniatura para ${file.name}:`, thumbErr.message);
                 }
 
-                const existing = await db.query('SELECT id, image_url FROM resources WHERE url = $1 LIMIT 1', [driveUrl]);
-
-                if (existing.rows.length > 0) {
-                    // Actualizar si ya existe (incluyendo miniatura si la anterior era nula)
-                    const oldThumb = existing.rows[0].image_url;
-                    const finalThumb = persistentThumbnailUrl || oldThumb;
-
-                    await db.query(
-                        'UPDATE resources SET title = $1, resource_type = $2, image_url = $3 WHERE id = $4', 
-                        [cleanTitle, resourceType, finalThumb, existing.rows[0].id]
-                    );
-                    updatedCount++;
-                } else {
-                    const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                    await db.query(
-                        'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                        [resourceId, cleanTitle, author || 'Admin Hub', driveUrl, resourceType, false, persistentThumbnailUrl]
-                    );
-                    insertedCount++;
-                }
+                const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author);
+                if (result.action === 'updated') updatedCount++;
+                else insertedCount++;
             }
 
             res.json({
@@ -584,16 +349,13 @@ class AdminController {
     }
 }
 
-// Exportamos una instancia para poder usar 'this' correctamente si es necesario
-// O mejor, ajustamos las rutas para llamar a los métodos de la instancia.
 const controller = new AdminController();
 
-// BINDING: Truco para no perder el contexto 'this' al pasarlo como callback en router
 module.exports = {
     getDashboardStats: controller.getDashboardStats.bind(controller),
     runAiAnalysis: controller.runAiAnalysis.bind(controller),
     bulkInjectQuestions: controller.bulkInjectQuestions.bind(controller),
-    generateAiQuestions: controller.generateAiQuestions.bind(controller), // ✅ Rutina RAG añadida
+    generateAiQuestions: controller.generateAiQuestions.bind(controller), 
     getAllQuestions: controller.getAllQuestions.bind(controller),
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),

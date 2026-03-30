@@ -741,46 +741,22 @@ window.showExamReview = async function () {
     for (let i = 0; i < totalProcessed; i++) {
         const q = state.questions[i];
         const ans = state.answers[i]; // { questionId, userAnswer, isCorrect }
+        
+        const isSavedFront = savedFronts.has(q.question_text.trim());
+        
+        // 1. Obtener HTML desde el Componente Central
+        const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: isSavedFront };
+        const cardHTML = window.UIComponents.createReviewCardHTML(config);
+        
+        // 2. Insertarlo usando DOM Parser o insertAdjacentHTML (aquí creamos el wrapper directo)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cardHTML.trim();
+        const card = tempDiv.firstChild;
 
-        const card = document.createElement('div');
-        card.className = 'review-card';
-
-        // Contenedor flexible para Título/Pregunta y Botón
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'review-card-header';
-
-        // Título/Pregunta
-        const qText = document.createElement('div');
-        qText.className = 'review-q-text';
-        qText.style.flex = '1';
-        qText.style.margin = '0';
-        qText.innerHTML = `<span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${i + 1}</span> ${q.question_text}`;
-        headerDiv.appendChild(qText);
-
-        // Flashcard Button
-        if (!isDemo) {
-            const saveBtnContainer = document.createElement('div');
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn-neon';
-            saveBtn.style.padding = '0.5rem 1rem';
-            saveBtn.style.fontSize = '0.75rem';
-            saveBtn.style.whiteSpace = 'nowrap';
-            saveBtn.style.borderRadius = '20px'; // Mas redondeado
-
-            const isSaved = savedFronts.has(q.question_text.trim());
-            if (isSaved) {
-                saveBtn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
-                saveBtn.disabled = true;
-                saveBtn.style.opacity = '0.5';
-                saveBtn.style.cursor = 'not-allowed';
-                saveBtn.style.background = 'rgba(16, 185, 129, 0.2)'; // Verde apagado
-                saveBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                saveBtn.style.color = '#10b981';
-                saveBtn.style.boxShadow = 'none';
-            } else {
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Flashcard';
-                // Añadir un color de acento azul/purpura para distinción
-
+        // 3. Bindear los Event Listeners (Porque la inyección HTML cruda no preserva funciones)
+        if (!isDemo && !isSavedFront) {
+            const saveBtn = card.querySelector('.save-flashcard-btn');
+            if (saveBtn) {
                 saveBtn.onclick = async () => {
                     const originalText = saveBtn.innerHTML;
                     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
@@ -818,68 +794,7 @@ window.showExamReview = async function () {
                     }
                 };
             }
-            saveBtnContainer.appendChild(saveBtn);
-            headerDiv.appendChild(saveBtnContainer);
         }
-
-        card.appendChild(headerDiv);
-
-        // Imagen de Pregunta (si existe)
-        if (q.image_url) {
-            card.classList.add('has-image'); // Para layout responsivo en CSS
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'review-q-image-container';
-            const img = document.createElement('img');
-            img.src = window.resolveImageUrl(q.image_url);
-            img.loading = 'lazy';
-            img.style.maxHeight = '250px';
-            img.style.borderRadius = '8px';
-            imgContainer.appendChild(img);
-            card.appendChild(imgContainer);
-        }
-
-        // Opciones
-        const optionsContainer = document.createElement('div');
-        optionsContainer.className = 'review-options';
-
-        q.options.forEach((optText, optIdx) => {
-            const optDiv = document.createElement('div');
-            optDiv.className = 'review-opt';
-
-            // Text content
-            const textSpan = document.createElement('span');
-            textSpan.style.flex = '1';
-            textSpan.textContent = optText;
-
-            // Logica de colores
-            if (optIdx === q.correct_option_index) {
-                optDiv.classList.add('r-correct');
-                textSpan.innerHTML = `<strong>${optText}</strong>`;
-            } else if (ans && optIdx === ans.userAnswer) {
-                optDiv.classList.add('r-wrong');
-                textSpan.innerHTML = `<strong>${optText}</strong>`;
-            }
-
-            optDiv.appendChild(textSpan);
-            optionsContainer.appendChild(optDiv);
-        });
-        card.appendChild(optionsContainer);
-
-        // Explicación
-        const expDiv = document.createElement('div');
-        expDiv.className = 'review-explanation';
-        
-        let explanationHTML = `<strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>`;
-        explanationHTML += `${q.explanation || 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.'}`;
-
-        // ✅ NUEVO: Imagen en Revisión (AHORA ABAJO DEL TEXTO)
-        if (q.explanation_image_url) {
-            const imgUrl = window.resolveImageUrl(q.explanation_image_url);
-            explanationHTML += `<div style="text-align:center; margin-top:1.5rem;"><img src="${imgUrl}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"></div>`;
-        }
-        
-        expDiv.innerHTML = explanationHTML;
-        card.appendChild(expDiv);
 
         feed.appendChild(card);
     }

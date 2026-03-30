@@ -143,7 +143,7 @@ class MediaController {
 
             res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
             res.setHeader('Content-Disposition', 'inline');
-            res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=86400'); // Cache 24h para usuarios
+            res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=31536000, immutable'); // Cache 1 año para usuarios
             
             file.createReadStream().pipe(res);
         } catch (error) {

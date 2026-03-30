@@ -88,11 +88,33 @@ class Server {
     }
 
     configureStaticFiles() {
-        // ✅ Servir archivos estáticos (CSS, JS, imágenes) desde la carpeta 'public'
-        this.app.use(express.static(path.join(__dirname, '../../presentation/public')));
+        // ✅ Servir archivos estáticos con CACHÉ agresivo para assets inmutables
+        const publicPath = path.join(__dirname, '../../presentation/public');
+
+        // 1. Caché largo para recursos estáticos (CSS, JS, imágenes, fuentes) — 7 días
+        this.app.use('/css', express.static(path.join(publicPath, 'css'), {
+            maxAge: '7d',
+            immutable: true
+        }));
+        this.app.use('/js', express.static(path.join(publicPath, 'js'), {
+            maxAge: '7d',
+            immutable: true
+        }));
+        this.app.use('/assets', express.static(path.join(publicPath, 'assets'), {
+            maxAge: '30d',
+            immutable: true
+        }));
+
+        // 2. Sin caché para HTML (siempre la versión más reciente)
+        this.app.use(express.static(publicPath, {
+            maxAge: 0,
+            etag: true,
+            lastModified: true
+        }));
 
         // ✅ Servir favicon.ico desde la raíz del proyecto
         this.app.get('/favicon.ico', (req, res) => {
+            res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 días
             res.sendFile(path.join(__dirname, '../../favicon.ico'));
         });
     }

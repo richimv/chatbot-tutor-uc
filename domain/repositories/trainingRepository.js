@@ -472,9 +472,6 @@ class TrainingRepository {
     // --- DECKS MANAGEMENT ---
 
     async getDecks(userId, parentId = null) {
-        // Auto-heal DB
-        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
-
         if (userId === 'GUEST') {
             // Guest mode: return unique system decks by name
             const query = `
@@ -518,8 +515,6 @@ class TrainingRepository {
     }
 
     async getDeckById(userId, deckId) {
-        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
-
         const query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
@@ -677,9 +672,6 @@ class TrainingRepository {
      * Actualizar Flashcard tras repaso (Algoritmo fuera, aquí solo update)
      */
     async updateFlashcard(cardId, interval, ef, reps, nextDate, lastQuality = 0) {
-        // Auto-heal DB column
-        await db.query('ALTER TABLE user_flashcards ADD COLUMN IF NOT EXISTS last_quality INT DEFAULT 0').catch(() => null);
-
         const query = `
             UPDATE user_flashcards
             SET interval_days = $2, easiness_factor = $3, repetition_number = $4, 
@@ -831,6 +823,83 @@ class TrainingRepository {
 
         const res = await db.query(query, params);
         return res.rows;
+    }
+
+    async incrementSimulatorUsage(userId) {
+        const query = `UPDATE users SET daily_simulator_usage = daily_simulator_usage + 1 WHERE id = $1`;
+        await db.query(query, [userId]);
+    }
+
+    async getMasteredFlashcardsCount(userId) {
+        const query = `
+            SELECT COUNT(*) as count_mastered
+            FROM user_flashcards
+            WHERE user_id = $1 AND repetition_number > 3
+        `;
+        const res = await db.query(query, [userId]);
+        return parseInt(res.rows[0].count_mastered, 10);
+    }
+
+    async getBasicQuizStats(userId, topicFilter, params) {
+        const query = `
+            SELECT 
+                COUNT(*) as total_games,
+                COALESCE(SUM(score), 0) as total_correct,
+                COALESCE(SUM(total_questions), 0) as total_questions
+            FROM quiz_history
+            WHERE user_id = $1 ${topicFilter}
+        `;
+        const res = await db.query(query, params);
+        return res.rows[0];
+    }
+
+    async getTopicAnalysis(userId, topicFilter, params) {
+        const query = `
+            SELECT 
+                key as subtema,
+                SUM((value->>'correct')::int) as correct_answers,
+                SUM((value->>'total')::int) as total_answers
+            FROM quiz_history, jsonb_each(area_stats)
+            WHERE user_id = $1 ${topicFilter} AND jsonb_typeof(area_stats) = 'object'
+            GROUP BY key
+            HAVING SUM((value->>'total')::int) > 0
+            ORDER BY (SUM((value->>'correct')::int)::float / SUM((value->>'total')::int)) DESC
+        `;
+        const res = await db.query(query, params);
+        return res.rows;
+    }
+
+    async getTopicAnalysisFallback(userId, topicFilter, params) {
+        const query = `
+            SELECT topic, AVG(score) as avg_s 
+            FROM quiz_history 
+            WHERE user_id = $1 ${topicFilter} 
+            GROUP BY topic 
+            ORDER BY avg_s DESC
+        `;
+        const res = await db.query(query, params);
+        return res.rows;
+    }
+
+    async getLeaderboard() {
+        const query = `
+            WITH RankedScores AS(
+                SELECT 
+                    u.name,
+                    qs.score,
+                    qs.topic,
+                    qs.difficulty,
+                    qs.created_at,
+                    ROW_NUMBER() OVER(PARTITION BY qs.user_id ORDER BY qs.score DESC) as rn
+                FROM quiz_history qs
+                JOIN users u ON qs.user_id = u.id
+            )
+            SELECT * FROM RankedScores WHERE rn = 1
+            ORDER BY score DESC
+            LIMIT 10;
+        `;
+        const result = await db.query(query);
+        return result.rows;
     }
 }
 

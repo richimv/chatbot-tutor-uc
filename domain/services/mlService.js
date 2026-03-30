@@ -76,26 +76,11 @@ const systemInstruction = {
 
 
 
-// ✅ 3. CONFIGURACIÓN DE MODELOS DUALES (Control Financiero)
-// modelStandard: Para Auditoría/Admin
-// modelLite: Para Usuarios Finales (Ahorro Total)
-
-const standardConfig = {
-    model: 'gemini-2.5-flash-lite', // ✅ FORZADO A LITE (Ahorro Total)
-    generationConfig: {
-        maxOutputTokens: 8192,
-        temperature: 0.3,
-        topP: 0.8,
-    }
-};
-
-const liteConfig = {
-    model: 'gemini-2.5-flash-lite',
-    generationConfig: standardConfig.generationConfig
-};
-
-// Instancia Singleton UNIFICADA
-const modelLite = vertex_ai.getGenerativeModel({ ...liteConfig, systemInstruction, generationConfig: { ...liteConfig.generationConfig, temperature: 0.7 } });
+const modelLite = vertex_ai.getGenerativeModel({ 
+    model: 'gemini-2.5-flash-lite', 
+    systemInstruction, 
+    generationConfig: { maxOutputTokens: 8192, temperature: 0.7, topP: 0.8 } 
+});
 
 console.log('🤖 MLService: Motor LITE UNIFICADO (Sin Thinking -> 2.5-Flash-Lite)');
 
@@ -462,7 +447,8 @@ class MLService {
                 }
             }
 
-            parsedResult = this._validateResponseWithLocalKB(parsedResult, knowledgeBaseSet);
+            // La validación estricta de localKB fue desactivada, retornamos directo
+            // parsedResult = this._validateResponseWithLocalKB(parsedResult, knowledgeBaseSet);
             parsedResult.usedRAG = usedRAG;
             return parsedResult;
 
@@ -477,30 +463,7 @@ class MLService {
         }
     }
 
-    /**
-     * Valida la respuesta de la IA.
-     * @private
-     */
-    static _validateResponseWithLocalKB(llmResponse, knowledgeBaseSet) {
-        // ✅ SOLUCIÓN: Se ha desactivado la validación estricta de texto entre comillas.
-        // La lógica anterior marcaba como "alucinación" cualquier concepto entre comillas (ej. "tasa de cambio")
-        // que no fuera una entidad de la BD, lo cual bloqueaba explicaciones válidas.
-        // Ahora confiamos en que el Prompt Engineering y el uso de herramientas evitan alucinaciones graves.
-
-        // TODO: En el futuro, se podría implementar una validación específica para los IDs de los enlaces [type:id]
-        // para asegurar que no lleven a páginas 404.
-
-        return llmResponse;
-    }
-
-    /**
-     * Obtiene recomendaciones de cursos y temas relacionados.
-     */
-    static async getRecommendations(query, directResultsIds = []) {
-        // ✅ RECOMMENDATIONS DISABLED (Python Service Removed)
-        // La lógica de recomendaciones ahora se maneja en el flujo principal o RAG.
-        return { relatedCourses: [], relatedTopics: [] };
-    }
+    // _validateResponseWithLocalKB y getRecommendations removidos (Dead Code)
 
     /**
      * ✅ Orquestador RAG con prevención de duplicados y generación por lotes (Batching)

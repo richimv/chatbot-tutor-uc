@@ -1,5 +1,5 @@
 const TrainingService = require('../../domain/services/trainingService');
-const db = require('../../infrastructure/database/db'); // Acceso directo a BD para guardar scores
+// const db = require('../../infrastructure/database/db'); // ❌ REMOVED: Clean Architecture enforcement
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 
@@ -130,10 +130,7 @@ class QuizController {
 
             if (isActiveAccount && ['basic', 'advanced'].includes(tier)) {
                 try {
-                    await db.query(
-                        `UPDATE users SET daily_simulator_usage = daily_simulator_usage + 1 WHERE id = $1`,
-                        [userId]
-                    );
+                    await TrainingService.incrementUserSimulatorUsage(userId);
                     console.log(`📉 [Simulator Limit] +1 Simulator Usage (Culminación) para Premium: ${req.user.email}`);
                 } catch (limitErr) {
                     console.error("⚠️ Error incrementando uso de simulador al culminar:", limitErr);
@@ -203,7 +200,7 @@ class QuizController {
                 return res.json({ success: true, savedFronts: [] });
             }
 
-            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
+            const TrainingRepository = require('../../domain/repositories/trainingRepository');
             const deckId = await TrainingRepository.ensureSystemDeck(userId, moduleName);
 
             const fronts = questions.map(q => q.question_text ? q.question_text.trim() : typeof q === 'string' ? q.trim() : '');
@@ -230,7 +227,7 @@ class QuizController {
                 return res.status(400).json({ error: 'Faltan datos de la pregunta.' });
             }
 
-            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
+            const TrainingRepository = require('../../domain/repositories/trainingRepository');
             
             // ✅ ESTRATEGIA "SOLO RESPUESTA": Para optimizar UI y velocidad de repaso,
             // el dorso solo contendrá el texto de la respuesta correcta.
@@ -291,133 +288,7 @@ class QuizController {
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
-            const userId = req.user.id;
-
-            const db = require('../../infrastructure/database/db');
-
-            // --- 0. CONTEXT FILTER ---
-            // Map context to topic keywords if needed, or use generic filter
-            let topicFilter = '';
-            const params = [userId];
-            if (context === 'MEDICINA') {
-                if (target) {
-                    params.push(target);
-                    // Match exams explicitly marked with this target
-                    topicFilter = `AND target = $2`;
-                } else {
-                    // Fallback para todo el ecosistema (todas las dificultades antiguas y modernas unificadas)
-                    topicFilter = ``; 
-                }
-            } else if (context) {
-                // Generic fallback
-                params.push(`%${context}%`);
-                topicFilter = `AND topic ILIKE $2`;
-            }
-
-            // --- 1. QUIZ STATS (KPIs) ---
-            // score = correct answers count (from frontend state.score)
-            // total_questions = total questions in that game
-            const quizQuery = `
-                SELECT 
-                    COUNT(*) as total_games,
-                    COALESCE(SUM(score), 0) as total_correct,
-                    COALESCE(SUM(total_questions), 0) as total_questions
-                FROM quiz_history
-                WHERE user_id = $1 ${topicFilter}
-            `;
-            const quizRes = await db.query(quizQuery, params);
-            const qStats = quizRes.rows[0];
-
-            const totalQ = parseInt(qStats.total_questions) || 0;
-            const totalCorrect = parseInt(qStats.total_correct) || 0;
-            const totalGames = parseInt(qStats.total_games) || 0;
-            const totalIncorrect = totalQ - totalCorrect;
-
-            // Calculate derived stats
-            let accuracy = 0;
-            let avgScore20 = 0;
-
-            if (totalQ > 0) {
-                accuracy = (totalCorrect / totalQ) * 100;
-                // Convert to grade 0-20
-                avgScore20 = (totalCorrect / totalQ) * 20;
-            }
-
-            // --- 2. FLASHCARD STATS (Mastery) ---
-            const fcQuery = `
-                SELECT COUNT(*) as count_mastered
-                FROM user_flashcards
-                WHERE user_id = $1 AND repetition_number > 3
-            `;
-            const fcRes = await db.query(fcQuery, [userId]);
-            const mastered = parseInt(fcRes.rows[0].count_mastered);
-
-            // --- 3. WIN/LOSS ANALYSIS (GRANULAR POR ÁREAS) ---
-            // Leemos el JSONB 'area_stats' de cada examen y agregamos.
-            const topicAnalysisQuery = `
-                SELECT 
-                    key as subtema,
-                    SUM((value->>'correct')::int) as correct_answers,
-                    SUM((value->>'total')::int) as total_answers
-                FROM quiz_history, jsonb_each(area_stats)
-                WHERE user_id = $1 ${topicFilter} AND jsonb_typeof(area_stats) = 'object'
-                GROUP BY key
-                HAVING SUM((value->>'total')::int) > 0
-                ORDER BY (SUM((value->>'correct')::int)::float / SUM((value->>'total')::int)) DESC
-            `;
-
-            let strongest = 'N/A';
-            let weakest = 'N/A';
-            let radarData = []; // Para enviar al UX Frontend
-
-            try {
-                const topicRes = await db.query(topicAnalysisQuery, params);
-                if (topicRes.rows.length > 0) {
-                    strongest = topicRes.rows[0].subtema;
-                    weakest = topicRes.rows[topicRes.rows.length - 1].subtema;
-
-                    // Empaquetar data para UI (Radar/Bars)
-                    radarData = topicRes.rows.map(row => {
-                        const correctAnswers = parseInt(row.correct_answers || 0, 10);
-                        const totalAnswers = parseInt(row.total_answers || 0, 10);
-                        return {
-                            subject: row.subtema,
-                            accuracy: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
-                            correct: correctAnswers,
-                            total: totalAnswers
-                        };
-                    });
-                }
-            } catch (e) {
-                console.warn("⚠️ No se pudo procesar area_stats JSONB. Fallback al mode antiguo.", e.message);
-                // Fallback a modo legacy si hay error (ej: JSONB vacío aún)
-                const fallbackQuery = `SELECT topic, AVG(score) as avg_s FROM quiz_history WHERE user_id = $1 ${topicFilter} GROUP BY topic ORDER BY avg_s DESC`;
-                const topicRes = await db.query(fallbackQuery, params);
-                if (topicRes.rows.length > 0) {
-                    strongest = topicRes.rows[0].topic;
-                    weakest = topicRes.rows[topicRes.rows.length - 1].topic;
-                }
-            }
-
-            // --- 4. GET SYSTEM DECK ID ---
-            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
-            let deckId = null;
-            if (context) {
-                deckId = await TrainingRepository.ensureSystemDeck(userId, context);
-            }
-
-            // --- 5. ASSEMBLE KPIS ---
-            const kpis = {
-                avg_score: avgScore20.toFixed(1),
-                accuracy: Math.round(accuracy),
-                total_correct: totalCorrect,
-                total_incorrect: totalIncorrect,
-                mastered_cards: mastered,
-                strongest_topic: strongest,
-                weakest_topic: weakest,
-                radar_data: radarData, // ✅ ENVIADO AL FRONT
-                system_deck_id: deckId
-            };
+            const kpis = await TrainingService.getUserQuizStats(req.user.id, context, target);
 
             res.json({
                 success: true,
@@ -432,25 +303,8 @@ class QuizController {
 
     async getLeaderboard(req, res) {
         try {
-            const db = require('../../infrastructure/database/db');
-            const refinedQuery = `
-                WITH RankedScores AS(
-                SELECT 
-                    u.name,
-                    qs.score,
-                    qs.topic,
-                    qs.difficulty,
-                    qs.created_at,
-                    ROW_NUMBER() OVER(PARTITION BY qs.user_id ORDER BY qs.score DESC) as rn
-                FROM quiz_history qs
-                JOIN users u ON qs.user_id = u.id
-                )
-                SELECT * FROM RankedScores WHERE rn = 1
-                ORDER BY score DESC
-                LIMIT 10;
-            `;
-            const result = await db.query(refinedQuery);
-            res.json({ success: true, leaderboard: result.rows });
+            const resultRows = await TrainingService.getLeaderboard();
+            res.json({ success: true, leaderboard: resultRows });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Error leaderboard' });
@@ -475,7 +329,7 @@ class QuizController {
             }
 
             const userId = req.user.id;
-            const TrainingRepository = require('../../infrastructure/repositories/trainingRepository');
+            const TrainingRepository = require('../../domain/repositories/trainingRepository');
 
             const data = await TrainingRepository.getQuizEvolution(userId, context, target);
 

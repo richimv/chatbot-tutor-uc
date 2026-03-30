@@ -1,4 +1,4 @@
-const trainingRepository = require('../../infrastructure/repositories/trainingRepository');
+const trainingRepository = require('../repositories/trainingRepository');
 
 class FlashcardService {
 

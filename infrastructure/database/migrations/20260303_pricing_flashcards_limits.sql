@@ -1,1 +1,0 @@
-ALTER TABLE users ADD COLUMN IF NOT EXISTS monthly_flashcards_usage INTEGER DEFAULT 0;

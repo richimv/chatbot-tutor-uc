@@ -1,5 +1,5 @@
 const { VertexAI } = require('@google-cloud/vertexai');
-const repository = require('../../infrastructure/repositories/trainingRepository');
+const repository = require('../repositories/trainingRepository');
 const MLService = require('./mlService');
 const UserAiService = require('./userAiService');
 
@@ -8,7 +8,6 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// INSTANCIAS DE VERTEX AI (Motor Dual)
 const modelCreativeLite = vertex_ai.getGenerativeModel({
     model: 'gemini-2.5-flash-lite',
     generationConfig: {
@@ -18,8 +17,6 @@ const modelCreativeLite = vertex_ai.getGenerativeModel({
         responseMimeType: 'application/json'
     },
 });
-
-const modelCreative = modelCreativeLite; // ✅ UNIFICADO A LITE
 
 class TrainingService {
 
@@ -304,8 +301,7 @@ class TrainingService {
      */
     async generateGeneralQuestionsAI(areas, count, tier = 'free') {
         try {
-            const activeModel = (tier === 'admin') ? modelCreative : modelCreativeLite;
-            console.log(`🤖 [Arena IA] Usando modelo ${tier === 'admin' ? 'Estándar' : 'Lite'} para Tier: ${tier}`);
+            console.log(`🤖 [Arena IA] Usando modelo Lite para Tier: ${tier}`);
 
             const areaString = areas.join(', ');
 
@@ -365,12 +361,21 @@ class TrainingService {
             Asegúrate de escapar correctamente las comillas dobles internas con \\" para no romper el formato JSON.
             `;
 
-            const result = await activeModel.generateContent(prompt);
+            const result = await modelCreativeLite.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;
 
             let questions;
             try {
-                questions = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+                // Extracción robusta (Mismo estándar que mlService)
+                const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                let jsonString = codeBlockMatch ? codeBlockMatch[1] : text;
+                const startIndex = jsonString.search(/\[/);
+                const endIndex = jsonString.lastIndexOf(']');
+                
+                if (startIndex !== -1 && endIndex !== -1) {
+                    jsonString = jsonString.substring(startIndex, endIndex + 1);
+                }
+                questions = JSON.parse(jsonString);
             } catch (parseError) {
                 console.error("❌ Error parseando JSON de IA General:", parseError.message);
                 console.error("📝 Texto crudo recibido que causó el error:\n", text);
@@ -458,9 +463,6 @@ class TrainingService {
     }
 
     /**
-     * Guarda el resultado (Sin cambios, usa repo)
-     */
-    /**
      * Guarda el resultado y opcionalmente crea flashcards.
      * @param {string} userId
      * @param {object} quizData
@@ -526,6 +528,95 @@ class TrainingService {
         }
 
         return { attemptId, flashcardsCreated: 0 };
+    }
+
+    // --- NUEVO: MÉTODOS DE ANALÍTICA DEL QUIZ (MIGRADOS DESDE EL CONTROLADOR) ---
+    async incrementUserSimulatorUsage(userId) {
+        await repository.incrementSimulatorUsage(userId);
+    }
+
+    async getUserQuizStats(userId, context, target) {
+        let topicFilter = '';
+        const params = [userId];
+        
+        if (context === 'MEDICINA') {
+            if (target) {
+                params.push(target);
+                topicFilter = `AND target = $2`;
+            } else {
+                topicFilter = ``; 
+            }
+        } else if (context) {
+            params.push(`%${context}%`);
+            topicFilter = `AND topic ILIKE $2`;
+        }
+
+        const qStats = await repository.getBasicQuizStats(userId, topicFilter, params);
+
+        let accuracy = 0;
+        let avgScore20 = 0;
+        const totalQ = parseInt(qStats.total_questions) || 0;
+        const totalCorrect = parseInt(qStats.total_correct) || 0;
+        const totalGames = parseInt(qStats.total_games) || 0;
+        const totalIncorrect = totalQ - totalCorrect;
+
+        if (totalQ > 0) {
+            accuracy = (totalCorrect / totalQ) * 100;
+            avgScore20 = (totalCorrect / totalQ) * 20;
+        }
+
+        const mastered = await repository.getMasteredFlashcardsCount(userId);
+
+        let strongest = 'N/A';
+        let weakest = 'N/A';
+        let radarData = []; 
+
+        try {
+            const topicRes = await repository.getTopicAnalysis(userId, topicFilter, params);
+            if (topicRes.length > 0) {
+                strongest = topicRes[0].subtema;
+                weakest = topicRes[topicRes.length - 1].subtema;
+
+                radarData = topicRes.map(row => {
+                    const correctAnswers = parseInt(row.correct_answers || 0, 10);
+                    const totalAnswers = parseInt(row.total_answers || 0, 10);
+                    return {
+                        subject: row.subtema,
+                        accuracy: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
+                        correct: correctAnswers,
+                        total: totalAnswers
+                    };
+                });
+            }
+        } catch (e) {
+            console.warn("⚠️ No se pudo procesar area_stats JSONB.", e.message);
+            const topicRes = await repository.getTopicAnalysisFallback(userId, topicFilter, params);
+            if (topicRes.length > 0) {
+                strongest = topicRes[0].topic;
+                weakest = topicRes[topicRes.length - 1].topic;
+            }
+        }
+
+        let deckId = null;
+        if (context) {
+            deckId = await repository.ensureSystemDeck(userId, context);
+        }
+
+        return {
+            avg_score: avgScore20.toFixed(1),
+            accuracy: Math.round(accuracy),
+            total_correct: totalCorrect,
+            total_incorrect: totalIncorrect,
+            mastered_cards: mastered,
+            strongest_topic: strongest,
+            weakest_topic: weakest,
+            radar_data: radarData,
+            system_deck_id: deckId
+        };
+    }
+
+    async getLeaderboard() {
+        return await repository.getLeaderboard();
     }
 }
 

@@ -2,6 +2,32 @@
     "version": 2,
     "public": true,
     "cleanUrls": true,
+    "headers": [
+        {
+            "source": "/css/(.*)",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+            ]
+        },
+        {
+            "source": "/js/(.*)",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+            ]
+        },
+        {
+            "source": "/assets/(.*)",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
+            ]
+        },
+        {
+            "source": "/(.*).html",
+            "headers": [
+                { "key": "Cache-Control", "value": "no-cache" }
+            ]
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/:path*",

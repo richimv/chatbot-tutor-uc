@@ -970,16 +970,28 @@ class RepasoManager {
         return data.cards || [];
     }
 
-    // Create Deck
+    // Create Deck (Protected against double-submission)
     async handleCreateDeck(e) {
         e.preventDefault();
+
+        // ✅ GUARD: Prevent double-click / rapid re-submission
+        if (this._isCreatingDeck) return;
+        this._isCreatingDeck = true;
+
+        const submitBtn = document.getElementById('btn-save-deck');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
+        }
+
         const deckId = document.getElementById('new-deck-id').value; // Hidden ID field for Edit
         const name = document.getElementById('new-deck-name').value;
         const parentId = document.getElementById('new-deck-parent').value || null;
 
-        if (deckId) {
-            // EDIT MODE
-            try {
+        try {
+            if (deckId) {
+                // EDIT MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
                 const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
@@ -990,14 +1002,12 @@ class RepasoManager {
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
                     await this.explorer.loadTree();
-                    this.loadDashboard(); // Refresh current view
+                    this.loadDashboard();
                 } else {
                     alert('Error al actualizar nombre');
                 }
-            } catch (err) { console.error(err); }
-        } else {
-            // CREATE MODE
-            try {
+            } else {
+                // CREATE MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
                 const res = await fetch(`${window.AppConfig.API_URL}/api/decks`, {
                     method: 'POST',
@@ -1013,8 +1023,15 @@ class RepasoManager {
                 } else {
                     alert('Error al crear mazo');
                 }
-            } catch (err) {
-                console.error(err);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            // ✅ ALWAYS restore button and unlock, even on error
+            this._isCreatingDeck = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
             }
         }
     }

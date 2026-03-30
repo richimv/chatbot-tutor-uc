@@ -7,7 +7,7 @@ const AuthService = require('../../domain/services/authService');
 const UserRepository = require('../../domain/repositories/userRepository'); // ✅ 1. Importar la CLASE del repositorio.
 const ChatService = require('../../domain/services/chatService');
 const AnalyticsService = require('../../domain/services/analyticsService');
-const AdminService = require('../../domain/services/adminService');
+const adminServiceSingleton = require('../../domain/services/adminService');
 const SearchService = require('../../domain/services/searchService');
 const UsageService = require('../../domain/services/usageService'); // ✅ NUEVO
 
@@ -26,7 +26,7 @@ const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instanci
 const authService = new AuthService(userRepository); // ✅ Inyectar el repositorio en el servicio.
 const analyticsService = new AnalyticsService();
 const chatService = new ChatService();
-const adminService = new AdminService();
+const adminService = adminServiceSingleton;
 const searchService = new SearchService();
 const usageService = new UsageService(); // ✅ NUEVO: Servicio singleton
 

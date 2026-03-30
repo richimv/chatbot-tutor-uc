@@ -9,9 +9,6 @@
 // ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
 window.carouselInterval = null;
 
-// ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
-window.carouselInterval = null;
-
 /**
  * Inicia el desplazamiento suave del carrusel.
  * @param {string} trackId - ID del contenedor.
@@ -99,33 +96,6 @@ window.initializeCarousel = function (containerId) {
     setTimeout(checkScroll, 500);
     setTimeout(checkScroll, 2000);
 };
-
-// ... (Resto del archivo) ...
-
-// EN createCarouselHTML (Más abajo en el archivo, se actualiza la llamada):
-function createCarouselHTML(id, contentHTML) {
-    return `
-        <div class="carousel-container" id="${id}">
-            <button class="carousel-btn prev" 
-                onmouseenter="startCarouselScroll('${id}', -1, 1)" 
-                onmousedown="startCarouselScroll('${id}', -1, 4)" 
-                onmouseup="startCarouselScroll('${id}', -1, 1)" 
-                onmouseleave="stopCarouselScroll()">
-                &#10094;
-            </button>
-            <div class="carousel-track-container" id="${id}-track">
-                ${contentHTML}
-            </div>
-            <button class="carousel-btn next" 
-                onmouseenter="startCarouselScroll('${id}', 1, 1)" 
-                onmousedown="startCarouselScroll('${id}', 1, 4)" 
-                onmouseup="startCarouselScroll('${id}', 1, 1)" 
-                onmouseleave="stopCarouselScroll()">
-                &#10095;
-            </button>
-        </div>
-    `;
-}
 
 // --- Componentes para la página de Búsqueda (search.js) ---
 
@@ -830,7 +800,7 @@ window.createVideoCardHTML = function (item) {
              onclick="window.uiManager.unlockResource('${item.id}', 'video', ${isPremium})">
             
             <div class="video-thumbnail-wrapper">
-                <img src="${thumbnail}" alt="${title}" class="video-img-contain" 
+                <img src="${thumbnail}" alt="${title}" class="video-img-contain" loading="lazy"
                      onerror="if(!this.dataset.triedMq && this.src.includes('youtube')){ this.dataset.triedMq=true; this.src=this.src.replace('hqdefault','mqdefault'); } else { this.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'; }">
                 
                 <div class="video-play-hint">
@@ -850,4 +820,95 @@ window.createVideoCardHTML = function (item) {
             </div>
         </div>
     `;
+};
+
+// ==========================================
+// QUIZ REVIEW CARDS (Fase 4 Refactoring)
+// ==========================================
+window.UIComponents = window.UIComponents || {};
+
+window.UIComponents.createReviewCardHTML = function (config) {
+    const { question, answer, index, isDemo, isSavedFront } = config;
+
+    let saveBtnHTML = '';
+    if (!isDemo) {
+        if (isSavedFront) {
+            saveBtnHTML = `
+            <div>
+                <button class="btn-neon saved-flashcard-btn" disabled
+                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px; opacity: 0.5; cursor: not-allowed; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #10b981; box-shadow: none;">
+                    <i class="fas fa-check"></i> Ya guardado
+                </button>
+            </div>`;
+        } else {
+            saveBtnHTML = `
+            <div>
+                <button class="btn-neon save-flashcard-btn" data-qindex="${index}"
+                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px;">
+                    <i class="fas fa-save"></i> Guardar Flashcard
+                </button>
+            </div>`;
+        }
+    }
+
+    let imageHTML = '';
+    if (question.image_url) {
+        const resolvedImg = window.uiManager && window.uiManager.resolveImageUrl ? window.uiManager.resolveImageUrl(question.image_url) : (window.resolveImageUrl ? window.resolveImageUrl(question.image_url) : question.image_url);
+        imageHTML = `
+        <div class="review-q-image-container">
+            <img src="${resolvedImg}" loading="lazy" style="max-height: 250px; border-radius: 8px;">
+        </div>`;
+    }
+
+    let optionsHTML = '';
+    const optionsList = question.options || [];
+    optionsList.forEach((optText, optIdx) => {
+        let className = 'review-opt';
+        let formattedText = optText;
+
+        if (optIdx === question.correct_option_index) {
+            className += ' r-correct';
+            formattedText = `<strong>${optText}</strong>`;
+        } else if (answer && optIdx === answer.userAnswer) {
+            className += ' r-wrong';
+            formattedText = `<strong>${optText}</strong>`;
+        }
+
+        optionsHTML += `
+        <div class="${className}">
+            <span style="flex: 1;">${formattedText}</span>
+        </div>`;
+    });
+
+    const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
+    const expText = question.explanation || defaultExp;
+    
+    let expImageHTML = '';
+    if (question.explanation_image_url) {
+        const resolvedExpImg = window.uiManager && window.uiManager.resolveImageUrl ? window.uiManager.resolveImageUrl(question.explanation_image_url) : (window.resolveImageUrl ? window.resolveImageUrl(question.explanation_image_url) : question.explanation_image_url);
+        expImageHTML = `
+        <div style="text-align:center; margin-top:1.5rem;">
+            <img src="${resolvedExpImg}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        </div>`;
+    }
+
+    return `
+    <div class="review-card ${question.image_url ? 'has-image' : ''}" data-qindex="${index}">
+        <div class="review-card-header">
+            <div class="review-q-text" style="flex: 1; margin: 0;">
+                <span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${index + 1}</span> 
+                ${question.question_text}
+            </div>
+            ${saveBtnHTML}
+        </div>
+        ${imageHTML}
+        <div class="review-options">
+            ${optionsHTML}
+        </div>
+        <div class="review-explanation">
+            <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
+            ${expText}
+            ${expImageHTML}
+        </div>
+    </div>`;
 };

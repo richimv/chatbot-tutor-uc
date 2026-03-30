@@ -1,4 +1,4 @@
-const db = require('../../infrastructure/database/db');
+// const db = require('../../infrastructure/database/db'); // ❌ REMOVED: Clean Architecture enforcement
 
 const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository');
 const AnalyticsRepository = require('../repositories/analyticsRepository');
@@ -25,21 +25,14 @@ class AnalyticsService {
     // ==========================================
 
     async recordSearchWithIntent(query, results, isEducationalQuery, userId = null, source = 'search_bar') {
-        console.log(`📊 Registrando búsqueda en BD: "${query}"`);
         try {
-            const queryText = `
-                INSERT INTO search_history(query, results_count, is_educational_query, user_id, source)
-                VALUES($1, $2, $3, $4, $5)
-            `;
-            const values = [query, results.length, isEducationalQuery, userId, source];
-            await db.query(queryText, values);
+            await this.analyticsRepo.recordSearchWithIntent(query, results.length, isEducationalQuery, userId, source);
         } catch (error) {
             console.error('❌ Error al registrar la búsqueda en la base de datos:', error);
         }
     }
 
     async recordFeedback(query, response, isHelpful, userId = null, messageId = null) {
-        console.log(`📊 Registrando feedback en BD para la consulta: "${query}"`);
         try {
             if (messageId) {
                 const parsedMessageId = parseInt(messageId, 10);
@@ -47,8 +40,8 @@ class AnalyticsService {
                     console.warn(`⚠️ No se puede registrar el feedback: message_id "${messageId}" no es un número válido.`);
                     return;
                 }
-                const messageExists = await db.query('SELECT 1 FROM chat_messages WHERE id = $1', [parsedMessageId]);
-                if (messageExists.rows.length === 0) {
+                const exists = await this.analyticsRepo.isMessageExists(parsedMessageId);
+                if (!exists) {
                     console.warn(`⚠️ No se puede registrar el feedback: message_id ${parsedMessageId} no existe en la tabla chat_messages.`);
                     return;
                 }
@@ -58,12 +51,7 @@ class AnalyticsService {
                 return;
             }
 
-            const queryText = `
-                INSERT INTO feedback(query, response, is_helpful, user_id, message_id)
-                VALUES($1, $2, $3, $4, $5)
-            `;
-            const values = [query, response, isHelpful, userId, messageId];
-            await db.query(queryText, values);
+            await this.analyticsRepo.recordFeedbackFromService(query, response, isHelpful, userId, messageId);
         } catch (error) {
             console.error('❌ Error al registrar el feedback en la base de datos:', error);
         }
@@ -83,15 +71,7 @@ class AnalyticsService {
 
     async logPulse(sessionId, userId = null, isMobile = false) {
         try {
-            const queryText = `
-                INSERT INTO web_traffic(session_id, user_id, is_mobile, last_ping)
-                VALUES($1, $2, $3, NOW())
-                ON CONFLICT (session_id) 
-                DO UPDATE SET 
-                    last_ping = EXCLUDED.last_ping,
-                    user_id = COALESCE(EXCLUDED.user_id, web_traffic.user_id);
-            `;
-            await db.query(queryText, [sessionId, userId, isMobile]);
+            await this.analyticsRepo.logPulse(sessionId, userId, isMobile);
         } catch (error) {
             console.error('❌ Error registrando pulso de tráfico:', error);
         }
@@ -99,18 +79,11 @@ class AnalyticsService {
 
     async getRealTimeStats() {
         try {
-            const query = `
-                SELECT 
-                    COUNT(*) as active_now,
-                    COUNT(*) FILTER (WHERE is_mobile = TRUE) as mobile_active
-                FROM web_traffic 
-                WHERE last_ping >= NOW() - INTERVAL '5 minutes'
-            `;
-            const res = await db.query(query);
+            const stats = await this.analyticsRepo.getRealTimeStats();
             return {
-                activeNow: parseInt(res.rows[0].active_now, 10),
-                mobileActive: parseInt(res.rows[0].mobile_active, 10),
-                desktopActive: parseInt(res.rows[0].active_now, 10) - parseInt(res.rows[0].mobile_active, 10)
+                activeNow: parseInt(stats.active_now, 10),
+                mobileActive: parseInt(stats.mobile_active, 10),
+                desktopActive: parseInt(stats.active_now, 10) - parseInt(stats.mobile_active, 10)
             };
         } catch (error) {
             console.error('❌ Error obteniendo tráfico en tiempo real:', error);
@@ -128,77 +101,27 @@ class AnalyticsService {
             this.isKBReady = true;
         }
 
-        console.log('📊 Obteniendo KPIs del dashboard desde la BD...');
-        const dateFilter = `created_at >= NOW() - INTERVAL '${days} days'`;
+        const metrics = await this.analyticsRepo.getDashboardMetricsRaw(days);
 
-        const totalSearchesQuery = `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`;
-        const totalChatQueriesQuery = `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`;
-        const educationalQueriesQuery = `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`;
-        const totalFeedbacksQuery = `SELECT COUNT(*) FROM feedback WHERE ${dateFilter}`;
-        const positiveFeedbacksQuery = `SELECT COUNT(*) FROM feedback WHERE is_helpful = TRUE AND ${dateFilter}`;
+        const totalInteractions = metrics.totalSearches + metrics.totalChatQueries;
 
-        const activeUsersQuery = `
-            SELECT COUNT(DISTINCT user_id) 
-            FROM (
-                SELECT user_id FROM search_history WHERE ${dateFilter} AND user_id IS NOT NULL
-                UNION
-                SELECT user_id FROM conversations WHERE updated_at >= NOW() - INTERVAL '${days} days' AND user_id IS NOT NULL 
-            ) AS active_users;
-        `;
-        const totalChatMessagesQuery = `SELECT COUNT(*) FROM chat_messages WHERE ${dateFilter}`;
-        const topSearchesQuery = `
-            SELECT query, COUNT(*) as count 
-            FROM search_history 
-            WHERE ${dateFilter}
-            GROUP BY query 
-            ORDER BY count DESC
-            LIMIT 5`;
-        const totalUsersQuery = 'SELECT COUNT(*) FROM users';
-
-        const [
-            totalSearchesRes,
-            totalChatQueriesRes,
-            educationalQueriesRes,
-            totalFeedbacksRes,
-            positiveFeedbacksRes,
-            activeUsersRes,
-            totalChatMessagesRes,
-            topSearchesRes,
-            totalUsersRes
-        ] = await Promise.all([
-            db.query(totalSearchesQuery),
-            db.query(totalChatQueriesQuery),
-            db.query(educationalQueriesQuery),
-            db.query(totalFeedbacksQuery),
-            db.query(positiveFeedbacksQuery),
-            db.query(activeUsersQuery),
-            db.query(totalChatMessagesQuery),
-            db.query(topSearchesQuery),
-            db.query(totalUsersQuery)
-        ]);
-
-        const totalSearches = parseInt(totalSearchesRes.rows[0].count, 10);
-        const totalChatQueries = parseInt(totalChatQueriesRes.rows[0].count, 10);
-        const educationalQueries = parseInt(educationalQueriesRes.rows[0].count, 10);
-        const totalInteractions = totalSearches + totalChatQueries;
-
-        const classifiedTopSearches = topSearchesRes.rows.map(term => ({
+        const classifiedTopSearches = metrics.topSearchesRaw.map(term => ({
             ...term,
             type: this.classifySearchTerm(term.query)
         }));
 
         return {
-            totalSearches: totalSearches,
-            totalChatQueries: totalChatQueries,
-            chatAdoptionRate: totalInteractions > 0 ? ((totalChatQueries / totalInteractions) * 100).toFixed(1) : 0,
-            educationalQueryPercentage: totalInteractions > 0 ? ((educationalQueries / totalInteractions) * 100).toFixed(1) : 0,
-            totalFeedbacks: parseInt(totalFeedbacksRes.rows[0].count, 10),
-            positiveFeedbacks: parseInt(positiveFeedbacksRes.rows[0].count, 10),
+            totalSearches: metrics.totalSearches,
+            totalChatQueries: metrics.totalChatQueries,
+            chatAdoptionRate: totalInteractions > 0 ? ((metrics.totalChatQueries / totalInteractions) * 100).toFixed(1) : 0,
+            educationalQueryPercentage: totalInteractions > 0 ? ((metrics.educationalQueries / totalInteractions) * 100).toFixed(1) : 0,
+            totalFeedbacks: metrics.totalFeedbacks,
+            positiveFeedbacks: metrics.positiveFeedbacks,
             users: {
-                active: parseInt(activeUsersRes.rows[0].count, 10),
-                total: parseInt(totalUsersRes.rows[0].count, 10)
+                active: metrics.activeUsers,
+                total: metrics.totalUsers
             },
-            totalChatMessages: parseInt(totalChatMessagesRes.rows[0].count, 10),
+            totalChatMessages: metrics.totalChatMessages,
             topSearches: classifiedTopSearches,
             categoryDistribution: await this.getCategoryDistribution(days),
             topCareers: await this.getTopViewedEntities('career', days),
@@ -212,10 +135,7 @@ class AnalyticsService {
 
     async getUniqueVisitorsCount(days = 1) {
         try {
-            // "Hoy" significa desde las 00:00:00 del día actual (UTC)
-            const query = `SELECT COUNT(DISTINCT session_id) FROM web_traffic WHERE created_at >= CURRENT_DATE`;
-            const res = await db.query(query);
-            return parseInt(res.rows[0].count, 10);
+            return await this.analyticsRepo.getUniqueVisitorsCountRaw(days);
         } catch (error) {
             console.error('❌ Error en getUniqueVisitorsCount:', error);
             return 0;
@@ -228,13 +148,11 @@ class AnalyticsService {
 
     classifySearchTerm(query) {
         const normalizedQuery = normalizeText(query);
-
         if (normalizedQuery.length < 3) return 'General';
-
         const scores = { Curso: 0, Tema: 0, Carrera: 0, Docente: 0 };
 
         const scoreCategory = (category, nameSet) => {
-            if (!nameSet) return; // ✅ FIX: Guard against undefined sets
+            if (!nameSet) return;
             for (const name of nameSet) {
                 if (name === normalizedQuery) {
                     scores[category] = Math.max(scores[category], 3);
@@ -268,13 +186,8 @@ class AnalyticsService {
 
     isQueryEducational(queryText) {
         if (!queryText || typeof queryText !== 'string') return false;
-
         const query = normalizeText(queryText);
-
-        // 1. Detectar Patrones de Pregunta (PRIORIDAD ALTA)
-        // Se busca intención explícita de aprendizaje o duda.
         const educationalPatterns = [
-            // Preguntas directas e indirectas
             /(que|cual|como|por que|para que|donde|cuando|quien)\s+(es|son|sirve|funciona|hacer|estudiar)/i,
             /\b(definicion|concepto|significado|explicacion|resumen)\s+(de|del|sobre)\b/i,
             /\b(diferencia|comparacion|versus|vs)\b/i,
@@ -283,32 +196,14 @@ class AnalyticsService {
             /\b(pasos|guia|tutorial|manual)\s+(para|de)\b/i,
             /\b(recomienda|sugiere)\s+(un|el|la|los|las)\b/i
         ];
-
-        // Si coincide con un patrón de pregunta, es educativo (Pregunta Profunda)
         if (educationalPatterns.some(pattern => pattern.test(query))) return true;
 
-        // 2. Detectar Entidades Exactas (PRIORIDAD MEDIA)
-        // Si el usuario busca "Medicina Humana" (nombre exacto de carrera), es una búsqueda navegacional, NO una pregunta profunda.
         const entityType = this.classifySearchTerm(queryText);
+        if (entityType !== 'General') return false;
 
-        // Si el sistema reconoce la entidad y NO hubo patrón de pregunta, asumimos que quiere VER la entidad (navigational intent).
-        // Por lo tanto, NO es "educational query" en el sentido de "necesito explicación", sino "necesito el recurso".
-        if (entityType !== 'General') {
-            return false; // ✅ CORRECCIÓN: "Medicina Humana" -> False (Mostrar resultados, no banner de pregunta)
-        }
-
-        // 3. Palabras Clave Académicas Genéricas (PRIORIDAD BAJA)
-        // Si no es un patrón de pregunta ni una entidad conocida, buscamos keywords sueltas.
-        const academicKeywords = [
-            'aprender', 'estudiar', 'entender', 'explicar', 'resolver'
-        ];
-
+        const academicKeywords = ['aprender', 'estudiar', 'entender', 'explicar', 'resolver'];
         if (academicKeywords.some(keyword => new RegExp(`\\b${keyword}\\b`, 'i').test(query))) return true;
-
-        // 4. Heurística de Longitud
-        // Búsquedas muy largas que no coincidieron con nada anterior pueden ser preguntas complejas no estructuradas.
         if (query.split(/\s+/).length > 4) return true;
-
         return false;
     }
 
@@ -316,16 +211,9 @@ class AnalyticsService {
     // MÉTODOS DE AGRUPACIÓN Y Gráficas (CORREGIDO FINAL)
     // ==========================================
 
-    /**
-     * ✅ REFACTORIZADO FINAL (JACCARD SIMILARITY): Obtiene datos de series de tiempo.
-     * Usa el Índice de Jaccard (similitud de conjuntos de tokens) con un umbral estricto (0.8)
-     * para evitar que búsquedas genéricas o parciales inflen entidades específicas.
-     */
     async getEntityTimeSeriesData(type, days = 30) {
-        // 1. Obtener muestra de términos crudos
-        const rawTerms = await this.getTopSearchesRaw(days, 500); // Muestra más grande
+        const rawTerms = await this.getTopSearchesRaw(days, 500); 
 
-        // 2. Cargar Catálogo Canónico
         const courseRepo = new CourseRepository();
         const topicRepo = new TopicRepository();
 
@@ -338,10 +226,7 @@ class AnalyticsService {
             canonicalNames = topics.map(t => t.name);
         }
 
-        // 3. Agrupación Estricta usando Jaccard Similarity
         const groupedEntities = {};
-
-        // Helper de tokenización interna (usando Set para unicidad y eficiencia)
         const tokenizeToSet = (str) => {
             if (!str) return new Set();
             const stopwords = ['el', 'la', 'los', 'las', 'de', 'del', 'en', 'y', 'para', 'por', 'con', 'un', 'una', 'sobre', 'curso', 'tema', 'ingenieria'];
@@ -354,7 +239,6 @@ class AnalyticsService {
             return new Set(tokens);
         };
 
-        // Umbral de Jaccard muy estricto (80% de coincidencia de conjunto)
         const JACCARD_THRESHOLD = 0.8;
 
         for (const term of rawTerms) {
@@ -367,44 +251,29 @@ class AnalyticsService {
             for (const name of canonicalNames) {
                 const nameTokensSet = tokenizeToSet(name);
                 if (nameTokensSet.size === 0) continue;
-
-                // Cálculo del Índice de Jaccard: Intersección / Unión
-                // 1. Intersección
                 const intersection = new Set([...queryTokensSet].filter(x => nameTokensSet.has(x)));
-
-                // 2. Unión
                 const union = new Set([...queryTokensSet, ...nameTokensSet]);
-
-                // 3. Score
                 const jaccardScore = intersection.size / union.size;
 
-                // Aplicar umbral estricto
                 if (jaccardScore >= JACCARD_THRESHOLD) {
                     if (jaccardScore > maxJaccardScore) {
                         maxJaccardScore = jaccardScore;
                         bestMatch = name;
                     }
-                    // Si encontramos un match perfecto (1.0), podemos parar de buscar para esta query
                     if (jaccardScore === 1.0) break;
                 }
             }
 
             const entityName = bestMatch;
-
             if (entityName) {
                 if (!groupedEntities[entityName]) {
-                    groupedEntities[entityName] = {
-                        name: entityName,
-                        count: 0,
-                        rawQueries: []
-                    };
+                    groupedEntities[entityName] = { name: entityName, count: 0, rawQueries: [] };
                 }
                 groupedEntities[entityName].count += parseInt(term.count, 10);
                 groupedEntities[entityName].rawQueries.push(term.query);
             }
         }
 
-        // 4. Top 5 y Procesamiento de Series de Tiempo (Igual que antes)
         const top5Entities = Object.values(groupedEntities)
             .sort((a, b) => b.count - a.count)
             .slice(0, 5);
@@ -444,66 +313,20 @@ class AnalyticsService {
     // ==========================================
 
     async getSearchTrends(days = 30) {
-        console.log('📊 Obteniendo tendencias de búsqueda desde la BD...');
-        const trendsQuery = `
-            SELECT DATE(created_at) as date, COUNT(*) as count
-            FROM search_history
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
-            GROUP BY DATE(created_at)
-            ORDER BY date ASC;
-        `;
-        const trendsData = await db.query(trendsQuery);
+        const rows = await this.analyticsRepo.getSearchTrendsRaw(days);
         return {
-            labels: trendsData.rows.map(row => new Date(row.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })),
-            values: trendsData.rows.map(row => row.count)
+            labels: rows.map(row => new Date(row.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })),
+            values: rows.map(row => row.count)
         };
     }
 
     async getInteractionTrends(days = 30) {
-        console.log('📊 Obteniendo tendencias de interacción por canal...');
-        const query = `
-            WITH all_dates AS (
-                SELECT generate_series(
-                    (NOW() - INTERVAL '${days - 1} days')::date,
-                    NOW()::date,
-                    '1 day'::interval
-                )::date AS date
-            )
-            SELECT
-                d.date,
-                COALESCE(SUM(CASE WHEN s.source = 'chatbot' THEN 1 ELSE 0 END), 0) AS chatbot_queries,
-                COALESCE(SUM(CASE WHEN s.source = 'search_bar' THEN 1 ELSE 0 END), 0) AS search_bar_queries
-            FROM all_dates d
-            LEFT JOIN search_history s ON d.date = DATE(s.created_at)
-            GROUP BY d.date
-            ORDER BY d.date ASC;
-        `;
-        const { rows } = await db.query(query);
-        return rows;
+        return await this.analyticsRepo.getInteractionTrendsRaw(days);
     }
 
     async getTopViewedEntities(type, days = 30) {
-        let tableName = '';
-        let nameField = 'name';
-        switch (type) {
-            case 'career': tableName = 'careers'; break;
-            case 'course': tableName = 'courses'; break;
-            case 'topic': tableName = 'topics'; break;
-            default: return [];
-        }
-        const query = `
-            SELECT t.${nameField} as name, COUNT(pv.id) as count, t.id
-            FROM page_views pv
-            JOIN ${tableName} t ON pv.entity_id = t.id
-            WHERE pv.entity_type = $1 
-            AND pv.created_at >= NOW() - INTERVAL '${days} days'
-            GROUP BY t.id, t.${nameField}
-            ORDER BY count DESC
-            LIMIT 5;
-        `;
         try {
-            const res = await db.query(query, [type]);
-            return res.rows;
+            return await this.analyticsRepo.getTopViewedEntitiesRaw(type, days);
         } catch (error) {
             console.error(`❌ Error obteniendo top ${type}:`, error);
             return [];
@@ -520,7 +343,6 @@ class AnalyticsService {
 
     getTopInstructorsFromSearches(rawTerms) {
         if (!rawTerms || !Array.isArray(rawTerms)) return [];
-        // ✅ SAFETY CHECK: Si no hay instructores cargados, retornar vacío.
         if (!this.knowledgeBaseRepo.instructorNames || this.knowledgeBaseRepo.instructorNames.size === 0) {
             return [];
         }
@@ -537,7 +359,6 @@ class AnalyticsService {
 
         for (const term of rawTerms) {
             if (foundQueries.has(term.query)) continue;
-            // Usa Array.from solo si estamos seguros, pero ya validamos el size arriba.
             const isInstructor = Array.from(this.knowledgeBaseRepo.instructorNames).some(name =>
                 name.includes(term.query.toLowerCase()) || term.query.toLowerCase().includes(name)
             );
@@ -550,15 +371,7 @@ class AnalyticsService {
     }
 
     async getTopSearchesRaw(days = 30, limit = 100) {
-        const query = `
-            SELECT query, COUNT(*) as count 
-            FROM search_history 
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
-            GROUP BY query 
-            ORDER BY count DESC
-            LIMIT $1`;
-        const res = await db.query(query, [limit]);
-        return res.rows;
+        return await this.analyticsRepo.getTopSearchesRawData(days, limit);
     }
 
     async getCategoryDistribution(days = 30) {
@@ -572,26 +385,12 @@ class AnalyticsService {
     }
 
     async getZeroResultSearches(days = 30) {
-        const query = `
-            SELECT query, COUNT(*) as count
-            FROM search_history
-            WHERE results_count = 0
-            AND created_at >= NOW() - INTERVAL '${days} days'
-            GROUP BY query
-            ORDER BY count DESC
-            LIMIT 5;
-        `;
-        const res = await db.query(query);
-        return res.rows;
+        return await this.analyticsRepo.getZeroResultSearchesRaw(days);
     }
 
     async getAnalyticsForML(days = 90) {
         try {
-            const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - INTERVAL '${days} days' ORDER BY created_at DESC LIMIT 50000`;
-            const queryFeedback = `SELECT query, response, is_helpful, created_at FROM feedback WHERE created_at >= NOW() - INTERVAL '${days} days' ORDER BY created_at DESC LIMIT 10000`;
-            const searchHistoryRes = await db.query(querySearch);
-            const feedbackRes = await db.query(queryFeedback);
-            return { searchHistory: searchHistoryRes.rows, feedback: feedbackRes.rows };
+            return await this.analyticsRepo.getAnalyticsForMLRaw(days);
         } catch (error) {
             console.error('❌ Error al obtener datos de analítica para ML:', error);
             return { searchHistory: [], feedback: [] };
@@ -621,39 +420,16 @@ class AnalyticsService {
     // MÉTODOS DE ANALÍTICA DE IA (NUEVO)
     // ==========================================
 
-    /**
-     * Registra una interacción específica con las funciones de IA.
-     * @param {string} query - La consulta del usuario.
-     * @param {string} intentType - 'deep_question', 'navigational', etc.
-     * @param {string} eventType - 'impression', 'click_explanation', etc.
-     * @param {string} userId - ID del usuario (opcional).
-     */
     async logAIInteraction(query, intentType, eventType, userId = null) {
-        console.log(`🤖 AI Event: ${eventType} [${intentType}] for "${query}"`);
         try {
-            const queryText = `
-                INSERT INTO ai_analytics(query, intent_type, event_type, user_id)
-                VALUES($1, $2, $3, $4)
-            `;
-            await db.query(queryText, [query, intentType, eventType, userId]);
+            await this.analyticsRepo.logAIInteractionRaw(query, intentType, eventType, userId);
         } catch (error) {
             console.error('❌ Error registrando interacción de IA:', error);
         }
     }
 
     async getAIAnalytics(days = 30) {
-        const query = `
-            SELECT 
-                COUNT(*) FILTER (WHERE event_type = 'impression') as impressions,
-                COUNT(*) FILTER (WHERE event_type = 'click_explanation') as clicks,
-                COUNT(DISTINCT query) as unique_questions
-            FROM ai_analytics
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
-        `;
-        const res = await db.query(query);
-        const stats = res.rows[0];
-
-        // Calcular CTR
+        const stats = await this.analyticsRepo.getAIAnalyticsRaw(days);
         const ctr = stats.impressions > 0
             ? ((parseInt(stats.clicks) / parseInt(stats.impressions)) * 100).toFixed(1)
             : 0;
@@ -667,33 +443,18 @@ class AnalyticsService {
     }
 
     async getTopDeepQuestions(days = 30) {
-        // Preguntas profundas más populares donde hubo clic (Interés Real)
-        const query = `
-            SELECT query, COUNT(*) as count
-            FROM ai_analytics
-            WHERE event_type = 'click_explanation'
-            AND created_at >= NOW() - INTERVAL '${days} days'
-            GROUP BY query
-            ORDER BY count DESC
-            LIMIT 5
-        `;
-        const res = await db.query(query);
-        return res.rows;
+        return await this.analyticsRepo.getTopDeepQuestionsRaw(days);
     }
 
     async predictPopularCourse(days = 30) {
-        // ✅ PYTHON SERVICE DEPRECATED
-        // Ahora el AdminController lee directamente el JSON generado por el script batch.
+        // ✅ PYTHON SERVICE DEPRECATED: Removido
         return { popularCourse: null, popularTopic: null };
     }
 
-
     async getAllFeedback() {
-        const res = await db.query('SELECT * FROM feedback ORDER BY created_at DESC');
-        return res.rows;
+        return await this.analyticsRepo.getAllFeedbackRaw();
     }
 
-    // ... (Mantener resto de métodos getTimeSeriesData) ...
     async getTimeSeriesData(days = 30) {
         const rawRows = await this.analyticsRepo.getSearchHistoryTimeSeries(days);
         const uniqueDates = [...new Set(rawRows.map(r => new Date(r.date).toISOString().split('T')[0]))].sort();
@@ -710,38 +471,18 @@ class AnalyticsService {
             datasets: datasets
         };
     }
+
     async getHeatmapData(userId) {
-        // Query 1: Quiz Attempts (aggregated by day)
-        const quizQuery = `
-            SELECT to_char(created_at, 'YYYY-MM-DD') as day, COUNT(*) as count
-            FROM quiz_history
-            WHERE user_id = $1
-            GROUP BY day
-        `;
-
-        // Query 2: Flashcard Reviews
-        const cardQuery = `
-            SELECT to_char(last_reviewed_at, 'YYYY-MM-DD') as day, COUNT(*) as count
-            FROM user_flashcards
-            WHERE user_id = $1 AND last_reviewed_at IS NOT NULL
-            GROUP BY day
-        `;
-
-        const [quizRes, cardRes] = await Promise.all([
-            db.query(quizQuery, [userId]),
-            db.query(cardQuery, [userId])
-        ]);
-
-        // Merge Map
         const heatmap = {};
-
+        const res = await this.analyticsRepo.getHeatmapDataRaw(userId);
+        
         // Add Quizzes (Value: 2 points per quiz)
-        quizRes.rows.forEach(row => {
+        res.quizResRows.forEach(row => {
             heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count) * 2;
         });
 
         // Add Cards (Value: 1 point per card)
-        cardRes.rows.forEach(row => {
+        res.cardResRows.forEach(row => {
             heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count);
         });
 

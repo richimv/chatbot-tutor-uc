@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-// --- Importar Controladores ---
 const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController, mediaController
 } = require('../../application/controllers');
 
@@ -112,9 +111,6 @@ router.get('/analytics/featured-courses', analyticsController.getFeaturedCourses
 router.get('/careers/:id', coursesController.getCareerById);
 router.get('/courses/:id', coursesController.getCourseById);
 router.get('/topics/:id', coursesController.getTopicById);
-
-// --- Rutas CRUD Protegidas para el Panel de Administración ---
-router.get('/students', auth, adminOnly, coursesController.getStudents);
 
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);
