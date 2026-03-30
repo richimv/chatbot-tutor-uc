@@ -411,6 +411,16 @@ Esta funcionalidad es irreversible y desencadena una limpieza en cascada:
 3.  **Borrado Admin:** Se utiliza la `SUPABASE_SERVICE_ROLE_KEY` para eliminar el usuario del proveedor de identidad.
 4.  **Limpieza DB:** Gracias a `ON DELETE CASCADE` en PostgreSQL, se eliminan automáticamente todos los registros dependientes (chats, favoritos, historial).
 
+#### 11.2. Arquitectura Multi-Cloud y Proxy (Vercel -> Render)
+El proyecto utiliza una arquitectura distribuida para maximizar la velocidad de carga y estabilidad:
+*   **Vercel (Frontend):** Procesa el dominio `hubacademia.com` y sirve HTML/CSS/JS.
+*   **Render (Backend):** Aloja el servidor Node.js en `https://tutor-ia-backend.onrender.com`.
+
+**Configuración de Rewrites (vercel.json):**
+Para que las llamadas a `/api/*` lleguen correctamente al backend, se utiliza una regla de **Rewrite**. 
+> [!IMPORTANT]
+> La regla `/api/(.*)` debe ser la **primera** en el array de `rewrites` para evitar que Vercel intente servir rutas de la API como si fueran archivos estáticos (causando errores 404).
+
 ---
 
 ## 12. 🗑️ Guía de Funcionalidad: Eliminación de Cuenta
