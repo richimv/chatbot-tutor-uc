@@ -79,8 +79,10 @@ Optimización de la carga de bibliografía y guías clínicas mediante el escane
     *   Permite importar decenas de archivos (PDFs, Videos, Documentos) en un solo paso.
     *   **Identificador de Carpeta:** Se obtiene de la URL de Drive (ej: `https://drive.google.com/drive/folders/ID_AQUI`).
     *   **Lógica de Actualización:** Si agregas archivos nuevos a una carpeta ya sincronizada, el sistema los detecta e inserta sin duplicar los existentes (Upsert).
-*   **Miniaturas Automáticas:** 
-    *   Gracias a la integración con Drive API, el sistema genera portadas visuales automáticas para los recursos sincronizados, eliminando la necesidad de subir imágenes manuales.
+*   **Persistencia de Miniaturas (GCS):** 
+    *   **Generación Automática:** Durante el escaneo, el sistema descarga la miniatura de alta resolución de Drive.
+    *   **Optimización WebP:** La imagen se procesa con Sharp para reducir su peso y se sube permanentemente al Bucket de Google Cloud Storage (`/thumbnails`).
+    *   **Estabilidad:** Al estar guardadas en GCS, las miniaturas ya no dependen de la API de Drive para visualizarse, eliminando errores de carga (404) en el frontend.
 *   **Atribución de Autor:** Permite definir un autor universal (ej: "MINSA", "AMIR") para todo el lote sincronizado.
 
 ---

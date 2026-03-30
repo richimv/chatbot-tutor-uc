@@ -423,6 +423,23 @@ Para que las llamadas a `/api/*` lleguen correctamente al backend, se utiliza un
 
 ---
 
+## 11.3 Persistencia de Miniaturas (Drive -> GCS)
+Para garantizar una carga instantánea y eliminar la fragilidad del proxy de Vercel, el sistema utiliza un flujo de **Almacenamiento Persistente Optimizado**.
+
+**Flujo de Trabajo de Élite:**
+1.  **Escaneo:** El administrador sincroniza carpetas desde el Panel.
+2.  **Descarga Cruda:** Render descarga la miniatura de Drive en alta resolución (`s800`).
+3.  **Optimización WebP (Sharp):** El sistema convierte la imagen al formato WebP de Google, reduciendo el peso en ~70% sin pérdida visual perceptible.
+4.  **Caché Agresivo (Cache-Control):** Al subir a GCS, se inyecta la cabecera `public, max-age=31536000` (1 año).
+5.  **Entrega Directa:** Los alumnos descargan la imagen desde una URL estática de GCS.
+
+**Impacto en la Experiencia de Usuario (UX):**
+-   **Velocidad de Carga:** Tras la primera visita, las imágenes se recuperan de la **Memoria Local/Caché** del dispositivo del alumno (celular o PC) en milisegundos.
+-   **Ahorro de Datos:** La optimización WebP reduce significativamente el consumo de datos móviles para los estudiantes.
+-   **Resiliencia:** El sistema es inmune a caídas temporales de la API de Drive o problemas de red en proxies intermedios.
+
+---
+
 ## 12. 🗑️ Guía de Funcionalidad: Eliminación de Cuenta
 
 Esta sección detalla el flujo de eliminación de cuenta ("Danger Zone"), diseñado para ser seguro, irreversible y adaptativo según el método de autenticación del usuario.

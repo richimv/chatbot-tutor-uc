@@ -64,7 +64,10 @@ class MediaController {
             const gcsFile = bucket.file(gcsPath);
 
             await gcsFile.save(buffer, {
-                metadata: { contentType }
+                metadata: { 
+                    contentType,
+                    cacheControl: 'public, max-age=31536000' // ✅ MEJORA: Caché de 1 año (Estilo Netflix)
+                }
             });
 
             console.log(`✅ Archivo subido y optimizado a GCS: ${gcsPath}`);
@@ -166,9 +169,12 @@ class MediaController {
             const gcsPath = `${folder}/${fileName}`;
             const gcsFile = bucket.file(gcsPath);
 
-            // 3. Guardar en GCS
+            // 3. Guardar en GCS con caché agresivo
             await gcsFile.save(optimizedBuffer, {
-                metadata: { contentType: 'image/webp' }
+                metadata: { 
+                    contentType: 'image/webp',
+                    cacheControl: 'public, max-age=31536000' // ✅ MEJORA: Caché de 1 año
+                }
             });
 
             console.log(`✅ Buffer subido y optimizado a GCS: ${gcsPath}`);
