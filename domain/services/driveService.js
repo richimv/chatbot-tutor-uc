@@ -7,15 +7,18 @@ const path = require('path');
  */
 class DriveService {
     constructor() {
-        // ✅ MEJORA: Autenticación flexible (Local vs Producción)
+        // ✅ DEBUGLOG: Verificación de entorno en Producción
+        console.log('📡 [DriveService] Inicializando con Env:', process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'EXISTENTE' : 'VACÍO');
+        
         const authOptions = {
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
         };
 
-        // Si existe GOOGLE_APPLICATION_CREDENTIALS (como en Render), la librería lo usará automáticamente.
-        // De lo contrario, buscamos el archivo local relativo para desarrollo.
         if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
             authOptions.keyFile = path.join(__dirname, '../../service-account-key.json');
+            console.log('📁 [DriveService] Usando fallback local:', authOptions.keyFile);
+        } else {
+            console.log('🔑 [DriveService] Usando credenciales de variable de entorno.');
         }
 
         this.auth = new google.auth.GoogleAuth(authOptions);
@@ -43,15 +46,21 @@ class DriveService {
                 supportsAllDrives: true
             });
 
-            // Google devuelve una URL temporal de miniatura.
-            // Nota: thumbnailLink suele ser una imagen de ~220px ajustable.
+            if (!response.data.thumbnailLink) {
+                console.log(`⚠️ [DriveService] Google no devolvió link para (${fileId}):`, response.data.mimeType);
+            }
+
             return {
                 thumbnailUrl: response.data.thumbnailLink,
                 name: response.data.name,
                 mimeType: response.data.mimeType
             };
         } catch (error) {
-            console.error(`❌ [DriveService] Error al obtener miniatura (${fileId}):`, error.message);
+            console.error(`❌ [DriveService] Error FATAL (${fileId}):`, {
+                message: error.message,
+                code: error.code,
+                errors: error.errors || 'N/A'
+            });
             return null;
         }
     }

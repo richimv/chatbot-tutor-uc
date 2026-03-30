@@ -156,17 +156,21 @@ class MediaController {
     async serveDriveThumbnail(req, res) {
         try {
             const { fileId } = req.query;
+            console.log(`📡 [MediaController] Solicitando miniatura para: ${fileId}`);
+            
             if (!fileId) return res.status(400).send('Falta el ID del archivo.');
 
             // 1. Obtener el enlace de la miniatura desde Google Drive API
             const driveData = await driveService.getThumbnailLink(fileId);
+            
             if (!driveData || !driveData.thumbnailUrl) {
+                console.warn(`⚠️ [MediaController] No se pudo obtener el link de Google para: ${fileId}`);
                 return res.status(404).send('No se pudo obtener la miniatura de Drive.');
             }
 
-            // 2. Hacer la petición a la URL temporal de Google y pitear la respuesta
-            // Nota: Google permite modificar el tamaño con el parámetro =sXXX al final
-            const thumbUrl = driveData.thumbnailUrl.split('=')[0] + '=s800'; // Solicitar 800px para calidad premium
+            // 2. Hacer la petición a la URL temporal de Google y pipear la respuesta
+            const thumbUrl = driveData.thumbnailUrl.split('=')[0] + '=s800'; 
+            console.log(`🔗 [MediaController] Descargando desde Google: ${thumbUrl.substring(0, 60)}...`);
 
             const response = await axios({
                 method: 'get',
@@ -182,7 +186,7 @@ class MediaController {
             response.data.pipe(res);
 
         } catch (error) {
-            console.error(`❌ Error sirviendo miniatura de Drive (${req.query.fileId}):`, error.message);
+            console.error(`❌ [MediaController] Error FATAL (${req.query.fileId}):`, error.message);
             res.status(500).send('Error al procesar la miniatura de Drive.');
         }
     }
