@@ -380,12 +380,29 @@ La protección de rentabilidad del sistema se basa en un guardián central: `che
 
 ## 11. ⚠️ Notas de Despliegue Críticas
 
-### 10.1. Variables de Entorno Adicionales
-Para el correcto funcionamiento de las funciones administrativas (como la eliminación definitiva de cuentas y la auto-verificación de usuarios corporativos), es **OBLIGATORIO** configurar la siguiente variable en el entorno de producción (Render, Vercel, etc.):
+### 11.1. Variables de Entorno y Secret Files (Render / Producción)
+Para garantizar la operatividad de los servicios de IA (Gemini), Almacenamiento (GCS), Pagos (Mercado Pago) y Base de Datos (Supabase), se han configurado las siguientes variables en el entorno de producción según las capturas de auditoría:
 
-*   `SUPABASE_SERVICE_ROLE_KEY`: Clave secreta con privilegios de super-admin (bypass RLS).
-    *   **Ubicación:** Supabase Dashboard -> Project Settings -> API -> `service_role` secret.
-    *   **Riesgo:** Nunca debe exponerse en el frontend ni en repositorios públicos.
+| Variable | Descripción |
+| :--- | :--- |
+| `APP_URL` | URL base de la aplicación (ej: `https://hubacademia.com`). |
+| `GCS_BUCKET_NAME` | Nombre del cubo en Google Cloud Storage para imágenes médicas. |
+| `GEMINI_API_KEY` | Llave de acceso a la API de Vertex AI / Gemini 2.5. |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Ruta absoluta al archivo de credenciales (`/etc/secrets/service-account-key.json`). |
+| `GOOGLE_CLOUD_LOCATION` | Región del proyecto en Google Cloud (ej: `us-central1`). |
+| `GOOGLE_CLOUD_PROJECT` | ID del proyecto en Google Cloud Console. |
+| `JWT_SECRET` | Firma secreta para la validación de tokens de sesión. |
+| `MP_ACCESS_TOKEN` | Token de acceso para la API de Mercado Pago. |
+| `NODE_DATABASE_URL` | String de conexión directa a PostgreSQL (Supabase). |
+| `PORT` | Puerto de escucha del servidor (generalmente `10000` en Render). |
+| `SUPABASE_KEY` | Public Anon Key de Supabase. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service Role Key (Bypass RLS) para tareas administrativas. |
+| `SUPABASE_URL` | URL del endpoint de Supabase. |
+
+#### Configuración de Secret Files (Render)
+El archivo `service-account-key.json` (que contiene las llaves de la Service Account de Google) **NO** se incluye en el repositorio de GitHub por seguridad. En su lugar, se gestiona mediante el módulo de **Secret Files** de Render:
+*   **Nombre del Archivo:** `service-account-key.json`
+*   **Acceso:** Montado automáticamente por Render en el directorio raíz o en `/etc/secrets/` segun configuración. La variable `GOOGLE_APPLICATION_CREDENTIALS` debe apuntar a la ruta correcta para que las librerías de Google realicen la autenticación automática.
 
 ### 10.2. Eliminación de Cuenta (Danger Zone)
 Esta funcionalidad es irreversible y desencadena una limpieza en cascada:

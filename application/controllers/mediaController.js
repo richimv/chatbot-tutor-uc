@@ -7,9 +7,15 @@ const driveService = require('../../domain/services/driveService');
 
 class MediaController {
     constructor() {
-        this.storage = new Storage({
-            keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
-        });
+        // ✅ MEJORA: Autenticación robusta (Usa variable de entorno o fallback local)
+        const storageOptions = {};
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+            storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        } else {
+            storageOptions.keyFilename = path.join(__dirname, '../../service-account-key.json');
+        }
+
+        this.storage = new Storage(storageOptions);
         this.bucketName = process.env.GCS_BUCKET_NAME || 'chatbot-tutor-medical-images';
     }
 

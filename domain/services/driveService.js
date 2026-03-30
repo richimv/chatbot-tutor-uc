@@ -7,10 +7,18 @@ const path = require('path');
  */
 class DriveService {
     constructor() {
-        this.auth = new google.auth.GoogleAuth({
-            keyFile: path.join(__dirname, '../../service-account-key.json'),
+        // ✅ MEJORA: Autenticación flexible (Local vs Producción)
+        const authOptions = {
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
+        };
+
+        // Si existe GOOGLE_APPLICATION_CREDENTIALS (como en Render), la librería lo usará automáticamente.
+        // De lo contrario, buscamos el archivo local relativo para desarrollo.
+        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+            authOptions.keyFile = path.join(__dirname, '../../service-account-key.json');
+        }
+
+        this.auth = new google.auth.GoogleAuth(authOptions);
         this.drive = google.drive({ version: 'v3', auth: this.auth });
     }
 
