@@ -54,7 +54,8 @@ class AdminController {
             }).join(',')
         ).join('\n');
 
-        fs.writeFileSync(path.join(DATA_DIR, fileName), `${headers}\n${rows}`);
+        fs.writeFileSync(path.join(DATA_DIR, fileName), headers + "\n" + rows);
+
     }
 
     /**
@@ -284,7 +285,7 @@ class AdminController {
         try {
             // ✅ DEFENSA: FormData envía "null" o "undefined" como strings.
             const sanitize = (val) => (val === 'null' || val === 'undefined' || val === '' || val === 'N/A') ? null : val;
-            
+
             const q = {
                 ...req.body,
                 career: sanitize(req.body.career),
@@ -293,7 +294,7 @@ class AdminController {
                 topic: sanitize(req.body.topic) || 'General',
                 explanation: sanitize(req.body.explanation) || ''
             };
-            
+
             if (typeof q.options === 'string') {
                 try { q.options = JSON.parse(q.options); } catch (e) { console.error('Error parsing options:', e); }
             }
@@ -351,7 +352,7 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
-                q.subtopic || null, 
+                q.subtopic || null,
                 q.difficulty || 'Senior',
                 q.image_url || null,
                 hash,
@@ -459,7 +460,7 @@ class AdminController {
                 q.target || null,
                 q.career || null,
                 q.topic || 'General',
-                q.subtopic || null, 
+                q.subtopic || null,
                 q.difficulty || 'Senior',
                 q.image_url || null,
                 hash,
@@ -502,6 +503,68 @@ class AdminController {
             res.status(500).json({ error: 'Error del servidor al eliminar pregunta.' });
         }
     }
+
+    /**
+     * POST /api/admin/drive/sync-folder
+     * Sincroniza archivos de una carpeta de Drive a la tabla resources.
+     */
+    async syncDriveFolder(req, res) {
+        try {
+            const { folderId, resourceType, author } = req.body;
+
+            if (!folderId || !resourceType) {
+                return res.status(400).json({ error: 'Faltan parámetros: folderId y resourceType son obligatorios.' });
+            }
+
+            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType}`);
+
+            const DriveService = require('../../domain/services/driveService');
+            const files = await DriveService.getFilesFromFolder(folderId);
+
+            if (!files || files.length === 0) {
+                return res.json({ success: true, message: 'La carpeta está vacía o no se encontraron archivos.', inserted: 0 });
+            }
+
+            let insertedCount = 0;
+            let updatedCount = 0;
+
+            for (const file of files) {
+                // Generar URL estándar: https://drive.google.com/open?id=FILE_ID
+                const driveUrl = `https://drive.google.com/open?id=${file.id}`;
+
+                // Limpiar nombre (quitar extensión)
+                const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
+
+                // Verificar si ya existe por URL (o FileID contenido en la URL)
+                const existing = await db.query('SELECT id FROM resources WHERE url = $1 LIMIT 1', [driveUrl]);
+
+                if (existing.rows.length > 0) {
+                    // Actualizar si ya existe (opcional, solo título por ahora)
+                    await db.query('UPDATE resources SET title = $1, resource_type = $2 WHERE id = $3', [cleanTitle, resourceType, existing.rows[0].id]);
+                    updatedCount++;
+                } else {
+                    // Crear nuevo recurso
+                    const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    await db.query(
+                        'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium) VALUES ($1, $2, $3, $4, $5, $6)',
+                        [resourceId, cleanTitle, author || 'Admin Hub', driveUrl, resourceType, false]
+                    );
+                    insertedCount++;
+                }
+            }
+
+            res.json({
+                success: true,
+                message: `Sincronización completada. ${insertedCount} nuevos recursos añadidos, ${updatedCount} actualizados.`,
+                inserted: insertedCount,
+                updated: updatedCount
+            });
+
+        } catch (error) {
+            console.error('❌ Error en sincronización de Drive:', error);
+            res.status(500).json({ error: 'Error del servidor al sincronizar carpeta de Drive.' });
+        }
+    }
 }
 
 // Exportamos una instancia para poder usar 'this' correctamente si es necesario
@@ -517,5 +580,6 @@ module.exports = {
     getAllQuestions: controller.getAllQuestions.bind(controller),
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),
-    deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller)
+    deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller),
+    syncDriveFolder: controller.syncDriveFolder.bind(controller)
 };

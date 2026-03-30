@@ -1,7 +1,7 @@
 # 📘 Informe Técnico Profesional: Chatbot Tutor UC
 
 **Versión del Documento:** 1.0  
-**Fecha de Generación:** 06 de Febrero de 2026  
+**Fecha de Generación:** 30 de Marzo de 2026  
 **Proyecto:** Hub Academia - Chatbot Tutor UC
 
 ---
@@ -770,3 +770,61 @@ Se identificó y resolvió una desconexión crítica profunda entre la persisten
 - **Sincronización de Semilla Inicial (First-Rep UI Bind):** El SM-2 original castigaba toda tarjeta nueva/fallada (`reps = 0`) agendándola a 24 horas (1 día) como bloque inicial de hielo, ignorando pasivamente los marcadores de `3 días` (Bien) o `7 días` (Fácil) descritos por el front. Se reescribió el escalón base del algoritmo algorítmico para forzar la adopción milimétrica del indicador textual de los botones HTML para el primer intervalo. Las repeticiones subsecuentes mantienen inalterada la rigurosidad multiplicativa.
 - **Condicionamiento Analítico (Mastery > 21):** Para purificar las métricas del "Mastered Cards" (Dominadas), se purgaron los atajos falsos (ej. `last_quality = 4`). Hoy, el Dashboard General y el Backend SQL filtran como Masterizadas estrictamente solo aquellas tarjetas que empíricamente han sobrevivido la barrera del "Intervalo Maduro (> 21 días al futuro sin fallar)".
 - **Indicador Focus Glow:** Se implementó visualmente la clase CSS `.is-due-glow` combinada con `@keyframes duePulseGlow`. Suscitada condicionalmente desde el DOM javascript (`repaso.js` y `deck-details.js`), inyecta un suave campo de fuerza resplandeciente pulsante alrededor del borde azul-neón de toda aquella tarjeta puntual cuya fecha `next_review_at` ha caducado y solicita estudio inmediato el día de hoy.
+
+---
+
+## 24. 📂 Integración Avanzada de Google Drive y Smart Routing (v2.6)
+
+Se implementó un sistema robusto para la gestión y visualización de recursos alojados en Google Drive, optimizando la carga visual y garantizando la compatibilidad con las políticas de seguridad de los navegadores.
+
+### 24.1. Drive Thumbnail Proxy (Backend)
+Para mostrar miniaturas de documentos de Drive sin exponer las URLs originales y evitar bloqueos de CORS:
+*   **Servicio (`driveService.js`):** Utiliza `google-auth-library` para autenticarse con una Service Account y solicitar el `thumbnailLink` de archivos específicos vía Google Drive API v3.
+*   **Endpoint Proxy (`/api/media/drive-thumbnail`):** Actúa como un puente seguro que descarga la miniatura desde los servidores de Google y la sirve al cliente, permitiendo el almacenamiento en caché y protegiendo las credenciales del servidor.
+
+### 24.2. Smart Cover en Tarjetas (UI Components)
+Las tarjetas de recursos en la biblioteca ahora poseen inteligencia visual (`components.js`):
+*   **Priorización:** 1. Imagen manual del Admin -> 2. Miniatura de Drive -> 3. Icono de Fallback.
+*   **Detección de Carpetas:** El sistema identifica si el enlace de Drive es una carpeta (Folder). Si es así, omite la petición de miniatura (ya que Drive no genera miniaturas para carpetas) y muestra el icono de carpeta automáticamente, evitando errores de red.
+*   **Manejo de Errores (Self-Healing):** Si una miniatura falla al cargar, la imagen se oculta silenciosamente y activa el icono de fallback mediante un ID único por tarjeta, manteniendo la estética impecable.
+
+### 24.3. Smart Routing del Visor (Security First)
+Se rediseñó el motor de visualización en `uiManager.js` para resolver problemas de `Content Security Policy (CSP)` de Google Drive:
+*   **Documentos (PDF, Drive, Externos):** Dado que Google bloquea el incrustado en `iframes` por seguridad, el sistema ahora detecta estos archivos y los abre automáticamente en una **Pestaña Nueva** (`_blank`), permitiendo el uso de los potentes visores nativos de Drive y del navegador.
+*   **Imágenes (GCS/Locales):** Mantienen su comportamiento inmersivo abriéndose dentro del **Modal de la plataforma**, garantizando velocidad y fluidez visual para diagramas o esquemas médicos.
+
+### 24.5. Sincronización Masiva (Drive Folder Scanner)
+Se integró un motor de escaneo masivo para poblar la biblioteca de recursos directamente desde carpetas de Google Drive, optimizando la gestión administrativa:
+*   **Endpoint:** `POST /api/admin/drive/sync-folder`.
+*   **Lógica de Upsert:** El sistema identifica cada archivo por su Drive File ID. Si el recurso ya existe en la base de datos (basado en la URL), actualiza el título y tipo; si es nuevo, genera un `resource_id` único y lo inserta.
+*   **Procesamiento de Títulos:** Elimina automáticamente las extensiones de archivo (ej: ".pdf", ".mp4") para mantener la limpieza visual en la plataforma.
+*   **Atribución Dinámica:** Permite definir un autor global y el tipo de recurso (Libro, Guía, Norma, etc.) para todo el lote sincronizado.
+
+---
+
+## 25. 📂 Estructura de Carpetas Detallada (Actualizada)
+
+---
+
+## 25. 💰 Análisis de Costos e Infraestructura de Almacenamiento (GCS vs Drive)
+
+Para optimizar la rentabilidad del proyecto, se ha definido una estrategia dual de almacenamiento basada en el tipo de recurso y su nivel de exclusividad.
+
+### 25.1. Google Cloud Storage (GCS) - Almacenamiento Propietario
+*   **Uso:** Recursos de autoría propia, materiales Premium exclusivos e imágenes de perfil.
+*   **Modelo de Costos:**
+    *   **Almacenamiento:** Pago por GB/mes (aprox. $0.02 USD/GB).
+    *   **Transferencia (Egress):** Costo por descarga fuera de la red de Google tras superar el primer 1GB gratuito mensual.
+*   **Seguridad:** Permite un control de acceso granular y firmado (Signed URLs), siendo ideal para contenido que **no debe ser público** fuera de la plataforma.
+
+### 25.2. Google Drive - Almacenamiento Público/Semipúblico
+*   **Uso:** Material bibliográfico general, normas técnicas públicas y recursos de apoyo masivos.
+*   **Modelo de Costos:** **$0 USD** (Dentro de los límites de cuota de la cuenta de Google y la API).
+*   **Limitación Estratégica:** Drive requiere que los archivos sean "Públicos con el enlace" para que el visor y las miniaturas funcionen fluidamente. 
+*   **Riesgo de Exposición:** Al ser enlaces públicos, si un usuario copia la URL, podría compartirla externamente, lo que debilita el valor de un "Recurso Premium".
+
+### 25.3. Estrategia "Safe-Profit" Recomendada
+1.  **Material Gratuito/Público:** Alojar en **Google Drive** para ahorrar costos de almacenamiento y transferencia en GCS.
+2.  **Material Premium/Propio:** Alojar en **GCS**. Aunque genera un costo marginal, garantiza que el archivo solo sea accesible a través de los guardias de nuestra plataforma (`unlockResource`), protegiendo la propiedad intelectual y el modelo de negocio de suscripciones.
+
+---

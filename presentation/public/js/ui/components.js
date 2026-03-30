@@ -635,26 +635,44 @@ function createUnifiedResourceCardHTML(item) {
             break;
     }
 
-    // 5. Layout Híbrido: Si tiene imagen priorizamos imagen, sino un fondo degradado con Icono grande
+    // 5. Layout Híbrido Senior: Resolución de Imagen Inteligente (Smart Cover)
     const rawImage = item.image_url || item.coverUrl;
+    const hasManualImage = Boolean(rawImage && rawImage.trim() !== '');
+    const isDrive = window.uiManager.isDriveLink(url);
+    
     let visualHTML = '';
-    const hasImage = Boolean(rawImage && rawImage.trim() !== '');
+    let displayImage = null;
 
-    if (hasImage) {
-        const finalImage = window.resolveImageUrl(rawImage);
-        visualHTML = `<img src="${finalImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='https://placehold.co/200x260/1e293b/ffffff?text=Material'">`;
-    } else {
-        visualHTML = `
-            <div class="urc-icon-fallback ${typeColorClass}">
-                <i class="fas ${iconClass}"></i>
-            </div>
-        `;
+    if (hasManualImage) {
+        // Prioridad 1: Imagen manual definida por el admin
+        displayImage = window.resolveImageUrl(rawImage);
+    } else if (isDrive) {
+        // Prioridad 2: Miniatura dinámica de Google Drive (Vía Proxy Seguro)
+        displayImage = window.uiManager.resolveImageUrl(url);
+    }
+
+    if (displayImage) {
+        // ✅ CORRECCIÓN SENIOR: Ocultar fallback si la imagen carga, mostrarlo si falla.
+        // Usamos un ID único para el fallback basado en el ID del item para control local.
+        const fallbackId = `fb-${type}-${item.id}`;
+        visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.style.display='none'; document.getElementById('${fallbackId}').style.display='flex';">`;
+    }
+
+    // El fallback ahora tiene un ID único y su visibilidad depende de 'displayImage'
+    const fallbackId = `fb-${type}-${item.id}`;
+    const fallbackHTML = `
+        <div id="${fallbackId}" class="urc-icon-fallback ${typeColorClass} fallback-trigger" style="${displayImage ? 'display:none;' : 'display:flex;'}">
+            <i class="fas ${iconClass}"></i>
+        </div>
+    `;
+
+    if (!displayImage) {
+        visualHTML = fallbackHTML;
     }
 
     // 6. Ensamblaje del Componente Universal
-    // Nota: El type interno para la biblioteca siempre será "book" para guardar favoritos (legado compatible)
     return `
-        <div class="unified-resource-card ${hasImage ? 'has-bg-image' : ''}" data-resource-type="${type}">
+        <div class="unified-resource-card ${displayImage ? 'has-bg-image' : ''}" data-resource-type="${type}">
             
             <!-- Zona de Acciones Flotantes (Librería) -->
             <div class="urc-library-actions">
@@ -669,6 +687,7 @@ function createUnifiedResourceCardHTML(item) {
             <!-- Zona Superior: Visual (Clicable) -->
             <div class="urc-visual-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium}, '${title.replace(/'/g, "\\'")}')`}" title="Abrir ${title}">
                 ${visualHTML}
+                ${displayImage ? fallbackHTML : ''}
                 
                 <!-- Overlay Oscuro y Candado -->
                 <div class="urc-visual-overlay"></div>

@@ -72,11 +72,24 @@ Administración de la base de usuarios de la plataforma.
 
 ---
 
-## 6. 🛠️ Reglas de Operación (Resumen Técnico)
+## 6. 🔄 Sincronización Masiva (Google Drive)
+Optimización de la carga de bibliografía y guías clínicas mediante el escaneo de carpetas de Drive.
+
+*   **Funcionamiento:** 
+    *   Permite importar decenas de archivos (PDFs, Videos, Documentos) en un solo paso.
+    *   **Identificador de Carpeta:** Se obtiene de la URL de Drive (ej: `https://drive.google.com/drive/folders/ID_AQUI`).
+    *   **Lógica de Actualización:** Si agregas archivos nuevos a una carpeta ya sincronizada, el sistema los detecta e inserta sin duplicar los existentes (Upsert).
+*   **Miniaturas Automáticas:** 
+    *   Gracias a la integración con Drive API, el sistema genera portadas visuales automáticas para los recursos sincronizados, eliminando la necesidad de subir imágenes manuales.
+*   **Atribución de Autor:** Permite definir un autor universal (ej: "MINSA", "AMIR") para todo el lote sincronizado.
+
+---
+
+## 7. 🛠️ Reglas de Operación (Resumen Técnico)
 *   **Imágenes:** Portadas y miniaturas se guardan en el servidor (`assets/`) y se gestionan mediante `FormData` para subida fluida.
 *   **KPI Financiero:** El panel estima ganancias basándose en la suscripción activa (s/ 9.90 mensual).
 *   **Ofuscación de Enlaces:** Implementada para proteger la integridad de los recursos compartidos.
 
 ---
 > [!IMPORTANT]
-> Esta guía ha sido verificada contra el código fuente al 16 de marzo de 2026. Cualquier cambio en la lógica de `MLService.js` o `admin.js` debe ser reflejado aquí.
+> Esta guía ha sido verificada contra el código fuente al 30 de marzo de 2026. Cualquier cambio en la lógica de `MLService.js` o `admin.js` debe ser reflejado aquí.

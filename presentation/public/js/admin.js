@@ -483,9 +483,32 @@ class AdminManager {
         // ✅ APLICAR ORDENAMIENTO
         const sortedBooks = this.sortData(this.allBooks, 'book', 'tab-books');
         const itemsHTML = sortedBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
-        const content = this._createTabHeaderHTML('book', 'Añadir Recurso', 'tab-books') +
-            (itemsHTML || '<p class="empty-state">No hay recursos.</p>');
-        container.innerHTML = content;
+        
+        // CUSTOM HEADER with Drive Sync Button
+        const headerHTML = `
+            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
+                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px;">
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none;">
+                    </div>
+                    <select class="tab-sort-select" data-tab="tab-books" style="height: 40px;">
+                        <option value="date-desc">📅 Más Recientes</option>
+                        <option value="alpha-asc">🔤 A-Z</option>
+                    </select>
+                </div>
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('drive-sync')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fab fa-google-drive"></i> <span class="hide-mobile">Sincronizar Drive</span>
+                    </button>
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('book')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Recurso</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = headerHTML + (itemsHTML || '<p class="empty-state">No hay recursos.</p>');
     }
 
     displayQuestions() {
@@ -925,11 +948,9 @@ class AdminManager {
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', this.currentItem?.name || '', true) +
                     this.createFormGroup('email', 'generic-email', 'Email (*)', this.currentItem?.email || '', true);
                 break;
-            case 'book':
+            case 'book': {
                 title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
                 if (id) this.currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
-
-                // Definir tipos de recurso acordes al nuevo enfoque EdTech
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
                 const resourceTypes = [
@@ -990,6 +1011,51 @@ class AdminManager {
                 `;
                 fieldsHTML += this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', this.currentItem?.image_url || '');
                 break;
+            }
+
+            case 'drive-sync': {
+                title.textContent = 'Sincronizar Carpeta de Google Drive';
+                
+                const resourceTypes = [
+                    { id: 'book', name: 'Libro / PDF' },
+                    { id: 'guia', name: 'Guía de Práctica Clínica' },
+                    { id: 'norma', name: 'Norma Técnica/Legal' },
+                    { id: 'paper', name: 'Artículo / Paper' },
+                    { id: 'video', name: 'Video Clase' },
+                    { id: 'other', name: 'Otro Recurso' }
+                ];
+
+                fieldsHTML = `
+                    <div class="admin-item-card" style="padding: 15px; text-align: left; background: rgba(66, 133, 244, 0.1); border: 1px solid rgba(66, 133, 244, 0.2); margin-bottom: 20px; border-radius: 12px;">
+                        <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                            <i class="fab fa-google-drive" style="color: #4285f4; font-size: 1.2rem; margin-right: 8px;"></i>
+                            <strong>Instrucciones:</strong> Ingresa el ID de la carpeta de Drive (el código al final de la URL). 
+                            El sistema escaneará todos los archivos y los añadirá automáticamente al Hub.
+                        </p>
+                    </div>
+
+                    ${this.createFormGroup('text', 'generic-folder-id', 'ID de la Carpeta de Google Drive (*)', '', true)}
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        ${this.createSelect('generic-resource-type', 'Tipo de Recurso para este Lote (*)', resourceTypes, 'book', false)}
+                        ${this.createFormGroup('text', 'generic-author', 'Nombre de Autor / Fuente', 'Admin Hub', true)}
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
+                        <i class="fas fa-info-circle"></i> <b>Nota:</b> Los archivos duplicados serán actualizados, no creados de nuevo. Asegúrate de que la Service Account tenga acceso a esta carpeta.
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    const btn = document.getElementById('generic-save-btn');
+                    if (btn) {
+                        btn.innerHTML = '<i class="fab fa-google-drive"></i> Iniciar Sincronización';
+                        btn.style.background = 'linear-gradient(135deg, #4285f4, #34a853)';
+                        btn.style.borderColor = 'transparent';
+                    }
+                }, 0);
+                break;
+            }
         }
 
         fieldsContainer.innerHTML = fieldsHTML;
@@ -1827,6 +1893,51 @@ class AdminManager {
                     this.closeGenericModal();
                     await this.loadAllData();
                     return; // Retorno anticipado
+                }
+
+                case 'drive-sync': {
+                    const syncBtn = document.getElementById('generic-save-btn');
+                    const originalText = syncBtn.innerHTML;
+                    
+                    try {
+                        const folderId = document.getElementById('generic-folder-id').value.trim();
+                        const resourceType = document.getElementById('generic-resource-type').value;
+                        const author = document.getElementById('generic-author').value.trim();
+
+                        if (!folderId) throw new Error('El ID de la carpeta es obligatorio.');
+
+                        syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando Drive...';
+                        syncBtn.disabled = true;
+
+                        const syncUrl = `${window.AppConfig.API_URL}/api/admin/drive/sync-folder`;
+                        const resSync = await fetch(syncUrl, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Authorization': `Bearer ${localStorage.getItem('authToken')}` 
+                            },
+                            body: JSON.stringify({ folderId, resourceType, author })
+                        });
+
+                        const resDataSync = await resSync.json();
+                        if (!resSync.ok) throw new Error(resDataSync.error || 'Error en la sincronización de Drive');
+
+                        await window.confirmationModal.showAlert(
+                            `🚀 ¡Sincronización Exitosa!\n\n${resDataSync.message}`, 
+                            'Drive Bridge'
+                        );
+
+                        this.closeGenericModal();
+                        await this.loadAllData();
+                        return; // Fin del flujo exitoso
+                    } catch (err) {
+                        throw err; // Burbujea al catch general
+                    } finally {
+                        if (syncBtn) {
+                            syncBtn.innerHTML = originalText;
+                            syncBtn.disabled = false;
+                        }
+                    }
                 }
 
                 default:

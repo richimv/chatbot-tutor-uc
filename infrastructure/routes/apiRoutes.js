@@ -44,17 +44,18 @@ router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions)
 router.post('/admin/question', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.addSingleQuestion);
 router.put('/admin/question/:id', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.updateSingleQuestion);
 router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSingleQuestion);
+router.post('/admin/drive/sync-folder', auth, adminOnly, adminController.syncDriveFolder); // ✅ NUEVO: Scanner de Drive
 
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');
 router.use('/payment', paymentRoutes);
 
-// ✅ NUEVO: PROXY DE MEDIOS (Google// Proxy de Medios (GCS)
+// ✅ NUEVO: PROXY DE MEDIOS (Google Drive & GCS)
 router.get('/media/explanation/:id', optionalAuth, (req, res) => mediaController.serveExplanationImage(req, res));
 router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.serveResourceImage(req, res));
 router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
-router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res)); // ✅ Nueva ruta pública/opcional
-//diaController)); // ✅ NUEVO: Solo Admins
+router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res));
+router.get('/media/drive-thumbnail', optionalAuth, (req, res) => mediaController.serveDriveThumbnail(req, res)); // ✅ Nuevo proxy Drive
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');

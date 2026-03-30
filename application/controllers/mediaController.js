@@ -1,7 +1,9 @@
+const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
-const sharp = require('sharp'); // ✅ NUEVO: Procesamiento de imágenes
+const sharp = require('sharp'); 
 const db = require('../../infrastructure/database/db');
+const driveService = require('../../domain/services/driveService');
 
 class MediaController {
     constructor() {
@@ -138,6 +140,44 @@ class MediaController {
         } catch (error) {
             console.error('❌ Error sirviendo GCS por ruta:', error);
             res.status(500).send('Error interno.');
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Sirve una miniatura de Google Drive actuando como proxy.
+     * GET /api/media/drive-thumbnail?fileId=...
+     */
+    async serveDriveThumbnail(req, res) {
+        try {
+            const { fileId } = req.query;
+            if (!fileId) return res.status(400).send('Falta el ID del archivo.');
+
+            // 1. Obtener el enlace de la miniatura desde Google Drive API
+            const driveData = await driveService.getThumbnailLink(fileId);
+            if (!driveData || !driveData.thumbnailUrl) {
+                return res.status(404).send('No se pudo obtener la miniatura de Drive.');
+            }
+
+            // 2. Hacer la petición a la URL temporal de Google y pitear la respuesta
+            // Nota: Google permite modificar el tamaño con el parámetro =sXXX al final
+            const thumbUrl = driveData.thumbnailUrl.split('=')[0] + '=s800'; // Solicitar 800px para calidad premium
+
+            const response = await axios({
+                method: 'get',
+                url: thumbUrl,
+                responseType: 'stream'
+            });
+
+            // 3. Establecer cabeceras y servir
+            res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+            res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 24h
+            res.setHeader('Content-Disposition', 'inline');
+
+            response.data.pipe(res);
+
+        } catch (error) {
+            console.error(`❌ Error sirviendo miniatura de Drive (${req.query.fileId}):`, error.message);
+            res.status(500).send('Error al procesar la miniatura de Drive.');
         }
     }
 }

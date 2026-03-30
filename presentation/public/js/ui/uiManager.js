@@ -163,7 +163,7 @@ class UIManager {
         if (!isPremium) {
             if (type === 'video') {
                 this.openVideoModal(url, title);
-            } else if (this.isImage(url)) {
+            } else if (this.isImage(url) || this.isDriveLink(url)) {
                 this.showMediaViewer(url, title);
             } else {
                 window.open(url, '_blank');
@@ -227,7 +227,7 @@ class UIManager {
                     // 👉 ACCIÓN SEGÚN TIPO
                     if (type === 'video') {
                         this.openVideoModal(url, data.title || '');
-                    } else if (this.isImage(url)) {
+                    } else if (this.isImage(url) || this.isDriveLink(url)) {
                         this.showMediaViewer(url, data.title || '');
                     } else {
                         // Artículos y Libros se abren en nueva pestaña
@@ -368,21 +368,44 @@ class UIManager {
      * Inicia el Visor de Medios (Imágenes).
      */
     showMediaViewer(url, title) {
+        if (!url) return;
+
+        // ✅ LÓGICA SMART ROUTING SENIOR
+        const isDrive = this.isDriveLink(url);
+        const isImage = this.isImage(url);
+        const isPdf = url.toLowerCase().includes('.pdf');
+
+        // 1. Si es DOCUMENTO (Drive, PDF, Externo) -> ABRIR EN PESTAÑA NUEVA (Seguro y Oficial)
+        if (isDrive || isPdf) {
+            window.open(url, '_blank');
+            return; // No abrimos el modal
+        }
+
+        // 2. Si es IMAGEN (GCS, etc.) -> ABRIR EN EL MODAL (Experiencia Inmersiva)
         const modal = document.getElementById('media-viewer-modal');
         const img = document.getElementById('media-viewer-img');
         const titleEl = document.getElementById('media-viewer-title');
         const downloadBtn = document.getElementById('media-viewer-download');
+        const body = document.getElementById('media-viewer-body');
 
-        if (modal && img) {
-            // Resolver URL si es GCS (aunque ya debería venir resuelta o registrarse resuelta)
-            const finalUrl = window.resolveImageUrl(url);
+        if (modal && img && body && isImage) {
+            const resolvedUrl = this.resolveImageUrl(url);
 
-            img.src = finalUrl;
+            // Limpiar visor de restos de iframes anteriores
+            img.style.display = 'none';
+            const oldIframe = body.querySelector('iframe');
+            if (oldIframe) oldIframe.remove();
+
             if (titleEl) titleEl.innerText = title || 'Visualizando Recurso';
+
+            // Mostrar imagen normal
+            img.src = resolvedUrl;
+            img.style.display = 'block';
+
             if (downloadBtn) {
                 downloadBtn.onclick = () => {
                     const a = document.createElement('a');
-                    a.href = finalUrl;
+                    a.href = resolvedUrl;
                     a.download = title ? `${title.replace(/\s+/g, '_')}.png` : 'recurso_hub.png';
                     document.body.appendChild(a);
                     a.click();
@@ -392,13 +415,21 @@ class UIManager {
 
             modal.style.display = 'flex';
             this.pushModalState('media-viewer-modal');
+        } else {
+            // 3. FALLBACK: Si no es imagen definida ni Drive, abrir en pestaña nueva por seguridad
+            window.open(url, '_blank');
         }
     }
 
     closeMediaViewer() {
         const modal = document.getElementById('media-viewer-modal');
+        const body = document.getElementById('media-viewer-body');
         if (modal) {
             modal.style.display = 'none';
+            if (body) {
+                const iframe = body.querySelector('iframe');
+                if (iframe) iframe.remove();
+            }
             this.popModalState('media-viewer-modal');
         }
     }
@@ -412,12 +443,16 @@ class UIManager {
                     <div class="media-viewer-header">
                         <span id="media-viewer-title" class="media-viewer-title-text">Visualizando Recurso</span>
                         <div class="media-viewer-actions">
+                            <a id="media-viewer-full-link" href="#" target="_blank" class="media-btn-download" title="Ver original"><i class="fas fa-external-link-alt"></i></a>
                             <button id="media-viewer-download" class="media-btn-download" title="Descargar"><i class="fas fa-download"></i></button>
                             <button class="media-btn-close" onclick="window.uiManager.closeMediaViewer()">&times;</button>
                         </div>
                     </div>
-                    <div class="media-viewer-body">
+                    <div id="media-viewer-body" class="media-viewer-body">
                         <img id="media-viewer-img" src="" alt="Recurso">
+                        <div id="media-viewer-loader" class="media-loader" style="display:none;">
+                            <i class="fas fa-circle-notch fa-spin"></i> Cargando documento...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,6 +522,21 @@ class UIManager {
                     max-height: 75vh;
                     object-fit: contain;
                 }
+                .media-viewer-body iframe {
+                    width: 100%;
+                    height: 75vh;
+                    border: none;
+                    border-radius: 8px;
+                    display: none;
+                }
+                .media-loader {
+                    color: white;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 1rem;
+                }
             </style>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
@@ -502,6 +552,52 @@ class UIManager {
             cleanUrl.endsWith('.webp') ||
             cleanUrl.endsWith('.gif') ||
             cleanUrl.endsWith('.svg');
+    }
+
+    /**
+     * ✅ NUEVO: Detecta si un enlace pertenece a Google Drive.
+     */
+    isDriveLink(url) {
+        if (!url) return false;
+        return url.includes('drive.google.com');
+    }
+
+    /**
+     * ✅ NUEVO: Detecta si un enlace de Drive es una CARPETA (Folder).
+     */
+    isDriveFolder(url) {
+        if (!this.isDriveLink(url)) return false;
+        return url.includes('/folders/') || url.includes('folderid=');
+    }
+
+    /**
+     * Procesa una URL para obtener su versión de previsualización (GCS o Drive).
+     */
+    resolveImageUrl(path) {
+        if (!path) return '';
+        if (path.startsWith('http')) {
+            // ✅ DETECCIÓN DE DRIVE
+            if (this.isDriveLink(path)) {
+                // Si es una CARPETA, no solicitamos miniatura (Google no las genera para carpetas)
+                if (this.isDriveFolder(path)) return '';
+
+                const fileId = this.extractDriveFileId(path);
+                return fileId ? `/api/media/drive-thumbnail?fileId=${fileId}` : path;
+            }
+            return path; // Es una URL externa directa
+        }
+
+        // ✅ Lógica de GCS existente
+        if (path.startsWith('assets/')) return '/' + path;
+        return `/api/media/gcs?path=${path}`;
+    }
+
+    /**
+     * Extrae el ID de un enlace de Google Drive
+     */
+    extractDriveFileId(url) {
+        const match = url.match(/\/d\/(.+?)(\/|$)/) || url.match(/id=(.+?)(&|$)/);
+        return match ? match[1] : null;
     }
 
 
