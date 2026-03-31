@@ -618,7 +618,7 @@ function createUnifiedResourceCardHTML(item) {
         displayImage = window.resolveImageUrl(rawImage);
     } else if (isDrive) {
         // Prioridad 2: Miniatura dinámica de Google Drive (Vía Proxy Seguro)
-        displayImage = window.uiManager.resolveImageUrl(url);
+        displayImage = window.resolveImageUrl(url);
     }
 
     if (displayImage) {
@@ -853,7 +853,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
 
     let imageHTML = '';
     if (question.image_url) {
-        const resolvedImg = window.uiManager && window.uiManager.resolveImageUrl ? window.uiManager.resolveImageUrl(question.image_url) : (window.resolveImageUrl ? window.resolveImageUrl(question.image_url) : question.image_url);
+        const resolvedImg = window.resolveImageUrl ? window.resolveImageUrl(question.image_url) : question.image_url;
         imageHTML = `
         <div class="review-q-image-container">
             <img src="${resolvedImg}" loading="lazy" style="max-height: 250px; border-radius: 8px;">
@@ -885,7 +885,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
     
     let expImageHTML = '';
     if (question.explanation_image_url) {
-        const resolvedExpImg = window.uiManager && window.uiManager.resolveImageUrl ? window.uiManager.resolveImageUrl(question.explanation_image_url) : (window.resolveImageUrl ? window.resolveImageUrl(question.explanation_image_url) : question.explanation_image_url);
+        const resolvedExpImg = window.resolveImageUrl ? window.resolveImageUrl(question.explanation_image_url) : question.explanation_image_url;
         expImageHTML = `
         <div style="text-align:center; margin-top:1.5rem;">
             <img src="${resolvedExpImg}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">

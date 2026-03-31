@@ -315,6 +315,7 @@ class AdminController {
                 const driveUrl = `https://drive.google.com/open?id=${file.id}`;
                 const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
 
+                // ⚡️ NUEVO: Lógica de Persistencia de Miniatura en GCS con Fallback
                 let persistentThumbnailUrl = null;
                 try {
                     const thumbData = await DriveService.downloadThumbnailBuffer(file.id);
@@ -328,6 +329,20 @@ class AdminController {
                     }
                 } catch (thumbErr) {
                     console.warn(`⚠️ No se pudo persistir miniatura para ${file.name}:`, thumbErr.message);
+                }
+
+                // 🛡️ SI NO HAY MINIATURA (Falló Google o es un archivo pesado), USAMOS EL FALLBACK PREMIUM
+                if (!persistentThumbnailUrl) {
+                    const FALLBACKS = {
+                        'Video Explicativo': 'thumbnails/default_video.webp',
+                        'Libro / Manual': 'thumbnails/default_book.webp',
+                        'Guía de Práctica Clínica': 'thumbnails/default_guia.webp',
+                        'Normas Técnicas': 'thumbnails/default_norma.webp',
+                        'Artículo / Paper': 'thumbnails/default_paper.webp',
+                        'Infografía / Otros': 'thumbnails/default_other.webp'
+                    };
+                    persistentThumbnailUrl = FALLBACKS[resourceType] || FALLBACKS['Infografía / Otros'];
+                    console.log(`✨ Asignando portada de respaldo para: ${file.name} (${resourceType})`);
                 }
 
                 const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author);

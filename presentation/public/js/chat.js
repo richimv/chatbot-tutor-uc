@@ -1,17 +1,19 @@
 class ChatComponent {
-    constructor() {
+    constructor(options = {}) {
         this.isOpen = false;
         this.isSending = false;
-        // ✅ FASE III: El ID de la conversación activa ahora se gestiona dinámicamente.
         this.activeConversationId = null;
-        // ✅ FASE III: El historial de mensajes se carga desde la API, no de localStorage.
         this.messages = [];
         this.conversations = [];
-        // ✅ NUEVO: Contador para generar IDs únicos de mensajes del bot para el feedback.
         this.messageIdCounter = 0;
+        
+        // Fase IV: Opciones de Modularidad
+        this.targetSelector = options.targetSelector || 'body'; // Dónde se inyecta
+        this.isFullScreen = false;
 
-        // Callback binding para el listener de resize/history
+        // Callback binding
         this.handlePopState = this.handlePopState.bind(this);
+        this.toggleFullScreen = this.toggleFullScreen.bind(this);
 
         this.init();
     }
@@ -65,7 +67,15 @@ class ChatComponent {
                             <h3 id="chatbot-title-heading">Asistente Hub</h3>
                             <span class="chatbot-status">En línea</span>
                         </div>
-                        <button id="chatbot-close" class="chatbot-close"><i class="fas fa-times"></i></button>
+                        <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
+                            <!-- Botón Pantalla Completa (Mejorado) -->
+                            <button id="chatbot-expand" class="chatbot-expand" aria-label="Pantalla completa" title="Pantalla completa">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button id="chatbot-close" class="chatbot-close" aria-label="Cerrar chat" title="Cerrar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chatbot-messages" class="chatbot-messages">
@@ -81,7 +91,7 @@ class ChatComponent {
 
                     <div class="chatbot-input-container">
                         <div class="chatbot-input">
-                            <input type="text" id="chatbot-input" placeholder="Escribe tu pregunta aquí..." maxlength="500">
+                            <textarea id="chatbot-input" placeholder="Escribe tu pregunta aquí... (Usa Shift + Enter para salto de línea)" maxlength="5000" rows="1"></textarea>
                             <button id="chatbot-send" class="chatbot-send">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -99,7 +109,13 @@ class ChatComponent {
             </button>
         `;
 
-        document.body.insertAdjacentHTML('beforeend', chatHTML);
+        const targetEl = document.querySelector(this.targetSelector);
+        if (targetEl) {
+            targetEl.insertAdjacentHTML('beforeend', chatHTML);
+        } else {
+            console.error(`Target selector ${this.targetSelector} no encontrado para inyectar el Chat.`);
+        }
+        
         this.loadChatStyles();
     }
 
@@ -111,19 +127,15 @@ class ChatComponent {
 
     addWelcomeMessage() {
         // ✅ CORRECCIÓN: Solo añadir el mensaje de bienvenida si no hay una conversación activa.
-        // Se usa `this.messages.length` en lugar del antiguo `this.conversationHistory.length`.
-        // Esto evita que el mensaje aparezca al cambiar entre chats existentes.
         if (this.messages.length === 0) {
-            const welcomeText = `**¡Hola! Soy tu asistente académico.**
-¿En qué puedo ayudarte hoy?`;
+            const welcomeText = `**¡Hola! Soy tu asistente tutorial.**
+¿En qué te puedo ayudar hoy?`;
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
 
-            // ✅ RESTAURADO: Sugerencias iniciales
+            // ✅ RESTAURADO: Solo 2 preguntas puntuales que la IA entienda bien.
             const defaultSuggestions = [
-                "¿Cómo funciona la plataforma?",
-                "Quiero hacer un Quiz",
-                "Quiero hacer un Simulacro",
-                "Quiero hacer un Repaso",
+                "Explícame de forma resumida todo lo que puedes hacer como mi Tutor Educativo.",
+                "¿Qué tipo de normativas, guías y conocimientos médicos dominas?"
             ];
             this.showFollowUpSuggestions(defaultSuggestions);
         }
@@ -162,6 +174,15 @@ class ChatComponent {
             });
         }
 
+        // ✅ FASE IV: Botón Expandir
+        const expandBtn = document.getElementById('chatbot-expand');
+        if (expandBtn) {
+            expandBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleFullScreen();
+            });
+        }
+
         // ✅ FASE III: Botón de "Nuevo Chat"
         const newChatBtn = document.getElementById('new-chat-btn');
         if (newChatBtn) {
@@ -183,17 +204,32 @@ class ChatComponent {
                 document.getElementById('chatbot-container').classList.remove('history-open');
             });
         }
-        // ENVÍO DE MENSAJES
+        // ENVÍO DE MENSAJES Y AUTORESIZE TEXTAREA
         const sendBtn = document.getElementById('chatbot-send');
         const input = document.getElementById('chatbot-input');
 
         if (sendBtn && input) {
-            sendBtn.addEventListener('click', () => this.sendMessage());
+            sendBtn.addEventListener('click', () => {
+                this.sendMessage();
+                // Resetear textarea size
+                input.style.height = 'auto';
+            });
 
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                // Calculamos max-height basado en aprox 5 líneas (120px)
+                const newHeight = Math.min(this.scrollHeight, 120);
+                this.style.height = newHeight + 'px';
+                if (this.value === '') this.style.height = 'auto';
+            });
+
+            // Shift+Enter soporte
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendMessage();
+                    input.style.height = 'auto'; // Resetear
                 }
             });
         }
@@ -326,6 +362,11 @@ class ChatComponent {
         toggleBtn.setAttribute('aria-expanded', this.isOpen);
 
         if (this.isOpen) {
+            // ✅ Fix OVERSCROLL: Si el usuario usa móvil, bloquear scroll de body siempre por precaución
+            if (window.innerWidth <= 750 || this.isFullScreen) {
+                document.body.style.overflow = 'hidden';
+            }
+
             // ✅ UX: Modificamos el historial al ABRIR para crear un "checkpoint" falso
             // que nos permita atrapar el botón de "Atrás"
             if (window.history && window.history.pushState) {
@@ -384,6 +425,40 @@ class ChatComponent {
         const container = document.getElementById('chatbot-container');
         container.classList.remove('open');
         container.setAttribute('aria-hidden', 'true');
+        
+        // Liberar el scroll del body
+        document.body.style.overflow = '';
+    }
+
+    toggleFullScreen() {
+        this.isFullScreen = !this.isFullScreen;
+        const container = document.getElementById('chatbot-container');
+        const expandBtn = document.getElementById('chatbot-expand');
+        const icon = expandBtn.querySelector('i');
+
+        if (this.isFullScreen) {
+            container.classList.add('chat-fullscreen');
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+            // Bloquear scroll trasero agresivamente en PC y móvil
+            document.body.style.overflow = 'hidden';
+            expandBtn.setAttribute('aria-label', 'Salir de pantalla completa');
+            expandBtn.setAttribute('title', 'Restaurar ventana');
+        } else {
+            container.classList.remove('chat-fullscreen');
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+            // Restaurar scroll si es PC y no está en modo normal
+            if (window.innerWidth > 750) {
+                document.body.style.overflow = '';
+            }
+            expandBtn.setAttribute('aria-label', 'Pantalla completa');
+            expandBtn.setAttribute('title', 'Pantalla completa');
+            
+            // Reparar UI si hay overflow en base a resize
+            const input = document.getElementById('chatbot-input');
+            if (input) input.style.height = 'auto';
+        }
     }
 
     async sendMessage() {
@@ -717,10 +792,9 @@ class ChatComponent {
             const button = document.createElement('button');
             button.className = 'suggestion-btn';
             button.textContent = suggestion;
-            button.addEventListener('click', () => {
-                document.getElementById('chatbot-input').value = suggestion;
-                this.sendMessage();
-            });
+            // ✅ ELIMINADO: Se quita el eventListener directo porque causaba conflicto 
+            // con el listener delegado de 'suggestionsContainer' en setupEventListeners,
+            // dejando el texto atorado en el input.
             suggestionsContainer.appendChild(button);
         });
     }
@@ -849,9 +923,15 @@ class ChatComponent {
     }
 
     async handleDeleteConversation(conversationId) {
-        if (!await window.confirmationModal.show('¿Estás seguro de que quieres eliminar este chat? Esta acción no se puede deshacer.', 'Eliminar Chat', 'Eliminar', 'Cancelar')) {
-            return;
+        // Fallback robusto nativo si confirmationModal no está disponible
+        let isConfirmed = false;
+        if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
+            isConfirmed = await window.confirmationModal.show('¿Estás seguro de que quieres eliminar este chat? Esta acción no se puede deshacer.', 'Eliminar Chat', 'Eliminar', 'Cancelar');
+        } else {
+            isConfirmed = confirm('¿Estás seguro de que quieres eliminar este chat?');
         }
+
+        if (!isConfirmed) return;
 
         try {
             const response = await fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {

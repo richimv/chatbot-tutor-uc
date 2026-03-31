@@ -36,7 +36,7 @@
     display: flex;
     flex-direction: row;
     /* Sidebar + Main */
-    z-index: 2147483647;
+    z-index: 9990; /* Bajado de MAX_INT para no solapar modales supremos (Visor UI) */
     font-family: var(--chat-font);
     overflow: hidden;
     transform: translateY(20px) scale(0.95);
@@ -232,6 +232,7 @@
 }
 
 .chatbot-close,
+.chatbot-expand,
 .chatbot-history-toggle {
     background: transparent;
     border: none;
@@ -243,14 +244,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
     font-size: 1rem;
 }
 
-.chatbot-close:hover,
-.chatbot-history-toggle:hover {
+.chatbot-history-toggle:hover,
+.chatbot-expand:hover {
     background-color: var(--chat-surface);
-    color: var(--chat-text);
+    color: var(--chat-primary); /* Hover azul para toggle y expand */
+}
+
+.chatbot-close:hover {
+    background-color: var(--chat-surface);
+    color: #ef4444; /* Hover rojo para cerrar */
 }
 
 /* Messages Area */
@@ -262,6 +268,7 @@
     flex-direction: column;
     gap: 1.25rem;
     scroll-behavior: smooth;
+    overscroll-behavior: contain; /* 🛑 FIX: Evitar el scroll bleed hacia el body */
     background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
 }
 
@@ -273,6 +280,7 @@
     font-size: 0.95rem;
     position: relative;
     word-wrap: break-word;
+    white-space: pre-wrap; /* ✅ FIX: Preservar saltos de línea del Shift+Enter */
     animation: messageEnter 0.3s ease-out both;
 }
 
@@ -461,7 +469,7 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.chatbot-input input {
+.chatbot-input textarea {
     flex: 1;
     background: transparent;
     border: none;
@@ -470,6 +478,10 @@
     font-size: 0.95rem;
     outline: none;
     min-width: 0;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    max-height: 120px;
 }
 
 .chatbot-send {
@@ -552,7 +564,7 @@
     align-items: center;
     justify-content: center;
     font-size: 1.6rem;
-    z-index: 2147483640;
+    z-index: 9900; /* 🛑 BAJADO: de 2147483640 a 9900 para no tapar en modo Full Screen */
     transition: transform 0.2s;
 }
 
@@ -601,7 +613,7 @@
         border-radius: 0;
         transform: translateY(100%);
         /* Ensure z-index is high enough to cover everything */
-        z-index: 2147483647;
+        z-index: 9990; /* Ajustado */
         border: none;
     }
 
@@ -633,5 +645,39 @@
         padding: 1rem;
         padding-bottom: env(safe-area-inset-bottom, 1rem);
         /* iPhone X+ safe area */
+    }
+    
+    .chatbot-expand {
+        display: none !important; /* El chat ya es Full Screen en móviles */
+    }
+}
+
+/* --- Fullscreen Mode Expansion --- */
+.chatbot-container.chat-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    max-width: 100vw;
+    top: 0;
+    left: 0;
+    bottom: auto;
+    right: auto;
+    border-radius: 0;
+    transform: translateY(0) scale(1) !important;
+    border: none;
+    z-index: 15000 !important; /* 🔥 CRÍTICO: Cubre library-toggle (10001) y chatbot-toggle (9900) pero respeta media-viewer (999999) */
+}
+
+/* Comportamiento de Fullscreen en Desktop (Estilo Gemini/ChatGPT) */
+@media (min-width: 769px) {
+    .chatbot-container.chat-fullscreen .chatbot-history-panel {
+        position: relative; /* Lo anclamos permanentemente a la izquierda */
+        transform: translateX(0);
+        width: 300px;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    
+    .chatbot-container.chat-fullscreen .chatbot-history-toggle {
+        display: none; /* Ocultar hamburguesa porque el panel ya está fijo visible */
     }
 }

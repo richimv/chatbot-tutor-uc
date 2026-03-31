@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
-const sharp = require('sharp'); 
+const sharp = require('sharp');
 const db = require('../../infrastructure/database/db');
 const driveService = require('../../domain/services/driveService');
 
@@ -26,7 +26,7 @@ class MediaController {
         try {
             return await sharp(buffer)
                 .resize({ width: 1600, withoutEnlargement: true }) // ✅ MEJORA: Aumentado de 1200 a 1600 para mayor detalle
-                .webp({ 
+                .webp({
                     quality: 85, // ✅ MEJORA: Calidad superior a 80
                     smartSubsampling: true // ✅ MEJORA: Bordes más nítidos para texto y diagramas
                 })
@@ -45,7 +45,7 @@ class MediaController {
     async uploadFile(file, folder = 'explanations', optimize = true) {
         try {
             const bucket = this.storage.bucket(this.bucketName);
-            
+
             let buffer = file.buffer;
             let fileName = file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
             let contentType = file.mimetype;
@@ -64,7 +64,7 @@ class MediaController {
             const gcsFile = bucket.file(gcsPath);
 
             await gcsFile.save(buffer, {
-                metadata: { 
+                metadata: {
                     contentType,
                     cacheControl: 'public, max-age=31536000' // ✅ MEJORA: Caché de 1 año (Estilo Netflix)
                 }
@@ -83,12 +83,12 @@ class MediaController {
      */
     async deleteFile(gcsPath) {
         if (!gcsPath || gcsPath.startsWith('http')) return;
-        
+
         try {
             const bucket = this.storage.bucket(this.bucketName);
             const file = bucket.file(gcsPath);
             const [exists] = await file.exists();
-            
+
             if (exists) {
                 await file.delete();
                 console.log(`🗑️ Archivo eliminado de GCS: ${gcsPath}`);
@@ -138,13 +138,20 @@ class MediaController {
                 '.jpeg': 'image/jpeg',
                 '.webp': 'image/webp',
                 '.gif': 'image/gif',
-                '.svg': 'image/svg+xml'
+                '.svg': 'image/svg+xml',
+                '.pdf': 'application/pdf',
+                '.mp4': 'video/mp4',
+                '.webm': 'video/webm',
+                '.mov': 'video/quicktime',
+                '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             };
 
             res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
             res.setHeader('Content-Disposition', 'inline');
             res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=31536000, immutable'); // Cache 1 año para usuarios
-            
+
             file.createReadStream().pipe(res);
         } catch (error) {
             console.error('❌ Error sirviendo GCS por ruta:', error);
@@ -159,10 +166,10 @@ class MediaController {
     async uploadBuffer(buffer, originalName, mimeType, folder = 'thumbnails') {
         try {
             const bucket = this.storage.bucket(this.bucketName);
-            
+
             // 1. Optimización forzada a WebP
             const optimizedBuffer = await this._optimizeImage(buffer);
-            
+
             // 2. Preparar metadatos
             const baseName = path.parse(originalName).name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
             const fileName = `${Date.now()}-${baseName}.webp`;
@@ -171,7 +178,7 @@ class MediaController {
 
             // 3. Guardar en GCS con caché agresivo
             await gcsFile.save(optimizedBuffer, {
-                metadata: { 
+                metadata: {
                     contentType: 'image/webp',
                     cacheControl: 'public, max-age=31536000' // ✅ MEJORA: Caché de 1 año
                 }

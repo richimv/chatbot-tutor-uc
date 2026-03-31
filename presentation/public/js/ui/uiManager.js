@@ -365,58 +365,99 @@ class UIManager {
     }
 
     /**
-     * Inicia el Visor de Medios (Imágenes).
+     * Inicia el Visor de Medios (Universal).
      */
     showMediaViewer(url, title) {
         if (!url) return;
 
         // ✅ LÓGICA SMART ROUTING SENIOR
-        const isDrive = this.isDriveLink(url);
-        const isImage = this.isImage(url);
-        const isPdf = url.toLowerCase().includes('.pdf');
+        const isOurContent = this.isOurResource(url);
 
-        // 1. Si es DOCUMENTO (Drive, PDF, Externo) -> ABRIR EN PESTAÑA NUEVA (Seguro y Oficial)
-        if (isDrive || isPdf) {
+        // 1. Si NO es nuestro recurso (Excluye GCS) -> ABRIR EN PESTAÑA NUEVA (Seguro y Oficial)
+        if (!isOurContent || this.isDriveLink(url)) {
             window.open(url, '_blank');
-            return; // No abrimos el modal
+            return;
         }
 
-        // 2. Si es IMAGEN (GCS, etc.) -> ABRIR EN EL MODAL (Experiencia Inmersiva)
+        // 2. Si es Nuestro Recurso (GCS) -> ABRIR EN EL MODAL (Experiencia Inmersiva)
         const modal = document.getElementById('media-viewer-modal');
         const img = document.getElementById('media-viewer-img');
         const titleEl = document.getElementById('media-viewer-title');
         const downloadBtn = document.getElementById('media-viewer-download');
         const body = document.getElementById('media-viewer-body');
 
-        if (modal && img && body && isImage) {
-            const resolvedUrl = this.resolveImageUrl(url);
+        if (modal && body) {
+            // ✅ USAR RESOLUTOR UNIVERSAL
+            const resolvedUrl = window.resolveImageUrl(url);
 
             // Limpiar visor de restos de iframes anteriores
-            img.style.display = 'none';
-            const oldIframe = body.querySelector('iframe');
-            if (oldIframe) oldIframe.remove();
+            if (img) img.style.display = 'none';
+            body.querySelectorAll('iframe, video, audio').forEach(el => el.remove());
 
             if (titleEl) titleEl.innerText = title || 'Visualizando Recurso';
 
-            // Mostrar imagen normal
-            img.src = resolvedUrl;
-            img.style.display = 'block';
+            // Detección y Renderizado
+            if (this.isImage(url)) {
+                if (img) {
+                    img.src = resolvedUrl;
+                    img.style.display = 'block';
+                }
+            } else if (this.isVideo(url)) {
+                const video = document.createElement('video');
+                video.controls = true;
+                video.style.width = '100%';
+                video.style.maxHeight = '85vh';
+                video.style.borderRadius = '8px';
+                video.style.backgroundColor = '#000';
+                video.src = resolvedUrl;
+                body.appendChild(video);
+            } else if (this.isPDF(url)) {
+                const iframe = document.createElement('iframe');
+                iframe.src = resolvedUrl;
+                iframe.style.width = '100%';
+                iframe.style.height = '85vh';
+                iframe.style.border = 'none';
+                iframe.style.borderRadius = '8px';
+                iframe.style.backgroundColor = '#fff'; // Necesario para que algunos PDFs no queden transparentes
+                body.appendChild(iframe);
+            } else if (this.isOffice(url)) {
+                const iframe = document.createElement('iframe');
+                // Google Docs Viewer (Requiere URL Absoluta accesible publicamente para el motor de Google)
+                const absoluteUrl = resolvedUrl.startsWith('http') ? resolvedUrl : `${window.location.origin}${resolvedUrl}`;
+                iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true`;
+                iframe.style.width = '100%';
+                iframe.style.height = '85vh';
+                iframe.style.border = 'none';
+                iframe.style.borderRadius = '8px';
+                body.appendChild(iframe);
+            } else {
+                // Fallback de seguridad
+                window.open(resolvedUrl, '_blank');
+                return;
+            }
 
             if (downloadBtn) {
                 downloadBtn.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = resolvedUrl;
-                    a.download = title ? `${title.replace(/\s+/g, '_')}.png` : 'recurso_hub.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
+                   // Simulamos clic dinámico para descarga
+                   window.open(resolvedUrl, '_blank'); 
                 };
             }
+
+            // Experiencia Inmersiva: Ocultar scrool, Chat y Botones Flotantes
+            document.body.style.overflow = 'hidden';
+            
+            const chatContainer = document.getElementById('chatbot-container');
+            const chatToggle = document.getElementById('chatbot-toggle');
+            const libraryToggle = document.querySelector('.library-toggle');
+            
+            if (chatContainer) chatContainer.style.visibility = 'hidden';
+            if (chatToggle) chatToggle.style.visibility = 'hidden';
+            if (libraryToggle) libraryToggle.style.visibility = 'hidden';
 
             modal.style.display = 'flex';
             this.pushModalState('media-viewer-modal');
         } else {
-            // 3. FALLBACK: Si no es imagen definida ni Drive, abrir en pestaña nueva por seguridad
+            // 3. FALLBACK SI NO INYECTÓ HTML
             window.open(url, '_blank');
         }
     }
@@ -427,9 +468,25 @@ class UIManager {
         if (modal) {
             modal.style.display = 'none';
             if (body) {
-                const iframe = body.querySelector('iframe');
-                if (iframe) iframe.remove();
+                body.querySelectorAll('iframe, video, audio').forEach(el => el.remove());
+                const img = document.getElementById('media-viewer-img');
+                if (img) {
+                    img.src = '';
+                    img.style.display = 'none';
+                }
             }
+            
+            // Restaurar visuales inmersivos
+            document.body.style.overflow = '';
+            
+            const chatContainer = document.getElementById('chatbot-container');
+            const chatToggle = document.getElementById('chatbot-toggle');
+            const libraryToggle = document.querySelector('.library-toggle');
+            
+            if (chatContainer) chatContainer.style.visibility = '';
+            if (chatToggle) chatToggle.style.visibility = '';
+            if (libraryToggle) libraryToggle.style.visibility = '';
+            
             this.popModalState('media-viewer-modal');
         }
     }
@@ -461,16 +518,16 @@ class UIManager {
                     display: none;
                     position: fixed;
                     top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.9);
-                    backdrop-filter: blur(10px);
-                    z-index: 10001;
+                    background: rgba(0,0,0,0.95);
+                    backdrop-filter: blur(15px);
+                    z-index: 999999; /* Z-Index extremo para asegurar Full Screen */
                     justify-content: center;
                     align-items: center;
                 }
                 .media-viewer-container {
-                    width: 90%;
-                    max-width: 1000px;
-                    max-height: 90vh;
+                    width: 95%;
+                    max-width: 1400px; /* Mas ancho para pdfs y videos */
+                    height: 95vh;      /* Ocupa casi todo el alto */
                     display: flex;
                     flex-direction: column;
                     gap: 15px;
@@ -509,18 +566,17 @@ class UIManager {
                 .media-btn-close:hover { background: #ef4444; }
                 .media-viewer-body {
                     flex: 1;
-                    overflow: auto;
+                    overflow: hidden; /* Evitar scroll interno del Modal */
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    background: #111;
-                    border-radius: 12px;
-                    border: 1px solid rgba(255,255,255,0.1);
+                    background: transparent;
                 }
                 .media-viewer-body img {
                     max-width: 100%;
-                    max-height: 75vh;
+                    max-height: 85vh;
                     object-fit: contain;
+                    border-radius: 8px;
                 }
                 .media-viewer-body iframe {
                     width: 100%;
@@ -544,14 +600,32 @@ class UIManager {
 
     isImage(url) {
         if (!url) return false;
-        // Limpiar query params si los hay
         const cleanUrl = url.split('?')[0].toLowerCase();
-        return cleanUrl.endsWith('.png') ||
-            cleanUrl.endsWith('.jpg') ||
-            cleanUrl.endsWith('.jpeg') ||
-            cleanUrl.endsWith('.webp') ||
-            cleanUrl.endsWith('.gif') ||
-            cleanUrl.endsWith('.svg');
+        return /\.(png|jpe?g|webp|gif|svg)$/i.test(cleanUrl);
+    }
+
+    isPDF(url) {
+        if (!url) return false;
+        return url.split('?')[0].toLowerCase().endsWith('.pdf');
+    }
+
+    isVideo(url) {
+        if (!url) return false;
+        const clean = url.split('?')[0].toLowerCase();
+        return /\.(mp4|webm|mov)$/i.test(clean);
+    }
+
+    isOffice(url) {
+        if (!url) return false;
+        const clean = url.split('?')[0].toLowerCase();
+        return /\.(docx?|pptx?|xlsx?)$/i.test(clean);
+    }
+
+    isOurResource(url) {
+        if (!url) return false;
+        if (!url.startsWith('http')) return true; // Relative GCS path
+        if (url.includes(window.AppConfig.API_URL)) return true; // Already resolved GCS path
+        return false;
     }
 
     /**
@@ -570,26 +644,6 @@ class UIManager {
         return url.includes('/folders/') || url.includes('folderid=');
     }
 
-    /**
-     * Procesa una URL para obtener su versión de previsualización (GCS o Drive).
-     */
-    resolveImageUrl(path) {
-        if (!path) return '';
-        if (path.startsWith('http')) {
-            // ✅ DETECCIÓN DE DRIVE
-            if (this.isDriveLink(path)) {
-                // Ya no usamos el proxy temporal /api/media/drive-thumbnail.
-                // Ahora dependemos de la miniatura persistente en GCS.
-                // Si llegamos aquí con un link de Drive, es que no hay miniatura generada aún.
-                return ''; 
-            }
-            return path; // Es una URL externa directa
-        }
-
-        // ✅ Lógica de GCS existente
-        if (path.startsWith('assets/')) return '/' + path;
-        return `/api/media/gcs?path=${path}`;
-    }
 
     /**
      * Extrae el ID de un enlace de Google Drive
