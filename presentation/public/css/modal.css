@@ -27,7 +27,16 @@
     max-height: 90vh;
     /* Altura máxima */
     overflow: hidden;
-    /* ✅ CORRECCIÓN: Evitar que el footer sobresalga de los bordes redondeados */
+    margin: 10px; /* Margen de seguridad para móviles */
+}
+
+/* Optimización móvil para modales */
+@media screen and (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-width: none !important;
+        margin: 5px;
+    }
 }
 
 .modal-header {

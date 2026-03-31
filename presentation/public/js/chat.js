@@ -367,9 +367,12 @@ class ChatComponent {
                 document.body.style.overflow = 'hidden';
             }
 
-            // ✅ UX: Modificamos el historial al ABRIR para crear un "checkpoint" falso
-            // que nos permita atrapar el botón de "Atrás"
+            // ✅ UX MÓVIL: Guardamos el estado de navegación actual ANTES de pushear
+            // el checkpoint del chat. Así al cerrar con la X podemos restaurarlo
+            // con replaceState (silencioso) en vez de history.back() (ruidoso).
             if (window.history && window.history.pushState) {
+                this._stateBeforeChat = window.history.state;
+                this._hrefBeforeChat = window.location.href;
                 window.history.pushState({ chatbotOpen: true }, '', '');
             }
 
@@ -392,18 +395,26 @@ class ChatComponent {
     closeChat() {
         if (!this.isOpen) return;
 
-        // ✅ LÓGICA DE HISTORIAL: Cierre manual
-        // El usuario hizo click visualmente en la "X" o el toggle, no usó el botón back del celular.
-        // Si hay estado historial de chat, lo intentamos purgar retrocediendo el navegador
-        // Ojo que al retroceder el navegador se disparará `handlePopState`, 
-        // pero como ya entraremos al flujo normal no es un problema.
-        const state = window.history.state;
-        if (state && state.chatbotOpen) {
-            window.history.back(); // Esto eventualmente dispara popstate y limpia
-        } else {
-            // Si por algún motivo no estaba en history, lo cerramos manual directo.
-            this.forceCloseChatFromBack();
+        // ✅ REFACTORIZACIÓN: Cierre silencioso del chat (NO re-renderiza BIBLIOTECA).
+        // Problema anterior: history.back() disparaba 'popstate', y search.js al
+        // recibir el popstate con el estado PREVIO (ej. { view: 'home' }) lo
+        // interpretaba como navegación legítima y re-renderizaba toda la vista.
+        //
+        // Solución: replaceState() sobreescribe la entrada actual del historial
+        // SIN disparar 'popstate'. El chat se cierra visualmente y el historial
+        // queda limpio como si el pushState del chat nunca existió.
+        const currentState = window.history.state;
+        if (currentState && currentState.chatbotOpen) {
+            // Restaurar el estado de navegación previo silenciosamente
+            window.history.replaceState(
+                this._stateBeforeChat || null,
+                '',
+                this._hrefBeforeChat || window.location.href
+            );
         }
+
+        // Cerrar visualmente
+        this.forceCloseChatFromBack();
     }
 
     // Función helper para cerrar visualmente sin alterar history (usado cuando history ya disparó popstate)

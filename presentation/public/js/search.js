@@ -231,13 +231,6 @@ class SearchComponent {
             return;
         }
 
-        // ✅ CORRECCIÓN: Ignorar estados empujados por el ChatComponent.
-        // Cuando el chat se cierra con history.back(), el popstate no debe
-        // provocar un re-render de la BIBLIOTECA/búsqueda.
-        if (state && state.chatbotOpen) {
-            return;
-        }
-
         if (!state || !state.view) {
             // Si no hay estado (ej: estado inicial vacío), volvemos al home.
             this.renderInitialView();

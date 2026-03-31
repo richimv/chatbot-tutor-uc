@@ -603,7 +603,7 @@
     visibility: visible;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .chatbot-container {
         width: 100%;
         height: 100%;
@@ -612,8 +612,8 @@
         right: 0;
         border-radius: 0;
         transform: translateY(100%);
-        /* Ensure z-index is high enough to cover everything */
-        z-index: 9990; /* Ajustado */
+        /* Ensure z-index is high enough to cover everything, including library-toggle (10001) */
+        z-index: 10100; /* Ajustado para cubrir librería */
         border: none;
     }
 
@@ -624,7 +624,19 @@
     .chatbot-history-panel {
         width: 85%;
         max-width: 320px;
-        z-index: 2147483647;
+        z-index: 100; /* Bajado para no competir con modales globales */
+    }
+
+    /* ✅ CORRECCIÓN: Mostrar iconos de edición/borrado siempre en móvil 
+       (Ya que no hay hover en touch devices) */
+    .conversation-item .conversation-actions {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .conversation-actions button {
+        padding: 8px; /* Target táctil más grande */
+        font-size: 1rem;
     }
 
     .chatbot-toggle {
