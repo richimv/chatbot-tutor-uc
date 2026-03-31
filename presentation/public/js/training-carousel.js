@@ -1,6 +1,6 @@
 /**
  * @fileoverview training-carousel.js (Infinite 2D Hardware-Accelerated Slider)
- * @description Diseño a prueba de balas. Cero lag, bucle infinito real. Sin dots.
+ * @description Diseño estilo Manta: Tarjetas del mismo tamaño, juntas y oscurecidas a los lados.
  */
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
@@ -27,11 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateVisuals() {
         const isMobile = window.innerWidth <= 768;
-        // Separación: 110% en PC (para que se abran), 95% en móvil (para que quepan en pantallas chicas)
-        const spread = isMobile ? 95 : 110;
+
+        // 🔥 CLAVE 1: Reducimos la separación. 
+        // 103% deja un margen milimétrico entre las tarjetas, manteniéndolas alineadas y pegadas.
+        const spread = isMobile ? 102 : 103;
 
         cards.forEach((card, index) => {
-            // Calcular la distancia relativa al centro
             let diff = index - activeIndex;
             const total = cards.length;
 
@@ -39,25 +40,37 @@ document.addEventListener('DOMContentLoaded', () => {
             if (diff > Math.floor(total / 2)) diff -= total;
             if (diff < -Math.floor(total / 2)) diff += total;
 
+            // Transiciones fluidas directas desde JS
+            card.style.transition = 'transform 0.5s ease, filter 0.5s ease, opacity 0.5s ease';
+
             if (diff === 0) {
                 // TARJETA CENTRAL
                 card.style.transform = `translate(-50%, -50%) scale(1)`;
                 card.style.opacity = '1';
+                card.style.filter = 'brightness(1)'; // Iluminación total
                 card.style.zIndex = '10';
                 card.classList.add('carousel-card--active');
-                card.style.pointerEvents = 'auto'; // Habilitar clics
+                card.style.pointerEvents = 'auto';
             } else if (diff === 1 || diff === -1) {
                 // TARJETAS ADYACENTES (Izquierda y Derecha)
-                const direction = diff; // 1 = Derecha, -1 = Izquierda
-                card.style.transform = `translate(calc(-50% + ${direction * spread}%), -50%) scale(0.85)`;
-                card.style.opacity = '0.5'; // Opacas para no distraer
+                const direction = diff;
+
+                // 🔥 CLAVE 2: scale(1) para que tengan el MISMO tamaño que la del centro
+                card.style.transform = `translate(calc(-50% + ${direction * spread}%), -50%) scale(1)`;
+
+                // 🔥 CLAVE 3: 100% de opacidad, pero oscurecidas con brightness (Efecto Manta)
+                card.style.opacity = '1';
+                // 🔥 CAMBIO: Aumentado para que tengan mejor visibilidad
+                card.style.filter = 'brightness(0.7)';
+
                 card.style.zIndex = '5';
                 card.classList.remove('carousel-card--active');
-                card.style.pointerEvents = 'none'; // Deshabilitar clics para no ir a enlaces por error
+                card.style.pointerEvents = 'none';
             } else {
-                // Ocultar tarjetas extra si alguna vez pones más de 3
-                card.style.transform = `translate(-50%, -50%) scale(0.5)`;
+                // Ocultar tarjetas extra
+                card.style.transform = `translate(-50%, -50%) scale(1)`;
                 card.style.opacity = '0';
+                card.style.filter = 'brightness(0)';
                 card.style.zIndex = '0';
                 card.style.pointerEvents = 'none';
             }
@@ -94,22 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentX = e.touches[0].clientX;
             const diff = startX - currentX;
 
-            if (Math.abs(diff) > 50) { // Sensibilidad del deslizamiento
+            if (Math.abs(diff) > 50) {
                 if (diff > 0) goNext();
                 else goPrev();
-                isDragging = false; // Solo girar una vez por deslizamiento
+                isDragging = false;
             }
         }, { passive: true });
 
         wrapper.addEventListener('touchend', () => isDragging = false);
 
-        // Prevenir locuras al cambiar de pestaña
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) pauseAutoPlay();
             else startAutoPlay();
         });
 
-        // Reajustar si giran el celular
         window.addEventListener('resize', updateVisuals);
     }
 
