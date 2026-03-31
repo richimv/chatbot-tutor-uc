@@ -622,10 +622,10 @@ function createUnifiedResourceCardHTML(item) {
     }
 
     if (displayImage) {
-        // ✅ CORRECCIÓN SENIOR: Ocultar fallback si la imagen carga, mostrarlo si falla.
-        // Usamos un ID único para el fallback basado en el ID del item para control local.
+        // ✅ CORRECCIÓN SENIOR: Búsqueda relativa (parentElement.querySelector) para asegurar disponibilidad
+        // del nodo, impidiendo que el onerror crashee intentando invocar document.getElementById
         const fallbackId = `fb-${type}-${item.id}`;
-        visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.style.display='none'; document.getElementById('${fallbackId}').style.display='flex';">`;
+        visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.style.display='none'; const fb = this.parentElement.querySelector('.urc-icon-fallback'); if(fb) fb.style.display='flex';">`;
     }
 
     // El fallback ahora tiene un ID único y su visibilidad depende de 'displayImage'
