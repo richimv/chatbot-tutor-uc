@@ -3,6 +3,7 @@ const AdminService = require('../../domain/services/adminService'); // Importar 
 const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ IMPORTAR CLIENTE SUPABASE
 const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida centralizada a GCS
+const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
 const fs = require('fs');
 const path = require('path');
 
@@ -214,6 +215,42 @@ class CoursesController {
     }
     */
 
+    /**
+     * ✅ NUEVO: Procesa una URL para detectar si es de Drive y extraer su miniatura de forma persistente.
+     * @param {string} url - La URL del recurso.
+     * @param {string} currentImageUrl - La imagen actual o recién subida manualmente.
+     * @returns {Promise<string|null>} - La nueva URL de la imagen (GCS).
+     */
+    async _handleDriveThumbnail(url, currentImageUrl) {
+        // 1. Si ya se subió una imagen manual en este request, NO sobreescribir.
+        if (currentImageUrl) return currentImageUrl;
+        if (!url) return null;
+ 
+        // 2. Extraer ID de archivo de Drive
+        const fileId = DriveService.extractFileId(url);
+        if (!fileId) return null;
+ 
+        try {
+            console.log(`📡 [Drive] Detectado recurso de Drive (${fileId}). Intentando extraer miniatura...`);
+            const thumbData = await DriveService.downloadThumbnailBuffer(fileId);
+            
+            if (thumbData && thumbData.buffer) {
+                // Persistir en GCS (Optimizado a WebP)
+                const persistentUrl = await mediaController.uploadBuffer(
+                    thumbData.buffer,
+                    `${fileId}.jpg`,
+                    thumbData.mimeType,
+                    'thumbnails'
+                );
+                console.log(`✅ [Drive] Miniatura extraída y persistida: ${persistentUrl}`);
+                return persistentUrl;
+            }
+        } catch (error) {
+            console.warn(`⚠️ [Drive] Error extrayendo miniatura para ${fileId}:`, error.message);
+        }
+        return null;
+    }
+ 
     // --- Métodos CRUD Genéricos para el Panel de Administración ---
 
     async createEntity(req, res, entityType) {
@@ -275,7 +312,13 @@ class CoursesController {
                     req.body.url = req.body.image_url;
                 }
             }
-
+ 
+            // ✅ NUEVO: EXTRACCIÓN AUTOMÁTICA DE MINIATURA (Drive)
+            if (entityType === 'book' && req.body.url) {
+                const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
+                if (driveThumb) req.body.image_url = driveThumb;
+            }
+ 
             const newItem = await this.adminService.create(entityType, req.body);
             res.status(201).json(newItem);
         } catch (error) {
@@ -396,7 +439,13 @@ class CoursesController {
                     req.body.url = req.body.image_url;
                 }
             }
-
+ 
+            // ✅ NUEVO: EXTRACCIÓN AUTOMÁTICA DE MINIATURA (Drive Update)
+            if (entityType === 'book' && req.body.url) {
+                const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
+                if (driveThumb) req.body.image_url = driveThumb;
+            }
+ 
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);
             res.json(updatedItem);
         } catch (error) {

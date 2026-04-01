@@ -331,18 +331,10 @@ class AdminController {
                     console.warn(`⚠️ No se pudo persistir miniatura para ${file.name}:`, thumbErr.message);
                 }
 
-                // 🛡️ SI NO HAY MINIATURA (Falló Google o es un archivo pesado), USAMOS EL FALLBACK PREMIUM
+                // 🛡️ SI NO HAY MINIATURA (Falló Google o es un archivo pesado), NO ASIGNAMOS NADA.
+                // El sistema ya maneja un diseño por defecto en el frontend si image_url es null.
                 if (!persistentThumbnailUrl) {
-                    const FALLBACKS = {
-                        'Video Explicativo': 'thumbnails/default_video.webp',
-                        'Libro / Manual': 'thumbnails/default_book.webp',
-                        'Guía de Práctica Clínica': 'thumbnails/default_guia.webp',
-                        'Normas Técnicas': 'thumbnails/default_norma.webp',
-                        'Artículo / Paper': 'thumbnails/default_paper.webp',
-                        'Infografía / Otros': 'thumbnails/default_other.webp'
-                    };
-                    persistentThumbnailUrl = FALLBACKS[resourceType] || FALLBACKS['Infografía / Otros'];
-                    console.log(`✨ Asignando portada de respaldo para: ${file.name} (${resourceType})`);
+                    console.log(`✨ Sin miniatura para: ${file.name} (se usará diseño por defecto UI)`);
                 }
 
                 const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author);

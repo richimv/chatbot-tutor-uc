@@ -6,7 +6,7 @@ class ChatComponent {
         this.messages = [];
         this.conversations = [];
         this.messageIdCounter = 0;
-        
+
         // Fase IV: Opciones de Modularidad
         this.targetSelector = options.targetSelector || 'body'; // Dónde se inyecta
         this.isFullScreen = false;
@@ -91,7 +91,7 @@ class ChatComponent {
 
                     <div class="chatbot-input-container">
                         <div class="chatbot-input">
-                            <textarea id="chatbot-input" placeholder="Escribe tu pregunta aquí... (Usa Shift + Enter para salto de línea)" maxlength="5000" rows="1"></textarea>
+                            <textarea id="chatbot-input" placeholder="Escribe tu pregunta aquí..." maxlength="5000" rows="1"></textarea>
                             <button id="chatbot-send" class="chatbot-send">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -115,7 +115,7 @@ class ChatComponent {
         } else {
             console.error(`Target selector ${this.targetSelector} no encontrado para inyectar el Chat.`);
         }
-        
+
         this.loadChatStyles();
     }
 
@@ -216,7 +216,7 @@ class ChatComponent {
             });
 
             // Auto-resize textarea
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 this.style.height = 'auto';
                 // Calculamos max-height basado en aprox 5 líneas (120px)
                 const newHeight = Math.min(this.scrollHeight, 120);
@@ -436,7 +436,7 @@ class ChatComponent {
         const container = document.getElementById('chatbot-container');
         container.classList.remove('open');
         container.setAttribute('aria-hidden', 'true');
-        
+
         // Liberar el scroll del body
         document.body.style.overflow = '';
     }
@@ -465,7 +465,7 @@ class ChatComponent {
             }
             expandBtn.setAttribute('aria-label', 'Pantalla completa');
             expandBtn.setAttribute('title', 'Pantalla completa');
-            
+
             // Reparar UI si hay overflow en base a resize
             const input = document.getElementById('chatbot-input');
             if (input) input.style.height = 'auto';

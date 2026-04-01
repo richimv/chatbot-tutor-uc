@@ -489,8 +489,8 @@ class AdminManager {
             <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
                 <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
                     <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
-                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none;">
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
+                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; padding: 5px 0;">
                     </div>
                     <select class="tab-sort-select" data-tab="tab-books" style="height: 40px;">
                         <option value="date-desc">📅 Más Recientes</option>
@@ -528,12 +528,12 @@ class AdminManager {
             <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
                 <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
                     <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px; transition: border-color 0.2s;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
                         <input type="text" class="admin-search-input-dynamic" 
                             placeholder="Buscar preguntas (Servidor)..." 
                             value="${this.currentQuestionSearch}"
                             oninput="window.adminManager.handleDynamicSearch(this.value)"
-                            style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                            style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem; padding: 5px 0;">
                     </div>
 
                     <select class="form-input" style="width: auto; height: 40px; min-width: 180px;" 
@@ -2120,12 +2120,12 @@ class AdminManager {
                             <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
                                 <!-- ✅ UX MEJORA: Barra de búsqueda con ancho fijo y mejor padding para evitar solapamiento del icono -->
                                 <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
-                                    <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px; font-size: 0.9rem;"></i>
+                                    <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
                                     <input type="text"
                                         class="admin-search-input"
                                         placeholder="Buscar..."
                                         data-target-tab="${tabId}"
-                                        style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem;">
+                                        style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem; padding: 5px 0;">
                                 </div>
 
                                 ${sortSelectHTML}
