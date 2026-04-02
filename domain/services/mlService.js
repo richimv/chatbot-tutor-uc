@@ -24,36 +24,29 @@ const vertex_ai = new VertexAI({ project: project, location: location });
 const systemInstruction = {
     role: 'system',
     parts: [{
-        text: `ROL: Eres el Tutor Senior de "Hub Academia", un experto en Medicina Peruana y un ecosistema EdTech 100% oficial y legal.
+        text: `ROL: Eres el Tutor Senior de "Hub Academia", un experto en Medicina Peruana.
     
-    TU MISIÓN TIENE 3 PILARES:
-    1.  **TUTOR CLÍNICO:** Explicar conceptos médicos basándote estrictamente en las Normas Técnicas, Guías de Práctica Clínica (GPC) y el marco legal del MINSA/EsSalud provistos en el contexto.
-    2.  **CURADOR DE RECURSOS:** Conectar al usuario con material "Open Source", Papers, y guías oficiales. Presenta siempre estos recursos como enlaces Markdown directos: [Título](URL).
-    3.  **EXPERTO VISUAL:** Si el material es una Infografía o Imagen (Tipo: "other"), descríbelo como material visual de apoyo (ej: "He seleccionado esta infografía para ilustrar el concepto...").
-    4.  **GUÍA ACADÉMICO:** Orientar sobre qué Cursos, Módulos y Flashcards están disponibles. Cuando menciones un curso, usa SIEMPRE: [Nombre](/course?id=ID).
+    TU MISIÓN (PILAR ÚNICO):
+    **TUTOR CLÍNICO:** Explicar conceptos médicos basándote en las Normas Técnicas de Salud (NTS), Guías de Práctica Clínica (GPC), el marco legal del MINSA/EsSalud y los grandes tratados médicos (Harrison, Washington, Nelson, CTO, AMIR).
 
     --- DIRECTRICES DE COMPORTAMIENTO ---
 
     A) AL RESPONDER SOBRE TEMAS/CONCEPTOS MÉDICOS:
-    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza tu conocimiento interno de las Normas Técnicas, Guías de Práctica Clínica (GPC) y libros de referencia (Harrison, Washington, Nelson, CTO, AMIR).
+    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza tu conocimiento interno de las Normas Técnicas, Guías de Práctica Clínica (GPC) y libros de referencia.
     2.  **Referencias:** 
         * **Si mencionas Guías/Normas:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
         * **Fuentes Oficiales:** Fundamenta tu explicación en los libros de texto médicos verificados y normas oficiales peruanas (NTS, RM, Leyes) que forman parte de tu base de conocimiento experto.
     3.  **Uso de Conocimiento General:** Si el contexto provisto (RAG) no contiene la respuesta exacta a preguntas específicas (ej. plazos normativos, tiempos, o dosis exactas), **DEBES usar tu conocimiento experto pre-entrenado general** para dar la respuesta correcta. BAJO NINGUNA CIRCUNSTANCIA respondas "no está en mi base de conocimientos" o "el contexto proporcionado no lo menciona". Eres un médico experto y debes suplir cualquier deficiencia de los documentos con tu propio conocimiento médico.
 
-    B) AL RESPONDER SOBRE ESTRUCTURA DE CURSOS:
-    Si el usuario pregunta "¿Qué cursos tiene Medicina?" o sobre temas específicos, revisa el contexto inyectado.
-    1.  **Listado Claro:** Presenta la información con viñetas. OBLIGATORIO: Usa enlaces Markdown para que sean clickeables.
-        * Ejemplo: "Te recomiendo el curso de [Anatomía Humana](/course?id=123)".
-    2.  **No inventes:** Solo menciona los cursos que el sistema te ha mostrado en el contexto.
+    B) PROHIBICIONES ABSOLUTAS (TEMPORAL - CATÁLOGO EN CONSTRUCCIÓN):
+    1.  **PROHIBIDO mencionar, recomendar o enlazar CURSOS** de Hub Academia. No generes links tipo [Nombre](/course?id=X). El catálogo aún está incompleto.
+    2.  **PROHIBIDO mencionar o enlazar RECURSOS, LIBROS o MATERIALES** de la biblioteca interna. No generes links a Google Drive, GCS ni a URLs internas de la plataforma.
+    3.  Si el usuario pregunta por cursos o recursos, responde: "Estamos ampliando nuestro catálogo académico y pronto tendrás acceso a cursos y materiales de estudio. Por ahora, puedo ayudarte con cualquier consulta médica.".
+    4.  Enfócate EXCLUSIVAMENTE en la respuesta médica/clínica/normativa.
 
-    D) LÍMITE DE RECURSOS (OPTIMIZACIÓN):
-    *   Si el contexto te da muchos recursos, **LISTA MÁXIMO 3 a 5**.
-    *   Si hay más, añade una línea final: "Y [X] recursos más disponibles en el Centro de Referencia."
-
-    E) SUGERENCIAS ACTIVAS (OBLIGATORIO):
+    C) SUGERENCIAS ACTIVAS (OBLIGATORIO):
     Al final de TU RESPUESTA, genera siempre 3 preguntas cortas que el usuario podría hacer a continuación para profundizar.
-    *   Deben ser INTUITIVAS y naturales ligadas al caso u objetivos (ej. "Ver dosis pediátrica", "¿Cuál es el tratamiento de primera línea?", "Ir a Flashcards de este tema").
+    *   Deben ser INTUITIVAS y naturales ligadas al caso u objetivos (ej. "Ver dosis pediátrica", "¿Cuál es el tratamiento de primera línea?", "¿Qué complicaciones debo vigilar?").
 
     IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
     {
@@ -61,15 +54,6 @@ const systemInstruction = {
       "respuesta": "Tu respuesta completa aquí en Markdown. POR FAVOR, SE EXTENSO Y PEDAGÓGICO. Para conceptos médicos, utiliza al menos 3 párrafos bien estructurados, usa negritas para términos clave y tablas si es necesario para comparar conceptos. No seas breve; el usuario busca aprender.",
       "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
     }
-
-    --- VALLA DE SEGURIDAD ACADÉMICA (CERO TOLERANCIA A LA CREATIVIDAD) ---
-    1. PROHIBIDO INVENTAR ENLACES O IDs. Usa ÚNICAMENTE los IDs del bloque [CATÁLOGO ACADÉMICO] inyectado.
-    2. SI NO ESTÁ EN LA LISTA, NO EXISTE: Si un curso no aparece en el [CATÁLOGO ACADÉMICO], tienes PROHIBIDO mencionarlo como una oferta o recomendación de Hub Academia. No inventes nombres de cursos genéricos (ej. "Salud Pública" o "Medicina Interna") si no están en la lista.
-    3. PROHIBIDO MENCIONAR "FICTICIO": Nunca indiques que un ID es ficticio o que el usuario debe verificar el catálogo; simplemente no menciones lo que no está verificado en el contexto.
-    4. Si recomiendas un curso de la lista, usa estrictamente su ID real: [Nombre](/course?id=ID). Cualquier otro formato o ID falso (123, 456, abc) está terminantemente prohibido.
-    5. Para libros y recursos, usa la propiedad 'url' exacta que se te proporcione. No inventes links a Google Drive ni a otras plataformas salvo sean oficiales y seguras.
-    6. RESPUESTA SINCERA: Si el usuario pide un curso sobre un tema que no tenemos (ej. Dengue), responde: "Actualmente no contamos con un curso específico de ese tema, pero puedes revisar las normativas y recursos en nuestra biblioteca." No intentes "adivinar" o "sugerir" cursos inexistentes.
-    7. **AUDITORÍA EN VIVO:** Todo lo que escribas será filtrado técnicamente por el sistema. Si mencionas un curso inexistente, tu enlace será eliminado automáticamente.
     `
     }]
 };
@@ -79,7 +63,7 @@ const systemInstruction = {
 const modelLite = vertex_ai.getGenerativeModel({ 
     model: 'gemini-2.5-flash-lite', 
     systemInstruction, 
-    generationConfig: { maxOutputTokens: 8192, temperature: 0.7, topP: 0.8 } 
+    generationConfig: { maxOutputTokens: 65535, temperature: 0.7, topP: 0.8 } 
 });
 
 console.log('🤖 MLService: Motor LITE UNIFICADO (Sin Thinking -> 2.5-Flash-Lite)');
@@ -130,111 +114,30 @@ class MLService {
         let validCourseIds = new Set();
 
         try {
-            // 0. CATÁLOGO MAESTRO (Evita alucinaciones de IDs)
-            const allCourses = await courseRepo.findAll();
-            if (allCourses && allCourses.length > 0) {
-                validCourseIds = new Set(allCourses.map(c => String(c.id)));
-                const catalogStr = allCourses.map(c => `[ID=${c.id}] "${c.name}"`).join(' | ');
-                contextInjection += `\n[CATÁLOGO ACADÉMICO REAL - TOTAL: ${allCourses.length} CURSOS]\n${catalogStr}\n[FIN CATÁLOGO - PROHIBIDO MENCIONAR CURSOS FUERA DE ESTA LISTA]\n`;
-            }
-            // 1. Buscar coincidencias directas de libros (Metadata Search - MEJORADO 🧠)
-            const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
             const normalizedMsg = normalizeText(message);
 
-            // Lista de palabras comunes a ignorar para enfocarnos en lo importante
-            const stopWords = [
-                'el', 'la', 'los', 'las', 'un', 'una', 'de', 'del', 'y', 'o', 'en', 'con', 'por', 'para',
-                'citame', 'citar', 'cita', 'dame', 'quiero', 'libro', 'libros', 'texto', 'textos',
-                'busco', 'necesito', 'tienes', 'formato', 'apa', 'vancouver', 'iso', 'edicion'
-            ];
+            // =====================================================================
+            // 🔒 MÓDULOS DESACTIVADOS TEMPORALMENTE (Catálogo en Construcción)
+            // Cuando el catálogo de cursos y la biblioteca de recursos estén listos,
+            // descomentar las secciones 0, 1, 2 y 3 para reactivar la inyección.
+            // =====================================================================
 
-            // Extraemos las palabras clave (tokens) del mensaje del usuario
-            const msgTokens = normalizedMsg.split(/\s+/)
-                .filter(w => w.length > 2 && !stopWords.includes(w)); // Solo palabras > 2 letras y que no sean stopWords
+            // 0. CATÁLOGO MAESTRO - DESACTIVADO (Solo 1 curso incompleto)
+            // const allCourses = await courseRepo.findAll();
+            // if (allCourses && allCourses.length > 0) { ... }
 
-            const matchedBooks = allBooks.filter(b => {
-                const normTitle = normalizeText(b.title);
-                const normAuthor = b.author ? normalizeText(b.author) : '';
+            // 1. PRE-FETCHING DE LIBROS - DESACTIVADO (URLs en migración)
+            // const allBooks = await knowledgeBaseRepo.bookRepo.findAll();
+            // matchedBooks logic...
 
-                // A. Coincidencia Exacta (Como antes, por si acaso)
-                if (normTitle.includes(normalizedMsg)) return true;
+            // 2. BÚSQUEDA POR TEMA - DESACTIVADO (Recursos en migración)
+            // const entities = knowledgeBaseRepo.findEntitiesInText(message);
+            // topic injection logic...
 
-                // B. Coincidencia Inteligente por Palabras Clave
-                if (msgTokens.length > 0) {
-                    // Si el usuario dijo "Gray", buscamos si "Gray" está en el título o autor
-                    // Usamos 'every' para ser estrictos (todas las keywords deben estar) 
-                    // o 'some' para ser flexibles. 'some' es mejor para chats.
-                    return msgTokens.some(token => normTitle.includes(token) || normAuthor.includes(token));
-                }
-                return false;
-            });
+            // 3. BÚSQUEDA POR CURSO - DESACTIVADO (Catálogo incompleto)
+            // course injection logic...
 
-            if (matchedBooks.length > 0) {
-                // Limitamos a 3 resultados para optimizar tokens (antes 5)
-                const topMatches = matchedBooks.slice(0, 3);
-
-                contextInjection += `\n[BIBLIOTECA: RECURSOS ENCONTRADOS]\n` +
-                    topMatches.map(b =>
-                        `* Título: "${b.title}"
-                           Tipo: ${b.resource_type || 'Desconocido'}
-                           Autor: ${b.author || 'Anónimo'}
-                           URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
-                    ).join('\n---\n') +
-                    `\n[FIN RECURSOS]\n`;
-                console.log(`🚀 Pre-fetching Inteligente: ${topMatches.length} recursos inyectados (Keywords: ${msgTokens.join(', ')}).`);
-            }
-
-            // 2. Buscar por TEMA (usando la lógica existente de entidades)
-            const entities = knowledgeBaseRepo.findEntitiesInText(message);
-
-            if (entities.topics.length > 0) {
-                const topicName = entities.topics[0];
-                const allTopics = await knowledgeBaseRepo.topicRepo.findAll();
-                const topic = allTopics.find(t => normalizeText(t.name).includes(normalizeText(topicName)));
-
-                if (topic) {
-                    const topicBooks = allBooks.filter(b => (topic.bookIds || []).includes(b.id));
-
-                    // ✅ OPTIMIZACIÓN: Límite de 3 recursos + "Ver más"
-                    const limitedBooks = topicBooks.slice(0, 3);
-                    const remaining = topicBooks.length - limitedBooks.length;
-
-                    contextInjection += `\n[BIBLIOTECA: RECURSOS DEL TEMA "${topic.name}"]\n` +
-                        `Descripción: ${topic.description || "No disponible"}\n` +
-                        `Material Relacionado (${limitedBooks.length} de ${topicBooks.length} mostrados):\n` +
-                        limitedBooks.map(b =>
-                            `* [Tipo: ${b.resource_type || 'Material'}] Título: "${b.title}" | Autor: ${b.author} | URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
-                        ).join('\n') +
-                        (remaining > 0 ? `\n... y ${remaining} recursos más disponibles.` : '') +
-                        `\n[Ver todos: /?q=${encodeURIComponent(topic.name)}]` +
-                        `\n[FIN RECURSOS TEMA]\n`;
-                }
-            }
-
-            // 3. Buscar por CURSO (RAG para cursos mencionados)
-            if (entities.courses.length > 0) {
-                const courseName = entities.courses[0];
-                const allCourses = await courseRepo.findAll();
-                const course = allCourses.find(c => normalizeText(c.name).includes(normalizeText(courseName)));
-
-                if (course) {
-                    const courseBooks = allBooks.filter(b => (course.materials || []).some(m => m.id === b.id) || (course.bookIds || []).includes(b.id));
-
-                    // ✅ OPTIMIZACIÓN: Límite de 3 recursos + "Ver más"
-                    const limitedBooks = courseBooks.slice(0, 3);
-                    const remaining = courseBooks.length - limitedBooks.length;
-
-                    contextInjection += `\n[BIBLIOTECA: CURSO "${course.name}"]\n` +
-                        `Descripción: ${course.description || "No disponible"}\n` +
-                        `ENLACE AL CURSO: /course?id=${course.id}\n` +
-                        `Materiales (${limitedBooks.length} de ${courseBooks.length} mostrados):\n` +
-                        limitedBooks.map(b =>
-                            `* [Tipo: ${b.resource_type || 'Material'}] Título: "${b.title}" | Autor: ${b.author} | URL: ${this._resolveResourceUrl(b.url, b.resource_type)}`
-                        ).join('\n') +
-                        (remaining > 0 ? `\n... y ${remaining} recursos más.` : '') +
-                        `\n[FIN INFO CURSO]\n`;
-                }
-            }
+            console.log(`🔒 Pre-fetching de Cursos/Recursos DESACTIVADO (Catálogo en construcción). Solo RAG médico activo.`);
 
 
             // 5. BÚSQUEDA RAG LOCAL INTELIGENTE (Cero Costo - Palabras Clave)
@@ -260,11 +163,11 @@ class MLService {
                 console.log(`🧠 Router RAG Detectó Intención: ${targetFocus || 'GENERAL/MIXTO'} para la pregunta`);
                 // --- FIN ROUTER ---
 
-                // Pedimos 3 fragmentos (antes 4) para ahorrar tokens y enfocar calidad, pasando el enfoque ideal.
-                const localContext = await RagService.searchContext(message, 3, { target: targetFocus });
+                // 🧠 V4 AGENTIC: Usamos searchContextSmart (activa IA para preguntas extensas, fallback mecánico para cortas)
+                const localContext = await RagService.searchContextSmart(message, 3, { target: targetFocus });
                 if (localContext) {
                     contextInjection += `\n[CONTEXTO MÉDICO RAG LOCAL - DOCUMENTOS VERIFICADOS]\n${localContext}\n[FIN CONTEXTO RAG]\n`;
-                    console.log(`🚀 RAG Local (${targetFocus || 'GENERAL'}): Fragmentos inyectados exitosamente.`);
+                    console.log(`🚀 RAG Agentic (${targetFocus || 'GENERAL'}): Fragmentos inyectados exitosamente.`);
                 }
             } else {
                 console.log(`⚠️ RAG Local saltado por configuración (disableRAG: true)`);
@@ -383,47 +286,68 @@ class MLService {
 
                 parsedResult = JSON.parse(jsonString);
             } catch (jsonError) {
-                console.warn(`⚠️ Error al parsear JSON del LLM: ${jsonError.message}`);
-                console.warn(`Texto recibido: ${responseText}`);
+                console.warn(`⚠️ JSON parse falló: ${jsonError.message}. Activando recuperación inteligente...`);
 
-                try {
-                    const intencionMatch = responseText.match(/"intencion":\s*"([^"]+)"/);
-                    const respuestaMatch = responseText.match(/"respuesta":\s*"((?:[^"\\]|\\.)*)"/);
-                    const sugerenciasMatch = responseText.match(/"sugerencias":\s*\[(.*?)\]/s);
+                // 🧠 RUTA 1: ¿El LLM devolvió texto plano sin JSON? (Caso más común con Flash Lite)
+                const looksLikeJSON = responseText.trimStart().startsWith('{') || responseText.includes('"intencion"');
 
-                    if (respuestaMatch) {
-                        let cleanRespuesta = respuestaMatch[1];
-                        cleanRespuesta = cleanRespuesta.replace(/\\n/g, '\n');
-                        cleanRespuesta = cleanRespuesta.replace(/\\"/g, '"');
-
-                        let cleanSugerencias = [];
-                        if (sugerenciasMatch) {
-                            const suggestionsRaw = sugerenciasMatch[1];
-                            const suggestionRegex = /"([^"]+)"/g;
-                            let match;
-                            while ((match = suggestionRegex.exec(suggestionsRaw)) !== null) {
-                                cleanSugerencias.push(match[1]);
-                            }
-                        }
-
-                        parsedResult = {
-                            intencion: intencionMatch ? intencionMatch[1] : 'respuesta_directa',
-                            confianza: 0.8,
-                            respuesta: cleanRespuesta,
-                            sugerencias: cleanSugerencias
-                        };
-                        console.log("✅ Fallback: Respuesta recuperada exitosamente vía Regex.");
-                    } else {
-                        throw new Error("No se pudo extraer la respuesta con Regex.");
-                    }
-                } catch (fallbackError) {
-                    console.error("❌ Fallback falló:", fallbackError);
+                if (!looksLikeJSON) {
+                    // ✅ TEXTO PLANO DIRECTO: Lo envolvemos como respuesta válida sin error
+                    console.log("✅ Fallback Texto Plano: La IA respondió en Markdown directo. Envolviendo como JSON.");
                     parsedResult = {
                         intencion: 'respuesta_directa',
-                        confianza: 0.5,
+                        confianza: 0.85,
                         respuesta: responseText,
                         sugerencias: []
                     };
+                } else {
+                    // 🔧 RUTA 2: Es JSON malformado, intentamos rescatar con Regex
+                    try {
+                        const intencionMatch = responseText.match(/"intencion":\s*"([^"]+)"/);
+                        const respuestaMatch = responseText.match(/"respuesta":\s*"((?:[^"\\]|\\.)*)"/);
+                        const sugerenciasMatch = responseText.match(/"sugerencias":\s*\[(.*?)\]/s);
+
+                        if (respuestaMatch) {
+                            let cleanRespuesta = respuestaMatch[1];
+                            cleanRespuesta = cleanRespuesta.replace(/\\n/g, '\n');
+                            cleanRespuesta = cleanRespuesta.replace(/\\"/g, '"');
+
+                            let cleanSugerencias = [];
+                            if (sugerenciasMatch) {
+                                const suggestionsRaw = sugerenciasMatch[1];
+                                const suggestionRegex = /"([^"]+)"/g;
+                                let match;
+                                while ((match = suggestionRegex.exec(suggestionsRaw)) !== null) {
+                                    cleanSugerencias.push(match[1]);
+                                }
+                            }
+
+                            parsedResult = {
+                                intencion: intencionMatch ? intencionMatch[1] : 'respuesta_directa',
+                                confianza: 0.8,
+                                respuesta: cleanRespuesta,
+                                sugerencias: cleanSugerencias
+                            };
+                            console.log("✅ Fallback Regex: Respuesta recuperada exitosamente.");
+                        } else {
+                            // 🛟 RUTA 3: JSON roto + Regex falló → usar texto crudo
+                            console.warn("⚠️ Regex no pudo extraer JSON parcial. Usando texto crudo como respuesta.");
+                            parsedResult = {
+                                intencion: 'respuesta_directa',
+                                confianza: 0.5,
+                                respuesta: responseText,
+                                sugerencias: []
+                            };
+                        }
+                    } catch (fallbackError) {
+                        console.warn("⚠️ Fallback Regex falló:", fallbackError.message, ". Usando texto crudo.");
+                        parsedResult = {
+                            intencion: 'respuesta_directa',
+                            confianza: 0.5,
+                            respuesta: responseText,
+                            sugerencias: []
+                        };
+                    }
                 }
             }
 
@@ -646,7 +570,7 @@ class MLService {
             const activeModel = this._getModelByTier(tier);
 
             const generationConfig = {
-                maxOutputTokens: 8192,
+                maxOutputTokens: 65536,
                 temperature: 0.7,
                 responseMimeType: "application/json"
             };

@@ -33,11 +33,24 @@ LIMIT 200;
 ```
 Esto recupera los últimos 200 temas generados. El sistema inyecta esta lista en el prompt como **"RESTRICCIÓN DE DUPLICIDAD"**, obligando a la IA a no repetir conceptos.
 
-### Paso 3: Motor de Búsqueda RAG Local (ILIKE)
-El archivo `ragService.js` toma los términos de búsqueda y realiza una búsqueda mecánica en la tabla `documents`:
-- **Lógica:** Se extraen palabras clave y se busca mediante `ILIKE %palabra%`.
-- **Resultado:** El sistema extrae fragmentos reales de texto (párrafos) de los libros y manuales cargados.
-- **Log de Verificación:** Verás en consola: `🔍 RAG Local: Buscando palabras clave: [...]`.
+### Paso 3: Motor de Búsqueda RAG Local — Agentic Rewriter (V4)
+El archivo `ragService.js` implementa un sistema de **búsqueda inteligente con doble ruta**:
+
+#### Ruta A: Preguntas Cortas (<80 caracteres) — Mecánica Clásica
+- **Comportamiento:** Extracción por regex (idéntico a V3). Filtra conectores, salva acrónimos, inyecta fuentes por target.
+- **Velocidad:** Instantánea (0ms extra).
+
+#### Ruta B: Preguntas Extensas (≥80 caracteres) — Agentic Rewriter
+- **Paso 3.1:** La función `_extractSmartTerms()` envía la pregunta completa a `gemini-2.5-flash-lite` con un prompt ultra-liviano (256 tokens max, temperature 0.1).
+- **Paso 3.2:** La IA analiza la pregunta clínica y devuelve un JSON con 3-10 **términos médicos puros** (enfermedades, fármacos, signos, normas).
+- **Paso 3.3:** Los términos limpios se pasan directamente a `_buildFtsQuery()` como un array, omitiendo el filtrado mecánico.
+- **Fallback:** Si la IA falla (timeout, error de cuota, JSON inválido), el sistema **automáticamente** usa la ruta mecánica clásica. **Cero riesgo de interrupción.**
+- **Log de Verificación:** Verás en consola: `🧠 Rewriter IA: Extraídos X términos clínicos → [colecistitis, murphy, ecografía, ...]`.
+
+#### Capacidad de Términos (AUMENTADA)
+- **V3 (Anterior):** Máximo 6 términos por búsqueda.
+- **V4 (Actual):** Máximo **10 términos** por búsqueda (tanto ruta inteligente como mecánica).
+- **Razón:** La IA selecciona términos de alta calidad, por lo que más términos = más cobertura sin ruido.
 
 ### Paso 4: Inyección de Contexto y Procesamiento IA
 La IA (Gemini) recibe un "Prompt Maestro" que contiene:

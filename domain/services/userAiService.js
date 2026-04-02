@@ -10,7 +10,7 @@ const vertex_ai = new VertexAI({ project: project, location: location });
 const liteConfig = {
     model: 'gemini-2.5-flash-lite',
     generationConfig: {
-        maxOutputTokens: 8192,
+        maxOutputTokens: 65535,
         temperature: 0.7,
         topP: 0.8,
         responseMimeType: "application/json"
