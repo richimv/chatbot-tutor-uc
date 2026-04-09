@@ -8,8 +8,12 @@
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 2147483647;
-    /* Garantizar que flote por encima del header siempre */
+    z-index: 10000; /* Reducido para permitir que TinyMCE (z-index: 1300+) flote si lo ajustamos */
+}
+
+/* Fix para que los menús de TinyMCE se vean sobre el modal */
+.tox-tinymce-aux {
+    z-index: 2147483647 !important;
 }
 
 /* --- REDISEÑO COMPLETO DE MODALES --- */

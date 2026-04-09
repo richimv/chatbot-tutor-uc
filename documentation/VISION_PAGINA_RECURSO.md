@@ -31,6 +31,8 @@ Esta página se divide en dos secciones principales diseñadas para una lectura 
     *   Cuadros comparativos o tablas de datos clave.
     *   Imágenes integradas dentro del texto para reforzar el aprendizaje.
 *   **Formato:** Limpio, con tipografía optimizada para lectura larga y estructura jerárquica clara.
+*   **Tablas Inteligentes:** Implementación de contenedores responsivos (`table-responsive-wrapper`) que permiten el desplazamiento lateral de tablas complejas (10+ columnas) sin romper el diseño, garantizando legibilidad total en dispositivos móviles.
+*   **Optimización Móvil:** Botones minimalistas y tipografía escalada para evitar el ruido visual y maximizar el área de lectura.
 
 ---
 
@@ -57,4 +59,4 @@ Cuando se activa el modo "Estudiar", el sistema despliega una capa superior tác
 ---
 
 > [!IMPORTANT]
-> **Estado de Implementación:** Este documento es una hoja de ruta (Roadmap). Los desarrollos actuales se centrarán en preparar la arquitectura del backend para servir estos diferentes tipos de archivos de forma robusta.
+> **Estado de Implementación:** Completado. La arquitectura de visualización de recursos está operativa, incluyendo el editor enriquecido TinyMCE 6 para la gestión de contenidos y el sistema de renderizado responsivo para datos complejos.

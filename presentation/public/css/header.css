@@ -61,7 +61,7 @@ body {
     align-items: center;
     box-shadow: var(--shadow-md);
     position: relative;
-    z-index: 2147483647;
+    z-index: 999; /* Reducido para no tapar los modales (z-index: 10000) */
 }
 
 .header-nav {

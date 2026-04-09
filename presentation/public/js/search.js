@@ -1070,7 +1070,8 @@ class SearchComponent {
                 { id: 'Libros y Manuales', val: 'book' },
                 { id: 'Papers Científicos', val: 'paper' },
                 { id: 'Normas y Directivas', val: 'norma' },
-                { id: 'Guías Clínicas', val: 'guia' }
+                { id: 'Guías Clínicas', val: 'guia' },
+                { id: 'Imágenes / Otros', val: 'other' }
             ];
 
             filtersContainer.innerHTML = biblioFilters.map(f => `

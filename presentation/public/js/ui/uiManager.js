@@ -2,17 +2,17 @@ class UIManager {
     constructor() {
         this.modalId = 'auth-prompt-modal';
         this.injectModalHTML();
-        // ✅ NUEVO: Inyectar Modal de Video
+        // NUEVO: Inyectar Modal de Video
         this.injectVideoModalHTML();
-        // ✅ NUEVO: Inyectar Visor de Medios (Imágenes)
+        // NUEVO: Inyectar Visor de Medios (Imágenes)
         this.injectMediaViewerHTML();
-        // ✅ NUEVO: Registro seguro de URLs para ofuscación
+        // NUEVO: Registro seguro de URLs para ofuscación
         this.materialRegistry = new Map();
 
-        // ✅ NUEVO: Verificar estado de pago al cargar
+        // NUEVO: Verificar estado de pago al cargar
         this.checkPaymentStatus();
 
-        // ✅ NUEVO: Lógica de Botón "Atrás" para Modales
+        // NUEVO: Lógica de Botón "Atrás" para Modales
         this.openModals = new Set();
         window.addEventListener('popstate', (e) => this.handlePopState(e));
     }
@@ -258,6 +258,82 @@ class UIManager {
     }
 
     /**
+     * Intercepts navigation to a dedicated resource page. If premium, it checks authentication and deducts lives. 
+     * @param {string} id - ID del recurso
+     * @param {string} type - Tipo de recurso
+     * @param {boolean} isPremium - Si es premium
+     */
+    async unlockAndNavigate(id, type = 'book', isPremium = false) {
+        let baseUrl = type === 'course' ? '/course' : '/resource.html';
+        let targetUrl = `${baseUrl}?id=${id}`;
+
+        if (!isPremium) {
+            window.location.href = targetUrl;
+            return;
+        }
+
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
+
+        if (!token || !user) {
+            this.showAuthPromptModal();
+            return;
+        }
+
+        const status = user.subscriptionStatus || user.subscription_status;
+        if (status !== 'active' && user.role !== 'admin') {
+            const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+            if (usage >= limit) {
+                this.showPaywallModal();
+                return;
+            }
+        }
+
+        try {
+            const response = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ resource_id: id })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.allowed) {
+                if (data.plan === 'free' && window.sessionManager) {
+                    const sessionUser = window.sessionManager.getUser();
+                    if (sessionUser) {
+                        sessionUser.usageCount = data.usage;
+                        window.sessionManager.notifyStateChange();
+                        this.showToast(`🔓 Acceso Concedido. Te quedan ${data.limit - data.usage} pases.`);
+                    }
+                }
+
+                // Track visualización a la página dedicada y navegar
+                if (window.AnalyticsApiService) {
+                    window.AnalyticsApiService.recordView(type, id);
+                }
+                setTimeout(() => { window.location.href = targetUrl; }, 100);
+            } else if (response.status === 403 || !data.allowed) {
+                if (user && window.sessionManager) {
+                    user.usageCount = data.usage || 50;
+                    window.sessionManager.notifyStateChange();
+                }
+                this.showPaywallModal();
+            } else {
+                console.error('Error verificando acceso:', data);
+                alert('Error al verificar acceso.');
+            }
+        } catch (error) {
+            console.error('Error de red:', error);
+            alert('Error de conexión. Intente nuevamente.');
+        }
+    }
+
+    /**
      * Alias para compatibilidad con código existente de libros.
      */
     openMaterial(id, isPremium = false, title = '') {
@@ -318,7 +394,7 @@ class UIManager {
             };
             document.addEventListener('keydown', escListener);
 
-            // ✅ OPTIMIZACIÓN MÓVIL: Fullscreen Automático si es posible
+            // OPTIMIZACIÓN MÓVIL: Fullscreen Automático si es posible
             if (window.innerWidth < 768) {
                 const videoContainer = container.querySelector('.video-container-responsive');
                 if (videoContainer) {
@@ -370,7 +446,7 @@ class UIManager {
     showMediaViewer(url, title) {
         if (!url) return;
 
-        // ✅ LÓGICA SMART ROUTING SENIOR
+        // LÓGICA SMART ROUTING SENIOR
         const isOurContent = this.isOurResource(url);
 
         // 1. Si NO es nuestro recurso (Excluye GCS) -> ABRIR EN PESTAÑA NUEVA (Seguro y Oficial)
@@ -387,7 +463,7 @@ class UIManager {
         const body = document.getElementById('media-viewer-body');
 
         if (modal && body) {
-            // ✅ USAR RESOLUTOR UNIVERSAL
+            // USAR  RESOLUTOR UNIVERSAL
             const resolvedUrl = window.resolveImageUrl(url);
 
             // Limpiar visor de restos de iframes anteriores
@@ -438,18 +514,18 @@ class UIManager {
 
             if (downloadBtn) {
                 downloadBtn.onclick = () => {
-                   // Simulamos clic dinámico para descarga
-                   window.open(resolvedUrl, '_blank'); 
+                    // Simulamos clic dinámico para descarga
+                    window.open(resolvedUrl, '_blank');
                 };
             }
 
             // Experiencia Inmersiva: Ocultar scrool, Chat y Botones Flotantes
             document.body.style.overflow = 'hidden';
-            
+
             const chatContainer = document.getElementById('chatbot-container');
             const chatToggle = document.getElementById('chatbot-toggle');
             const libraryToggle = document.querySelector('.library-toggle');
-            
+
             if (chatContainer) chatContainer.style.visibility = 'hidden';
             if (chatToggle) chatToggle.style.visibility = 'hidden';
             if (libraryToggle) libraryToggle.style.visibility = 'hidden';
@@ -475,18 +551,18 @@ class UIManager {
                     img.style.display = 'none';
                 }
             }
-            
+
             // Restaurar visuales inmersivos
             document.body.style.overflow = '';
-            
+
             const chatContainer = document.getElementById('chatbot-container');
             const chatToggle = document.getElementById('chatbot-toggle');
             const libraryToggle = document.querySelector('.library-toggle');
-            
+
             if (chatContainer) chatContainer.style.visibility = '';
             if (chatToggle) chatToggle.style.visibility = '';
             if (libraryToggle) libraryToggle.style.visibility = '';
-            
+
             this.popModalState('media-viewer-modal');
         }
     }
@@ -629,7 +705,7 @@ class UIManager {
     }
 
     /**
-     * ✅ NUEVO: Detecta si un enlace pertenece a Google Drive.
+     * NUEVO: Detecta si un enlace pertenece a Google Drive.
      */
     isDriveLink(url) {
         if (!url) return false;
@@ -637,7 +713,7 @@ class UIManager {
     }
 
     /**
-     * ✅ NUEVO: Detecta si un enlace de Drive es una CARPETA (Folder).
+     * NUEVO: Detecta si un enlace de Drive es una CARPETA (Folder).
      */
     isDriveFolder(url) {
         if (!this.isDriveLink(url)) return false;
@@ -655,7 +731,7 @@ class UIManager {
 
 
     /**
-     * ✅ Valida límites para acciones (Simulador, Arena, o Asistente IA).
+     * Valida límites para acciones (Simulador, Arena, o Asistente IA).
      * Retorna FALSE si el usuario está bloqueado, TRUE si puede proceder.
      */
     validateFreemiumAction(event, type = 'arena') {

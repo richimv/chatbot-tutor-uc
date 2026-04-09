@@ -12,7 +12,7 @@ class BookRepository {
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
@@ -87,7 +87,7 @@ class BookRepository {
     }
 
     async create(bookData) {
-        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false, content_html = null } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
 
@@ -95,8 +95,8 @@ class BookRepository {
             await db.query('BEGIN');
 
             const { rows } = await db.query(
-                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium]
+                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html]
             );
             const newResource = rows[0];
 
@@ -125,7 +125,7 @@ class BookRepository {
 
     async update(id, bookData) {
         // ✅ MEJORA ROBUSTA: Construcción dinámica de la query.
-        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium, content_html } = bookData;
 
         const fields = [
             'title = $1', 'author = $2', 'url = $3', 'resource_type = $4'
@@ -142,6 +142,11 @@ class BookRepository {
         if (is_premium !== undefined) {
             params.push(is_premium);
             fields.push(`is_premium = $${params.length}`);
+        }
+
+        if (content_html !== undefined) {
+            params.push(content_html);
+            fields.push(`content_html = $${params.length}`);
         }
 
         params.push(id);

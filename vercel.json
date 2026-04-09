@@ -126,6 +126,10 @@
             "destination": "/presentation/public/simulators.html"
         },
         {
+            "source": "/resource",
+            "destination": "/presentation/public/resource.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/presentation/public/$1"
         }

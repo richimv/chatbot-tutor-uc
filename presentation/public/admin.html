@@ -7,35 +7,38 @@
     <title>Administración - Hub Academia</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- ✅ NUEVA ESTRUCTURA CSS -->
-    <link rel="stylesheet" href="css/components.css"> <!-- ✅ SOLUCIÓN: Cargar los estilos de los componentes -->
+    <!-- NUEVA ESTRUCTURA CSS -->
+    <link rel="stylesheet" href="css/components.css"> <!-- SOLUCIÓN: Cargar los estilos de los componentes -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/admin-units.css"> <!-- ✅ NUEVO: Estilos para el gestor de unidades -->
+    <link rel="stylesheet" href="css/admin-units.css"> <!-- NUEVO: Estilos para el gestor de unidades -->
     <link rel="stylesheet" href="css/modal.css">
-    <!-- ✅ CORRECCIÓN: Eliminados archivos CSS que ya no existen para limpiar la consola -->
+    <!-- CORRECCIÓN: Eliminados archivos CSS que ya no existen para limpiar la consola -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- ✅ CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
+    <!-- CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
     <link rel="icon" type="image/png" href="/assets/logo.png">
 
-    <!-- ✅ FIX: Cargar librería de Supabase -->
+    <!-- FIX: Cargar librería de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- ✅ NUEVO: Librería SheetJS para parsear ficheros Excel (.xlsx, .csv) limpiamente en el navegador -->
+    <!-- NUEVO: Librería SheetJS para parsear ficheros Excel (.xlsx, .csv) limpiamente en el navegador -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Editor Profesional: TinyMCE 6 (Mini-Word con soporte avanzado de Excel/Tablas) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 </head>
 
 <body>
     <header class="admin-header">
-        <!-- ✅ ESTRUCTURA UNIFICADA -->
+        <!-- ESTRUCTURA UNIFICADA -->
         <a href="/" class="logo">
             <h1>Panel de Gestión</h1>
         </a>
         <div class="header-nav">
 
 
-            <!-- ✅ REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
+            <!-- REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
             <a href="/dashboard" class="nav-link">📊 Estadísticas</a>
         </div>
     </header>
@@ -47,7 +50,7 @@
             <button class="tab-link" data-tab="tab-students">Alumnos</button>
             <button class="tab-link" data-tab="tab-topics">Temas</button>
             <button class="tab-link" data-tab="tab-books">Recursos</button>
-            <!-- ✅ NUEVO: Pestaña para inyección masiva de preguntas -->
+            <!-- NUEVO: Pestaña para inyección masiva de preguntas -->
             <button class="tab-link" data-tab="tab-questions">Preguntas</button>
         </div>
 
@@ -83,7 +86,7 @@
         </div>
     </div>
 
-    <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
+    <!-- NUEVO: Modal de Confirmación Genérico -->
     <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
         <!--2147483647 para que este por encima de todo-->
         <div class="modal-content" style="max-width: 400px;">
@@ -101,16 +104,16 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración global -->
+    <script src="js/config.js"></script> <!-- NUEVO: Configuración global -->
 
-    <script src="js/services/authApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Auth -->
-    <script src="js/sessionManager.js"></script> <!-- ✅ NUEVO: Gestor de sesión -->
-    <script src="js/ui/uiManager.js"></script> <!-- ✅ NUEVO: Gestor UI -->
-    <script src="js/ui/components.js?v=38dc494d"></script> <!-- ✅ CORRECCIÓN: Incluir el script de componentes -->
-    <script src="js/ui/confirmationModal.js"></script> <!-- ✅ NUEVO: Modal de confirmación -->
-    <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
-    <script src="js/app.js?v=38dc494d"></script> <!-- ✅ NUEVO: Inicialización global -->
-    <script src="js/admin.js"></script> <!-- Cargar después de sus dependencias -->
+    <script src="js/services/authApiService.js"></script> <!-- NUEVO: Servicio de API de Auth -->
+    <script src="js/sessionManager.js"></script> <!-- NUEVO: Gestor de sesión -->
+    <script src="js/ui/uiManager.js"></script> <!-- NUEVO: Gestor UI -->
+    <script src="js/ui/components.js?v=38dc494d"></script> <!-- CORRECCIÓN: Incluir el script de componentes -->
+    <script src="js/ui/confirmationModal.js"></script> <!-- NUEVO: Modal de confirmación -->
+    <script src="js/security.js"></script> <!-- NUEVO: Escudo de Seguridad -->
+    <script src="js/app.js?v=38dc494d"></script> <!-- NUEVO: Inicialización global -->
+    <script src="js/admin.js?v=9999"></script> <!-- Forzar recarga absoluta -->
 </body>
 
 </html>

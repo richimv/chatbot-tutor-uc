@@ -1,0 +1,200 @@
+/* Base resource layout styles */
+.resource-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 40px;
+    min-height: 60vh;
+}
+
+.resource-hero {
+    position: sticky;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.resource-cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2/3;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.resource-cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(20,20,20,0.8), rgba(0,0,0,0.9));
+}
+
+.resource-cover-fallback i {
+    font-size: 8rem;
+    opacity: 0.8;
+}
+
+.resource-info h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.resource-info p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.resource-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.resource-hero .btn-view, 
+.resource-hero .btn-download, 
+.resource-hero .btn-save,
+.resource-actions .btn-save {
+    padding: 10px 16px !important; /* Forzar minimalismo */
+    border-radius: 10px !important;
+    font-size: 0.9rem !important; /* Elegancia constante */
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+    width: 100% !important;
+    max-width: 280px !important; /* Tamaño homogéneo */
+    margin: 0 auto; /* Centrados */
+}
+
+.btn-view, .btn-save {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view:hover, .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-download {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-download:hover {
+    background: var(--surface-3);
+}
+
+.resource-body {
+    background: transparent;
+    padding: 0;
+    min-width: 0; /* Crucial: permite que el contenido flex/grid se reduzca en vez de expandirse */
+}
+
+.resource-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Force pasted HTML (Excel/Word) to respect dark mode */
+.resource-content * {
+    background-color: transparent !important;
+    color: inherit;
+}
+
+.resource-content h2, .resource-content h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.resource-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.resource-content table {
+    width: 100%;
+    min-width: 800px; /* Asegura que las tablas anchas mantengan legibilidad al forzar scroll */
+    border-collapse: collapse;
+}
+
+.resource-content th, .resource-content td {
+    border: 1px solid var(--border-color) !important;
+    padding: 12px;
+    text-align: left;
+    min-width: 120px; /* Evita que las columnas se aplasten demasiado */
+    color: var(--text-main) !important;
+}
+
+.resource-content th {
+    background-color: var(--bg-tertiary) !important;
+    font-weight: bold;
+    color: var(--primary) !important;
+}
+
+/* Forzar que cualquier texto pegado de Excel/Word sea legible */
+.resource-content p, .resource-content span, .resource-content li {
+    color: var(--text-main) !important;
+}
+
+/* Optimización móvil y diseño minimalista */
+@media (max-width: 900px) {
+    .resource-container {
+        grid-template-columns: 1fr;
+        margin: 20px auto;
+        gap: 20px;
+    }
+    .resource-hero {
+        position: static;
+        align-items: center;
+        text-align: center;
+    }
+    .resource-cover {
+        max-width: 250px;
+    }
+    .resource-info h1 {
+        font-size: 1.25rem; /* Título más pequeño en móvil */
+    }
+    .resource-info p {
+        font-size: 0.95rem; /* Subtítulo más pequeño */
+    }
+    .resource-body {
+        padding: 0;
+    }
+    .resource-content {
+        font-size: 0.95rem;
+    }
+    .btn-view, .btn-save, .btn-download {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        max-width: none; /* En móvil que ocupen el ancho disponible del contenedor */
+    }
+}

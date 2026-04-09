@@ -6,7 +6,7 @@
  * Esto ayuda a mantener la lógica de la aplicación (en search.js, admin.js) separada de la presentación.
  */
 
-// ✅ GLOBAL: Lógica de Auto-Scroll para Carruseles
+// GLOBAL: Lógica de Auto-Scroll para Carruseles
 window.carouselInterval = null;
 
 /**
@@ -138,7 +138,7 @@ function getIconForItem(name, type) {
 function createBrowseCardHTML(item, type) {
     const iconClass = getIconForItem(item.name, type);
 
-    // ✅ MEJORA: Card para Carreras con soporte de imagen TIPO POSTER
+    // MEJORA: Card para Carreras con soporte de imagen TIPO POSTER
     if (type === 'career') {
         // Opción 1: Diseño Full Image (Si tiene imagen)
         if (item.image_url) {
@@ -239,7 +239,7 @@ function createBrowseCardHTML(item, type) {
             </div>
         `;
     } else if (type === 'topic') {
-        // ✅ CORRECCIÓN: Eliminado onclick a topic.html (muerto). search.js intercepta.
+        // CORRECCIÓN: Eliminado onclick a topic.html (muerto). search.js intercepta.
         clickAction = '';
         contentHTML = `
             <div class="browse-card-icon">
@@ -265,7 +265,7 @@ function createBrowseCardHTML(item, type) {
 function createFilterSidebarHTML(careers) {
     const sortedCareers = careers.sort((a, b) => a.name.localeCompare(b.name));
     return `
-        <!-- ✅ CORRECCIÓN: El sidebar se genera como un aside simple.
+        <!-- CORRECCIÓN: El sidebar se genera como un aside simple.
              La lógica responsive lo moverá al modal en pantallas pequeñas. -->
         <aside class="filter-sidebar">
             <h4>Filtrar por Carrera</h4>
@@ -321,7 +321,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
         return ''; // No mostrar nada si no hay recomendaciones
     }
 
-    // ✅ MEJORA: Renderizado híbrido de Cursos y Libros
+    // Renderizado híbrido de Cursos y Libros
     const coursesHTML = (recommendations.relatedCourses || []).map(item => {
         const isBook = item.type === 'book';
         const icon = isBook ? 'fa-book-open' : 'fa-graduation-cap';
@@ -355,7 +355,7 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
         </div>
     `).join('');
 
-    // ✅ NUEVO: Calcular confianza promedio para mostrar indicador
+    // NUEVO: Calcular confianza promedio para mostrar indicador
     const allRecommendations = [
         ...(recommendations.relatedCourses || []),
         ...(recommendations.relatedTopics || [])
@@ -404,7 +404,7 @@ function createBackButtonHTML() {
     return `<button class="back-button" aria-label="Volver a la página anterior">‹ Volver</button>`;
 }
 
-// ✅ NUEVO: Tarjeta de Intención Educativa (Diseño Premium para Preguntas)
+// NUEVO: Tarjeta de Intención Educativa (Diseño Premium para Preguntas)
 function createEducationalIntentCardHTML(query) {
     return /*html*/`
         <div class="educational-intent-card">
@@ -430,7 +430,7 @@ function createEducationalIntentCardHTML(query) {
     `;
 }
 
-// ✅ NUEVO: Componente para el botón de chat contextual dentro de una vista.
+// NUEVO: Componente para el botón de chat contextual dentro de una vista.
 function createContextualChatButtonHTML(type, name) {
     const action = type === 'course' ? `window.askAboutCourse('${name}')` : `window.askAboutTopic('${name}')`;
     return `
@@ -442,9 +442,9 @@ function createContextualChatButtonHTML(type, name) {
     `;
 }
 
-// ✅ NUEVO: Componente para la vista de un tema.
+// NUEVO: Componente para la vista de un tema.
 function createTopicViewHTML(topic, description, books = [], showChatButton = false) {
-    // ✅ SOLUCIÓN: Renderizar los libros/recursos de forma segura (Link Obfuscation)
+    // SOLUCIÓN: Renderizar los libros/recursos de forma segura (Link Obfuscation)
     const booksHTML = books.length > 0
         ? books.map(book => {
             if (book.url) window.uiManager.registerMaterial(book.id, book.url);
@@ -482,7 +482,7 @@ function createTopicViewHTML(topic, description, books = [], showChatButton = fa
 
 
 function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = false) {
-    // ✅ SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
+    // SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
     let displayName = type === 'book' ? item.title : item.name;
     if (type === 'question') {
         displayName = item.question_text ? (item.question_text.substring(0, 80) + '...') : 'Pregunta sin texto';
@@ -490,7 +490,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
 
     const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
 
-    // ✅ NUEVO: Mostrar badge de área para carreras de forma más limpia
+    // NUEVO: Mostrar badge de área para carreras de forma más limpia
     let areaBadge = '';
     if (type === 'career' && item.area) {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
@@ -501,8 +501,10 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     // Subtitulo formateado
     const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
 
+    const resourceTypeAttr = type === 'book' ? `data-resource-type="${item.resource_type || item.type || 'other'}"` : `data-resource-type="${type}"`;
+
     return `
-        <div class="admin-item-card item-card">
+        <div class="admin-item-card item-card" ${resourceTypeAttr}>
             <div class="item-card-content">
                 <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
                 ${areaBadge}
@@ -528,7 +530,7 @@ function createUnifiedResourceCardHTML(item) {
     const title = item.title || item.name || 'Material sin título';
     const author = item.author || '';
     const url = item.url || '#';
-    // ✅ Homologación de tipos para cubrir libros, artículos, normas, etc.
+    // Homologación de tipos para cubrir libros, artículos, normas, etc.
     const type = item.type || item.resource_type || 'other';
 
     // 2. Registrar URL de forma segura en UI Manager para accesos protegidos
@@ -541,7 +543,7 @@ function createUnifiedResourceCardHTML(item) {
     let isLocked = false;
 
     if (isPremium) {
-        // ✅ PRIORIDAD: Usar datos directos de sesión si el manager falla (Race Condition)
+        // PRIORIDAD: Usar datos directos de sesión si el manager falla (Race Condition)
         const token = localStorage.getItem('authToken');
         const userStr = localStorage.getItem('user');
         const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
@@ -599,8 +601,8 @@ function createUnifiedResourceCardHTML(item) {
             typeColorClass = 'urc-color-paper';
             break;
         default:
-            iconClass = 'fa-folder-open';
-            typeLabel = 'Material de Apoyo';
+            iconClass = 'fa-image';
+            typeLabel = 'Imagen / Otro';
             typeColorClass = 'urc-color-other';
             break;
     }
@@ -609,7 +611,7 @@ function createUnifiedResourceCardHTML(item) {
     const rawImage = item.image_url || item.coverUrl;
     const hasManualImage = Boolean(rawImage && rawImage.trim() !== '');
     const isDrive = window.uiManager.isDriveLink(url);
-    
+
     let visualHTML = '';
     let displayImage = null;
 
@@ -622,7 +624,7 @@ function createUnifiedResourceCardHTML(item) {
     }
 
     if (displayImage) {
-        // ✅ CORRECCIÓN SENIOR: Búsqueda relativa (parentElement.querySelector) para asegurar disponibilidad
+        // CORRECCIÓN SENIOR: Búsqueda relativa (parentElement.querySelector) para asegurar disponibilidad
         // del nodo, impidiendo que el onerror crashee intentando invocar document.getElementById
         const fallbackId = `fb-${type}-${item.id}`;
         visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.style.display='none'; const fb = this.parentElement.querySelector('.urc-icon-fallback'); if(fb) fb.style.display='flex';">`;
@@ -655,7 +657,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
-            <div class="urc-visual-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium}, '${title.replace(/'/g, "\\'")}')`}" title="Abrir ${title}">
+            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium})" title="Ver detalles de ${title}">
                 ${visualHTML}
                 ${displayImage ? fallbackHTML : ''}
                 
@@ -666,7 +668,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Inferior: Información (Clicable) -->
-            <div class="urc-info-zone" role="button" tabindex="0" onclick="${type === 'course' ? `window.location.href='/course?id=${item.id}'` : `window.uiManager.unlockResource('${item.id}', '${type}', ${isPremium}, '${title.replace(/'/g, "\\'")}')`}" title="Abrir ${title}">
+            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium})" title="Ver detalles de ${title}">
                 <div class="urc-meta">
                     <span class="urc-badge ${typeColorClass}"><i class="fas ${iconClass}"></i> ${typeLabel}</span>
                     ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
@@ -753,7 +755,7 @@ function createSkeletonCardHTML(type = 'Grid') {
     `;
 }
 
-// ✅ NUEVO: Tarjeta de Video Premium (Rediseñada para distinción visual)
+// NUEVO: Tarjeta de Video Premium (Rediseñada para distinción visual)
 window.createVideoCardHTML = function (item) {
     const title = item.title || item.name || 'Video Educativo';
     const author = item.author || 'Hub Academia';
@@ -767,8 +769,8 @@ window.createVideoCardHTML = function (item) {
 
     const videoId = getYouTubeID(url);
     const resolvedImage = window.resolveImageUrl(item.image_url);
-    const thumbnail = item.image_url && !item.image_url.includes('unsplash') 
-        ? resolvedImage 
+    const thumbnail = item.image_url && !item.image_url.includes('unsplash')
+        ? resolvedImage
         : (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
 
     if (url && url !== '#') {
@@ -882,7 +884,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
 
     const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
     const expText = question.explanation || defaultExp;
-    
+
     let expImageHTML = '';
     if (question.explanation_image_url) {
         const resolvedExpImg = window.resolveImageUrl ? window.resolveImageUrl(question.explanation_image_url) : question.explanation_image_url;

@@ -131,6 +131,8 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     target CHARACTER VARYING(255),
     career CHARACTER VARYING(100),
     subtopic CHARACTER VARYING(255),
+    explanation_image_url TEXT,
+    visual_support_recommendation TEXT,
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)
 );
 
@@ -185,6 +187,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
     image_url CHARACTER VARYING(500),
     resource_type CHARACTER VARYING(50) DEFAULT 'book'::character varying,
     is_premium BOOLEAN DEFAULT false,
+    content_html TEXT,
     CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 
@@ -252,6 +255,9 @@ CREATE TABLE IF NOT EXISTS public.user_flashcards (
     deck_id UUID,
     sort_order INTEGER DEFAULT 0,
     last_quality INTEGER DEFAULT 0,
+    image_url TEXT,
+    explanation_image_url TEXT,
+    is_template BOOLEAN DEFAULT false,
     CONSTRAINT user_flashcards_pkey PRIMARY KEY (id)
 );
 

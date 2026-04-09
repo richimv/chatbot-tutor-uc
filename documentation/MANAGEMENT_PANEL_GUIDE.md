@@ -35,6 +35,15 @@ El sistema ha evolucionado de una "Biblioteca de Libros" a un repositorio multim
 3.  **Seguridad y Acceso:**
     *   **Ofuscación:** Las URLs reales no se exponen en el HTML; se gestionan mediante un registro seguro en `uiManager.js`.
     *   **Pases (Vidas):** Los recursos marcados como **Premium** descuentan pases a usuarios gratuitos cada vez que se desbloquean.
+    *   **Interceptación Directa (UI):** Para los recursos con página web dedicada (`/resource.html`), el candado Premium actúa directamente al intentar hacer clic en la tarjeta (`components.js`). Si el usuario es visitante o agotó sus vidas, el sistema levanta nativamente el **Modal de Autenticación** o el **Paywall Modal** bloqueando el acceso a la vista dedicada sin consumos de base de datos innecesarios ni filtraciones de links.
+
+### Administración de Recursos:
+*   **Editor Pro (TinyMCE 6):** Migración completa de Quill.js a **TinyMCE 6** (Mini-Word) para la gestión de resúmenes enriquecidos.
+    *   **Tablas de Datos:** Soporte nativo para crear y editar tablas complejas (estilo Excel) con control de celdas, bordes y alineación.
+    *   **Estética Pro:** Selector de colores de fuente/fondo, encabezados jerárquicos y formato de listas avanzadas.
+    *   **Modo Oscuro Editorial:** Configuración `oxide-dark` que garantiza que el texto sea perfectamente legible (blanco) durante el proceso de edición, eliminando el problema del texto invisible.
+    *   **Espacio de Trabajo:** El modal de edición se ha ampliado a **1100px** de ancho y **95vh** de alto para maximizar el área de redacción científica.
+*   **Buscador con Filtro Dual:** El panel `admin.js` ahora incorpora filtrado en tiempo real por el tipo exacto (`book`, `paper`, `guia`, `norma`, `video`, `other`), combinándose instantáneamente con la barra de texto (`admin-search-input`) permitiendo curar catálogos sin latencias de red.
 
 ---
 

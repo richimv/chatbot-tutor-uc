@@ -4,13 +4,13 @@ class AdminManager {
         this.allCareers = [];
         this.allCourses = []; // Cursos base (de courses.json)
 
-        this.allStudents = []; // ✅ NUEVO: Almacén para alumnos
+        this.allStudents = []; // NUEVO: Almacén para alumnos
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
-        this.allQuestions = []; // ✅ NUEVO: Almacén para preguntas
+        this.allQuestions = []; // NUEVO: Almacén para preguntas
 
         // Estado de ordenamiento
-        // ✅ NUEVO: Estado de ordenamiento por pestaña
+        // NUEVO: Estado de ordenamiento por pestaña
         this.tabSortState = {
             'tab-careers': 'date-desc',
             'tab-courses': 'date-desc',
@@ -19,7 +19,7 @@ class AdminManager {
             'tab-books': 'date-desc',
             'tab-questions': 'date-desc'
         };
-        this.previewTimer = null; // ✅ Debounce para previsualización
+        this.previewTimer = null; // Debounce para previsualización
 
         // Estado de Preguntas (NUEVO)
         this.currentQuestionDomain = 'all';
@@ -30,7 +30,7 @@ class AdminManager {
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
 
-        // ✅ SOLUCIÓN: Bindeo explícito para el nuevo manejador de eventos.
+        // SOLUCIÓN: Bindeo explícito para el nuevo manejador de eventos.
         this.handleResetPassword = this.handleResetPassword.bind(this);
 
         this.init();
@@ -44,10 +44,10 @@ class AdminManager {
                 const toggle = openDropdown.querySelector('.searchable-dropdown-toggle');
                 const list = openDropdown.querySelector('.collapsible-list');
 
-                // ✅ SOLUCIÓN: Cerrar si el clic NO está en la barra de búsqueda NI en la lista.
+                // SOLUCIÓN: Cerrar si el clic NO está en la barra de búsqueda NI en la lista.
                 if (!toggle.contains(e.target) && !list.contains(e.target)) {
                     openDropdown.classList.remove('open');
-                    this._updateDropdownState(openDropdown); // ✅ SOLUCIÓN: Actualizar estado en lugar de limpiar.
+                    this._updateDropdownState(openDropdown); // SOLUCIÓN: Actualizar estado en lugar de limpiar.
                     const searchInput = openDropdown.querySelector('.live-search-input');
                     if (searchInput) {
                         searchInput.blur();
@@ -73,10 +73,10 @@ class AdminManager {
 
         this.genericForm.addEventListener('submit', (e) => { e.preventDefault(); this.saveGenericForm(); });
 
-        // ✅ SOLUCIÓN DEFINITIVA: Devolver el control del modal a admin.js.
+        // SOLUCIÓN DEFINITIVA: Devolver el control del modal a admin.js.
         // Este listener se encarga de cerrar el modal genérico desde el panel de admin,
         // evitando conflictos con la lógica global de app.js.
-        // ✅ SOLUCIÓN UX: Prevenir cierres accidentales al seleccionar texto y soltar fuera.
+        // SOLUCIÓN UX: Prevenir cierres accidentales al seleccionar texto y soltar fuera.
         // Solo cerramos si el click EMPEZÓ y TERMINÓ en el fondo.
         let isMouseDownOnBackdrop = false;
 
@@ -106,7 +106,7 @@ class AdminManager {
             isMouseDownOnBackdrop = false;
         });
 
-        // ✅ SOLUCIÓN: Listener centralizado para todos los componentes interactivos dentro del modal genérico.
+        // SOLUCIÓN: Listener centralizado para todos los componentes interactivos dentro del modal genérico.
         // Esto reemplaza los listeners que se añadían repetidamente en openGenericModal.
         this.genericModal.addEventListener('click', (e) => {
             // --- Lógica para abrir/cerrar dropdowns ---
@@ -129,7 +129,7 @@ class AdminManager {
 
                 if (!currentContainer.classList.contains('open')) {
                     // Si se acaba de cerrar, limpiar y desenfocar el input de búsqueda.
-                    this._updateDropdownState(currentContainer); // ✅ SOLUCIÓN: Actualizar estado en lugar de limpiar.
+                    this._updateDropdownState(currentContainer); // SOLUCIÓN: Actualizar estado en lugar de limpiar.
                     const searchInput = currentContainer.querySelector('.live-search-input');
                     if (searchInput) searchInput.blur();
                 }
@@ -144,7 +144,7 @@ class AdminManager {
                 if (container) this.updateSelectedChips(container);
             }
 
-            // ✅ NUEVO: Listeners para el Gestor de Unidades
+            // NUEVO: Listeners para el Gestor de Unidades
             if (e.target.id === 'add-unit-btn') {
                 const container = document.getElementById('units-container');
                 container.insertAdjacentHTML('beforeend', this._createUnitHTML('Nueva Unidad', []));
@@ -229,28 +229,40 @@ class AdminManager {
             }
         });
 
-        // ✅ NUEVO: Listener centralizado para las barras de búsqueda de las pestañas.
-        // ✅ MEJORA UX: Debounce para evitar lag al escribir.
+        // NUEVO: Listener centralizado para las barras de búsqueda de las pestañas.
+        // MEJORA UX: Debounce para evitar lag al escribir.
         let searchTimeout;
-        document.getElementById('admin-main-container').addEventListener('input', (e) => {
-            if (e.target.classList.contains('admin-search-input')) {
+        const handleSearchFilter = (e) => {
+            if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter')) {
                 clearTimeout(searchTimeout);
                 const input = e.target;
 
                 searchTimeout = setTimeout(() => {
-                    const filter = input.value.toLowerCase().trim(); // Trim para limpiar espacios
-                    const tabId = input.dataset.targetTab;
+                    const tabId = input.dataset.targetTab || input.dataset.tab;
+                    if (!tabId) return;
+
                     const tabContent = document.getElementById(tabId);
+
+                    // Buscar input interactivo y dropdown
+                    const searchInput = tabContent.querySelector('.admin-search-input');
+                    const filter = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+                    const typeSelect = tabContent.querySelector('.admin-type-filter');
+                    const typeFilter = typeSelect ? typeSelect.value : 'all';
 
                     // Seleccionar todas las tarjetas de item dentro de la pestaña activa.
                     const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
 
                     items.forEach(item => {
-                        // ✅ MEJORA: Búsqueda más profunda (buscar en atributos data si existen, o solo texto visible)
                         const textContent = item.textContent.toLowerCase();
-                        // Podríamos añadir búsqueda por ID o atributos específicos si fuera necesario
-                        const matches = textContent.includes(filter);
+                        const matchesText = textContent.includes(filter);
 
+                        let matchesType = true;
+                        if (typeFilter !== 'all') {
+                            matchesType = item.dataset.resourceType === typeFilter;
+                        }
+
+                        const matches = matchesText && matchesType;
                         item.style.display = matches ? '' : 'none';
 
                         // Animación sutil de entrada (opcional)
@@ -279,7 +291,10 @@ class AdminManager {
 
                 }, 300); // 300ms de retraso (debounce)
             }
-        });
+        };
+
+        document.getElementById('admin-main-container').addEventListener('input', handleSearchFilter);
+        document.getElementById('admin-main-container').addEventListener('change', handleSearchFilter);
 
         // ✅ NUEVO: Listener delegado para los controles de ordenamiento en cada pestaña
         document.getElementById('admin-main-container').addEventListener('change', (e) => {
@@ -319,7 +334,7 @@ class AdminManager {
         if (tabId === 'tab-questions') this.displayQuestions();
     }
 
-    // ✅ NUEVO: Método auxiliar para obtener las cabeceras de autenticación.
+    // NUEVO: Método auxiliar para obtener las cabeceras de autenticación.
     _getAuthHeaders() {
         return {
             'Content-Type': 'application/json',
@@ -327,7 +342,7 @@ class AdminManager {
         };
     }
 
-    // ✅ NUEVO: Método para obtener IDs seleccionados de un checkbox list
+    // NUEVO: Método para obtener IDs seleccionados de un checkbox list
     getSelectedIds(name) {
         const container = document.querySelector(`.searchable-dropdown-container[data-name="${name}"]`);
         if (!container) return [];
@@ -337,7 +352,7 @@ class AdminManager {
             .filter(id => !isNaN(id));
     }
 
-    // ✅ NUEVO: Método de ordenamiento genérico
+    // NUEVO: Método de ordenamiento genérico
     sortData(data, type = 'default', tabId) {
         if (!data || !Array.isArray(data)) return [];
 
@@ -354,7 +369,7 @@ class AdminManager {
                     const nameBDesc = (type === 'book' ? b.title : b.name) || '';
                     return nameBDesc.localeCompare(nameADesc);
                 case 'date-asc':
-                    // ✅ SOLUCIÓN: Usar created_at si existe, sino usar ID como proxy (asumiendo serial/autoincrement)
+                    // SOLUCIÓN: Usar created_at si existe, sino usar ID como proxy (asumiendo serial/autoincrement)
                     // Para usuarios (instructors/students) siempre hay created_at. Para otros, usamos ID.
                     const dateA = a.created_at ? new Date(a.created_at).getTime() : (parseInt(a.id, 10) || 0);
                     const dateB = b.created_at ? new Date(b.created_at).getTime() : (parseInt(b.id, 10) || 0);
@@ -387,18 +402,18 @@ class AdminManager {
             this.allCareers = await careersRes.json();
             this.allCourses = await coursesRes.json();
 
-            this.allStudents = await studentsRes.json(); // ✅ NUEVO
+            this.allStudents = await studentsRes.json();
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
 
-            // ✅ OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
+            // OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
             // pero para no romper el flujo actual, cargamos el primer lote.
             this.allQuestions = await questionsRes.json();
 
-            // ✅ CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
+            // CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
             this.displayCareers();
             this.displayBaseCourses();
-            this.displayStudents(); // ✅ NUEVO
+            this.displayStudents();
             this.displayTopics();
             this.displayBooks();
             this.displayQuestions();
@@ -437,7 +452,7 @@ class AdminManager {
 
     displayCareers() {
         const container = document.getElementById('tab-careers');
-        // ✅ APLICAR ORDENAMIENTO
+        // APLICAR ORDENAMIENTO
         const sortedCareers = this.sortData(this.allCareers, 'career', 'tab-careers');
         const itemsHTML = sortedCareers.map(career => createAdminItemCardHTML(career, 'career')).join('');
         const content = this._createTabHeaderHTML('career', 'Añadir Carrera', 'tab-careers') +
@@ -447,7 +462,7 @@ class AdminManager {
 
     displayBaseCourses() {
         const container = document.getElementById('tab-courses');
-        // ✅ APLICAR ORDENAMIENTO
+        // APLICAR ORDENAMIENTO
         const sortedCourses = this.sortData(this.allCourses, 'course', 'tab-courses');
         const itemsHTML = sortedCourses.map(course => createAdminItemCardHTML(course, 'course', course.code ? `(${course.code})` : '')).join('');
         const content = this._createTabHeaderHTML('course', 'Añadir Curso', 'tab-courses') +
@@ -457,10 +472,10 @@ class AdminManager {
 
 
 
-    // ✅ NUEVO: Método para mostrar alumnos
+    // NUEVO: Método para mostrar alumnos
     displayStudents() {
         const container = document.getElementById('tab-students');
-        // ✅ APLICAR ORDENAMIENTO
+        // APLICAR ORDENAMIENTO
         const sortedStudents = this.sortData(this.allStudents, 'student', 'tab-students');
         const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`, true)).join('');
         const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') +
@@ -470,7 +485,7 @@ class AdminManager {
 
     displayTopics() {
         const container = document.getElementById('tab-topics');
-        // ✅ APLICAR ORDENAMIENTO
+        // APLICAR ORDENAMIENTO
         const sortedTopics = this.sortData(this.allTopics, 'topic', 'tab-topics');
         const itemsHTML = sortedTopics.map(topic => createAdminItemCardHTML(topic, 'topic')).join('');
         const content = this._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics') +
@@ -480,10 +495,10 @@ class AdminManager {
 
     displayBooks() {
         const container = document.getElementById('tab-books');
-        // ✅ APLICAR ORDENAMIENTO
+        // APLICAR ORDENAMIENTO
         const sortedBooks = this.sortData(this.allBooks, 'book', 'tab-books');
         const itemsHTML = sortedBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
-        
+
         // CUSTOM HEADER with Drive Sync Button
         const headerHTML = `
             <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
@@ -492,6 +507,15 @@ class AdminManager {
                         <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
                         <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; padding: 5px 0;">
                     </div>
+                    <select class="admin-type-filter" data-target-tab="tab-books" style="height: 40px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: 0 10px; cursor: pointer;">
+                        <option value="all">Todos los Tipos</option>
+                        <option value="book">Libro/Manual</option>
+                        <option value="paper">Paper Científico</option>
+                        <option value="norma">Norma/Directiva</option>
+                        <option value="guia">Guía Clínica</option>
+                        <option value="video">Video</option>
+                        <option value="other">Imagen/Otro</option>
+                    </select>
                     <select class="tab-sort-select" data-tab="tab-books" style="height: 40px;">
                         <option value="date-desc">📅 Más Recientes</option>
                         <option value="alpha-asc">🔤 A-Z</option>
@@ -513,7 +537,7 @@ class AdminManager {
 
     displayQuestions() {
         const container = document.getElementById('tab-questions');
-        // ✅ APLICAR ORDENAMIENTO (Local sobre lo que ya tenemos cargado)
+        // APLICAR ORDENAMIENTO (Local sobre lo que ya tenemos cargado)
         const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
         const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
 
@@ -566,7 +590,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ NUEVO: Manejador de cambio de dominio
+     * NUEVO: Manejador de cambio de dominio
      */
     handleDomainChange(domain) {
         this.currentQuestionDomain = domain;
@@ -574,7 +598,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ NUEVO: Manejador de búsqueda dinámica con Debounce
+     * NUEVO: Manejador de búsqueda dinámica con Debounce
      */
     handleDynamicSearch(val) {
         this.currentQuestionSearch = val;
@@ -585,7 +609,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ NUEVO: Refresca el listado de preguntas desde el servidor con filtros aplicados.
+     * NUEVO: Refresca el listado de preguntas desde el servidor con filtros aplicados.
      */
     async refreshQuestions() {
         const listContainer = document.getElementById('questions-list-container');
@@ -905,7 +929,7 @@ class AdminManager {
             case 'course':
                 title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
 
-                // ✅ SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
+                // SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
                 if (id) {
                     try {
                         const res = await fetch(`${window.AppConfig.API_URL}/api/courses/${id}`, { headers: this._getAuthHeaders() });
@@ -922,11 +946,11 @@ class AdminManager {
                 }
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', this.currentItem?.name || '', true) +
-                    // ✅ NUEVO: Selector de Carreras
+                    // NUEVO: Selector de Carreras
                     this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, this.currentItem?.careerIds || [], 'career') +
                     // this.createUnitManager(...) Eliminado
 
-                    // ✅ OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
+                    // OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
                     // Se crea una copia [...Array] para no mutar el original desordenadamente.
                     this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), this.currentItem?.materials?.map(m => m.id) || this.currentItem?.bookIds || [], 'book') +
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
@@ -936,13 +960,13 @@ class AdminManager {
                 if (id) this.currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', this.currentItem?.name || '', true) +
                     // Descripción eliminada
-                    // ✅ SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
+                    // SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
                     this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, this.currentItem?.bookIds || [], 'book') +
                     '<div id="resources-container"></div>';
                 break;
 
 
-            case 'student': // ✅ NUEVO
+            case 'student':
                 title.textContent = id ? 'Editar Alumno' : 'Añadir Alumno';
                 if (id) this.currentItem = this.allStudents.find(i => i.id === id);
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', this.currentItem?.name || '', true) +
@@ -951,6 +975,8 @@ class AdminManager {
             case 'book': {
                 title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
                 if (id) this.currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
+
+                // Removido de aquí para hacerlo global al final del método
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
                 const resourceTypes = [
@@ -967,7 +993,7 @@ class AdminManager {
                     ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, this.currentItem?.resource_type || 'book', false)}
                 </div>
 
-                <!-- ✅ Checkbox Premium -->
+                <!-- Checkbox Premium -->
                 <div class="form-group" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" id="generic-is-premium" style="width: 20px; height: 20px; cursor: pointer;" ${this.currentItem?.is_premium ? 'checked' : ''}>
                     <label for="generic-is-premium" style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
@@ -975,12 +1001,12 @@ class AdminManager {
                     </label>
                 </div>
 
-                <!-- ✅ NUEVO: Asignación de Temas (Topics) al Recurso -->
+                <!-- NUEVO: Asignación de Temas (Topics) al Recurso -->
                 <div style="margin-bottom: 15px;">
                     ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, this.currentItem?.topics?.map(t => t.id) || this.currentItem?.topicIds || [], 'topic')}
                 </div>
 
-                <!-- ✅ NUEVO: Asignación Directa de Curso(s) -->
+                <!-- NUEVO: Asignación Directa de Curso(s) -->
                 <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
                     ${this.createCheckboxList('Cursos Asociados', 'generic-courses', this.allCourses, this.currentItem?.courseIds || [], 'course')}
                     <small style="color:var(--text-muted); display:block; margin-top:4px;">Asigna directamente a la biblioteca de los cursos este material sin tener que navegar a editarlos.</small>
@@ -991,7 +1017,7 @@ class AdminManager {
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', this.currentItem?.title || '', true)}
                     </div>
                     <div style="grid-column: 1 / -1;">
-                        <!-- ✅ UX MEJORA: Campo Autor Validado -->
+                        <!-- UX MEJORA: Campo Autor Validado -->
                         <div class="form-group">
                             <label for="generic-author">Autor/Creador (*)</label>
                             <input type="text" id="generic-author" name="generic-author" value="${this.currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
@@ -1001,11 +1027,17 @@ class AdminManager {
                         </div>
                     </div>
 
-                    <div style="grid-column: 1 / -1;">
                         ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (Opcional)', this.currentItem?.url || '', false)}
                         <small style="display:block; color:var(--text-muted); margin-top:2px;">
                             <i class="fas fa-magic"></i> <b>Tip:</b> Si se deja vacío, se usará la <b>imagen de portada</b> como recurso (ideal para infografías/mapas).
                         </small>
+                    </div>
+
+                    <!-- NUEVO: Editor de Texto Enriquecido para el Resumen (TinyMCE - Mini Word) -->
+                    <div style="grid-column: 1 / -1; margin-top: 15px;">
+                        <label class="form-label" style="font-weight: 600;">Resumen del Recurso (Estilo Wikipedia, Opcional)</label>
+                        <textarea id="generic-content-html" style="height: 350px;"></textarea>
+                        <input type="hidden" id="hidden-content-html" name="generic-content-html" value="">
                     </div>
                 </div>
                 `;
@@ -1015,7 +1047,7 @@ class AdminManager {
 
             case 'drive-sync': {
                 title.textContent = 'Sincronizar Carpeta de Google Drive';
-                
+
                 const resourceTypes = [
                     { id: 'book', name: 'Libro / PDF' },
                     { id: 'guia', name: 'Guía de Práctica Clínica' },
@@ -1045,7 +1077,7 @@ class AdminManager {
                         <i class="fas fa-info-circle"></i> <b>Nota:</b> Los archivos duplicados serán actualizados, no creados de nuevo. Asegúrate de que la Service Account tenga acceso a esta carpeta.
                     </div>
                 `;
-                
+
                 setTimeout(() => {
                     const btn = document.getElementById('generic-save-btn');
                     if (btn) {
@@ -1061,8 +1093,68 @@ class AdminManager {
         fieldsContainer.innerHTML = fieldsHTML;
         this.genericModal.style.display = 'flex';
 
-        // ✅ SOLUCIÓN DEFINITIVA: Inicializar el estado visual de los componentes después de renderizar.
+        // NUEVO: Inicializar TinyMCE 6 si es un recurso de tipo 'book'
+        if (type === 'book') {
+            setTimeout(() => {
+                // Eliminar instancia previa si existe para evitar duplicados
+                if (tinymce.get('generic-content-html')) {
+                    tinymce.get('generic-content-html').remove();
+                }
+
+                tinymce.init({
+                    selector: '#generic-content-html',
+                    height: 400,
+                    menubar: 'edit insert view format table tools help',
+                    plugins: [
+                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                        'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                        'bold italic backcolor forecolor | alignleft aligncenter ' +
+                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                        'table | removeformat | help',
+                    skin: 'oxide-dark',
+                    content_css: 'dark',
+                    branding: false,
+                    promotion: false,
+                    placeholder: 'Escribe el resumen enriquecido aquí (puedes añadir imágenes, tablas de Excel, colores y más)...',
+                    content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
+                        'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +
+                        'table th, table td { border: 1px solid #475569; padding: 8px; } ' +
+                        'table th { background-color: #334155; }',
+                    setup: (editor) => {
+                        editor.on('init', () => {
+                            if (this.currentItem?.content_html) {
+                                editor.setContent(this.currentItem.content_html);
+                            }
+                        });
+                        editor.on('change', () => {
+                            document.getElementById('hidden-content-html').value = editor.getContent();
+                        });
+                        editor.on('KeyUp', () => {
+                            document.getElementById('hidden-content-html').value = editor.getContent();
+                        });
+                    }
+                });
+
+                document.getElementById('hidden-content-html').value = this.currentItem?.content_html || '';
+            }, 0);
+        }
+
+        // SOLUCIÓN DEFINITIVA: Inicializar el estado visual de los componentes después de renderizar.
         // Esto soluciona los dos problemas reportados.
+        
+        // --- NUEVO: Aumentar tamaño de modal globalmente para todas las pestañas ---
+        setTimeout(() => {
+            const modalContent = this.genericModal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.maxWidth = '1100px';
+                modalContent.style.width = '95%';
+                modalContent.style.maxHeight = '95vh';
+            }
+        }, 0);
+
         this.genericModal.querySelectorAll('.searchable-dropdown-container').forEach(container => {
             if (container.dataset.multiselect === 'true') {
                 // 1. Para listas de checkboxes (multiselect), actualiza los "stickers azules".
@@ -1096,7 +1188,7 @@ class AdminManager {
         this._liveSearchFilter('search-section-career-select', 'fieldset[data-name="section-career-select"] .checkbox-list', '.checkbox-item', 'label');
         this._liveSearchFilter('search-generic-courses', 'div[data-name="generic-courses"] .checkbox-list', '.checkbox-item', 'label');
 
-        // ✅ FEEDBACK UNIVERSAL DE ARCHIVOS: Inicializar listeners para cualquier grupo de carga de imagen presente
+        // FEEDBACK UNIVERSAL DE ARCHIVOS: Inicializar listeners para cualquier grupo de carga de imagen presente
         const setupFileInputFeedback = (inputId, infoId) => {
             const _input = document.getElementById(inputId);
             const _info = document.getElementById(infoId);
@@ -1133,7 +1225,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ NUEVO: Actualiza el estado visual de un dropdown cuando se cierra.
+     * NUEVO: Actualiza el estado visual de un dropdown cuando se cierra.
      * En lugar de borrar el input, lo sincroniza con el valor seleccionado.
      * @param {HTMLElement} container El .searchable-dropdown-container
      */
@@ -1251,7 +1343,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ NUEVO: Lógica unificada para marcar imagen como eliminada en el frontend.
+     * NUEVO: Lógica unificada para marcar imagen como eliminada en el frontend.
      */
     removeImage(id) {
         const flag = document.getElementById(`${id}-delete-flag`);
@@ -1272,7 +1364,7 @@ class AdminManager {
     }
 
     /**
-     * ✅ Actualiza la previsualización en tiempo real mientras el usuario escribe.
+     * Actualiza la previsualización en tiempo real mientras el usuario escribe.
      */
     updateLivePreview(id) {
         if (this.previewTimer) clearTimeout(this.previewTimer);
@@ -1284,7 +1376,7 @@ class AdminManager {
             if (!urlInput || !previewImg || !previewContainer) return;
 
             const value = urlInput.value.trim();
-            // ✅ Optimización Anti-Ruido: Solo buscar si tiene al menos 4 caracteres y un punto (ej: a.png)
+            // Optimización Anti-Ruido: Solo buscar si tiene al menos 4 caracteres y un punto (ej: a.png)
             if (!value || value.length < 4 || !value.includes('.')) {
                 previewContainer.style.display = 'none';
                 return;
@@ -1293,7 +1385,7 @@ class AdminManager {
             const isExternal = value.startsWith('http');
             const previewUrl = window.resolveImageUrl(value);
 
-            // ✅ Carga Asíncrona: Validar éxito antes de mostrar para evitar parpadeos y 404s visuales
+            // Carga Asíncrona: Validar éxito antes de mostrar para evitar parpadeos y 404s visuales
             const tempImg = new Image();
             tempImg.onload = () => {
                 // Sincronía: Verificar que el valor del input no haya cambiado durante la carga
@@ -1308,7 +1400,7 @@ class AdminManager {
                 }
             };
             tempImg.src = previewUrl;
-        }, 750); // ✅ Aumentado a 750ms para permitir escribir nombres completos sin spam de consola
+        }, 750); // Aumentado a 750ms para permitir escribir nombres completos sin spam de consola
     }
 
     createSelect(id, label, options, selectedValue, optional = false) {
@@ -1318,7 +1410,7 @@ class AdminManager {
     }
 
     createSearchableSelect(id, label, options, selectedValue, optional = false) {
-        // ✅ SOLUCIÓN: El ID de un docente es un UUID (string), no un número.
+        // SOLUCIÓN: El ID de un docente es un UUID (string), no un número.
         // Se comprueba si el ID del control contiene 'instructor' para decidir si se parsea o no.
         const isInstructorSelect = id.includes('instructor');
         const finalSelectedValue = isInstructorSelect
@@ -1326,7 +1418,7 @@ class AdminManager {
             : (selectedValue ? parseInt(selectedValue, 10) : null);
 
         let optionsHTML = optional ? '<option value="">-- Ninguno --</option>' : '';
-        // ✅ MEJORA: Usar una comparación no estricta (==) para comparar el valor final (que puede ser string o número)
+        // MEJORA: Usar una comparación no estricta (==) para comparar el valor final (que puede ser string o número)
         // con el `opt.id` de las opciones, que siempre es un string desde el HTML.
         optionsHTML += options.map(opt => `<option value="${opt.id}" ${opt.id == finalSelectedValue ? 'selected' : ''}>${opt.name}</option>`).join('');
         return `
@@ -1344,10 +1436,10 @@ class AdminManager {
     }
 
     createCheckboxList(label, name, options, selectedIds = [], type = 'default') {
-        // ✅ SOLUCIÓN: Asegurarse de que los IDs seleccionados sean números para la comparación.
+        // SOLUCIÓN: Asegurarse de que los IDs seleccionados sean números para la comparación.
         const numericSelectedIds = (selectedIds || []).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
 
-        // ✅ LÓGICA CORREGIDA: Respetar el orden pasado por el invocador.
+        // LÓGICA CORREGIDA: Respetar el orden pasado por el invocador.
         // Anteriormente se forzaba un orden alfabético aquí, sobrescribiendo el orden por fecha/ID.
         const sortedOptions = options; // Usar el array tal cual viene (ya ordenado)
         const itemsHTML = sortedOptions.map(opt => {
@@ -1384,7 +1476,7 @@ class AdminManager {
         container.appendChild(newRow);
     }
 
-    // ✅ NUEVO: Gestor de Unidades
+    // NUEVO: Gestor de Unidades
     createUnitManager(allTopics, currentTopics = []) {
         // Agrupar temas actuales por unidad
         const unitsMap = new Map();
@@ -1492,7 +1584,7 @@ class AdminManager {
      */
     handleDomainChangeInModal(domain) {
         const isTrivia = domain === 'GENERAL_TRIVIA';
-        
+
         const targetContainer = document.getElementById('generic-target-container');
         const careerWrapper = document.getElementById('generic-career-wrapper');
         const explImageWrapper = document.getElementById('generic-explanation-image-upload-group');
@@ -1501,12 +1593,20 @@ class AdminManager {
         if (targetContainer) targetContainer.style.display = isTrivia ? 'none' : 'block';
         if (careerWrapper) careerWrapper.style.display = isTrivia ? 'none' : 'block';
         if (explImageWrapper) explImageWrapper.style.display = isTrivia ? 'none' : 'block';
-        
+
     }
 
     closeGenericModal() {
         // 1. Ocultar el modal
         this.genericModal.style.display = 'none';
+
+        // Restaurar ancho original por si fue modificado (ej. por 'book')
+        const modalContent = this.genericModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.maxWidth = '';
+            modalContent.style.width = '';
+        }
+
         // 2. Limpiar su contenido para la próxima vez que se abra
         const fieldsContainer = document.getElementById('generic-form-fields');
         if (fieldsContainer) fieldsContainer.innerHTML = '';
@@ -1541,7 +1641,7 @@ class AdminManager {
 
         let body = {};
 
-        // ✅ MEJORA UI/UX: Bloquear botón para evitar spam clicks / duplicados
+        // MEJORA UI/UX: Bloquear botón para evitar spam clicks / duplicados
         const saveBtn = document.getElementById('generic-save-btn');
         const originalBtnText = saveBtn ? saveBtn.innerHTML : 'Guardar';
         if (saveBtn) {
@@ -1552,7 +1652,7 @@ class AdminManager {
         try {
             switch (type) {
                 case 'career':
-                    // ✅ AHORA USA FORMDATA
+                    // AHORA USA FORMDATA
                     const careerFormData = new FormData();
                     careerFormData.append('name', document.getElementById('generic-name').value);
                     careerFormData.append('area', document.getElementById('generic-area').value);
@@ -1573,7 +1673,7 @@ class AdminManager {
                     body = careerFormData;
                     break;
                 case 'course':
-                    // ✅ AHORA USA FORMDATA
+                    // AHORA USA FORMDATA
                     const courseFormData = new FormData();
                     courseFormData.append('name', document.getElementById('generic-name').value);
                     // Append arrays as JSON strings or separate fields depending on backend expectation.
@@ -1624,14 +1724,14 @@ class AdminManager {
                         email: document.getElementById('generic-email').value
                     };
                     break;
-                case 'student': // ✅ NUEVO
+                case 'student':
                     body = {
                         name: document.getElementById('generic-name').value,
                         email: document.getElementById('generic-email').value
                     };
                     break;
                 case 'topic':
-                    // ✅ SOLUCIÓN: Enviar un array
+                    // SOLUCIÓN: Enviar un array
                     const selectedBooksTopic = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);
                     body = {
                         name: document.getElementById('generic-name').value,
@@ -1639,31 +1739,33 @@ class AdminManager {
                     };
                     break;
                 case 'book':
-                    // ✅ LÓGICA ESPECIAL: Usar FormData para subir archivos (imagen de portada)
+                    // LÓGICA ESPECIAL: Usar FormData para subir archivos (imagen de portada)
                     const formData = new FormData();
                     formData.append('title', document.getElementById('generic-title').value);
                     formData.append('author', document.getElementById('generic-author').value);
                     formData.append('url', document.getElementById('generic-url').value);
-                    // ✅ Type Field
+                    // Type Field
                     formData.append('resource_type', document.getElementById('generic-type').value);
-                    // ✅ Premium Field
+                    // Premium Field
                     formData.append('is_premium', document.getElementById('generic-is-premium').checked);
+                    // NUEVO: Resumen Enriquecido (HTML)
+                    formData.append('content_html', document.getElementById('hidden-content-html').value);
 
-                    // ✅ NUEVO: Capturar Temas Seleccionados
+                    // NUEVO: Capturar Temas Seleccionados
                     const resourceTopicIds = this.getSelectedIds('generic-topics');
                     formData.append('topicIds', JSON.stringify(resourceTopicIds));
 
-                    // ✅ NUEVO: Capturar Cursos Asociados
+                    // NUEVO: Capturar Cursos Asociados
                     const resourceCourseIds = this.getSelectedIds('generic-courses');
                     formData.append('courseIds', JSON.stringify(resourceCourseIds));
 
-                    // ✅ NUEVO: Manejo de eliminación de imagen
+                    // NUEVO: Manejo de eliminación de imagen
                     const deleteImageFlag = document.getElementById('generic-image-delete-flag')?.value;
                     if (deleteImageFlag === 'true') {
                         formData.append('deleteImage', 'true');
                     }
 
-                    // ✅ Prioridad: 1. Archivo Local | 2. URL/Texto Manual
+                    // Prioridad: 1. Archivo Local | 2. URL/Texto Manual
                     const fileInput = document.getElementById('generic-image-file');
                     const urlInput = document.getElementById('generic-image-url');
 
@@ -1688,7 +1790,7 @@ class AdminManager {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
                         target: qTarget,
-                        // ✅ INTEGRIDAD: Solo cambiar career si es SERUMS; si no, mantener lo que ya tenía el objeto original
+                        // INTEGRIDAD: Solo cambiar career si es SERUMS; si no, mantener lo que ya tenía el objeto original
                         // para evitar borrar datos accidentalmente en otros dominios.
                         career: (qTarget === 'SERUMS') ? (qCareerEl?.value || null) : (this.currentItem?.career || null),
                         topic: document.getElementById('generic-topic').value,
@@ -1722,7 +1824,7 @@ class AdminManager {
                         }
                     });
 
-                    // ✅ Lógica de Imagen de ENUNCIADO
+                    // Lógica de Imagen de ENUNCIADO
                     const qImageFile = document.getElementById('generic-image-file');
                     const qImageUrl = document.getElementById('generic-image-url');
                     const qDeleteFlag = document.getElementById('generic-image-delete-flag');
@@ -1740,7 +1842,7 @@ class AdminManager {
                         }
                     }
 
-                    // ✅ Lógica de Imagen de EXPLICACIÓN
+                    // Lógica de Imagen de EXPLICACIÓN
                     const explImageFile = document.getElementById('generic-explanation-image-file');
                     const explImageUrl = document.getElementById('generic-explanation-image-url');
                     const explDeleteFlag = document.getElementById('generic-explanation-image-delete-flag');
@@ -1898,7 +2000,7 @@ class AdminManager {
                 case 'drive-sync': {
                     const syncBtn = document.getElementById('generic-save-btn');
                     const originalText = syncBtn.innerHTML;
-                    
+
                     try {
                         const folderId = document.getElementById('generic-folder-id').value.trim();
                         const resourceType = document.getElementById('generic-resource-type').value;
@@ -1912,9 +2014,9 @@ class AdminManager {
                         const syncUrl = `${window.AppConfig.API_URL}/api/admin/drive/sync-folder`;
                         const resSync = await fetch(syncUrl, {
                             method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json', 
-                                'Authorization': `Bearer ${localStorage.getItem('authToken')}` 
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                             },
                             body: JSON.stringify({ folderId, resourceType, author })
                         });
@@ -1923,7 +2025,7 @@ class AdminManager {
                         if (!resSync.ok) throw new Error(resDataSync.error || 'Error en la sincronización de Drive');
 
                         await window.confirmationModal.showAlert(
-                            `🚀 ¡Sincronización Exitosa!\n\n${resDataSync.message}`, 
+                            `🚀 ¡Sincronización Exitosa!\n\n${resDataSync.message}`,
                             'Drive Bridge'
                         );
 
@@ -1944,7 +2046,7 @@ class AdminManager {
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
             }
 
-            // ✅ SOLUCIÓN DEFINITIVA: Añadir el ID al cuerpo de la petición SOLO si estamos
+            // SOLUCIÓN DEFINITIVA: Añadir el ID al cuerpo de la petición SOLO si estamos
             // actualizando un registro existente (método PUT) Y si NO estamos usando FormData.
             // (Si usamos FormData, no podemos mezclarlo con JSON body fácilmente aquí).
             if (method === 'PUT' && id && !(body instanceof FormData)) {
@@ -1955,7 +2057,7 @@ class AdminManager {
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             };
 
-            // ✅ FIX: Content-Type NO debe establecerse para FormData (el navegador pone boundary)
+            // FIX: Content-Type NO debe establecerse para FormData (el navegador pone boundary)
             if (!(body instanceof FormData)) {
                 headers['Content-Type'] = 'application/json';
             }
@@ -1981,7 +2083,7 @@ class AdminManager {
         } catch (error) {
             console.error(`❌ Error guardando ${type}:`, error);
 
-            // ✅ NUEVO: Manejo específico para sesión expirada
+            // NUEVO: Manejo específico para sesión expirada
             if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
                 await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
                 // Opcional: Redirigir al login después de que el usuario cierre el modal (si showAlert tuviera callback, o con un pequeño delay)
@@ -1990,7 +2092,7 @@ class AdminManager {
                 await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
             }
         } finally {
-            // ✅ MEJORA UI/UX: Restaurar botón independientemente de si hubo éxito o error
+            // MEJORA UI/UX: Restaurar botón independientemente de si hubo éxito o error
             if (saveBtn) {
                 saveBtn.innerHTML = originalBtnText;
                 saveBtn.disabled = false;
@@ -2026,7 +2128,7 @@ class AdminManager {
         } catch (error) {
             console.error(`❌ Error eliminando ${type}:`, error);
 
-            // ✅ NUEVO: Manejo específico para sesión expirada
+            // NUEVO: Manejo específico para sesión expirada
             if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
                 await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
             } else {
@@ -2035,7 +2137,7 @@ class AdminManager {
         }
     }
 
-    // ✅ NUEVO: Manejador para restablecer la contraseña de un usuario (docente).
+    // NUEVO: Manejador para restablecer la contraseña de un usuario (docente).
     async handleResetPassword(userId) {
         const instructor = this.allInstructors.find(i => i.id === parseInt(userId, 10));
         if (!instructor) {
@@ -2052,7 +2154,7 @@ class AdminManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // ✅ SOLUCIÓN: Añadir el token de autorización a la cabecera.
+                    // SOLUCIÓN: Añadir el token de autorización a la cabecera.
                     // El token se guarda en localStorage al iniciar sesión.
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
@@ -2073,7 +2175,7 @@ class AdminManager {
 
     renderTopicResources(resources) {
         const container = document.getElementById('resources-container');
-        if (!container) return; // ✅ SAFETY CHECK: Evitar crash si el contenedor no existe.
+        if (!container) return; // SAFETY CHECK: Evitar crash si el contenedor no existe.
         container.innerHTML = '';
 
         // Renderizar PDFs existentes
@@ -2100,10 +2202,10 @@ class AdminManager {
         // El botón de eliminar se maneja por delegación de eventos
     }
 
-    // ✅ NUEVO: Función auxiliar para crear el encabezado de las pestañas con la barra de búsqueda y ordenamiento.
+    // NUEVO: Función auxiliar para crear el encabezado de las pestañas con la barra de búsqueda y ordenamiento.
     _createTabHeaderHTML(type, buttonLabel, tabId) {
         const currentSort = this.tabSortState[tabId] || 'date-desc';
-        // ✅ UX MEJORA: Ocultar el filtro de ordenamiento en la pestaña "Secciones" ya que tiene su propio agrupamiento.
+        // UX MEJORA: Ocultar el filtro de ordenamiento en la pestaña "Secciones" ya que tiene su propio agrupamiento.
         const showSort = tabId !== 'tab-sections';
 
         const sortSelectHTML = showSort ? `
@@ -2137,7 +2239,7 @@ class AdminManager {
                         `;
     }
 
-    // ✅ NUEVO: Generador dinámico de Plantilla Excel para usuarios
+    // NUEVO: Generador dinámico de Plantilla Excel para usuarios
     downloadExcelTemplate() {
         if (typeof window.XLSX !== 'undefined') {
             const ws_data = [

@@ -33,6 +33,7 @@ class CoursesController {
         this.getCareerById = this.getCareerById.bind(this);
         this.getCourseById = this.getCourseById.bind(this);
         this.getTopicById = this.getTopicById.bind(this);
+        this.getResourceById = this.getResourceById.bind(this); // ✅ NUEVO
     }
     async getAllCourses(req, res) {
         // Este método sigue siendo útil para obtener la lista completa sin formato de búsqueda
@@ -144,6 +145,18 @@ class CoursesController {
         } catch (error) {
             console.error('Error in getCourseById:', error);
             res.status(500).json({ error: `Error al obtener el curso: ${error.message}` });
+        }
+    }
+
+    async getResourceById(req, res) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            const resource = await this.adminService.getById('book', id);
+            if (!resource) return res.status(404).json({ error: 'Recurso no encontrado' });
+            res.json(resource);
+        } catch (error) {
+            console.error('Error in getResourceById:', error);
+            res.status(500).json({ error: `Error al obtener el recurso: ${error.message}` });
         }
     }
 

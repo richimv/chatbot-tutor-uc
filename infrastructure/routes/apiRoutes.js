@@ -111,6 +111,7 @@ router.get('/analytics/featured-courses', analyticsController.getFeaturedCourses
 router.get('/careers/:id', coursesController.getCareerById);
 router.get('/courses/:id', coursesController.getCourseById);
 router.get('/topics/:id', coursesController.getTopicById);
+router.get('/resources/:id', coursesController.getResourceById); // ✅ NUEVO
 
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);
