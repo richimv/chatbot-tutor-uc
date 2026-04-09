@@ -61,8 +61,15 @@ El **Quiz Arena** es el componente gamificado y universal de Hub Academia. Ofrec
 - **Dificultad Unificada**: Soporte para niveles dinámicos sin forzar el antiguo estándar "Senior".
 - **Visualización GCS**: Integración completa con el proxy de Google Cloud Storage para imágenes WebP.
 
+## 5. Resiliencia de Red (NUEVO) 📡
+Dado el carácter competitivo de la Arena, se ha implementado un sistema para evitar la pérdida de récords por inestabilidad:
+
+- **safeFetch con Backoff**: Todas las comunicaciones críticas (Inicio, Carga de lotes, Envío de Score) utilizan reintentos automáticos (1s, 2s, 4s).
+- **Consistencia de Score**: El envío final del puntaje es idempotente y se reintenta hasta asegurar la sincronización con el servidor.
+- **Modo Offline**: Si la conexión se pierde durante una pregunta, el temporizador se pausa visualmente y el **Status Pill** informa al usuario, reanudando la carga en cuanto vuelve la señal.
+
 ---
-*Documentación técnica oficial - Actualizada Marzo 2026*
+*Documentación técnica oficial - Actualizada Abril 2026*
 
 ## 4. 🎮 Modo Especial: Quiz Arena (Review Battle)
 La **Quiz Arena** es el modo de repaso gamificado. A diferencia del estudio lineal de flashcards, la Arena extrae preguntas del banco global para un repaso dinámico:

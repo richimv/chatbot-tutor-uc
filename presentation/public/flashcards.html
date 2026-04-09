@@ -14,6 +14,7 @@
     <!-- Estilos Premium -->
     <link rel="stylesheet" href="css/flashcards.css">
     <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/components.css">
 </head>
 
 <body>
@@ -50,8 +51,7 @@
                     <a id="btn-back-deck" href="/repaso" class="btn-primary">
                         <i class="fas fa-arrow-left"></i> Volver al Mazo
                     </a>
-                    <button onclick="FlashcardManager.init()" class="btn-primary"
-                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                    <button onclick="FlashcardManager.init()" class="btn-primary">
                         <i class="fas fa-sync-alt"></i> Verificar
                     </button>
                 </div>
@@ -117,10 +117,11 @@
     <script src="js/services/authApiService.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/sessionManager.js"></script>
-    <script src="js/ui/uiManager.js"></script>
-    <script src="js/app.js?v=38dc494d"></script>
-
-    <script src="js/flashcards.js"></script>
+    <script src="js/ui/uiManager.js?v=20240410"></script>
+    <script src="js/app.js?v=20240410"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/flashcards.js?v=20240410"></script>
 
 </body>
 

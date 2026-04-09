@@ -48,7 +48,7 @@ class DeckExplorer {
         const headers = {};
         if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
 
-        const res = await fetch(url, { headers });
+        const res = await window.uiManager.safeFetch(url, { headers });
         const data = await res.json();
         return data.decks || [];
     }

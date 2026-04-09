@@ -53,7 +53,8 @@ const Arena = (function () {
         ui.screens.loading.classList.remove('hidden');
 
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/start`, {
+            // ✅ NUEVO: Usar safeFetch para inicio resiliente
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -195,7 +196,8 @@ const Arena = (function () {
         isLoadingMore = true;
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
+            // ✅ NUEVO: Preload resiliente
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ topic: ui.lobby.topic.value })
@@ -337,12 +339,17 @@ const Arena = (function () {
         if (state.currIdx === 0 && state.score === 0) { window.location.reload(); return; }
         try {
             const token = localStorage.getItem('authToken');
-            await fetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
+            // ✅ NUEVO: Envío de puntaje resiliente
+            await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
                 method: 'POST',
+                isRetryable: true, // Idempotente para el score de esta partida
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ score: state.score, totalQuestions: state.questions.length, topic: ui.lobby.topic.value })
             });
-        } catch (e) { console.error("Submit Error:", e); }
+        } catch (e) { 
+            console.error("Submit Error:", e);
+            // Avisar sutilmente que se intentará sincronizar o que falló definitivamente
+        }
         alert(`Juego Terminado. Score: ${state.score}`);
         window.location.reload();
     }

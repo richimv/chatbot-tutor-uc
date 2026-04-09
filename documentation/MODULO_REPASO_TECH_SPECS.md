@@ -49,6 +49,13 @@ El sistema utiliza una variante del algoritmo SM-2 para calcular cuándo debe re
 
 ---
 
-## 🛡️ Integridad y Seguridad
-- **Validación de Propiedades**: Alineado con el estándar global `question_text` y `correct_option_index` para mantener la coherencia con el banco de preguntas.
-- **Control de Límites**: Integrado con `checkLimitsMiddleware` para limitar la generación de tarjetas por IA según el plan del usuario.
+## 5. Modo Offline y Sincronización Diferida (NUEVO) 📡
+Para asegurar un estudio fluido en cualquier entorno, el módulo de repaso incorpora una arquitectura de resiliencia:
+
+1. **Estudio Offline**: El lote de tarjetas pendientes se precarga localmente. El usuario puede calificar su desempeño sin conexión.
+2. **Cola de Sincronización (Sync Queue)**: Las calificaciones se guardan en una cola de fondo. El sistema intenta subirlas al servidor automáticamente usando la utilidad `safeFetch`.
+3. **Reintentos Inteligentes**: Si la sincronización falla debido a un microcorte, el sistema aplica **Exponential Backoff** (reintentos a los 1s, 2s, 4s...) hasta confirmar que la curva de aprendizaje del usuario ha sido actualizada en la base de datos.
+4. **Monitor Visual**: El **Status Pill** global alerta al usuario si sus repasos están siendo guardados localmente a la espera de señal.
+
+---
+*Documentación técnica oficial - Actualizada Abril 2026*

@@ -540,35 +540,7 @@ function createUnifiedResourceCardHTML(item) {
 
     // 3. Estado de acceso (Freemium/Premium)
     const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
-    let isLocked = false;
-
-    if (isPremium) {
-        // PRIORIDAD: Usar datos directos de sesión si el manager falla (Race Condition)
-        const token = localStorage.getItem('authToken');
-        const userStr = localStorage.getItem('user');
-        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
-
-        // Si no hay usuario ni token, está bloqueado al 100% (Visitante)
-        if (!user && !token) {
-            isLocked = true;
-        } else if (user) {
-            const status = user.subscriptionStatus || user.subscription_status;
-
-            // Si es active (Premium) o admin, NUNCA está bloqueado visualmente
-            if (status === 'active' || user.role === 'admin') {
-                isLocked = false;
-            } else {
-                // Freemium (no active). Solo bloquear si ya no tiene usos
-                const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
-                if (usage >= limit) {
-                    isLocked = true;
-                } else {
-                    isLocked = false;
-                }
-            }
-        }
-    }
+    const isLocked = window.uiManager.isResourceLocked(isPremium);
 
     // 4. Determinar Iconos, Textos y Colores SVG(CSS) según el Tipo (Single Source of Truth)
     let iconClass, typeLabel, typeColorClass;
@@ -599,6 +571,11 @@ function createUnifiedResourceCardHTML(item) {
             iconClass = 'fa-microscope';
             typeLabel = 'Artículo / Paper';
             typeColorClass = 'urc-color-paper';
+            break;
+        case 'video':
+            iconClass = 'fa-video';
+            typeLabel = 'Video Clase / Tutorial';
+            typeColorClass = 'urc-color-video';
             break;
         default:
             iconClass = 'fa-image';
@@ -778,23 +755,7 @@ window.createVideoCardHTML = function (item) {
     }
 
     const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
-    let isLocked = false;
-
-    if (isPremium) {
-        const user = window.sessionManager?.getUser();
-        const token = localStorage.getItem('authToken');
-
-        if (!user || !token) {
-            isLocked = true;
-        } else {
-            const status = user.subscriptionStatus || user.subscription_status;
-            if (status !== 'active' && user.role !== 'admin') {
-                const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
-                if (usage >= limit) isLocked = true;
-            }
-        }
-    }
+    const isLocked = window.uiManager.isResourceLocked(isPremium);
 
     return `
         <div class="video-card-premium ${isPremium ? 'is-premium' : ''} ${isLocked ? 'is-locked' : ''}" 

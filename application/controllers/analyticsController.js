@@ -313,8 +313,15 @@ class AnalyticsController {
             await this.analyticsService.logPulse(sessionId, userId, isMobile);
             res.status(204).send();
         } catch (error) {
-            console.error('❌ Error registrando pulso:', error);
-            res.status(500).json({ error: 'Error interno del servidor.' });
+            // ✅ CORRECCIÓN: Si es un error de red (DNS/Conexión), logeamos un warning silencioso
+            // Esto evita que el servidor se llene de errores rojos por micro-cortes de internet.
+            if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Pulso de tráfico omitido temporalmente por inestabilidad de red (DNS/Supabase).');
+            } else {
+                console.error('❌ Error registrando pulso:', error);
+            }
+            // Respondemos 200/204 de todos modos para no afectar al frontend
+            res.status(204).send();
         }
     }
 

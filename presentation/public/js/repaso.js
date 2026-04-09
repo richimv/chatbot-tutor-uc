@@ -738,8 +738,9 @@ class RepasoManager {
 
     async deleteBulkCards(cardIds) {
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/cards/batch`, {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/cards/batch`, {
                 method: 'DELETE',
+                isRetryable: true,
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
@@ -798,8 +799,9 @@ class RepasoManager {
         const sortedIds = this.currentCards.map(c => c.id);
 
         try {
-            await fetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/cards/reorder`, {
+            await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/cards/reorder`, {
                 method: 'PUT',
+                isRetryable: true,
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
@@ -916,7 +918,7 @@ class RepasoManager {
             }
         }
 
-        const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${id}`, {
+        const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${id}`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
@@ -942,7 +944,7 @@ class RepasoManager {
 
         let url = `${window.AppConfig.API_URL}/api/decks`;
         if (parentId) url += `?parentId=${parentId}`;
-        const res = await fetch(url, {
+        const res = await window.uiManager.safeFetch(url, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
@@ -962,7 +964,7 @@ class RepasoManager {
         }
 
 
-        const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
+        const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
@@ -993,8 +995,9 @@ class RepasoManager {
             if (deckId) {
                 // EDIT MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
-                const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
+                const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
+                    isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ name, icon })
                 });
@@ -1009,8 +1012,9 @@ class RepasoManager {
             } else {
                 // CREATE MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
-                const res = await fetch(`${window.AppConfig.API_URL}/api/decks`, {
+                const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks`, {
                     method: 'POST',
+                    isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ name, icon, parentId })
                 });
@@ -1080,15 +1084,17 @@ class RepasoManager {
             let res;
             if (cardId) {
                 // UPDATE: PUT /api/cards/:id
-                res = await fetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
+                res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                     method: 'PUT',
+                    isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ front, back })
                 });
             } else {
                 // CREATE: POST /api/decks/:deckId/cards
-                res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
+                res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
                     method: 'POST',
+                    isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                     body: JSON.stringify({ front, back })
                 });
@@ -1135,8 +1141,9 @@ class RepasoManager {
         document.getElementById('ai-loading').style.display = 'block';
 
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/generate`, {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/generate`, {
                 method: 'POST',
+                isRetryable: true,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                 body: JSON.stringify({ topic, amount: 5 })
             });
@@ -1224,7 +1231,7 @@ class RepasoManager {
      */
     async _checkUsageLimit() {
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/usage/check-ai-limits`, {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/usage/check-ai-limits`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${this.token}`
@@ -1289,7 +1296,11 @@ class RepasoManager {
 
         try {
             // DELETE /api/decks/:id
-            const res = await fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${this.token}` } });
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, { 
+                method: 'DELETE', 
+                isRetryable: true,
+                headers: { 'Authorization': `Bearer ${this.token}` } 
+            });
 
             if (res.ok) {
                 // Refresh Tree and Dashboard
@@ -1344,8 +1355,9 @@ class RepasoManager {
 
     async deleteCard(cardId) {
         try {
-            const res = await fetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                 method: 'DELETE',
+                isRetryable: true,
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             if (res.ok) {

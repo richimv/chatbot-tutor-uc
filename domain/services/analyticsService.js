@@ -70,11 +70,8 @@ class AnalyticsService {
     // ==========================================
 
     async logPulse(sessionId, userId = null, isMobile = false) {
-        try {
-            await this.analyticsRepo.logPulse(sessionId, userId, isMobile);
-        } catch (error) {
-            console.error('❌ Error registrando pulso de tráfico:', error);
-        }
+        // Redirigimos al repo, el error se captura en el Controller para manejo centralizado
+        await this.analyticsRepo.logPulse(sessionId, userId, isMobile);
     }
 
     async getRealTimeStats() {

@@ -13,8 +13,11 @@ const state = {
     startTime: null,
     topic: '',
     maxQuestions: 20, // 🎯 Study Mode Limit
-    isLoadingBatch: false
+    isLoadingBatch: false,
+    quizId: null // ✅ NUEVO: ID único de sesión para evitar colisiones en localStorage
 };
+
+const STORAGE_KEY = 'simulator_active_session';
 
 // Elementos DOM
 const elements = {
@@ -53,7 +56,7 @@ async function init() {
     try {
         const stored = localStorage.getItem('simActiveConfig');
         if (stored) savedConfig = JSON.parse(stored);
-    } catch (e) { console.warn("No active config found"); }
+    } catch (error) { console.warn("No active config found"); }
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
@@ -100,11 +103,55 @@ async function init() {
     if (btnTopExit) btnTopExit.onclick = handleExit;
 
     try {
-        await startQuiz();
+        // ✅ NUEVO: Intentar recuperar sesión previa
+        const recovered = loadSession();
+        if (recovered) {
+            console.log("♻️ Sesión recuperada de localStorage.");
+            Object.assign(state, recovered);
+            renderQuestion();
+            if (state.maxQuestions === 100) startMockTimer();
+        } else {
+            // Inicialización limpia
+            state.quizId = Date.now().toString(36); // Generar ID único
+            await startQuiz();
+        }
     } catch (error) {
         console.error("Error iniciando quiz:", error);
         alert("Error iniciando el simulacro. Revisa la consola.");
     }
+}
+
+/**
+ * Persistencia Local (Resiliencia ante recargas)
+ */
+function saveSession() {
+    if (new URLSearchParams(window.location.search).get('demo') === 'true') return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...state,
+        quizId: state.quizId
+    }));
+}
+
+function loadSession() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return null;
+        const data = JSON.parse(stored);
+        
+        // Validar que el mazo/tema sea el mismo (para no cargar un examen viejo en un contexto nuevo)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentAreas = (urlParams.get('areas') || '').split(',').sort().join(',');
+        const storedAreas = (data.areas || []).sort().join(',');
+
+        if (currentAreas === storedAreas && data.questions.length > 0) {
+            return data;
+        }
+    } catch (error) { console.warn("Fallo cargando sesión previa", error); }
+    return null;
+}
+
+function clearSession() {
+    localStorage.removeItem(STORAGE_KEY);
 }
 
 // 1.5 Helper para Obtener Token Fresco (Evita 401 en exámenes largos)
@@ -118,7 +165,7 @@ async function getValidToken() {
                 localStorage.setItem('authToken', freshToken); // Actualizar local
                 return freshToken;
             }
-        } catch (e) { console.warn("Error refreshing token via supabase UI", e); }
+        } catch (error) { console.warn("Error refreshing token via supabase UI", error); }
     }
     // 2. Fallback al token clásico
     return localStorage.getItem('authToken');
@@ -296,6 +343,7 @@ async function startQuiz() {
 
     // Ocultar Loading y mostrar primera pregunta
     elements.loadingOverlay.classList.add('hidden');
+    saveSession(); // Guardar estado inicial
     renderQuestion();
 
     // Iniciar temporizador maestro si es Simulacro Real
@@ -345,12 +393,12 @@ async function fetchNextBatch() {
                 return finishQuiz();
             }
 
-            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal(data.error, 'simulator');
-            } else {
-                alert(data.error || "No hay más preguntas disponibles para tu Plan actual.");
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast(data.error || "No hay más preguntas disponibles en este momento.", "info");
             }
-            return finishQuiz(); // Acabar el examen con lo poco que tenía
+            state.maxQuestions = state.questions.length; // Ajustar total al mazo real disponible
+            updateProgressUI();
+            return; 
         }
 
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
@@ -384,10 +432,11 @@ async function fetchNextBatch() {
 
             updateProgressUI(); // Update progress bar with new total? Or keep relative to 20?
         }
-    } catch (e) {
-        console.error("Error fetching batch:", e);
-        elements.loadingOverlay.classList.add('hidden');
-        alert("Ocurrió un error cargando nuevas preguntas o se cortó tu conexión.");
+    } catch (error) {
+        console.error("Error fetching batch:", error);
+        if (window.uiManager && window.uiManager.showToast) {
+            window.uiManager.showToast("Error de conexión al cargar más preguntas. Reintentando...", "warning");
+        }
     } finally {
         state.isLoadingBatch = false;
     }
@@ -413,7 +462,10 @@ function renderQuestion() {
             setTimeout(renderQuestion, 500); // Retry
             return;
         } else {
-            // No more questions available at all
+            // No more questions available, but we haven't hit maxQuestions.
+            // Adjust maxQuestions to current length to show accurate results
+            console.warn("⚠️ Banco agotado prematuramente. Finalizando con", state.questions.length, "preguntas.");
+            state.maxQuestions = state.questions.length;
             return finishQuiz();
         }
     }
@@ -503,6 +555,8 @@ function handleAnswer(selectedIndex, btnElement) {
         userAnswer: selectedIndex,
         isCorrect: isCorrect
     });
+
+    saveSession(); // ✅ PERSISTENCIA INMEDIATA
 
     // 🏆 MODO CIEGO (Simulacro Real)
     if (state.maxQuestions === 100) {
@@ -665,29 +719,42 @@ async function finishQuiz() {
 
     const token = await getValidToken();
     try {
-        await fetch(`${API_URL}/submit`, {
+        // ✅ NUEVO: Envío resiliente con safeFetch
+        await window.uiManager.safeFetch(`${API_URL}/submit`, {
             method: 'POST',
+            isRetryable: true, // Permitir reintentos aunque sea POST porque es idempotente via quizId (si lo añadimos)
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic, // Enviar etiqueta "Multi-Área" si hay más de 1
-                areas: state.areas, // Extra metadata
+                topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
+                areas: state.areas,
                 target: state.targetExam,
                 career: state.career,
                 score: state.score,
-                total_questions: state.currentQuestionIndex, // Send actual total answered
+                total_questions: state.currentQuestionIndex,
                 questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
                     ...q,
-                    userAnswer: state.answers[idx]?.userAnswer || 0, // Fallback en caso de click ultra rápìdo
-                    topic: q.topic || state.topic // Preservar el topic individual de la pregunta si el backend lo mandó
+                    userAnswer: state.answers[idx]?.userAnswer || 0,
+                    topic: q.topic || state.topic
                 }))
             })
         });
+
         console.log("✅ Resultados guardados y Flashcards generadas.");
-    } catch (e) {
-        console.error("Error guardando resultados", e);
+        clearSession(); // ✅ LIMPIAR SOLO SI TUVO ÉXITO
+    } catch (error) {
+        console.error("Error guardando resultados", error);
+        // Si falla definitivamente después de los reintentos de safeFetch
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No pudimos sincronizar tus resultados, pero no te preocupes, están guardados localmente. Los intentaremos subir automáticamente lo antes posible.',
+                icon: 'warning',
+                background: 'rgba(20,20,20,0.95)'
+            });
+        }
     }
 }
 
@@ -731,8 +798,8 @@ window.showExamReview = async function () {
             if (data.success && data.savedFronts) {
                 savedFronts = new Set(data.savedFronts);
             }
-        } catch (e) {
-            console.error('Error checking saved flashcards', e);
+        } catch (error) {
+            console.error('Error checking saved flashcards', error);
         }
     }
 
@@ -786,10 +853,10 @@ window.showExamReview = async function () {
                             saveBtn.disabled = false;
                             alert('No se pudo guardar la flashcard: ' + (data.error || 'Error desconocido'));
                         }
-                    } catch (e) {
+                    } catch (error) {
                         saveBtn.innerHTML = originalText;
                         saveBtn.disabled = false;
-                        console.error('Error saving flashcard', e);
+                        console.error('Error saving flashcard', error);
                         alert('Error de conexión al guardar la flashcard');
                     }
                 };

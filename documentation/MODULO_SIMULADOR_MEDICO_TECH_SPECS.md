@@ -9,7 +9,12 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 
 ### 🖥️ Frontend (Presentation)
 - **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas. Presenta un diseño de interfaz de usuario limpia (*Clean UI/Flat Design*) y utiliza gráficas renderizadas de forma nativa (HTML/CSS) sin pesadas librerías externas para visualización en móviles.
-- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz). Minimiza la fatiga visual al omitir bordes 3D o sombras redundantes. Además, la puntuación obtenida al finalizar se renderiza usando gráficos **SVG** nativos vectoriales, proporcionando animaciones `stroke-dashoffset` muy fluidas e interactivas.
+- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz)4. **Monitor Visual**: El **Status Pill** global alerta al usuario si sus repasos están siendo guardados localmente a la espera de señal.
+5. **Control de Concurrencia (Anti double-tap)**: Bloqueo semafórico (`_isRating`) en el motor de flashcards para prevenir múltiples peticiones accidentales durante microcortes de red, garantizando una calificación única y limpia.
+
+---
+*Documentación técnica oficial - Actualizada Abril 2026*
+se renderiza usando gráficos **SVG** nativos vectoriales, proporcionando animaciones `stroke-dashoffset` muy fluidas e interactivas.
 - **`js/simulator-dash.js`**: Lógica del dashboard: inicialización de charts, manejo de configuración y stats local/API. Contiene visualización *Empty State* para los usuarios sin historial (Demo).
 - **`js/quiz.js`**: Motor de interacción: manejo de estados (pregunta actual, respuestas), cronómetros, y batch loading. Permite la **creación manual e interactiva de Flashcards** desde el panel de revisión de desempeño.
 
@@ -60,3 +65,14 @@ El usuario puede cruzar variables fundamentales:
 - **Anti-Repetición**: Ciclo de enfriamiento de 24 horas (`seen_at`).
 - **Validación server-side**: Los resultados se auditan en el backend para evitar manipulación de puntajes.
 - **Deduplicación MD5**: Cada pregunta generada o inyectada tiene un hash único para evitar redundancia en el banco global.
+
+---
+
+## 📡 Resiliencia y Offline UX (NUEVO)
+Para garantizar la continuidad en exámenes de alta exigencia (100q), el simulador incorpora un sistema de resiliencia avanzada:
+
+1. **Persistencia de Sesión (Local Storage)**: Cada respuesta marcada se serializa instantáneamente en el navegador. En caso de recarga accidental (F5) o pérdida de suministro eléctrico, al reabrir la ventana el examen se6.  **Estabilidad UX (Pulse & Sync):** Se corrigió el estado de 'falso negativo' del monitor de conexión mediante la sincronización del constructor de `UIManager` con `navigator.onLine`. Se resolvieron interferencias visuales aplicando `components.css` y se eliminó la necesidad de doble clic en flashcards mediante un bloqueo semafórico de interactividad durante la sincronización. Se erradicó el `ReferenceError` en el simulador mediante la estandarización de bloques catch y la invalidación de caché vía `v=20240410`.
+ **Exponential Backoff**. Si el envío de un simulacro falla, el sistema reintenta automáticamente con intervalos crecientes (1s, 2s, 4s).
+4. **Validación de Integridad**: Al restaurar una sesión, el sistema verifica que el `quizId` y el mazo coincidan con la configuración actual para evitar colisiones de datos.
+5. **Batching Resiliente (v3.0)**: La carga de lotes (`fetchNextBatch`) ha sido refactorizada para ser tolerante a fallos. Si un lote falla por red, el sistema no aborta el examen; en su lugar, notifica al usuario vía Toast y permite reintentos, ajustando dinámicamente el progreso para garantizar que el alumno pueda finalizar su sesión sin pérdida de datos.
+6. **Estandarización de Errores**: Se eliminaron los `ReferenceError` mediante la migración a bloques `catch (error)` unificados y la invalidación de caché forzada (`v=20240410`).

@@ -76,7 +76,11 @@ class CoursesController {
             const courses = await this.adminService.getAll('course');
             res.json(courses);
         } catch (error) {
-            console.error('Error in getCourses:', error);
+            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Fallo de conexión al obtener cursos: Red inestable.');
+            } else {
+                console.error('Error in getCourses:', error);
+            }
             res.status(500).json({ error: `Error al obtener los cursos base: ${error.message}` });
         }
     }
@@ -178,7 +182,11 @@ class CoursesController {
             const books = await this.adminService.getAll('book', { type });
             res.json(books);
         } catch (error) {
-            console.error('❌ Error al obtener los libros:', error);
+            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Fallo de conexión al obtener libros: Red inestable.');
+            } else {
+                console.error('❌ Error al obtener los libros:', error);
+            }
             res.status(500).json({ message: 'Error al obtener los libros' });
         }
     }

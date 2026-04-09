@@ -9,6 +9,7 @@ const FlashcardManager = (() => {
     let queue = [];
     let currentCard = null;
     let isFlipped = false;
+    let syncQueue = []; // ✅ NUEVO: Cola de sincronización local
 
     // --- DOM Elements ---
     const views = {
@@ -125,7 +126,8 @@ const FlashcardManager = (() => {
             endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId}/cards/due`;
         }
 
-        const res = await fetch(endpoint, {
+        // ✅ NUEVO: Carga resiliente
+        const res = await window.uiManager.safeFetch(endpoint, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -226,8 +228,14 @@ const FlashcardManager = (() => {
         }
     }
 
+    let _isRating = false; // Bloqueo de concurrencia
+
     async function rate(quality) {
-        if (!currentCard) return;
+        if (_isRating || !currentCard) return;
+        _isRating = true;
+
+        // Visual feedback: Bloquear clics durante la sincronización para evitar doble-tappeo
+        if (ui.controls) ui.controls.style.pointerEvents = 'none';
 
         const urlParams = new URLSearchParams(window.location.search);
         const isDemo = urlParams.get('demo') === 'true';
@@ -260,31 +268,48 @@ const FlashcardManager = (() => {
         const token = localStorage.getItem('authToken');
         if (!token) return;
 
-        // 2. Submit review to server FIRST
-        try {
-            await fetch(`${API_URL}/review`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    cardId: processedCard.id,
-                    quality: quality,
-                    currentInterval: processedCard.interval_days,
-                    currentEf: processedCard.easiness_factor,
-                    currentReps: processedCard.repetition_number
-                })
-            });
-        } catch (e) {
-            console.error("Sync Failed for card", processedCard.id, e);
-        }
+        // 2. ✅ NUEVO: Encolar revisión para sincronización asíncrona (Resiliencia)
+        const reviewData = {
+            cardId: processedCard.id,
+            quality: quality,
+            currentInterval: processedCard.interval_days,
+            currentEf: processedCard.easiness_factor,
+            currentReps: processedCard.repetition_number
+        };
 
-        // 3. Show next card or check server for more
+        syncReview(reviewData, token);
+
+        // 3. Show next card IMMEDIATELY (UX fluida)
         if (queue.length > 0) {
             renderCard(queue[0]);
         } else {
             await loadCards(token);
+        }
+    }
+
+    /**
+     * Sincroniza una revisión individual con reintentos
+     */
+    async function syncReview(reviewData, token) {
+        try {
+            await window.uiManager.safeFetch(`${API_URL}/review`, {
+                method: 'POST',
+                isRetryable: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(reviewData)
+            });
+            console.log(`✅ Flashcard ${reviewData.cardId} sincronizada.`);
+        } catch (e) {
+            console.error("Sync Failed definitely for card", reviewData.cardId, e);
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast('Error de sincronización. Reintentando...', 'warning');
+            }
+        } finally {
+            _isRating = false;
+            if (ui.controls) ui.controls.style.pointerEvents = 'auto';
         }
     }
 

@@ -15,6 +15,93 @@ class UIManager {
         // NUEVO: Lógica de Botón "Atrás" para Modales
         this.openModals = new Set();
         window.addEventListener('popstate', (e) => this.handlePopState(e));
+
+        // ✅ NUEVO: Monitor de Conectividad
+        this.isOnline = navigator.onLine;
+        this.injectStatusPillHTML();
+        
+        // Sincronizar estado inicial inmediatamente
+        this.handleConnectivityChange(this.isOnline);
+
+        window.addEventListener('online', () => this.handleConnectivityChange(true));
+        window.addEventListener('offline', () => this.handleConnectivityChange(false));
+    }
+
+    /**
+     * Gestión de Resiliencia de Red
+     */
+    injectStatusPillHTML() {
+        if (document.getElementById('status-pill-container')) return;
+        const div = document.createElement('div');
+        div.id = 'status-pill-container';
+        div.className = 'status-pill-container';
+        div.innerHTML = `
+            <div id="status-pill" class="status-pill">
+                <span class="status-dot"></span>
+                <span id="status-text">Sin conexión</span>
+            </div>
+        `;
+        document.body.appendChild(div);
+    }
+
+    handleConnectivityChange(isOnline) {
+        this.isOnline = isOnline;
+        const container = document.getElementById('status-pill-container');
+        const pill = document.getElementById('status-pill');
+        const text = document.getElementById('status-text');
+
+        if (!isOnline) {
+            pill.className = 'status-pill offline';
+            text.textContent = 'Sin conexión - Trabajando localmente';
+            container.classList.add('active');
+        } else {
+            pill.className = 'status-pill online';
+            text.textContent = 'Conectado';
+            // Ocultar después de un momento
+            setTimeout(() => {
+                container.classList.remove('active');
+            }, 3000);
+        }
+    }
+
+    /**
+     * safeFetch: Wrapper robusto sobre fetch con reintentos automáticos.
+     * Ideal para microcortes.
+     */
+    async safeFetch(url, options = {}, retries = 3, backoff = 1000) {
+        const canRetry = !options.method || options.method === 'GET' || options.isRetryable === true;
+
+        for (let i = 0; i < retries; i++) {
+            try {
+                // Si estamos offline y no es un reintento, avisar al UI
+                if (!navigator.onLine && i === 0) {
+                    this.handleConnectivityChange(false);
+                }
+
+                const response = await fetch(url, options);
+                
+                // Si la respuesta es OK o no es reintentable (ej. 401, 400), salir
+                if (response.ok || response.status < 500) return response;
+
+                // Si es un error 500+ y es reintentable, seguimos al catch para el backoff
+                throw new Error(`Server Error: ${response.status}`);
+
+            } catch (err) {
+                const isNetworkError = err.name === 'TypeError' || err.message.includes('fetch');
+                
+                // Si no es reintentable o es el último intento, propagar el error
+                if (!canRetry || i === retries - 1 || (!isNetworkError && i === 0)) {
+                    // Si falló por red definitiva, avisar
+                    if (isNetworkError) this.handleConnectivityChange(false);
+                    throw err;
+                }
+
+                // Esperar antes de reintentar (Exponential Backoff)
+                console.warn(`🔄 Error de red. Reintentando (${i + 1}/${retries}) en ${backoff}ms...`);
+                await new Promise(res => setTimeout(res, backoff));
+                backoff *= 2; // Duplicar tiempo de espera
+            }
+        }
     }
 
     handlePopState(event) {
@@ -151,146 +238,40 @@ class UIManager {
      * @param {string} title - (Opcional) Título del recurso para el visor.
      * @param {string} videoContainerId - (Opcional) ID del contenedor DOM para inyectar video.
      */
-    async unlockResource(id, type = 'book', isPremium = false, title = '', videoContainerId = null) {
-        const url = this.materialRegistry.get(String(id));
-        if (!url) {
-            console.error('Material no encontrado o acceso denegado.');
-            return;
-        }
-
-        // ✅ LÓGICA DE RECURSOS GRATUITOS
-        // Si el recurso es gratuito (isPremium = false), se accede directamente sin descontar vidas ni pedir login.
-        if (!isPremium) {
-            if (type === 'video') {
-                this.openVideoModal(url, title);
-            } else if (this.isImage(url) || this.isDriveLink(url)) {
-                this.showMediaViewer(url, title);
-            } else {
-                window.open(url, '_blank');
-            }
-            if (window.AnalyticsApiService) window.AnalyticsApiService.recordView(type, id);
-            return;
-        }
-
-        // ✅ LÓGICA DE RECURSOS PREMIUM
-        const token = localStorage.getItem('authToken');
-        const userStr = localStorage.getItem('user');
-        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
-
-        // 1. Visitante: No Logueado -> Modal "Únete"
-        if (!token || !user) {
-            this.showAuthPromptModal();
-            return;
-        }
-
-        // 2. Freemium Sin Vidas: Cortocircuito Local -> Modal "Te encantó"
-        const status = user.subscriptionStatus || user.subscription_status;
-        if (status !== 'active' && user.role !== 'admin') {
-            const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
-            if (usage >= limit) {
-                this.showPaywallModal();
-                return; // Cortocircuito, no llama al servidor
-            }
-        }
-
-        // 3. Autenticado (Freemium con Vidas o Premium): Validar uso exacto en el backend.
-        (async () => {
-            try {
-                // Verificar límite de uso / grabar visita
-                const response = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ resource_id: id })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.allowed) {
-                    // Éxito: Acceso concedido
-
-                    // 1. Actualizar estado local si es Freemium
-                    if (data.plan === 'free' && window.sessionManager) {
-                        const user = window.sessionManager.getUser();
-                        if (user) {
-                            user.usageCount = data.usage; // Sincronizar
-                            window.sessionManager.notifyStateChange(); // Actualizar UI
-
-                            // 2. Feedback Visual (Toast)
-                            this.showToast(`🔓 Desbloqueado. Te quedan ${data.limit - data.usage} pases.`);
-                        }
-                    }
-
-                    // 👉 ACCIÓN SEGÚN TIPO
-                    if (type === 'video') {
-                        this.openVideoModal(url, data.title || '');
-                    } else if (this.isImage(url) || this.isDriveLink(url)) {
-                        this.showMediaViewer(url, data.title || '');
-                    } else {
-                        // Artículos y Libros se abren en nueva pestaña
-                        window.open(url, '_blank');
-                    }
-
-                    // Tracking
-                    if (window.AnalyticsApiService) {
-                        window.AnalyticsApiService.recordView(type, id);
-                    }
-
-                } else if (response.status === 403 || !data.allowed) {
-                    // ⛔ Límite alcanzado o suscripción inactiva
-                    // Actualizar estado local si el backend reporta límite
-                    if (user && window.sessionManager) {
-                        user.usageCount = data.usage || 50; // Sincronizar con el límite real
-                        window.sessionManager.notifyStateChange();
-                    }
-                    this.showPaywallModal();
-                } else {
-                    console.error('Error verificando acceso:', data);
-                    alert('Error verificando acceso. Intenta nuevamente.');
-                }
-            } catch (error) {
-                console.error('Error de red:', error);
-            }
-        })();
-    }
-
     /**
-     * Intercepts navigation to a dedicated resource page. If premium, it checks authentication and deducts lives. 
-     * @param {string} id - ID del recurso
-     * @param {string} type - Tipo de recurso
-     * @param {boolean} isPremium - Si es premium
+     * MÉTODO CENTRALIZADO: Verifica y descuenta acceso para recursos Premium.
+     * Gestiona autenticación, límites de lives y analíticas.
+     * @private
      */
-    async unlockAndNavigate(id, type = 'book', isPremium = false) {
-        let baseUrl = type === 'course' ? '/course' : '/resource';
-        let targetUrl = `${baseUrl}?id=${id}`;
-
+    async _verifyAndConsumeAccess(id, type, isPremium) {
+        // ✅ Caso 1: Recurso Gratuito
         if (!isPremium) {
-            window.location.href = targetUrl;
-            return;
+            if (window.AnalyticsApiService) window.AnalyticsApiService.recordView(type, id);
+            return { allowed: true, free: true };
         }
 
+        // ✅ Caso 2: Recurso Premium - Validar Auth
         const token = localStorage.getItem('authToken');
         const userStr = localStorage.getItem('user');
         const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
 
         if (!token || !user) {
             this.showAuthPromptModal();
-            return;
+            return { allowed: false, reason: 'unauthorized' };
         }
 
+        // Caso 2a: Freemium sin vidas (Cortocircuito local)
         const status = user.subscriptionStatus || user.subscription_status;
         if (status !== 'active' && user.role !== 'admin') {
             const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
             const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
             if (usage >= limit) {
                 this.showPaywallModal();
-                return;
+                return { allowed: false, reason: 'limit_reached' };
             }
         }
 
+        // Caso 2b: Validar exactamente en el Backend
         try {
             const response = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
                 method: 'POST',
@@ -300,44 +281,133 @@ class UIManager {
                 },
                 body: JSON.stringify({ resource_id: id })
             });
+
             const data = await response.json();
 
             if (response.ok && data.allowed) {
+                // Sincronizar estado local si es free
                 if (data.plan === 'free' && window.sessionManager) {
                     const sessionUser = window.sessionManager.getUser();
                     if (sessionUser) {
                         sessionUser.usageCount = data.usage;
                         window.sessionManager.notifyStateChange();
-                        this.showToast(`🔓 Acceso Concedido. Te quedan ${data.limit - data.usage} pases.`);
+                        this.showToast(`🔓 Desbloqueado. Te quedan ${data.limit - data.usage} pases.`);
                     }
                 }
 
-                // Track visualización a la página dedicada y navegar
-                if (window.AnalyticsApiService) {
-                    window.AnalyticsApiService.recordView(type, id);
-                }
-                setTimeout(() => { window.location.href = targetUrl; }, 100);
+                // Registrar visualización
+                if (window.AnalyticsApiService) window.AnalyticsApiService.recordView(type, id);
+
+                return { allowed: true, ...data };
             } else if (response.status === 403 || !data.allowed) {
                 if (user && window.sessionManager) {
                     user.usageCount = data.usage || 50;
                     window.sessionManager.notifyStateChange();
                 }
                 this.showPaywallModal();
+                return { allowed: false, reason: 'limit_reached' };
             } else {
                 console.error('Error verificando acceso:', data);
-                alert('Error al verificar acceso.');
+                alert('Error al verificar acceso. Reintenta.');
+                return { allowed: false, reason: 'error' };
             }
         } catch (error) {
             console.error('Error de red:', error);
-            alert('Error de conexión. Intente nuevamente.');
+            alert('Error de conexión.');
+            return { allowed: false, reason: 'network' };
         }
     }
 
     /**
-     * Alias para compatibilidad con código existente de libros.
+     * Intenta acceder a un recurso protegido (Libro, Video, Artículo) o gratuito.
+     * Muestra el visor correspondiente o abre el enlace.
      */
-    openMaterial(id, isPremium = false, title = '') {
-        this.unlockResource(id, 'book', isPremium, title);
+    async unlockResource(id, type = 'book', isPremium = false, title = '', videoContainerId = null) {
+        const url = this.materialRegistry.get(String(id));
+        if (!url) {
+            console.error('Material no encontrado o acceso denegado.');
+            return;
+        }
+
+        const result = await this._verifyAndConsumeAccess(id, type, isPremium);
+        if (!result.allowed) return;
+
+        // ACCIÓN SEGÚN TIPO
+        const finalTitle = result.title || title;
+
+        if (type === 'video') {
+            // Video siempre usa su modal especializado (YouTube/MP4)
+            this.openVideoModal(url, finalTitle);
+        } else if (type === 'other' || this.isImage(url) || this.isDriveLink(url)) {
+            // 'other', imágenes y links de Drive pasan por el MediaViewer
+            // El MediaViewer internamente decidirá si abrir en pestaña nueva (Drive) o visor inmersivo (GCS)
+            this.showMediaViewer(url, finalTitle);
+        } else {
+            // Libros, artículos y otros documentos estándar abren en pestaña nueva
+            window.open(url, '_blank');
+        }
+    }
+
+    /**
+     * Intercepta la navegación a una página dedicada.
+     * Verifica acceso antes de redirigir.
+     */
+    /**
+     * Intercepta la navegación a una página dedicada.
+     * Verifica acceso antes de redirigir.
+     * MEJORA: Si el tipo es visual (video/other), abre el visor directamente en lugar de navegar.
+     */
+    async unlockAndNavigate(id, type = 'book', isPremium = false) {
+        // ✅ REGLA DE EXPERIENCIA DIRECTA:
+        // Si es video u otro recurso visual, abrir el visor directamente
+        if (type === 'video' || type === 'other') {
+            await this.unlockResource(id, type, isPremium);
+            return;
+        }
+
+        let baseUrl = type === 'course' ? '/course' : '/resource';
+        let targetUrl = `${baseUrl}?id=${id}`;
+
+        const result = await this._verifyAndConsumeAccess(id, type, isPremium);
+        if (result.allowed) {
+            setTimeout(() => { window.location.href = targetUrl; }, 100);
+        }
+    }
+
+    /**
+     * MÉTODO CENTRALIZADO: Determina si un recurso debería mostrarse como bloqueado para el usuario actual.
+     * @param {boolean} isPremium - Si el recurso es premium.
+     * @returns {boolean} - true si está bloqueado visualmente por falta de suscripción/vidas.
+     */
+    isResourceLocked(isPremium) {
+        if (!isPremium) return false;
+
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        const user = window.sessionManager?.getUser() || (userStr ? JSON.parse(userStr) : null);
+
+        // Si no hay usuario ni token, está bloqueado (Visitante)
+        if (!user && !token) return true;
+
+        if (user) {
+            const status = user.subscriptionStatus || user.subscription_status;
+            // Si es active (Premium) o admin, NUNCA está bloqueado
+            if (status === 'active' || user.role === 'admin') return false;
+
+            // Freemium: Solo bloquear si ya no tiene usos
+            const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+            return usage >= limit;
+        }
+
+        return true;
+    }
+
+    /**
+     * Alias para compatibilidad con código existente.
+     */
+    openMaterial(id, isPremium = false, title = '', type = 'book') {
+        this.unlockResource(id, type, isPremium, title);
     }
 
     /**

@@ -330,6 +330,18 @@ La seguridad ha sido una prioridad desde el diseño inicial ("Security by Design
 *   **Resiliencia de Backend (Retry Pattern):** Se implementó un mecanismo de reintento automático en `authMiddleware.js` para manejar errores de red transitorios (`ECONNRESET`, `ETIMEDOUT`) contra Supabase. Esto asegura una alta disponibilidad incluso ante microcortes de conexión, reintentando la validación del token hasta 3 veces antes de fallar.
 *   **Extensiones de Base de Datos:** Se habilitaron `unaccent` (para búsquedas insensibles a tildes) y `fuzzystrmatch` (para algoritmo Levenshtein) en PostgreSQL para robustecer la búsqueda y evitar errores por typos.
 
+### 8.5. Resiliencia Global y Offline UX (HubPro Resilience Framework) 🛡️
+En la versión 3.0, hemos implementado una capa transversal de resiliencia diseñada para mitigar el impacto de microcortes de red y cortes prolongados de internet, garantizando que el flujo de aprendizaje nunca se detenga.
+
+1.  **Monitor Visual de Conectividad (Status Pill):** Inyección de un componente dinámico en el Header que informa al usuario en tiempo real sobre su estado de conexión. Opera de forma silenciosa e informativa.
+2.  **Persistencia de Estado Local (Exámenes de 100q):** Los simuladores médicos ahora guardan cada respuesta en `localStorage` al instante. El sistema es inmune a recargas (F5), cierres de pestaña o cortes de luz; al volver a entrar, el progreso se restaura íntegramente.
+3.  **Utilidad safeFetch (Exponential Backoff):** Reemplazo de peticiones estándar por un motor de reintentos inteligente. Si una petición falla por fallo de red, el sistema reintenta automáticamente a los 1s, 2s y 4s, sincronizando los datos en cuanto la red es estable.
+4.  **Sync Queue (Modo Offline en Flashcards):** El módulo de repaso permite calificar tarjetas sin internet. Las decisiones de estudio se encolan y se suben al servidor asincrónicamente mediante `safeFetch`.
+5.  **Manejo Resiliente en Backend:** Softening de logs para errores de DNS/Pooler (`ENOTFOUND`), transformando logs ruidosos en advertencias útiles para evitar clutter en la terminal de producción.
+6.  **Estabilidad UX (Pulse & Sync):** Se corrigió el estado de 'falso negativo' del monitor de conexión mediante la sincronización del constructor de `UIManager` con `navigator.onLine`. Se resolvieron interferencias visuales aplicando `components.css` y se eliminó la necesidad de doble clic en flashcards mediante un bloqueo semafórico de interactividad durante la sincronización.
+
+---
+
 ---
 
 ## 10. 👤 Ciclo de Vida del Usuario y Suscripciones

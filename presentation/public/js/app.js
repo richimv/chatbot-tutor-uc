@@ -24,6 +24,9 @@ function initTrafficTracking() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     const sendPulse = async () => {
+        // ✅ MEJORA: No intentar si estamos offline
+        if (!navigator.onLine) return;
+
         try {
             await fetch(`${window.API_URL}/api/analytics/pulse`, {
                 method: 'POST',
