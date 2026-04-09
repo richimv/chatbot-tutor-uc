@@ -264,7 +264,7 @@ class UIManager {
      * @param {boolean} isPremium - Si es premium
      */
     async unlockAndNavigate(id, type = 'book', isPremium = false) {
-        let baseUrl = type === 'course' ? '/course' : '/resource.html';
+        let baseUrl = type === 'course' ? '/course' : '/resource';
         let targetUrl = `${baseUrl}?id=${id}`;
 
         if (!isPremium) {
