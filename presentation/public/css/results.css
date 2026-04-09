@@ -9,10 +9,8 @@
 /* Header de resultados */
 /* Header de resultados */
 .results-header-container {
-    margin-bottom: var(--spacing-md);
-    /* Reducido de xl */
-    padding-bottom: var(--spacing-sm);
-    /* Reducido de md */
+    margin-bottom: 0.5rem; /* Reducido drásticamente para compactar */
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
 }
 
@@ -36,12 +34,11 @@
 }
 
 .results-main-title {
-    font-size: 1.4rem;
-    /* Reducido de 1.8rem */
+    font-size: 1.35rem;
     color: var(--text-main);
-    margin-bottom: 0.25rem;
-    /* Reducido de spacing-sm */
+    margin-bottom: 0;
     font-weight: 700;
+    line-height: 1.2;
 }
 
 .results-tags {

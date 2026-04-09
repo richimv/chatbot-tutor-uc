@@ -5,14 +5,25 @@
     position: relative;
     width: 100%;
     margin-bottom: 1.5rem;
-    /* ✅ Reduced from 3rem */
     transition: all 0.5s ease;
+}
+
+/* ✅ GLOBAL COMPACT: Remove hero gap when searching (Hero is hidden) */
+body.hero-hidden .hero-wrapper {
+    margin-bottom: 0 !important;
+}
+
+/* ✅ GLOBAL COMPACT: Main container padding reduction in search view */
+.main-container:has(.search-results-view),
+.main-container:has(.search-loading-container) {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
 }
 
 @media (max-width: 768px) {
     .hero-wrapper {
         margin-bottom: 2.5rem;
-        /* ✅ RELAXED: 30px (Hang) + 10px (Gap) = 40px */
+        /* RELAXED: 30px (Hang) + 10px (Gap) = 40px */
     }
 
     body.hero-hidden .hero-wrapper {
@@ -22,7 +33,7 @@
 
     /* Mobile constraints handled by base.css var(--page-padding-x) responsive rules now */
 
-    /* ✅ ALIGN: Search matches Mobile Header (42px) */
+    /* ALIGN: Search matches Mobile Header (42px) */
     body.hero-hidden .search-section {
         top: calc(42px + var(--trial-bar-height));
     }
@@ -30,7 +41,7 @@
 
 .hero {
     height: 360px;
-    /* ✅ Mobile First: Background Image Only */
+    /* Mobile First: Background Image Only */
     background: linear-gradient(90deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.7) 45%, rgba(15, 23, 42, 0.1) 100%), url('../assets/portada.png');
     background-size: cover;
     background-position: center;
@@ -45,7 +56,7 @@
     overflow: hidden;
 }
 
-/* ✅ Hero Video (Hidden on Mobile) */
+/* Hero Video (Hidden on Mobile) */
 .hero-video {
     display: none;
 }
@@ -135,14 +146,14 @@
 /* Responsive adjustments */
 .hero-features {
     justify-content: flex-start;
-    /* ✅ FIX: Alinear con el texto a la izquierda */
+    /* FIX: Alinear con el texto a la izquierda */
     flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
     .hero {
         height: auto;
-        /* ✅ FIX: Altura automática para evitar cortes */
+        /* FIX: Altura automática para evitar cortes */
         min-height: 480px;
         /* Altura mínima para asegurar espacio */
         padding-top: 5rem;
@@ -392,17 +403,80 @@ body.hero-hidden .search-subtitle {
         padding-bottom: 0.25rem;
     }
 
-    .main-container {
-        padding: 0.5rem !important;
-        padding-top: 0.5rem !important;
-        /* Pull content up towards search bar */
-    }
-
-    /* ✅ ALIGN: Search matches Mobile Header (42px) */
+    /* ALIGN: Search matches Mobile Header (42px) */
     body.hero-hidden .search-section {
         top: calc(42px + var(--trial-bar-height));
     }
 }
+
+/* =========================================
+   COMPACT SEARCH RESULTS
+   ========================================= */
+
+.search-results-view {
+    padding-top: 0;
+}
+
+.search-result-group {
+    margin-top: 1rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.search-result-group.first-group {
+    margin-top: 0.5rem;
+    /* Ajustado para estar cerca de la cuenta de resultados */
+}
+
+.search-section-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+}
+
+.search-section-header .browse-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scroll-sentinel {
+    height: 1px;
+    /* Minimal height */
+    width: 100%;
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Hide sentinel completely if it doesn't contain a spinner */
+.scroll-sentinel.hidden {
+    display: none !important;
+}
+
+/* Reducir espacio interno de las grillas en búsqueda */
+.search-results-view .books-grid,
+.search-results-view .video-grid {
+    padding-bottom: 0.25rem !important;
+    gap: 1rem !important;
+}
+
+@media (max-width: 768px) {
+
+    .search-results-view .books-grid,
+    .search-results-view .video-grid {
+        gap: 0.5rem !important;
+    }
+}
+
+.search-result-group .video-grid {
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
 
 /* =========================================
    RECOMMENDATION CARDS (Updated for Search UI)
@@ -653,5 +727,15 @@ body.hero-hidden .search-subtitle {
 @media (max-width: 768px) {
     body.hero-hidden .search-section {
         top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
+    }
+
+    /* Reducir aún más el espacio del header de resultados en móvil */
+    .search-results-view .results-header-container {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .search-results-view .results-main-title {
+        font-size: 1.25rem;
     }
 }

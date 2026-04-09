@@ -18,19 +18,19 @@ class SearchComponent {
 
         // Almacenes de datos
         this.allData = { careers: [], courses: [], topics: [] };
-        // ✅ DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
+        // DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
         this.featuredCourses = [];
 
         this.viewStack = []; // Pila para gestionar el historial de navegación
         this.currentView = { name: 'home', args: [] }; // Vista actual
 
-        // ✅ MANTA TABS STATE (Phase 30)
+        // MANTA TABS STATE (Phase 30)
         this.activeTab = 'biblioteca'; // 'biblioteca' | 'cursos'
         this.activeFilter = 'Libros y Manuales'; // Default param for first tab
 
         this.init();
 
-        // ✅ NUEVO: Escuchar cambios en la sesión para actualizar la UI (ej. quitar candados)
+        // NUEVO: Escuchar cambios en la sesión para actualizar la UI (ej. quitar candados)
         if (window.sessionManager) {
             window.sessionManager.onStateChange(() => {
                 console.log('🔄 Sesión actualizada. Re-renderizando vista actual:', this.currentView.name);
@@ -87,7 +87,7 @@ class SearchComponent {
     }
 
     async loadFeaturedContent() {
-        // ✅ FALLBACK ROBUSTO: Definir servicio local si falta el global
+        // FALLBACK ROBUSTO: Definir servicio local si falta el global
         let serviceToUse = window.SearchService;
 
         if (!serviceToUse) {
@@ -152,12 +152,12 @@ class SearchComponent {
         });
 
 
-        // ✅ CORRECCIÓN DEFINITIVA: Delegación de eventos en el `body`.
+        // CORRECCIÓN DEFINITIVA: Delegación de eventos en el `body`.
         // Esto asegura que los clics se capturen tanto en la vista de exploración (`#browse-container`)
         // como en la de resultados (`#results-container`), solucionando el problema de los stickers no clickables.
         document.body.addEventListener('click', this.handleContentClick.bind(this));
 
-        // ✅ CORRECCIÓN: Listener global para el botón de inicio en el header.
+        // CORRECCIÓN: Listener global para el botón de inicio en el header.
         const homeBtn = document.querySelector('.nav-home-button');
         if (homeBtn) {
             homeBtn.addEventListener('click', (e) => {
@@ -168,7 +168,7 @@ class SearchComponent {
             });
         }
 
-        // ✅ NUEVO: Listener para el botón VOLVER GLOBAL del header
+        // NUEVO: Listener para el botón VOLVER GLOBAL del header
         const headerBackBtn = document.getElementById('header-back-btn');
         if (headerBackBtn) {
             headerBackBtn.addEventListener('click', (e) => {
@@ -177,12 +177,12 @@ class SearchComponent {
             });
         }
 
-        // ✅ NUEVO: Listener para la barra de búsqueda sticky
+        // NUEVO: Listener para la barra de búsqueda sticky
         // CORRECCIÓN BUG: Usamos un 'placeholder' para evitar el salto de contenido
         const searchSection = document.querySelector('.search-section');
         const heroWrapper = document.querySelector('.hero-wrapper');
 
-        // ✅ REFACTOR: La barra de búsqueda ahora es estática o sticky por CSS.
+        // REFACTOR: La barra de búsqueda ahora es estática o sticky por CSS.
         // Se elimina la lógica JS que causaba el "rebote".
         // El CSS se encargará de posicionarla correctamente.
     }
@@ -215,7 +215,7 @@ class SearchComponent {
     }
 
     navigateBack() {
-        // ✅ SOLUCIÓN: Usar la funcionalidad nativa del navegador.
+        // SOLUCIÓN: Usar la funcionalidad nativa del navegador.
         // Esto disparará el evento 'popstate' que manejamos en handlePopState.
         history.back();
     }
@@ -226,7 +226,7 @@ class SearchComponent {
     handlePopState(event) {
         const state = event.state;
 
-        // ✅ CORRECCIÓN BUG 303: Ignorar estados empujados por uiManager (Modales)
+        // CORRECCIÓN BUG 303: Ignorar estados empujados por uiManager (Modales)
         if (state && state.modalOpen) {
             return;
         }
@@ -244,19 +244,19 @@ class SearchComponent {
      * Dispatcher centralizado para renderizar vistas.
      */
     renderView(viewName, ...args) {
-        // ✅ Mantener registro de la vista actual para re-renderizado por cambios de sesión
+        // Mantener registro de la vista actual para re-renderizado por cambios de sesión
         this.currentView = { name: viewName, args: args };
 
-        // ✅ LÓGICA DE VISIBILIDAD DEL HERO Y BOTÓN VOLVER GLOBAL
+        // LÓGICA DE VISIBILIDAD DEL HERO Y BOTÓN VOLVER GLOBAL
         const headerBackBtn = document.getElementById('header-back-btn');
         const searchSection = document.querySelector('.search-section');
-        const heroSlider = document.getElementById('hero-slider'); // ✅ NUEVO: Referencia directa al slider
-        const trainingModules = document.getElementById('training-modules'); // ✅ NUEVO: Controle Módulos
+        const heroSlider = document.getElementById('hero-slider'); // NUEVO: Referencia directa al slider
+        const trainingModules = document.getElementById('training-modules'); // NUEVO: Controle Módulos
 
         if (viewName === 'home') {
             document.body.classList.remove('hero-hidden');
             if (searchSection) searchSection.classList.remove('sticky');
-            if (heroSlider) heroSlider.style.display = 'block'; // ✅ Mostrar slider en Home
+            if (heroSlider) heroSlider.style.display = 'block'; // Mostrar slider en Home
             if (trainingModules) trainingModules.style.display = 'block';
 
             if (headerBackBtn) {
@@ -265,7 +265,7 @@ class SearchComponent {
             }
         } else {
             document.body.classList.add('hero-hidden');
-            if (heroSlider) heroSlider.style.display = 'none'; // ✅ Ocultar slider en otras vistas (Resultados, Cursos, etc.)
+            if (heroSlider) heroSlider.style.display = 'none'; // Ocultar slider en otras vistas (Resultados, Cursos, etc.)
             if (trainingModules) trainingModules.style.display = 'none';
 
             if (headerBackBtn) {
@@ -303,7 +303,7 @@ class SearchComponent {
             this.renderAllBooks();
         } else if (viewName === 'all-courses') {
             this.renderAllCourses();
-        } else if (viewName === 'medical-books') { // ✅ NUEVO: Soporte para vista de medicina
+        } else if (viewName === 'medical-books') { // NUEVO: Soporte para vista de medicina
             this.renderMedicalBooksView();
         } else {
             console.warn('Vista desconocida:', viewName);
@@ -314,16 +314,16 @@ class SearchComponent {
     }
 
     handleContentClick(e) {
-        // ✅ CORRECCIÓN CRÍTICA: Unificar el manejo del botón "Volver" aquí.
+        // CORRECCIÓN CRÍTICA: Unificar el manejo del botón "Volver" aquí.
         // Este listener en `contentContainer` ahora captura todos los clics de "Volver".
-        const backButton = e.target.closest('.back-button'); // ✅ CORRECCIÓN: Definir la variable backButton.
+        const backButton = e.target.closest('.back-button'); // CORRECCIÓN: Definir la variable backButton.
         if (backButton) {
             e.preventDefault();
             this.navigateBack();
             return;
         }
 
-        // ✅ NUEVO: Manejar el botón de cerrar tag en resultados
+        // NUEVO: Manejar el botón de cerrar tag en resultados
         const closeTagBtn = e.target.closest('.search-tag-close');
         if (closeTagBtn) {
             e.preventDefault();
@@ -331,11 +331,11 @@ class SearchComponent {
             return;
         }
 
-        // ✅ LÓGICA DE NAVEGACIÓN PROGRESIVA:
+        // LÓGICA DE NAVEGACIÓN PROGRESIVA:
         // - Topics: Navegación SPA interna (navigateTo).
         // - Carreras/Cursos: Navegación estándar MPA (window.location).
 
-        // ✅ NUEVO: Manejar clics en los stickers de carrera.
+        // NUEVO: Manejar clics en los stickers de carrera.
         const careerBadge = e.target.closest('.course-badge[data-career-id]');
         if (careerBadge) {
             e.stopPropagation();
@@ -349,12 +349,12 @@ class SearchComponent {
         }
 
 
-        // ✅ NUEVO: Evitar conflictos con botones de librería (LibraryUI)
+        // NUEVO: Evitar conflictos con botones de librería (LibraryUI)
         if (e.target.closest('.js-library-btn')) {
             return; // Dejar que libraryUI.js maneje esto
         }
 
-        // ✅ LÓGICA DE NAVEGACIÓN CENTRALIZADA (Reemplaza onclicks inline eliminados)
+        // LÓGICA DE NAVEGACIÓN CENTRALIZADA (Reemplaza onclicks inline eliminados)
         const browseCard = e.target.closest('[data-type]');
         if (browseCard) {
             const type = browseCard.dataset.type;
@@ -362,7 +362,7 @@ class SearchComponent {
 
             if (type === 'topic') {
                 e.preventDefault();
-                // ✅ UPDATE: Topic clicks now trigger a search instead of opening a page.
+                // UPDATE: Topic clicks now trigger a search instead of opening a page.
                 const topic = this.allData.topics.find(t => t.id == id);
                 if (topic) {
                     this.searchInput.value = topic.name;
@@ -381,7 +381,7 @@ class SearchComponent {
             }
         }
 
-        // ✅ SOLUCIÓN: Manejar clics en las tarjetas de recomendación.
+        // SOLUCIÓN: Manejar clics en las tarjetas de recomendación.
         const recommendationCard = e.target.closest('.recommendation-card[data-rec-id]');
         if (recommendationCard) {
             e.preventDefault();
@@ -403,14 +403,14 @@ class SearchComponent {
             return;
         }
 
-        // ✅ NUEVO: Manejar clics en los enlaces de materiales (libros)
-        // ✅ SOLUCIÓN: El selector correcto para las tarjetas de libro es '.material-card'.
+        // NUEVO: Manejar clics en los enlaces de materiales (libros)
+        // SOLUCIÓN: El selector correcto para las tarjetas de libro es '.material-card'.
         // El selector anterior '.material-item' era de un diseño antiguo.
         const materialLink = e.target.closest('.material-card');
         if (materialLink) {
             e.preventDefault();
 
-            // ✅ MEJORA: Verificar si el usuario ha iniciado sesión.
+            // MEJORA: Verificar si el usuario ha iniciado sesión.
             if (!window.sessionManager.isLoggedIn()) {
                 // Si no ha iniciado sesión, mostrar el modal de invitación.
                 document.getElementById('login-prompt-modal').style.display = 'flex';
@@ -420,7 +420,7 @@ class SearchComponent {
             const url = materialLink.href;
             const title = materialLink.textContent.trim();
 
-            // --- ✅ SOLUCIÓN DEFINITIVA: Lógica de manejo de enlaces ---
+            // --- SOLUCIÓN DEFINITIVA: Lógica de manejo de enlaces ---
 
             // SIEMPRE abrir en una nueva pestaña, sin importar si es PDF o Drive.
             // Esto elimina la necesidad del visor PDF heredado.
@@ -428,7 +428,7 @@ class SearchComponent {
             return;
         }
 
-        // ✅ NUEVO: Manejo de botones "Ver Todos"
+        // NUEVO: Manejo de botones "Ver Todos"
         const viewAllBtn = e.target.closest('.view-all-btn');
         if (viewAllBtn) {
             e.preventDefault();
@@ -440,7 +440,7 @@ class SearchComponent {
     }
 
     // =================================================================
-    // ✅ INICIO: SECCIÓN AÑADIDA - LÓGICA DE BÚSQUEDA
+    // INICIO: SECCIÓN AÑADIDA - LÓGICA DE BÚSQUEDA
     // =================================================================
 
     async performSearch() {
@@ -456,14 +456,16 @@ class SearchComponent {
 
         const skeletonCards = Array(3).fill(createSkeletonCardHTML('Premium')).join('');
         this.resultsContainer.innerHTML = `
-            <div class="detail-view-container">
-                <div class="section-header" style="margin-top: 1.5rem; border-bottom: none; opacity: 0.7;">
-                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">
-                        <i class="fas fa-search" style="color:var(--accent)"></i> Buscando inteligentemente...
-                    </h3>
-                </div>
-                <div class="documents-grid-premium" style="margin-top: 1rem;">
-                    ${skeletonCards}
+            <div class="detail-view-container search-results-view">
+                <div class="search-result-group first-group">
+                    <div class="search-section-header">
+                        <h3 class="browse-title">
+                            <i class="fas fa-search" style="color:var(--accent)"></i> Buscando inteligentemente...
+                        </h3>
+                    </div>
+                    <div class="documents-grid-premium">
+                        ${skeletonCards}
+                    </div>
                 </div>
             </div>
         `;
@@ -508,7 +510,7 @@ class SearchComponent {
         const foundBooks = data.results.filter(item => item.type === 'book' || item.resource_type === 'book');
         const foundVideos = data.results.filter(item => item.type === 'video' || item.resource_type === 'video');
 
-        // ✅ NUEVO: Documentos formales
+        // NUEVO: Documentos formales
         const formalTypes = ['norma', 'guia', 'paper'];
         const foundDocs = data.results.filter(item => formalTypes.includes(item.type) || formalTypes.includes(item.resource_type));
 
@@ -527,19 +529,23 @@ class SearchComponent {
 
         // 0. SECCIÓN: DOCUMENTOS FORMALES (Normas, Guías, Papers)
         if (foundDocs.length > 0) {
+            const isFirst = contentHTML === '';
             const docsHTML = foundDocs.map(doc => createUnifiedResourceCardHTML(doc)).join('');
             contentHTML += `
-                <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
-                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Documentos Encontrados (${foundDocs.length})</h3>
-                </div>
-                <div class="books-grid"> 
-                    ${docsHTML}
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                        <h3 class="browse-title"><i class="fas fa-file-medical" style="color:var(--accent)"></i> Normas y Guías Técnicas (${foundDocs.length})</h3>
+                    </div>
+                    <div class="books-grid"> 
+                        ${docsHTML}
+                    </div>
                 </div>
             `;
         }
 
         // 1. SECCIÓN: LIBROS CON INFINITE SCROLL
         if (foundBooks.length > 0) {
+            const isFirst = contentHTML === '';
             // Configuración del Infinite Scroll
             const ITEMS_PER_PAGE = 12;
             this.currentBookList = foundBooks; // Guardamos ref para lazy loading
@@ -551,55 +557,65 @@ class SearchComponent {
             const booksHTML = initialBatch.map(book => createUnifiedResourceCardHTML(book)).join('');
 
             contentHTML += `
-                <div class="section-header" style="margin-top: 1.5rem; border-bottom: none;">
-                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Libros Encontrados (${foundBooks.length})</h3>
-                </div>
-                <div id="books-grid-container" class="books-grid"> 
-                    ${booksHTML}
-                </div>
-                <!-- Sentinel for Infinite Scroll -->
-                <div id="books-sentinel" style="height: 20px; width: 100%; margin-top: 20px; display: flex; justify-content: center;">
-                    ${foundBooks.length > ITEMS_PER_PAGE ? '<i class="fas fa-circle-notch fa-spin" style="color: var(--accent); opacity: 0;"></i>' : ''}
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                        <h3 class="browse-title"><i class="fas fa-book-medical" style="color:var(--accent)"></i> Biblioteca Académica (${foundBooks.length})</h3>
+                    </div>
+                    <div id="books-grid-container" class="books-grid"> 
+                        ${booksHTML}
+                    </div>
+                    <!-- Sentinel for Infinite Scroll (Only shown if extra items exist) -->
+                    <div id="books-sentinel" class="scroll-sentinel ${foundBooks.length <= ITEMS_PER_PAGE ? 'hidden' : ''}">
+                        <i class="fas fa-circle-notch fa-spin" style="color: var(--accent); opacity: 0;"></i>
+                    </div>
                 </div>
             `;
         }
 
         // 2. SECCIÓN: VIDEOS
         if (foundVideos.length > 0) {
+            const isFirst = contentHTML === '';
             const videosHTML = foundVideos.map(video => createVideoCardHTML(video)).join('');
             contentHTML += `
-                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
-                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Videos Relacionados (${foundVideos.length})</h3>
-                </div>
-                <!-- Usamos 'video-grid' definido en course.css -->
-                <div class="video-grid" style="margin-top: 0.5rem;"> 
-                    ${videosHTML}
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                        <h3 class="browse-title"><i class="fas fa-play-circle" style="color:var(--accent)"></i> Clases y Videoteca (${foundVideos.length})</h3>
+                    </div>
+                    <div class="video-grid"> 
+                        ${videosHTML}
+                    </div>
                 </div>
             `;
         }
 
         // 3. SECCIÓN: ARTÍCULOS Y RECURSOS
         if (foundArticles.length > 0) {
+            const isFirst = contentHTML === '';
             const articlesHTML = foundArticles.map(resource => createUnifiedResourceCardHTML(resource)).join('');
             contentHTML += `
-                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
-                    <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Materiales y Lecturas (${foundArticles.length})</h3>
-                </div>
-                <div class="books-grid" style="margin-top: 0.5rem;"> 
-                    ${articlesHTML}
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                        <h3 class="browse-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Resúmenes y Apuntes (${foundArticles.length})</h3>
+                    </div>
+                    <div class="books-grid"> 
+                        ${articlesHTML}
+                    </div>
                 </div>
             `;
         }
 
         // 4. SECCIÓN: CURSOS (Ahora al final)
         if (foundCourses.length > 0) {
+            const isFirst = contentHTML === '';
             const coursesHTML = foundCourses.map(course => createUnifiedResourceCardHTML({ ...course, type: 'course' })).join('');
             contentHTML += `
-                <div class="section-header" style="margin-top: 2rem; border-bottom: none;">
-                     <h3 class="browse-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Cursos Encontrados (${foundCourses.length})</h3>
-                </div>
-                <div class="browse-grid" style="margin-top: 0.5rem;"> 
-                     ${coursesHTML}
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                         <h3 class="browse-title"><i class="fas fa-chalkboard-teacher" style="color:var(--accent)"></i> Programas de Especialización (${foundCourses.length})</h3>
+                    </div>
+                    <div class="books-grid"> 
+                        ${coursesHTML}
+                    </div>
                 </div>
             `;
         }
@@ -611,7 +627,7 @@ class SearchComponent {
         // 5. Secciones inferiores (Recomendaciones + Chat)
         let bottomSectionsHTML = '';
 
-        // ✅ NUEVO: Tarjeta de IA educativa si se detecta intención de pregunta
+        // NUEVO: Tarjeta de IA educativa si se detecta intención de pregunta
         let educationalCardHTML = '';
         if (data.isEducationalQuery) {
             educationalCardHTML = createEducationalIntentCardHTML(data.searchQuery);
@@ -623,37 +639,37 @@ class SearchComponent {
         `;
 
         // 6. Renderizar Vista "Biblioteca Digital"
-        // ✅ CORRECCIÓN DE DISEÑO: Alineación y Botón Volver consistente
+        // CORRECCIÓN FINAL: Clase 'search-results-view' añadida para activar el modo compacto en CSS.
         this.resultsContainer.innerHTML = /*html*/`
-            <div class="detail-view-container"> 
+            <div class="detail-view-container search-results-view"> 
                 
-                <!-- Cabecera de Resultados (Botón volver ahora está en el Header Global) -->
-                <div class="results-header-container" style="padding-top: 0.5rem;">
-                     <h2 class="results-main-title" style="margin-bottom: 0.25rem;">Resultados para "${data.searchQuery}"</h2>
-                     <p class="results-count" style="color: var(--text-muted);">
+                <!-- Cabecera de Resultados (Compacta) -->
+                <div class="results-header-container">
+                     <h2 class="results-main-title">Resultados para "${data.searchQuery}"</h2>
+                     <p class="results-count">
                         ${data.results ? data.results.length : 0} recursos encontrados
                      </p>
                 </div>
 
-                <!-- CONTENIDO PRINCIPAL (Separado) -->
-                <div style="min-height: 40vh;">
+                <!-- CONTENIDO PRINCIPAL -->
+                <div class="search-results-body">
                      ${contentHTML}
-                     ${educationalCardHTML} <!-- ✅ MOVIDO: Mostrar tarjeta educativa al final -->
+                     ${educationalCardHTML}
                 </div>
 
-                <!-- SECCIONES INFERIORES -->
-                <div style="margin-top: 3rem;">
+                <!-- SECCIONES INFERIORES (Solo si hay contenido o IA) -->
+                <div class="search-bottom-sections">
                     ${bottomSectionsHTML}
                 </div>
             </div>
         `;
 
-        // ✅ SYNC: Actualizar estado visual de botones (Guardado/Favorito)
+        // SYNC: Actualizar estado visual de botones (Guardado/Favorito)
         if (window.libraryManager) {
             setTimeout(() => window.libraryManager.updateButtons(), 100);
         }
 
-        // ✅ INICIAR INFINITE SCROLL SI ES NECESARIO
+        // INICIAR INFINITE SCROLL SI ES NECESARIO
         if (foundBooks.length > 0 && this.currentBookList.length > this.loadedBooksCount) {
             this.setupInfiniteScroll();
         }
@@ -736,10 +752,10 @@ class SearchComponent {
     // setupFilterListeners() ELIMINADO: Ya no hay sidebar de filtros.
 
     // =================================================================
-    // ✅ FIN: SECCIÓN AÑADIDA
+    // FIN: SECCIÓN AÑADIDA
     // =================================================================
 
-    // ✅ NUEVO: Renderizar Catálogo de Libros POR ÁREAS (Lazy Loaded)
+    // NUEVO: Renderizar Catálogo de Libros POR ÁREAS (Lazy Loaded)
     renderAllBooks() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -806,7 +822,7 @@ class SearchComponent {
             if (s) s.style.display = 'none';
         }
 
-        // ✅ SYNC
+        // SYNC
         if (window.libraryManager) setTimeout(() => window.libraryManager.updateButtons(), 100);
 
         // Scroll top via Helper
@@ -864,7 +880,7 @@ class SearchComponent {
         }
     }
 
-    // ✅ NUEVO: Renderizar Catálogo de Cursos POR ÁREAS (Lazy Loaded)
+    // NUEVO: Renderizar Catálogo de Cursos POR ÁREAS (Lazy Loaded)
     renderAllCourses() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -1008,7 +1024,7 @@ class SearchComponent {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
 
-        // ✅ MANTA REDESIGN (PHASE 30) - TABS SKELETON
+        // MANTA REDESIGN (PHASE 30) - TABS SKELETON
         // 1. DIBUJAR LAS PESTAÑAS Y EL CONTENEDOR DE FILTROS A NIVEL ESTRUCTURAL
 
         const tabsHTML = `
@@ -1056,7 +1072,7 @@ class SearchComponent {
         this.renderTabContent();
     }
 
-    // ✅ NUEVO: Lógica dinámica de renderizado de contenido según Tab y Filtro
+    // NUEVO: Lógica dinámica de renderizado de contenido según Tab y Filtro
     async renderTabContent() {
         const filtersContainer = this.browseContainer.querySelector('#manta-filters');
         const gridContainer = this.browseContainer.querySelector('#manta-grid-container');
@@ -1122,7 +1138,7 @@ class SearchComponent {
                         });
                     }
 
-                    // ✅ PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
+                    // PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
                     gridContainer.innerHTML = '';
                     let currentIndex = 0;
                     const itemsPerPage = 20;
@@ -1202,7 +1218,7 @@ class SearchComponent {
                         });
                     }
 
-                    // ✅ PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
+                    // PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
                     gridContainer.innerHTML = '';
                     let currentIndex = 0;
                     const itemsPerPage = 20;
@@ -1386,7 +1402,7 @@ class SearchComponent {
         });
     }
 
-    // ✅ NUEVA VISTA: TODOS LOS LIBROS DE MEDICINA
+    // NUEVA VISTA: TODOS LOS LIBROS DE MEDICINA
     renderMedicalBooksView() {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
@@ -1415,7 +1431,7 @@ class SearchComponent {
     }
 
     /**
-     * ✅ HELPER: Scroll to Top Robusto
+     * HELPER: Scroll to Top Robusto
      * Fuerza el scroll al inicio en todos los contenedores posibles
      * para asegurar compatibilidad Desktop/Mobile.
      */

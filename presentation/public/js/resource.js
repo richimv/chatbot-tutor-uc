@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch(`${window.AppConfig.API_URL}/api/resources/${resourceId}`);
         if (!response.ok) throw new Error('Recurso no encontrado');
-        
+
         const resource = await response.json();
         renderResource(resource);
     } catch (error) {
@@ -21,24 +21,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderResource(resource) {
         document.title = `${resource.title} - Hub Academia`;
-        
+
         // Determine cover logic
         const rawImage = resource.image_url;
         let coverImage = null;
 
         if (rawImage && rawImage.trim() !== '') {
-             coverImage = window.resolveImageUrl ? window.resolveImageUrl(rawImage) : rawImage;
+            coverImage = window.resolveImageUrl ? window.resolveImageUrl(rawImage) : rawImage;
         } else if (resource.url && window.uiManager && window.uiManager.isDriveLink(resource.url)) {
-             coverImage = window.resolveImageUrl ? window.resolveImageUrl(resource.url) : null;
+            coverImage = window.resolveImageUrl ? window.resolveImageUrl(resource.url) : null;
         }
-        
+
         const isVideo = resource.resource_type === 'video' || (window.uiManager && window.uiManager.isVideo(resource.url));
         if (isVideo && resource.url && resource.url.includes('youtu') && (!rawImage || rawImage.includes('unsplash'))) {
-             const match = resource.url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
-             const videoId = (match && match[2].length === 11) ? match[2] : null;
-             if (videoId) {
-                 coverImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-             }
+            const match = resource.url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+            const videoId = (match && match[2].length === 11) ? match[2] : null;
+            if (videoId) {
+                coverImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            }
         }
 
         // Definir clases e iconos basados en el tipo de recurso (igual que components.js)
@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
             `;
-        } 
-        
+        }
+
         let viewTarget = `href="#"`;
         let viewOnClick = `onclick="event.preventDefault(); alert('Enlace no disponible');"`;
         let viewClass = 'btn-view';
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
 
-        // ✅ MEJORA PROFESIONAL: Envolver todas las tablas en un contenedor responsivo dinámicamente
+        // MEJORA PROFESIONAL: Envolver todas las tablas en un contenedor responsivo dinámicamente
         // Esto evita que las tablas de 10+ columnas rompan el layout sin usar el hack de 'display: block' en la tabla.
         setTimeout(() => {
             const contentBody = document.getElementById('resource-content-body');
@@ -157,13 +157,13 @@ function openResourceLink(id, url, isPremium) {
 
 // Mock function for saving resources (Library integration)
 async function saveResource(id, btn) {
-    if(!window.LibraryService) {
+    if (!window.LibraryService) {
         alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
         return;
     }
     const isSaved = btn.classList.contains('saved');
     try {
-        if(isSaved) {
+        if (isSaved) {
             await window.LibraryService.removeResource(id);
             btn.classList.remove('saved');
             btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
@@ -172,7 +172,7 @@ async function saveResource(id, btn) {
             btn.classList.add('saved');
             btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
         }
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Error al guardar en la biblioteca.");
     }
