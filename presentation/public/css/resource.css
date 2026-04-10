@@ -17,6 +17,12 @@
     gap: 20px;
 }
 
+/* Wrapper que contiene la portada + botón overlay */
+.resource-cover-wrapper {
+    position: relative;
+    width: 100%;
+}
+
 .resource-cover {
     width: 100%;
     height: auto;
@@ -34,8 +40,18 @@
 }
 
 .resource-cover-fallback i {
-    font-size: 8rem;
-    opacity: 0.8;
+    font-size: 5rem;
+    opacity: 0.6;
+}
+
+/* Botón "Ver Recurso" superpuesto sobre la portada */
+.resource-cover-overlay-btn {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    z-index: 10;
 }
 
 .resource-info h1 {
@@ -177,8 +193,14 @@
         align-items: center;
         text-align: center;
     }
-    .resource-cover {
+    /* Limitar ancho de la portada Y su wrapper para que el botón overlay
+       no se desborde visualmente más allá del bloque de color */
+    .resource-cover-wrapper {
         max-width: 250px;
+        margin: 0 auto; /* Centrar el bloque completo */
+    }
+    .resource-cover {
+        max-width: 100%; /* Hereda el constraint del wrapper */
     }
     .resource-info h1 {
         font-size: 1.25rem; /* Título más pequeño en móvil */
@@ -196,5 +218,9 @@
         padding: 10px 14px;
         font-size: 0.85rem;
         max-width: none; /* En móvil que ocupen el ancho disponible del contenedor */
+    }
+
+    .resource-cover-fallback i {
+        font-size: 3.5rem;
     }
 }

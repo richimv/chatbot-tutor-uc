@@ -17,6 +17,9 @@ const state = {
     quizId: null // ✅ NUEVO: ID único de sesión para evitar colisiones en localStorage
 };
 
+// Exponer estado para diagnóstico
+window.__quizState = state;
+
 const STORAGE_KEY = 'simulator_active_session';
 
 // Elementos DOM
@@ -40,6 +43,125 @@ const elements = {
     finalScore: document.getElementById('finalScore'),
     explanationImageContainer: document.getElementById('explanationImageContainer'),
     explanationImage: document.getElementById('explanationImage')
+};
+
+// ==========================================
+// 🚀 ASIGNACIÓN TEMPRANA (Para evitar Race Conditions)
+// ==========================================
+window.showExamReview = async function () {
+    console.log("🚀 Iniciando renderizado de revisión...");
+    try {
+        const resOverlay = document.getElementById('resultsOverlay');
+        if (resOverlay) resOverlay.classList.remove('active');
+        
+        const qHeader = document.querySelector('.question-header');
+        if (qHeader) qHeader.style.display = 'none';
+
+        const qText = document.getElementById('questionText');
+        if (qText) qText.style.display = 'none';
+
+        const oGrid = document.getElementById('optionsGrid');
+        if (oGrid) oGrid.style.display = 'none';
+
+        const fBox = document.getElementById('feedbackBox');
+        if (fBox) fBox.style.display = 'none';
+
+        const reviewContainer = document.getElementById('reviewContainer');
+        if (reviewContainer) reviewContainer.classList.remove('hidden');
+
+        const feed = document.getElementById('reviewFeed');
+        if (!feed) {
+            console.error("❌ Error: Elemento reviewFeed no encontrado.");
+            return;
+        }
+        
+        feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
+
+        const totalProcessed = Math.min(state.currentQuestionIndex, state.questions.length);
+        const answeredQuestions = state.questions.slice(0, totalProcessed);
+
+        feed.innerHTML = ''; 
+
+        if (totalProcessed === 0) {
+            feed.innerHTML = '<div style="text-align:center; padding: 2rem; color: var(--text-muted);">No hay preguntas respondidas.</div>';
+        }
+
+        const saveButtonsMap = new Map();
+
+        for (let i = 0; i < totalProcessed; i++) {
+            try {
+                const q = state.questions[i];
+                if (!q) continue; 
+                const ans = state.answers[i];
+                const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
+                const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: false };
+                const cardHTML = window.UIComponents.createReviewCardHTML(config);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = cardHTML.trim();
+                const card = tempDiv.firstElementChild;
+
+                if (!card) continue;
+
+                if (!isDemo) {
+                    const saveBtn = card.querySelector('.save-flashcard-btn');
+                    if (saveBtn) {
+                        const qTextRaw = (q.question_text || "").trim();
+                        if (qTextRaw) saveButtonsMap.set(qTextRaw, saveBtn);
+                        saveBtn.onclick = async () => {
+                            const originalText = saveBtn.innerHTML;
+                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            saveBtn.disabled = true;
+                            try {
+                                const token = await getValidToken();
+                                const res = await fetch(`${API_URL}/../training/flashcards/save-from-question`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                    body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA' })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    updateToSaved(saveBtn);
+                                } else {
+                                    saveBtn.innerHTML = originalText;
+                                    saveBtn.disabled = false;
+                                    alert('Error: ' + data.error);
+                                }
+                            } catch (e) { console.error(e); saveBtn.disabled = false; }
+                        };
+                    }
+                }
+                feed.appendChild(card);
+            } catch (e) { console.error(e); }
+        }
+
+        const isDemoStatus = new URLSearchParams(window.location.search).get('demo') === 'true';
+        if (!isDemoStatus && answeredQuestions.length > 0) {
+            getValidToken().then(token => {
+                fetch(`${API_URL}/../training/flashcards/check-saved`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ questions: answeredQuestions, moduleName: state.context || 'MEDICINA' })
+                }).then(res => res.json()).then(data => {
+                    if (data.success && data.savedFronts) {
+                        data.savedFronts.forEach(txt => {
+                            const btn = saveButtonsMap.get(txt.trim());
+                            if (btn) updateToSaved(btn);
+                        });
+                    }
+                });
+            });
+        }
+
+        function updateToSaved(btn) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
+            btn.style.opacity = '0.5';
+            btn.disabled = true;
+            btn.classList.remove('save-flashcard-btn');
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        console.log("✅ showExamReview finalizado.");
+    } catch (e) { console.error("💥 ERROR CRÍTICO en showExamReview:", e); }
 };
 
 // Configuración
@@ -758,117 +880,8 @@ async function finishQuiz() {
     }
 }
 
-// 7. Revisión Post-Examen (Exam Review)
-window.showExamReview = async function () {
-    // Esconder resultados y grilla principal
-    document.getElementById('resultsOverlay').classList.remove('active');
-    document.querySelector('.question-header').style.display = 'none';
-    document.getElementById('questionText').style.display = 'none';
-    document.getElementById('optionsGrid').style.display = 'none';
-    document.getElementById('feedbackBox').style.display = 'none';
-
-    // Mostrar Contenedor de Revisión
-    const reviewContainer = document.getElementById('reviewContainer');
-    reviewContainer.classList.remove('hidden');
-
-    const feed = document.getElementById('reviewFeed');
-    feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
-
-    // Iterar por las preguntas que realmente contestó o el total si ya terminó
-    const totalProcessed = state.currentQuestionIndex >= state.questions.length
-        ? state.questions.length
-        : state.currentQuestionIndex;
-    const answeredQuestions = state.questions.slice(0, totalProcessed);
-
-    // Check which ones are already saved as flashcards
-    let savedFronts = new Set();
-    const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
-    if (!isDemo && answeredQuestions.length > 0) {
-        try {
-            const token = await getValidToken();
-            const res = await fetch(`${API_URL}/../training/flashcards/check-saved`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    questions: answeredQuestions,
-                    moduleName: state.context || 'MEDICINA'
-                })
-            });
-            const data = await res.json();
-            if (data.success && data.savedFronts) {
-                savedFronts = new Set(data.savedFronts);
-            }
-        } catch (error) {
-            console.error('Error checking saved flashcards', error);
-        }
-    }
-
-    feed.innerHTML = ''; // Limpiar indicator
-
-    for (let i = 0; i < totalProcessed; i++) {
-        const q = state.questions[i];
-        const ans = state.answers[i]; // { questionId, userAnswer, isCorrect }
-        
-        const isSavedFront = savedFronts.has(q.question_text.trim());
-        
-        // 1. Obtener HTML desde el Componente Central
-        const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: isSavedFront };
-        const cardHTML = window.UIComponents.createReviewCardHTML(config);
-        
-        // 2. Insertarlo usando DOM Parser o insertAdjacentHTML (aquí creamos el wrapper directo)
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = cardHTML.trim();
-        const card = tempDiv.firstChild;
-
-        // 3. Bindear los Event Listeners (Porque la inyección HTML cruda no preserva funciones)
-        if (!isDemo && !isSavedFront) {
-            const saveBtn = card.querySelector('.save-flashcard-btn');
-            if (saveBtn) {
-                saveBtn.onclick = async () => {
-                    const originalText = saveBtn.innerHTML;
-                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-                    saveBtn.disabled = true;
-                    try {
-                        const token = await getValidToken();
-                        const res = await fetch(`${API_URL}/../training/flashcards/save-from-question`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({
-                                question: q,
-                                topic: q.topic || state.topic,
-                                moduleName: state.context || 'MEDICINA'
-                            })
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            saveBtn.innerHTML = '<i class="fas fa-check"></i> Ya guardado';
-                            saveBtn.style.background = 'rgba(16, 185, 129, 0.2)';
-                            saveBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                            saveBtn.style.color = '#10b981';
-                            saveBtn.style.boxShadow = 'none';
-                            saveBtn.style.opacity = '0.5';
-                            saveBtn.style.cursor = 'not-allowed';
-                        } else {
-                            saveBtn.innerHTML = originalText;
-                            saveBtn.disabled = false;
-                            alert('No se pudo guardar la flashcard: ' + (data.error || 'Error desconocido'));
-                        }
-                    } catch (error) {
-                        saveBtn.innerHTML = originalText;
-                        saveBtn.disabled = false;
-                        console.error('Error saving flashcard', error);
-                        alert('Error de conexión al guardar la flashcard');
-                    }
-                };
-            }
-        }
-
-        feed.appendChild(card);
-    }
-
-    // Scroll al inicio de la revisión
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
 
 // Auto-init
 document.addEventListener('DOMContentLoaded', init);
+
+console.log("💎 Module quiz.js loaded successfully. showExamReview is ready.");

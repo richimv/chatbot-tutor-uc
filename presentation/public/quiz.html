@@ -108,7 +108,7 @@
             <p style="color: #94a3b8; margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
 
             <div class="actions" style="flex-direction: column;">
-                <button id="btn-review-exam" onclick="showExamReview()" class="btn-neon"
+                <button id="btn-review-exam" type="button" onclick="event.preventDefault(); window.showExamReview(); return false;" class="btn-neon"
                     style="width: 100%; margin-bottom: 1rem;">
                     <i class="fas fa-eye"></i> Ver Corrección del Examen
                 </button>
@@ -127,16 +127,17 @@
     </div>
 
     <!-- Scripts -->
+    <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js"></script>
     <script src="js/services/authApiService.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/sessionManager.js"></script>
+    <script src="js/ui/components.js?v=20240410"></script>
     <script src="js/ui/uiManager.js?v=20240410"></script>
     <script src="js/app.js?v=20240410"></script>
     <script src="js/demoData.js"></script>
-    <script type="module" src="js/quiz.js?v=20240410"></script>
+    <script type="module" src="js/quiz.js?v=20240410_v3"></script>
 </body>
 
 </html>

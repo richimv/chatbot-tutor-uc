@@ -94,11 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         wrapper.innerHTML = `
             <div class="resource-hero">
-                <div style="position: relative; width: 100%;" class="resource-cover-wrapper">
+                <div class="resource-cover-wrapper">
                     ${visualHTML}
                     
-                    <div class="resource-cover-overlay-btn" style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); z-index: 10;">
-                        <button onclick="openResourceLink(${resource.id}, '${resource.url}', ${resource.is_premium})" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div class="resource-cover-overlay-btn">
+                        <button onclick="openResourceLink(${resource.id}, '${resource.url}', ${resource.is_premium})" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
                             <i class="fas fa-external-link-alt"></i> Ver Recurso
                         </button>
                     </div>

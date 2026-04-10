@@ -745,7 +745,8 @@ window.createVideoCardHTML = function (item) {
     };
 
     const videoId = getYouTubeID(url);
-    const resolvedImage = window.resolveImageUrl(item.image_url);
+    const safeResolve = window.resolveImageUrl || (url => url);
+    const resolvedImage = safeResolve(item.image_url);
     const thumbnail = item.image_url && !item.image_url.includes('unsplash')
         ? resolvedImage
         : (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
@@ -791,6 +792,10 @@ window.createVideoCardHTML = function (item) {
 window.UIComponents = window.UIComponents || {};
 
 window.UIComponents.createReviewCardHTML = function (config) {
+    if (!config || !config.question) {
+        return '<div class="review-card-error">Error: Datos de pregunta no disponibles.</div>';
+    }
+
     const { question, answer, index, isDemo, isSavedFront } = config;
 
     let saveBtnHTML = '';
@@ -816,7 +821,8 @@ window.UIComponents.createReviewCardHTML = function (config) {
 
     let imageHTML = '';
     if (question.image_url) {
-        const resolvedImg = window.resolveImageUrl ? window.resolveImageUrl(question.image_url) : question.image_url;
+        const safeResolve = window.resolveImageUrl || (url => url);
+        const resolvedImg = safeResolve(question.image_url);
         imageHTML = `
         <div class="review-q-image-container">
             <img src="${resolvedImg}" loading="lazy" style="max-height: 250px; border-radius: 8px;">
@@ -848,19 +854,22 @@ window.UIComponents.createReviewCardHTML = function (config) {
 
     let expImageHTML = '';
     if (question.explanation_image_url) {
-        const resolvedExpImg = window.resolveImageUrl ? window.resolveImageUrl(question.explanation_image_url) : question.explanation_image_url;
+        const safeResolve = window.resolveImageUrl || (url => url);
+        const resolvedExpImg = safeResolve(question.explanation_image_url);
         expImageHTML = `
         <div style="text-align:center; margin-top:1.5rem;">
             <img src="${resolvedExpImg}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
         </div>`;
     }
 
+    const questionText = question.question_text || 'Pregunta sin texto disponible.';
+
     return `
     <div class="review-card ${question.image_url ? 'has-image' : ''}" data-qindex="${index}">
         <div class="review-card-header">
             <div class="review-q-text" style="flex: 1; margin: 0;">
                 <span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${index + 1}</span> 
-                ${question.question_text}
+                ${questionText}
             </div>
             ${saveBtnHTML}
         </div>
