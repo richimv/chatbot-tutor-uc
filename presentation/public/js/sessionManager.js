@@ -7,6 +7,15 @@ class SessionManager {
     }
 
     async initialize() {
+        // ✅ LIMPIEZA DE URL: Supabase OAuth devuelve el token en el fragmento de URL
+        // (ej: /#access_token=eyJ...). Ya fue consumido por Supabase JS al cargar,
+        // así que lo limpiamos para que la URL quede visible y sin exponer el token
+        // en el historial del navegador.
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', window.location.pathname + '#home');
+            console.log('🧹 URL limpiada: token OAuth removido del fragmento.');
+        }
+
         // ✅ Pre-check: Clean malformed tokens to avoid server spam
         const rawToken = localStorage.getItem('authToken');
         if (rawToken && rawToken.split('.').length !== 3) {
