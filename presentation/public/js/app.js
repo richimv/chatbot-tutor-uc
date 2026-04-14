@@ -114,52 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Suscribir la UI a cambios (Para pintar el header)
         window.sessionManager.onStateChange(updateHeaderUI);
 
-        // Inicializar sesión guardada (si existe token antiguo)
+        // Inicializar sesión (Limpia URL y recupera perfil si existe token)
         await window.sessionManager.initialize();
-
-        // ✅ PASO 3: INTEGRACIÓN GOOGLE AUTH (SUPABASE)
-        if (window.supabaseClient) {
-            try {
-                // Escuchamos eventos de Login (Google o Email)
-                window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                    console.log('🔄 Estado Auth Supabase:', event);
-
-                    if (event === 'SIGNED_IN' && session) {
-                        // 🛡️ Si la autenticación ya la está manejando One Tap o la modal de login,
-                        // no disparar sessionManager.login() aquí (evita modales duplicadas).
-                        if (window._isAuthenticating) return;
-
-                        // 🛑 FRENO DE MANO (ANTI-BUCLE):
-                        const currentUser = window.sessionManager.getUser();
-
-                        if (!currentUser || currentUser.email !== session.user.email) {
-                            console.log('👤 Usuario detectado (Google/Auth), sincronizando...');
-
-                            // Preparamos los datos para la app
-                            const sbUser = session.user;
-                            const appUser = {
-                                id: sbUser.id,
-                                email: sbUser.email,
-                                name: sbUser.user_metadata?.full_name || sbUser.email.split('@')[0],
-                                role: 'student',
-                                subscriptionStatus: 'pending',
-                                usage_count: 0,
-                                max_free_limit: 50
-                            };
-
-                            // Guardamos en el Manager
-                            window.sessionManager.login(session.access_token, appUser);
-                        }
-                    } else if (event === 'SIGNED_OUT') {
-                        if (window.sessionManager.isLoggedIn()) {
-                            window.sessionManager.logout();
-                        }
-                    }
-                });
-            } catch (err) {
-                console.error('❌ Error inicializando Supabase Client:', err);
-            }
-        }
     }
 
     // --- Helpers de Admin y Modals ---

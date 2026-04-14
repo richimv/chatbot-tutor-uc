@@ -4,77 +4,77 @@ class SessionManager {
     constructor() {
         this.currentUser = null;
         this.onStateChangeCallbacks = [];
+        this.initSupabaseListener();
+    }
+
+    // ✅ NUEVO: Centralizar la escucha de Supabase aquí (Un solo sitio de verdad)
+    initSupabaseListener() {
+        if (window.supabaseClient) {
+            window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                console.log(`🔄 SessionManager [Evento Supabase]: ${event}`);
+
+                if (event === 'SIGNED_IN' && session) {
+                    // Si ya tenemos este usuario y no estamos forzando sync, ignorar
+                    if (this.currentUser && this.currentUser.id === session.user.id) return;
+                    
+                    // Si ya hay una sincronización global en curso, no disparar otra
+                    if (window._isAuthenticatingGlobal) return;
+
+                    try {
+                        window._isAuthenticatingGlobal = true;
+                        window._isAuthenticating = true; // El flag local para UI
+
+                        console.log('👤 Usuario detectado vía Supabase, sincronizando con el backend...');
+                        const syncResponse = await AuthApiService.syncGoogleUser(session.user);
+                        
+                        if (syncResponse && syncResponse.user) {
+                            this.currentUser = syncResponse.user;
+                            localStorage.setItem('authToken', session.access_token);
+                            this.notifyStateChange();
+                        }
+                    } catch (err) {
+                        console.error('❌ Error sincronizando tras evento Supabase:', err);
+                    } finally {
+                        window._isAuthenticatingGlobal = false;
+                        window._isAuthenticating = false;
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    this.currentUser = null;
+                    localStorage.removeItem('authToken');
+                    this.notifyStateChange();
+                }
+            });
+        }
     }
 
     async initialize() {
-        // ✅ LIMPIEZA DE URL: Supabase OAuth devuelve el token en el fragmento de URL
-        // (ej: /#access_token=eyJ...). Ya fue consumido por Supabase JS al cargar,
-        // así que lo limpiamos para que la URL quede visible y sin exponer el token
-        // en el historial del navegador.
+        // ✅ LIMPIEZA DE URL (Remover token del fragmento)
         if (window.location.hash && window.location.hash.includes('access_token')) {
             window.history.replaceState(null, '', window.location.pathname + '#home');
-            console.log('🧹 URL limpiada: token OAuth removido del fragmento.');
         }
 
-        // ✅ Pre-check: Clean malformed tokens to avoid server spam
+        // ✅ Pre-check: Clean malformed tokens
         const rawToken = localStorage.getItem('authToken');
         if (rawToken && rawToken.split('.').length !== 3) {
-            console.warn("🧹 Removing malformed token from localStorage.");
             localStorage.removeItem('authToken');
         }
 
         try {
-            // 1. Intentar obtener usuario del backend
+            // 1. Intentar obtener usuario del backend de forma rápida
             const token = localStorage.getItem('authToken');
-            if (!token) {
-                this.currentUser = null;
-            } else {
+            if (token) {
                 try {
                     this.currentUser = await AuthApiService.getMe();
                 } catch (err) {
-                    console.warn("Backend no reconoce sesión (401/404), verificando Supabase...", err);
                     this.currentUser = null;
                 }
             }
-
-            // 2. Lógica de Sincronización (Si el backend falló, pero Supabase tiene sesión)
-            if (!this.currentUser) {
-                if (window.supabaseClient) {
-                    const { data } = await window.supabaseClient.auth.getSession();
-
-                    if (data && data.session && data.session.user) {
-                        try {
-                            // 🛡️ Flag Crítico: Bloquea modales de bienvenida prematuros
-                            window._isAuthenticating = true;
-
-                            // Mostrar loading en UI mientras sincronizamos
-                            const userControls = document.getElementById('user-session-controls');
-                            if (userControls) userControls.innerHTML = '<span class="loading-user"><i class="fas fa-spinner fa-spin"></i> Sincronizando...</span>';
-
-                            // ✅ CORRECCIÓN RACE CONDITION: Esperar respuesta del backend con el perfil REAL
-                            const syncResponse = await AuthApiService.syncGoogleUser(data.session.user);
-
-                            if (syncResponse && syncResponse.user) {
-                                this.currentUser = syncResponse.user;
-                                localStorage.setItem('authToken', data.session.access_token);
-                                console.log('🎉 Sesión sincronizada y recuperada correctamente.');
-                            }
-
-                            // 🔓 Liberar UI solo cuando el perfil real está listo
-                            window._isAuthenticating = false;
-
-                        } catch (syncError) {
-                            console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
-                            // 🔍 DEBUG: Si falla el sync, liberamos UI para que el usuario pueda intentar de nuevo
-                            window._isAuthenticating = false;
-                            return;
-                        }
-                    }
-                }
-            }
-
+            
+            // Si el listener de Supabase detecta una sesión pendiente, 
+            // la sincronización ocurrirá automáticamente vía el callback onAuthStateChange.
+            
         } catch (error) {
-            console.error("Error general al inicializar sesión:", error);
+            console.error("Error al inicializar sesión:", error);
             this.currentUser = null;
         }
         this.notifyStateChange();
