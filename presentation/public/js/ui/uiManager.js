@@ -999,68 +999,96 @@ class UIManager {
      * Inyecta el HTML del modal en el body si no existe.
      * Esto evita tener que modificar todos los archivos HTML manualmente.
      */
+    /**
+     * Inyecta el HTML de la modal de captura de visitantes (Join Modal)
+     * ✅ MEJORA PREMIUM: Glastomorfismo y Auth Directo
+     */
     injectModalHTML() {
         if (document.getElementById(this.modalId)) return;
 
         const modalHTML = `
             <div id="${this.modalId}" class="auth-prompt-modal">
-                <div class="modal-content">
+                <div class="modal-content premium-glass-dark">
                     <div class="modal-header">
-                        <h2>Únete a Hub Academia</h2>
+                        <h2 style="color: #f8fafc !important;"><i class="fas fa-rocket"></i> Únete a Hub Academia</h2>
                         <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()">&times;</button>
                     </div>
                     
                     <div class="modal-body">
-                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
+                        <div class="auth-prompt-icon" style="margin-bottom: 24px;">
                             <div style="
-                                width: 50px; height: 50px; 
-                                background: rgba(59, 130, 246, 0.1); 
-                                border-radius: 50%; 
+                                width: 70px; height: 70px; 
+                                background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08)); 
+                                border-radius: 20px; 
                                 display: flex; align-items: center; justify-content: center; 
                                 margin: 0 auto;
-                                border: 1px solid rgba(59, 130, 246, 0.2);
+                                border: 1px solid rgba(255, 255, 255, 0.1);
+                                box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+                                transform: rotate(-5deg);
                             ">
-                                <img src="/assets/logo.png" alt="Hub Academia" style="width: 100%; height: 100%; object-fit: contain; padding: 5px; border-radius: 50%;">
+                                <img src="/assets/logo.png" alt="Hub Academia" style="width: 80%; height: 80%; object-fit: contain;">
                             </div>
                         </div>
 
-                        <div style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 5px; line-height: 1.5;">
-                            Regístrate gratis para acceder a simulacros médicos, flashcards inteligentes y analítica avanzada.
+                        <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 5px; line-height: 1.5; padding: 0 10px;">
+                            Registra tu progreso real, accede a analítica avanzada y desbloquea +5,000 preguntas.
                         </div>
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn-primary" onclick="window.location.href='register'" style="
+                    <div class="modal-footer" style="padding: 0 24px 32px 24px;">
+                        <button class="btn-primary" onclick="window.triggerGoogleLogin(this)" style="
                             width: 100%; 
-                            background: linear-gradient(90deg, #3b82f6, #2563eb); 
-                            color: #fff; 
-                            font-weight: 700; 
+                            background: #60a5fa; /* Usamos un color sólido para mejor contraste vs glass */
+                            color: #0f172a; 
+                            font-weight: 800; 
                             border: none;
-                            padding: 14px; 
-                            font-size: 1rem;
-                            border-radius: 12px;
-                            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+                            padding: 16px; 
+                            font-size: 1.05rem;
+                            border-radius: 14px;
+                            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.3);
                             cursor: pointer;
-                        ">
-                            Registrarse Gratis
-                        </button>
-                         <button class="btn-secondary" onclick="window.location.href='login'" style="
-                            width: 100%; 
-                            background: transparent; 
-                            border: 1px solid rgba(255,255,255,0.1); 
-                            color: #94a3b8;
-                            padding: 12px; 
-                            font-size: 0.95rem;
-                            border-radius: 12px;
-                            cursor: pointer;
-                        ">
-                             Ya tengo cuenta
+                            display: flex; align-items: center; justify-content: center; gap: 10px;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#93c5fd'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#60a5fa'">
+                            <i class="fab fa-google"></i> Continuar con Google
                         </button>
                     </div>
                 </div>
             </div>`;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado con estilo Premium Glass
+     */
+    renderGuestBanner(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        if (document.getElementById('guest-mode-banner-premium')) return;
+
+        const banner = document.createElement('div');
+        banner.id = 'guest-mode-banner-premium';
+        banner.className = 'premium-glass-dark';
+        banner.style.cssText = 'border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; animation: fadeIn 0.8s ease-out;';
+        banner.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1.2rem;">
+                <div style="width: 54px; height: 54px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #f8fafc; font-size: 1.6rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <i class="fas fa-user-astronaut"></i>
+                </div>
+                <div>
+                    <h3 style="color: #f8fafc; margin: 0; font-size: 1.15rem; font-weight: 700;">Estás en Modo Invitado</h3>
+                    <p style="color: #94a3b8; margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.4;">Regístrate para guardar tu progreso académico y acceder a todas las funciones.</p>
+                </div>
+            </div>
+            <button id="banner-auth-trigger" class="btn-action" style="background: #f8fafc; color: #0f172a; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: all 0.2s;" 
+                onclick="window.triggerGoogleLogin(this)"
+                onmouseover="this.style.transform='scale(1.05)'; this.style.background='#fff'" onmouseout="this.style.transform='scale(1)'; this.style.background='#f8fafc'">
+                <i class="fab fa-google"></i> Continuar con Google
+            </button>
+        `;
+        container.prepend(banner);
     }
     /**
      * Inyecta el HTML de la barra de estado Freemium.

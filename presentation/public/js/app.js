@@ -140,6 +140,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // que envía pulsos cada 2.5 minutos, manteniendo el servidor activo de forma más eficiente.
 });
 
+// ✅ FIX: Resetear estados de carga al volver a la página (evita botones girando infinitamente)
+window.addEventListener('pageshow', (event) => {
+    console.log('🔄 [App] Página mostrada. Reseteando estados de botones...');
+    
+    // Función de restauración
+    const restoreButtons = () => {
+        document.querySelectorAll('[data-original-html]').forEach(btn => {
+            btn.innerHTML = btn.dataset.originalHtml;
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        });
+        window._isAuthenticating = false;
+    };
+
+    // Ejecutamos inmediatamente y con un pequeño delay por si hay inyecciones dinámicas
+    restoreButtons();
+    setTimeout(restoreButtons, 200); 
+});
+
 // ✅ LÓGICA DEL BOTÓN "HUB QUIZ ARENA"
 const btnQuiz = document.getElementById('btn-quiz-arena');
 if (btnQuiz) {
@@ -191,14 +210,6 @@ function updateHeaderUI(user) {
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
                         <span class="user-menu-email">${user.email}</span>
-                        <div class="user-tier-info">
-                            <span class="tier-badge ${(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase()}">
-                                ${user.subscriptionTier || user.subscription_tier || 'Free'}
-                            </span>
-                            <span class="usage-text">
-                                🎁 Vistas gratis: ${Math.max(0, (user.maxFreeLimit || user.max_free_limit || 50) - (user.usageCount || user.usage_count || 0))}
-                            </span>
-                        </div>
                         ${(user.subscriptionStatus !== 'active' && user.subscriptionTier === 'free') ? '' : `
                             <div class="user-usage-badge premium-badge" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 800; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; margin-top: 5px; display: inline-block;">
                                 ⭐ ${user.subscriptionTier?.toUpperCase() || 'PREMIUM'}
@@ -252,51 +263,60 @@ function updateHeaderUI(user) {
 }
 
 /**
- * ✅ INICIO DE SESIÓN DIRECTO (Sin modales intermedias)
- * Configura el botón "Acceder" para disparar Google OAuth inmediatamente.
+ * ✅ UTILERÍA GLOBAL DE AUTENTICACIÓN
+ * Permite disparar el flujo de Google desde cualquier lugar (Modales, Banners, etc.)
+ */
+window.triggerGoogleLogin = async (buttonElement = null) => {
+    console.log('🖱️ [AuthManager] Iniciando flujo Google OAuth...');
+
+    if (!window.supabaseClient) {
+        alert('El servicio de autenticación se está preparando. Por favor, reintenta en un momento.');
+        return;
+    }
+
+    if (buttonElement) {
+        // ✅ MEJORA: Guardamos el HTML original para restaurarlo después si es necesario
+        if (!buttonElement.dataset.originalHtml) {
+            buttonElement.dataset.originalHtml = buttonElement.innerHTML;
+        }
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        buttonElement.style.pointerEvents = 'none';
+        buttonElement.style.opacity = '0.7';
+    }
+
+    window._isAuthenticating = true;
+
+    try {
+        const { error } = await window.supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: { 
+                redirectTo: window.location.origin + '/',
+                queryParams: { prompt: 'select_account' }
+            }
+        });
+        if (error) throw error;
+    } catch (err) {
+        window._isAuthenticating = false;
+        if (buttonElement && buttonElement.dataset.originalHtml) {
+            buttonElement.innerHTML = buttonElement.dataset.originalHtml;
+            buttonElement.style.pointerEvents = 'auto';
+            buttonElement.style.opacity = '1';
+        }
+        console.error('❌ Error OAuth:', err.message);
+    }
+};
+
+/**
+ * ✅ INICIO DE SESIÓN DIRECTO
+ * Configura el botón "Acceder" del header.
  */
 function setupDirectLoginListener() {
     const openBtn = document.getElementById('open-login-modal');
     if (!openBtn) return;
 
-    // ✅ NOTA PARA FUTURA EXPANSIÓN (Apple, Facebook, etc.):
-    // Si decides volver a usar una Modal para múltiples proveedores:
-    // 1. Define la modal estáticamente en index.html (no generada por JS).
-    // 2. No elimines el fragmento de la URL (#access_token) hasta que Supabase lo procese.
-    // 3. Usa stopPropagation() para evitar que el click cierre la modal antes de tiempo.
-    console.log('🛡️ [AuthUI] Configurando login directo en botón Acceder...');
-
-    openBtn.onclick = async (e) => {
+    openBtn.onclick = (e) => {
         e.preventDefault();
-        console.log('🖱️ [AuthUI] Click en Acceder -> Disparando Google OAuth');
-
-        if (!window.supabaseClient) {
-            alert('El servicio de autenticación está cargando. Por favor, espera un segundo.');
-            return;
-        }
-
-        // Feedback visual en el botón
-        const originalContent = openBtn.innerHTML;
-        openBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        openBtn.style.pointerEvents = 'none';
-
-        window._isAuthenticating = true;
-
-        try {
-            const { error } = await window.supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: { 
-                    redirectTo: window.location.origin + '/',
-                    queryParams: { prompt: 'select_account' }
-                }
-            });
-            if (error) throw error;
-        } catch (err) {
-            window._isAuthenticating = false;
-            openBtn.innerHTML = originalContent;
-            openBtn.style.pointerEvents = 'auto';
-            console.error('❌ Error OAuth Directo:', err.message);
-        }
+        window.triggerGoogleLogin(openBtn);
     };
 }
 

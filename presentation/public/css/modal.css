@@ -186,23 +186,31 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.85);
-    /* Dark Slate overlay */
+    background: rgba(2, 6, 23, 0.7); /* Deep Darker Overlay */
     z-index: 2147483647;
-    /* Garantizar sobreponerse al Header */
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.premium-glass-dark {
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(24px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.9) !important;
 }
 
 .auth-prompt-modal .modal-content {
-    background: #0f172a !important;
-    /* Unified Navy/Slate background */
-    border: 1px solid rgba(59, 130, 246, 0.3) !important;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(59, 130, 246, 0.1) !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
     width: 92% !important;
-    max-width: 400px !important;
-    border-radius: 20px !important;
+    max-width: 420px !important;
+    border-radius: 24px !important;
     font-family: 'Inter', sans-serif !important;
     position: relative !important;
     overflow: hidden !important;

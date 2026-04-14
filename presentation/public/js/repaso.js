@@ -1396,30 +1396,9 @@ class RepasoManager {
     }
 
     renderGuestBanner() {
-        const container = document.getElementById('main-content');
-        if (!container) return; 
-        
-        // Prevención de duplicados
-        if (document.getElementById('guest-mode-banner-repaso')) return;
-
-        const banner = document.createElement('div');
-        banner.id = 'guest-mode-banner-repaso';
-        banner.style.cssText = 'background: linear-gradient(90deg, #1e293b, #0f172a); border: 1px solid #3b82f6; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1); animation: fadeIn 0.8s ease-out;';
-        banner.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 50px; height: 50px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 1.5rem;">
-                    <i class="fas fa-user-astronaut"></i>
-                </div>
-                <div>
-                    <h3 style="color: #f8fafc; margin: 0; font-size: 1.1rem;">Estás en Modo Invitado</h3>
-                    <p style="color: #94a3b8; margin: 0.2rem 0 0 0; font-size: 0.9rem;">Regístrate para guardar tu progreso real y acceder a todas las funciones.</p>
-                </div>
-            </div>
-            <button class="btn-action" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer;" onclick="window.location.href='/register'">
-                Crear Cuenta Gratis
-            </button>
-        `;
-        container.prepend(banner);
+        if (window.uiManager) {
+            window.uiManager.renderGuestBanner('main-content');
+        }
     }
 }
 
