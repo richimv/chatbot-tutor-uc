@@ -44,7 +44,6 @@ class UserRepository {
     async create(userData) {
         const { email, name, role = 'student', id: externalId = null } = userData;
         
-        // El passwordHash es un placeholder para usuarios de Google
         const placeholderPassword = crypto.randomBytes(32).toString('hex');
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(placeholderPassword, salt);
@@ -53,19 +52,31 @@ class UserRepository {
 
         console.log(`💾 Persistiendo usuario en DB local: ${email} (${id})`);
 
-        const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
-        const values = [id, name, email.toLowerCase(), passwordHash, role];
-
         try {
+            // Intentar usar el Procedimiento Almacenado (Optimizado y Atómico)
+            const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
+            const values = [id, name, email.toLowerCase(), passwordHash, role];
             const res = await db.query(queryText, values);
-            if (res.rows.length === 0) {
-                console.warn('⚠️ sp_register_user no devolvió ninguna fila.');
-                return null;
-            }
-            return this._mapRowToUser(res.rows[0]);
+            
+            if (res.rows.length > 0) return this._mapRowToUser(res.rows[0]);
         } catch (dbError) {
-            console.error('❌ Error ejecutando sp_register_user:', dbError.message);
-            // Si el error es de tipo UNIQUE_VIOLATION pero algo falló en el UPSERT, lo reportamos
+            // 🛡️ FALLBACK SENIOR: Si la función no existe (42883), lo hacemos manual.
+            // Esto permite que el login funcione INCLUSO si el usuario no ha corrido el SQL.
+            if (dbError.code === '42883' || dbError.message.includes('function sp_register_user')) {
+                console.warn('⚠️ sp_register_user no encontrada en DB. Ejecutando fallback manual...');
+                const manualQuery = `
+                    INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW())
+                    ON CONFLICT (id) DO UPDATE SET 
+                        name = EXCLUDED.name, 
+                        email = EXCLUDED.email, 
+                        updated_at = NOW()
+                    RETURNING *;
+                `;
+                const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role]);
+                return this._mapRowToUser(manualRes.rows[0]);
+            }
+            console.error('❌ Error crítico en persistencia de usuario:', dbError.message);
             throw dbError;
         }
     }
