@@ -44,8 +44,12 @@ class AuthController {
             const user = await this.authService.syncGoogleUser({ email, name, id });
             res.status(200).json({ message: 'Sincronización exitosa', user });
         } catch (error) {
-            console.error('Error en syncUser:', error);
-            res.status(500).json({ error: 'Error al sincronizar usuario.' });
+            console.error('❌ Error en syncUser:', error);
+            // Devolver el mensaje real para poder arreglar el 500 inmediatamente
+            res.status(500).json({ 
+                error: 'Error al sincronizar usuario.', 
+                details: error.message 
+            });
         }
     }
 

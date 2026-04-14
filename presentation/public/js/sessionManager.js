@@ -66,8 +66,8 @@ class SessionManager {
 
                         } catch (syncError) {
                             console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
-                            // Si falla la sincronización crítica, limpiamos para no dejar estados zombies
-                            this.logout();
+                            // 🔍 DEBUG: Comentamos el logout para poder ver el error en la consola
+                            // this.logout();
                             return;
                         }
                     }
