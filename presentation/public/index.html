@@ -308,10 +308,13 @@
                     callback: handleGlobalOneTap,
                     context: "signin",
                     ux_mode: "popup",
-                    itp_support: true
+                    auto_select: false,
+                    use_fedcm_for_prompt: false, // 🛡️ Evita bloqueos experimentales de FedCM en navegadores no-Chrome
+                    itp_support: true,
+                    cancel_on_tap_outside: false
                 });
 
-                // 🛡️ prompt() 100% FedCM (Sin callback para evitar warnings)
+                // Intentar mostrar One Tap, pero sin forzar si el navegador lo bloquea
                 google.accounts.id.prompt();
             } catch (err) {
                 console.warn('ℹ️ Google Identity se cargará de forma manual via modal.');
