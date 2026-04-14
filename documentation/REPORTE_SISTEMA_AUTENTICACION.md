@@ -64,6 +64,24 @@ Tras la auditoría forense, se implementó una re-estructuración total del cicl
 - **Consola de Render**: Limpia de errores de duplicidad.
 - **Experiencia de Usuario**: Fluida, sin parpadeos en el botón de login tras el primer intento exitoso.
 
+## 5. Guía de Escalabilidad y Futuras Integraciones
+
+Para asegurar que Hub Academia crezca sin fricciones técnicas, se deben seguir estas directrices:
+
+### A. Expansión a Más Proveedores (Apple, Facebook, etc.)
+Si en el futuro decides añadir más botones de inicio de sesión:
+1. **Modal Estática**: La modal de selección debe vivir en el HTML (`index.html`) para evitar que scripts dinámicos rompan los *listeners* durante re-renderizados del Header.
+2. **Ciclo del Token**: No se debe limpiar el fragmento de la URL (`#access_token`) de forma manual al inicio. Es vital dejar que la librería del proveedor (Supabase/Firebase) lo procese primero.
+3. **Mantenimiento de Eventos**: Usa siempre `addEventListener` con `stopPropagation()` para evitar que clics en botones de login cierren la modal accidentalmente.
+
+### B. Mapeo de Datos (Camel vs Snake)
+El sistema está blindado para leer datos tanto en `snake_case` (Base de Datos) como en `camelCase` (Clases JS).
+- **Correcto**: `user.maxFreeLimit || user.max_free_limit`.
+- **Razón**: Esto evita que usuarios nuevos vean límites antiguos (como el hardcodeado de `3`) si el objeto no se ha instanciado completamente como clase.
+
+### C. Límites de Uso (Source of Truth)
+La fuente de verdad para los límites gratuitos es el archivo `database_schema.sql` (`max_free_limit INTEGER DEFAULT 50`). Cualquier cambio en la política de "vidas" debe empezar allí y reflejarse en el constructor de `User.js`.
+
 ---
 **Elaborado por**: Antigravity AI - Expert Senior Team.
-**Versión**: 1.5 - Estabilización Atómica Final.
+**Versión**: 1.6 - Manual de Escalabilidad y Blindaje.

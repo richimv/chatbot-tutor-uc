@@ -191,10 +191,15 @@ function updateHeaderUI(user) {
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
                         <span class="user-menu-email">${user.email}</span>
-                         ${(user.subscriptionStatus !== 'active' && user.subscriptionTier === 'free') ? `
-                            <div class="user-usage-badge">
-                                🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 50) - (user.usage_count || 0))}
-                            </div>` : `
+                        <div class="user-tier-info">
+                            <span class="tier-badge ${(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase()}">
+                                ${user.subscriptionTier || user.subscription_tier || 'Free'}
+                            </span>
+                            <span class="usage-text">
+                                🎁 Vistas gratis: ${Math.max(0, (user.maxFreeLimit || user.max_free_limit || 50) - (user.usageCount || user.usage_count || 0))}
+                            </span>
+                        </div>
+                        ${(user.subscriptionStatus !== 'active' && user.subscriptionTier === 'free') ? '' : `
                             <div class="user-usage-badge premium-badge" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 800; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; margin-top: 5px; display: inline-block;">
                                 ⭐ ${user.subscriptionTier?.toUpperCase() || 'PREMIUM'}
                             </div>
@@ -254,6 +259,11 @@ function setupDirectLoginListener() {
     const openBtn = document.getElementById('open-login-modal');
     if (!openBtn) return;
 
+    // ✅ NOTA PARA FUTURA EXPANSIÓN (Apple, Facebook, etc.):
+    // Si decides volver a usar una Modal para múltiples proveedores:
+    // 1. Define la modal estáticamente en index.html (no generada por JS).
+    // 2. No elimines el fragmento de la URL (#access_token) hasta que Supabase lo procese.
+    // 3. Usa stopPropagation() para evitar que el click cierre la modal antes de tiempo.
     console.log('🛡️ [AuthUI] Configurando login directo en botón Acceder...');
 
     openBtn.onclick = async (e) => {
