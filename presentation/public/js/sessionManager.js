@@ -7,35 +7,31 @@ class SessionManager {
         this.initSupabaseListener();
     }
 
-    // ✅ NUEVO: Centralizar la escucha de Supabase aquí (Un solo sitio de verdad)
+    // ✅ Centralizar la escucha de Supabase
     initSupabaseListener() {
         if (window.supabaseClient) {
             window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 console.log(`🔄 SessionManager [Evento Supabase]: ${event}`);
 
                 if (event === 'SIGNED_IN' && session) {
-                    // Si ya tenemos este usuario y no estamos forzando sync, ignorar
+                    // Evitar múltiples sincronizaciones paralelas
+                    if (window._isSyncing) return;
                     if (this.currentUser && this.currentUser.id === session.user.id) return;
-                    
-                    // Si ya hay una sincronización global en curso, no disparar otra
-                    if (window._isAuthenticatingGlobal) return;
 
                     try {
-                        window._isAuthenticatingGlobal = true;
-                        window._isAuthenticating = true; // El flag local para UI
+                        window._isSyncing = true;
+                        window._isAuthenticating = true;
 
-                        console.log('👤 Usuario detectado vía Supabase, sincronizando con el backend...');
                         const syncResponse = await AuthApiService.syncGoogleUser(session.user);
-                        
                         if (syncResponse && syncResponse.user) {
                             this.currentUser = syncResponse.user;
                             localStorage.setItem('authToken', session.access_token);
                             this.notifyStateChange();
                         }
                     } catch (err) {
-                        console.error('❌ Error sincronizando tras evento Supabase:', err);
+                        console.error('❌ Error de sincronización:', err);
                     } finally {
-                        window._isAuthenticatingGlobal = false;
+                        window._isSyncing = false;
                         window._isAuthenticating = false;
                     }
                 } else if (event === 'SIGNED_OUT') {
@@ -48,35 +44,24 @@ class SessionManager {
     }
 
     async initialize() {
-        // ✅ LIMPIEZA DE URL (Remover token del fragmento)
+        // 1. Limpieza rápida de URL
         if (window.location.hash && window.location.hash.includes('access_token')) {
             window.history.replaceState(null, '', window.location.pathname + '#home');
         }
 
-        // ✅ Pre-check: Clean malformed tokens
-        const rawToken = localStorage.getItem('authToken');
-        if (rawToken && rawToken.split('.').length !== 3) {
-            localStorage.removeItem('authToken');
+        // 2. Recuperar sesión local si existe
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                // No bloqueamos desesperadamente, intentamos recuperar
+                this.currentUser = await AuthApiService.getMe();
+            } catch (err) {
+                this.currentUser = null;
+                localStorage.removeItem('authToken');
+            }
         }
 
-        try {
-            // 1. Intentar obtener usuario del backend de forma rápida
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                try {
-                    this.currentUser = await AuthApiService.getMe();
-                } catch (err) {
-                    this.currentUser = null;
-                }
-            }
-            
-            // Si el listener de Supabase detecta una sesión pendiente, 
-            // la sincronización ocurrirá automáticamente vía el callback onAuthStateChange.
-            
-        } catch (error) {
-            console.error("Error al inicializar sesión:", error);
-            this.currentUser = null;
-        }
+        // Si no hay usuario tras initialize, notificamos para que aparezca el botón "Acceder"
         this.notifyStateChange();
     }
 

@@ -64,13 +64,15 @@ class AuthService {
                 throw new Error('No se pudo crear o recuperar el usuario de la base de datos.');
             }
 
-            // 2. Provisión de preferencias iniciales si es un usuario nuevo (o reset de seguridad)
-            // Solo lo hacemos si no tiene preferencias configuradas todavía.
+            // 2. Provisión de preferencias iniciales si es un usuario nuevo
             try {
-                const prefs = await userPreferencesService.getPreferences(id);
+                // Usamos 'medicine' como dominio base por defecto para el Tutor IA médico
+                const DEFAULT_DOMAIN = 'medicine'; 
+                const prefs = await userPreferencesService.getPreferences(id, DEFAULT_DOMAIN);
+                
                 if (!prefs || Object.keys(prefs).length === 0) {
-                    console.log(`✨ Provisionando preferencias iniciales para: ${email}`);
-                    await userPreferencesService.savePreferences(id, 'medicine', {
+                    console.log(`✨ Provisionando preferencias iniciales (${DEFAULT_DOMAIN}) para: ${email}`);
+                    await userPreferencesService.savePreferences(id, DEFAULT_DOMAIN, {
                         target: 'SERUMS',
                         difficulty: 'Básico',
                         career: 'Medicina Humana',
@@ -78,7 +80,8 @@ class AuthService {
                     });
                 }
             } catch (prefErr) {
-                console.warn(`⚠️ Error no crítico al verificar/guardar preferencias para ${email}:`, prefErr.message);
+                // Error no crítico: El usuario puede seguir logueado aunque fallen sus preferencias
+                console.warn(`⚠️ Sistema de preferencias (Sync): ${prefErr.message}`);
             }
 
             return user;

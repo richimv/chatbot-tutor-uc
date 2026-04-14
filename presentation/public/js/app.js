@@ -114,8 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Suscribir la UI a cambios (Para pintar el header)
         window.sessionManager.onStateChange(updateHeaderUI);
 
-        // Inicializar sesión (Limpia URL y recupera perfil si existe token)
-        await window.sessionManager.initialize();
+        // 🔥 SENIOR FIX: No bloquear la carga de la UI esperando al servidor
+        window.sessionManager.initialize();
     }
 
     // --- Helpers de Admin y Modals ---
