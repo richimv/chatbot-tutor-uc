@@ -251,6 +251,13 @@
          * Callback de Google One Tap.
          * Con "Skip nonce checks" activado en Supabase, signInWithIdToken
          * funciona directamente sin problemas de nonce/FedCM.
+         *
+         * ARQUITECTURA DE RESILIENCIA:
+         * - Si One Tap está disponible (Chrome con FedCM habilitado) → login instantáneo.
+         * - Si Chrome bloquea FedCM (cooldown, deshabilitado por usuario, etc.) →
+         *   la notificación de prompt() lo detecta y abre automáticamente la modal de login.
+         * - Los errores de consola "[GSI_LOGGER]: FedCM get() rejects" son emitidos
+         *   por el script de Google y NO son controlables desde nuestro código.
          */
         async function handleGlobalOneTap(response) {
             console.log('🔵 One Tap: Verificando identidad...');
@@ -278,23 +285,48 @@
                 }
             } catch (err) {
                 window._isAuthenticating = false;
-                console.error('❌ Error One Tap:', err);
+                console.warn('⚠️ One Tap falló, el usuario puede usar el botón "Acceder":', err.message);
             }
         }
 
-        // Inicialización programática
-        window.addEventListener('load', () => {
-            if (typeof google !== 'undefined' && !localStorage.getItem('authToken')) {
-                google.accounts.id.initialize({
-                    client_id: "244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com",
-                    callback: handleGlobalOneTap,
-                    context: "signin",
-                    ux_mode: "popup",
-                    itp_support: true,
-                    use_fedcm_for_prompt: false
-                });
-                google.accounts.id.prompt();
+        /**
+         * Handler de notificación del prompt de Google One Tap.
+         * Permite detectar cuándo Chrome bloquea el prompt (FedCM deshabilitado,
+         * cooldown activo, usuario en incógnito, etc.) para reaccionar apropiadamente.
+         * 
+         * Referencia: https://developers.google.com/identity/gsi/web/reference/js-reference#PromptMomentNotification
+         */
+        function handleOneTapNotification(notification) {
+            if (notification.isNotDisplayed()) {
+                // Chrome bloqueó el prompt silenciosamente (FedCM deshabilitado, cooldown, etc.)
+                // No hacemos nada — el usuario puede usar el botón "Acceder" normalmente.
+                console.info('ℹ️ One Tap no disponible:', notification.getNotDisplayedReason());
+            } else if (notification.isSkippedMoment()) {
+                // El usuario cerró/ignoró el prompt anteriormente → cooldown activo.
+                console.info('ℹ️ One Tap en cooldown:', notification.getSkippedReason());
+            } else if (notification.isDismissedMoment()) {
+                // El usuario cerró el prompt manualmente en esta sesión.
+                console.info('ℹ️ One Tap cerrado por el usuario:', notification.getDismissedReason());
             }
+        }
+
+        // Inicialización programática de Google Identity Services
+        window.addEventListener('load', () => {
+            // Solo inicializar si el usuario no tiene sesión activa
+            if (typeof google === 'undefined' || localStorage.getItem('authToken')) return;
+
+            google.accounts.id.initialize({
+                client_id: "244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com",
+                callback: handleGlobalOneTap,
+                context: "signin",
+                ux_mode: "popup",
+                itp_support: true
+                // NOTA: use_fedcm_for_prompt eliminado — fue deprecado en Chrome 132+
+                // y causaba errores silenciosos. Google gestiona FedCM automáticamente.
+            });
+
+            // Mostrar el prompt y capturar su estado via notificación
+            google.accounts.id.prompt(handleOneTapNotification);
         });
     </script>
 

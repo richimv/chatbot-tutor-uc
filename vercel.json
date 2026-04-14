@@ -6,25 +6,37 @@
         {
             "source": "/css/(.*)",
             "headers": [
-                { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=604800, immutable"
+                }
             ]
         },
         {
             "source": "/js/(.*)",
             "headers": [
-                { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=604800, immutable"
+                }
             ]
         },
         {
             "source": "/assets/(.*)",
             "headers": [
-                { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=2592000, immutable"
+                }
             ]
         },
         {
             "source": "/(.*).html",
             "headers": [
-                { "key": "Cache-Control", "value": "no-cache" }
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                }
             ]
         }
     ],
@@ -46,10 +58,6 @@
             "destination": "/presentation/public/login.html"
         },
         {
-            "source": "/register",
-            "destination": "/presentation/public/register.html"
-        },
-        {
             "source": "/pricing",
             "destination": "/presentation/public/pricing.html"
         },
@@ -68,18 +76,6 @@
         {
             "source": "/terms",
             "destination": "/presentation/public/terms.html"
-        },
-        {
-            "source": "/update-password",
-            "destination": "/presentation/public/update-password.html"
-        },
-        {
-            "source": "/change-password",
-            "destination": "/presentation/public/change-password.html"
-        },
-        {
-            "source": "/verification-status",
-            "destination": "/presentation/public/verification-status.html"
         },
         {
             "source": "/dashboard",
