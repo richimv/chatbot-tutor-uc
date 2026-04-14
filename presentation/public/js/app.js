@@ -208,6 +208,10 @@ function updateHeaderUI(user) {
     if (!container) return;
 
     if (user) {
+        // ✅ SENIOR FIX: Si entramos, cerramos cualquier modal de login que haya quedado abierta
+        const loginOverlay = document.getElementById('login-modal-overlay');
+        if (loginOverlay) loginOverlay.style.display = 'none';
+        
         // --- MODO: USUARIO LOGUEADO ---
         // 🔧 FIX: Usamos ui-avatars.com porque via.placeholder.com suele fallar
         const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
@@ -349,6 +353,12 @@ function updateHeaderUI(user) {
             // ✅ Botón "Continuar con Google" → OAuth directo
             googleBtn.addEventListener('click', async () => {
                 if (window.supabaseClient) {
+                    // 🔄 Feedback Visual: Cambiar estado del botón
+                    const originalContent = googleBtn.innerHTML;
+                    googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
+                    googleBtn.style.pointerEvents = 'none';
+                    googleBtn.style.opacity = '0.7';
+
                     // 🛡️ Flag: evita modales durante la redirección OAuth
                     window._isAuthenticating = true;
                     try {
@@ -359,6 +369,9 @@ function updateHeaderUI(user) {
                         if (error) throw error;
                     } catch (err) {
                         window._isAuthenticating = false;
+                        googleBtn.innerHTML = originalContent;
+                        googleBtn.style.pointerEvents = 'auto';
+                        googleBtn.style.opacity = '1';
                         console.error('❌ Error OAuth:', err);
                     }
                 }
