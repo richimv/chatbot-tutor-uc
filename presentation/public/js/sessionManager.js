@@ -48,21 +48,21 @@ class SessionManager {
                             const userControls = document.getElementById('user-session-controls');
                             if (userControls) userControls.innerHTML = '<span class="loading-user"><i class="fas fa-spinner fa-spin"></i> Sincronizando...</span>';
 
+                        try {
+                            // 🛡️ Flag Crítico: Bloquea modales de bienvenida prematuros
+                            window._isAuthenticating = true;
+
                             // ✅ CORRECCIÓN RACE CONDITION: Esperar respuesta del backend con el perfil REAL
                             const syncResponse = await AuthApiService.syncGoogleUser(data.session.user);
 
                             if (syncResponse && syncResponse.user) {
-                                // ✅ Usar el usuario retornado por el backend (con subscriptionStatus real)
                                 this.currentUser = syncResponse.user;
-
-                                // Guardar token de Supabase para futuras peticiones
                                 localStorage.setItem('authToken', data.session.access_token);
-
                                 console.log('🎉 Sesión sincronizada y recuperada correctamente.');
-                            } else {
-                                // Fallback: Si sync no devuelve user, intentar getMe
-                                this.currentUser = await AuthApiService.getMe();
                             }
+
+                            // 🔓 Liberar UI solo cuando el perfil real está listo
+                            window._isAuthenticating = false;
 
                         } catch (syncError) {
                             console.error('❌ Error crítico al sincronizar usuario Google:', syncError);

@@ -60,22 +60,33 @@ class UserRepository {
             
             if (res.rows.length > 0) return this._mapRowToUser(res.rows[0]);
         } catch (dbError) {
-            // 🛡️ FALLBACK SENIOR: Si la función no existe (42883), lo hacemos manual.
-            // Esto permite que el login funcione INCLUSO si el usuario no ha corrido el SQL.
+            // 🛡️ FALLBACK SENIOR: Si la función no existe (42883) o hay conflicto de email, lo hacemos manual.
             if (dbError.code === '42883' || dbError.message.includes('function sp_register_user')) {
-                console.warn('⚠️ sp_register_user no encontrada en DB. Ejecutando fallback manual...');
+                console.warn('⚠️ sp_register_user no encontrada. Usando SQL manual con resolución de conflictos...');
+                
+                // Estrategia: Intentar insertar por ID, pero si el EMAIL ya existe, actualizar el registro existente.
                 const manualQuery = `
                     INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, updated_at)
                     VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW())
-                    ON CONFLICT (id) DO UPDATE SET 
-                        name = EXCLUDED.name, 
-                        email = EXCLUDED.email, 
+                    ON CONFLICT (email) 
+                    DO UPDATE SET 
+                        id = EXCLUDED.id, -- Sincronizar ID de Supabase si el correo ya existía
+                        name = EXCLUDED.name,
                         updated_at = NOW()
                     RETURNING *;
                 `;
                 const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role]);
                 return this._mapRowToUser(manualRes.rows[0]);
             }
+            
+            // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
+            if (dbError.code === '23505') {
+                 console.log('🔄 Conflicto de email detectado. Vinculando ID de Google a cuenta existente...');
+                 const updateQuery = 'UPDATE public.users SET id = $1, name = $2, updated_at = NOW() WHERE lower(email) = $3 RETURNING *';
+                 const res = await db.query(updateQuery, [id, name, email.toLowerCase()]);
+                 return this._mapRowToUser(res.rows[0]);
+            }
+
             console.error('❌ Error crítico en persistencia de usuario:', dbError.message);
             throw dbError;
         }
