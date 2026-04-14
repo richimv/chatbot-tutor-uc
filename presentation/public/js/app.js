@@ -349,26 +349,25 @@ function updateHeaderUI(user) {
 
 // ✅ FUNCIÓN DE LOGOUT ROBUSTA (Evita bucles y limpia todo)
 window.handleLogout = async () => {
-    console.log("🚪 Iniciando cierre de sesión...");
+    console.log("🚪 Iniciando cierre de sesión nuclear...");
 
     try {
-        // 1. Cerrar sesión en Supabase explícitamente
-        if (window.supabaseClient) {
-            await window.supabaseClient.auth.signOut();
+        // 1. Limpieza atómica en el Manager (esto ya dispara notifyStateChange(null))
+        if (window.sessionManager) {
+            await window.sessionManager.logout();
+            console.log("✅ Sesión y memoria purgadas.");
+        } else {
+            // Fallback si no hay manager
+            if (window.supabaseClient) await window.supabaseClient.auth.signOut();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/';
         }
     } catch (error) {
-        console.warn("⚠️ Error al cerrar sesión en Supabase:", error);
+        console.warn("⚠️ Error durante el cierre de sesión:", error);
+        // Forzamos recarga ante error para asegurar limpieza
+        window.location.href = '/';
     }
-
-    // 2. Limpiar SessionManager y LocalStorage
-    if (window.sessionManager) {
-        window.sessionManager.logout();
-    }
-    localStorage.clear();
-    sessionStorage.clear();
-
-    // 3. Redirigir al inicio
-    window.location.href = '/';
 };
 
 // Helpers Globales

@@ -283,12 +283,9 @@
                 if (error) throw error;
 
                 if (data.session) {
-                    console.log('✅ Auth exitosa via One Tap. Sincronizando...');
-                    await AuthApiService.syncGoogleUser(data.session.user);
-                    // Guardar token silenciosamente (sin disparar eventos de UI)
-                    localStorage.setItem('authToken', data.session.access_token);
-                    // Recargar limpio: sessionManager.initialize() carga el perfil real
-                    window.location.reload();
+                    console.log('✅ Auth exitosa via One Tap. Delegando sincronización al SessionManager...');
+                    // No hace falta reload ni sync manual. 
+                    // SessionManager ya tiene un listener que detectará el cambio de estado.
                 }
             } catch (err) {
                 window._isAuthenticating = false;

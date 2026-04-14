@@ -38,7 +38,8 @@ class AuthService {
     // ✅ MEJORA: Lógica de sincronización atómica para Google OAuth
     async syncGoogleUser({ email, name, id }) {
         try {
-            console.log(`🔄 Sincronizando usuario Google: ${email} (ID: ${id})`);
+            // Log nivel INFO - No es error, es éxito de vinculación si ya existe
+            console.log(`📡 [AuthSync] Procesando sesión Google para: ${email.toLowerCase()}`);
 
             // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
             const adminEmails = [
@@ -49,15 +50,14 @@ class AuthService {
             const isAutoAdmin = adminEmails.includes(email.toLowerCase());
 
             // 1. Delegamos el registro/sincronización al repositorio (vía stored procedure)
-            // Esto es más seguro y atómico para correos institucionales.
+            // El repositorio usa sp_register_user que hace un UPSERT atómico.
             const userData = {
                 id: id,
-                email: email,
+                email: email.toLowerCase(),
                 name: name || email.split('@')[0],
                 role: isAutoAdmin ? 'admin' : 'student'
             };
 
-            // El repositorio usa sp_register_user que hace un UPSERT
             let user = await this.userRepository.create(userData);
 
             if (!user) {

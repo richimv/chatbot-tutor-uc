@@ -11,42 +11,65 @@ class SessionManager {
     initSupabaseListener() {
         if (window.supabaseClient) {
             window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                console.log(`🔄 SessionManager [Evento Supabase]: ${event}`);
+                console.log(`📡 [SessionGate] Evento: ${event}`);
 
                 if (event === 'SIGNED_IN' && session) {
-                    // 🛡️ Prevenir ráfagas de sinco
-                    if (window._isGlobalSyncing) return;
+                    // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización (One Tap vs Listener)
+                    if (window._isGlobalSyncing) {
+                        console.log('⏳ Sincronización en curso, ignorando evento duplicado.');
+                        return;
+                    }
+
+                    // Si ya tenemos el mismo usuario cargado, no re-sincronizar (evitar parpadeo)
                     if (this.currentUser && this.currentUser.id === session.user.id) return;
 
                     try {
                         window._isGlobalSyncing = true;
-                        window._isAuthenticating = true; // Para bloquear modales en app.js
+                        window._isAuthenticating = true; 
 
-                        // 🔄 Paso 1: Sincronización PROFESIONAL con el Backend
-                        console.log('👤 Usuario detectado. Sincronizando privilegios...');
+                        console.log('🚀 Iniciando Sincronización Atómica...');
+                        
+                        // Sincronizar unificada
                         const syncResponse = await AuthApiService.syncGoogleUser(session.user);
                         
                         if (syncResponse && syncResponse.user) {
-                            console.log('✅ Sincronización exitosa:', syncResponse.user.email);
+                            console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
                             this.currentUser = syncResponse.user;
                             localStorage.setItem('authToken', session.access_token);
                             
-                            // 🚀 Notificar a la UI inmediatamente con los datos reales (Tier, Vidas, etc.)
+                            // Notificar UI
                             this.notifyStateChange();
+                            
+                            // Si venimos de un reload de One Tap o similar, limpiar hash
+                            if (window.location.hash.includes('access_token')) {
+                                window.history.replaceState(null, '', window.location.pathname);
+                            }
                         }
                     } catch (err) {
-                        console.error('❌ Error crítico de sincronización:', err);
+                        console.error('❌ Error en ciclo de vida Auth:', err);
                     } finally {
                         window._isGlobalSyncing = false;
                         window._isAuthenticating = false;
                     }
                 } else if (event === 'SIGNED_OUT') {
-                    this.currentUser = null;
-                    localStorage.removeItem('authToken');
-                    this.notifyStateChange();
+                    console.log('🚪 Sesión finalizada en Auth Provider.');
+                    this.clearAllStates();
                 }
             });
         }
+    }
+
+    // ✅ NUEVO: Limpieza Nuclear de Estados
+    clearAllStates() {
+        console.log('🧹 Limpieza nuclear de estados...');
+        this.currentUser = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('sb-rayjtupppcbhzjizhamn-auth-token'); 
+        
+        // Limpiar cualquier cache de aplicaciones específicas
+        sessionStorage.clear();
+        
+        this.notifyStateChange();
     }
 
     async initialize() {
