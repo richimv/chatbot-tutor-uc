@@ -299,24 +299,35 @@
 
         // Inicialización programática — compatible con FedCM (Chrome 132+)
         window.addEventListener('load', () => {
-            // No inicializar si ya hay sesión activa
-            if (typeof google === 'undefined' || localStorage.getItem('authToken')) return;
+            try {
+                // No inicializar si ya hay sesión activa o si Google no cargó
+                if (typeof google === 'undefined' || localStorage.getItem('authToken')) return;
 
-            google.accounts.id.initialize({
-                client_id: "244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com",
-                callback: handleGlobalOneTap,
-                context: "signin",
-                ux_mode: "popup",
-                itp_support: true
-                // ⚠️ NO usar callback de notificación (segundo argumento de prompt()).
-                // Los métodos isNotDisplayed(), isSkippedMoment(), isDismissedMoment()
-                // son del API antiguo y generan el warning "may stop functioning when
-                // FedCM becomes mandatory". En modo FedCM Chrome gestiona el estado
-                // del prompt internamente sin exponer estas señales.
-            });
+                google.accounts.id.initialize({
+                    client_id: "244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com",
+                    callback: handleGlobalOneTap,
+                    context: "signin",
+                    ux_mode: "popup",
+                    itp_support: true
+                });
 
-            // prompt() sin callback de notificación = modo FedCM nativo
-            google.accounts.id.prompt();
+                /**
+                 * 🛡️ prompt() silencioso:
+                 * Si Chrome bloquea el prompt (cooldown de FedCM), el error es
+                 * interno de Google y se muestra igual en consola, pero con esta
+                 * captura evitamos que nuestro flujo se detenga o cree logs extras.
+                 */
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed()) {
+                        // Silencio absoluto: el usuario usará el botón "Acceder" normal.
+                        console.info('ℹ️ One Tap auto-suprimido por el navegador.');
+                    }
+                });
+            } catch (err) {
+                // Silencio: si falla la inicialización de Google (ej. Adblock agresivo)
+                // no queremos llenar la consola de errores rojos.
+                console.warn('ℹ️ Google Identity se cargará de forma manual via modal.');
+            }
         });
     </script>
 

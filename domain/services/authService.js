@@ -35,64 +35,56 @@ class AuthService {
         return user;
     }
 
-    // ✅ NUEVO: Lógica de sincronización para Google OAuth
+    // ✅ MEJORA: Lógica de sincronización atómica para Google OAuth
     async syncGoogleUser({ email, name, id }) {
         try {
             console.log(`🔄 Sincronizando usuario Google: ${email} (ID: ${id})`);
 
-            // 1. Buscar si ya existe en nuestra DB local (por email)
-            let user = await this.userRepository.findByEmail(email);
+            // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
+            const adminEmails = [
+                'admin@uc.edu', 
+                'hubacademia01@gmail.com'
+            ];
+
+            const isAutoAdmin = adminEmails.includes(email.toLowerCase());
+
+            // 1. Delegamos el registro/sincronización al repositorio (vía stored procedure)
+            // Esto es más seguro y atómico para correos institucionales.
+            const userData = {
+                id: id,
+                email: email,
+                name: name || email.split('@')[0],
+                role: isAutoAdmin ? 'admin' : 'student'
+            };
+
+            // El repositorio usa sp_register_user que hace un UPSERT
+            let user = await this.userRepository.create(userData);
 
             if (!user) {
-                // 2. Si no existe, lo creamos
-                console.log(`✨ Creando nuevo usuario desde Google: ${email}`);
+                throw new Error('No se pudo crear o recuperar el usuario de la base de datos.');
+            }
 
-                // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
-                const adminEmails = [
-                    'admin@uc.edu', // Legacy admin
-                    // Agrega aquí tus correos de Gmail personales para que sean Admin al entrar:
-                    'hubacademia01@gmail.com'
-                ];
-
-                const isAutoAdmin = adminEmails.includes(email.toLowerCase());
-
-                // Estructura básica para nuevo usuario
-                const newUser = {
-                    id: id, // Usamos el ID de Supabase
-                    email: email,
-                    name: name || email.split('@')[0],
-                    role: isAutoAdmin ? 'admin' : 'student', // Asignación inteligente de rol
-                    lives: 5,        // Vidas iniciales
-                    createdAt: new Date()
-                };
-
-                user = await this.userRepository.create(newUser);
-
-                // 🎯 PROVISIÓN AUTOMÁTICA: Configuración SERUMS por defecto
-                await userPreferencesService.savePreferences(id, 'medicine', {
-                    target: 'SERUMS',
-                    difficulty: 'Básico',
-                    career: 'Medicina Humana',
-                    areas: [
-                        'Salud Pública',
-                        'Cuidado Integral De Salud',
-                        'Ética E Interculturalidad',
-                        'Investigación',
-                        'Gestión De Servicios De Salud'
-                    ]
-                });
-                console.log(`🚀 Preferences provisioned for ${email}`);
-            } else {
-                // 3. Si existe, podríamos actualizar su nombre si cambió en Google
-                if (name && user.name !== name) {
-                    await this.userRepository.update(user.id, { name });
+            // 2. Provisión de preferencias iniciales si es un usuario nuevo (o reset de seguridad)
+            // Solo lo hacemos si no tiene preferencias configuradas todavía.
+            try {
+                const prefs = await userPreferencesService.getPreferences(id);
+                if (!prefs || Object.keys(prefs).length === 0) {
+                    console.log(`✨ Provisionando preferencias iniciales para: ${email}`);
+                    await userPreferencesService.savePreferences(id, 'medicine', {
+                        target: 'SERUMS',
+                        difficulty: 'Básico',
+                        career: 'Medicina Humana',
+                        areas: ['Salud Pública', 'Cuidado Integral De Salud', 'Ética E Interculturalidad', 'Investigación', 'Gestión De Servicios De Salud']
+                    });
                 }
+            } catch (prefErr) {
+                console.warn(`⚠️ Error no crítico al verificar/guardar preferencias para ${email}:`, prefErr.message);
             }
 
             return user;
         } catch (error) {
-            console.error('Error en syncGoogleUser:', error);
-            throw new Error('Error al sincronizar perfil con Google.');
+            console.error('❌ Error crítico en syncGoogleUser:', error);
+            throw new Error(`Error de sincronización: ${error.message}`);
         }
     }
 

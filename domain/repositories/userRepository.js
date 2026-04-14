@@ -44,23 +44,29 @@ class UserRepository {
     async create(userData) {
         const { email, name, role = 'student', id: externalId = null } = userData;
         
-        // Generamos un passwordHash aleatorio e inalcanzable para usuarios de Google
-        // ya que la base de datos (Stored Procedure sp_register_user) lo requiere.
+        // El passwordHash es un placeholder para usuarios de Google
         const placeholderPassword = crypto.randomBytes(32).toString('hex');
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(placeholderPassword, salt);
 
         const id = externalId || crypto.randomUUID();
 
+        console.log(`💾 Persistiendo usuario en DB local: ${email} (${id})`);
+
         const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
         const values = [id, name, email.toLowerCase(), passwordHash, role];
 
-        const res = await db.query(queryText, values);
         try {
+            const res = await db.query(queryText, values);
+            if (res.rows.length === 0) {
+                console.warn('⚠️ sp_register_user no devolvió ninguna fila.');
+                return null;
+            }
             return this._mapRowToUser(res.rows[0]);
-        } catch (mapError) {
-            console.warn('⚠️ Error al mapear usuario (Database Insert OK, Mapping Fail):', mapError.message);
-            return res.rows[0]; 
+        } catch (dbError) {
+            console.error('❌ Error ejecutando sp_register_user:', dbError.message);
+            // Si el error es de tipo UNIQUE_VIOLATION pero algo falló en el UPSERT, lo reportamos
+            throw dbError;
         }
     }
 
