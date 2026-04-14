@@ -46,7 +46,10 @@ function initTrafficTracking() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 DOM completamente cargado. Inicializando componentes...');
+    console.log('🚀 [App] DOM cargado. Inicializando...');
+
+    // 🛡️ CONFIGURACIÓN DE LOGIN DIRECTO
+    setupDirectLoginListener();
     
     // Inicializar tracking de tráfico
     initTrafficTracking();
@@ -238,113 +241,121 @@ function updateHeaderUI(user) {
             </button>
         `;
 
-        // ✅ Crear modal de login (reutiliza la UI premium de login.html)
-        if (!document.getElementById('login-modal-overlay')) {
-            const modalHTML = `
-                <div id="login-modal-overlay" style="
-                    display: none; position: fixed; inset: 0; z-index: 2147483647;
-                    background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-                    align-items: center; justify-content: center;
-                ">
-                    <div style="
-                        width: 100%; max-width: 440px; background: #121212;
-                        border: 1px solid rgba(255,255,255,0.1); border-radius: 28px;
-                        padding: 3rem 2.5rem; text-align: center;
-                        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-                        animation: fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1);
-                        position: relative; margin: 1rem;
-                    ">
-                        <button id="login-modal-close" style="
-                            position: absolute; top: 16px; right: 16px; background: none;
-                            border: none; color: #a1a1aa; font-size: 1.5rem; cursor: pointer;
-                            width: 36px; height: 36px; display: flex; align-items: center;
-                            justify-content: center; border-radius: 50%;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.1)'"
-                           onmouseout="this.style.color='#a1a1aa';this.style.background='none'">
-                            <i class="fas fa-times"></i>
-                        </button>
+        // ✅ RE-VINCULAMOS EL BOTÓN DE APERTURA (Login Directo)
+        setupDirectLoginListener();
+    }
+}
 
-                        <div style="margin-bottom: 2rem;">
-                            <img src="/assets/logo.png" alt="Hub Academia" style="
-                                width: 80px; height: 80px; object-fit: contain;
-                                filter: drop-shadow(0 0 15px rgba(59,130,246,0.3));
-                            ">
-                        </div>
+/**
+ * ✅ INICIO DE SESIÓN DIRECTO (Sin modales intermedias)
+ * Configura el botón "Acceder" para disparar Google OAuth inmediatamente.
+ */
+function setupDirectLoginListener() {
+    const openBtn = document.getElementById('open-login-modal');
+    if (!openBtn) return;
 
-                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0 0 1rem 0; color: #fff; letter-spacing: -0.02em;">
-                            ¡Bienvenido!
-                        </h2>
-                        <p style="color: #a1a1aa; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2.5rem; padding: 0 10px;">
-                            Accede a tu cuenta para continuar tu aprendizaje con Hub Academia.
-                        </p>
+    console.log('🛡️ [AuthUI] Configurando login directo en botón Acceder...');
 
-                        <button id="modal-google-login" style="
-                            width: 100%; display: flex; align-items: center; justify-content: center;
-                            gap: 14px; background: #fff; color: #1a1a1a; border: none;
-                            padding: 1rem; border-radius: 100px; font-size: 1.05rem; font-weight: 700;
-                            cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-                            box-shadow: 0 4px 12px rgba(255,255,255,0.1);
-                        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(255,255,255,0.2)'"
-                           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(255,255,255,0.1)'">
-                            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="Google" style="width: 22px; height: 22px;">
-                            Continuar con Google
-                        </button>
+    openBtn.onclick = async (e) => {
+        e.preventDefault();
+        console.log('🖱️ [AuthUI] Click en Acceder -> Disparando Google OAuth');
 
-                        <div style="margin-top: 2.5rem; font-size: 0.85rem; color: #a1a1aa; line-height: 1.5;">
-                            Al crear una cuenta, acepto los
-                            <a href="/terms" style="color: #fff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.2);">Términos de Servicio</a> y la
-                            <a href="/privacy" style="color: #fff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.2);">Política de Privacidad</a> de Hub Academia
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-            // Eventos de la modal
-            const overlay = document.getElementById('login-modal-overlay');
-            const closeBtn = document.getElementById('login-modal-close');
-            const googleBtn = document.getElementById('modal-google-login');
-
-            // Cerrar con X o clic fuera
-            closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) overlay.style.display = 'none';
-            });
-
-            // ✅ Botón "Continuar con Google" → OAuth directo
-            googleBtn.addEventListener('click', async () => {
-                if (window.supabaseClient) {
-                    // 🔄 Feedback Visual: Cambiar estado del botón
-                    const originalContent = googleBtn.innerHTML;
-                    googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
-                    googleBtn.style.pointerEvents = 'none';
-                    googleBtn.style.opacity = '0.7';
-
-                    // 🛡️ Flag: evita modales durante la redirección OAuth
-                    window._isAuthenticating = true;
-                    try {
-                        const { error } = await window.supabaseClient.auth.signInWithOAuth({
-                            provider: 'google',
-                            options: { redirectTo: window.location.origin + '/' }
-                        });
-                        if (error) throw error;
-                    } catch (err) {
-                        window._isAuthenticating = false;
-                        googleBtn.innerHTML = originalContent;
-                        googleBtn.style.pointerEvents = 'auto';
-                        googleBtn.style.opacity = '1';
-                        console.error('❌ Error OAuth:', err);
-                    }
-                }
-            });
+        if (!window.supabaseClient) {
+            alert('El servicio de autenticación está cargando. Por favor, espera un segundo.');
+            return;
         }
 
-        // Abrir modal al hacer clic en "Acceder"
-        document.getElementById('open-login-modal').addEventListener('click', () => {
-            document.getElementById('login-modal-overlay').style.display = 'flex';
-        });
+        // Feedback visual en el botón
+        const originalContent = openBtn.innerHTML;
+        openBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        openBtn.style.pointerEvents = 'none';
+
+        window._isAuthenticating = true;
+
+        try {
+            const { error } = await window.supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { 
+                    redirectTo: window.location.origin + '/',
+                    queryParams: { prompt: 'select_account' }
+                }
+            });
+            if (error) throw error;
+        } catch (err) {
+            window._isAuthenticating = false;
+            openBtn.innerHTML = originalContent;
+            openBtn.style.pointerEvents = 'auto';
+            console.error('❌ Error OAuth Directo:', err.message);
+        }
+    };
+}
+
+/**
+ * ✅ CONFIGURACIÓN ÚNICA DE MODAL ESTÁTICA
+ * Se ejecuta una sola vez al inicio para evitar duplicidad de listeners.
+ */
+function setupStaticModalListeners() {
+    const overlay = document.getElementById('login-modal-overlay');
+    const closeBtn = document.getElementById('close-login-modal') || document.getElementById('login-modal-close');
+    const googleBtn = document.getElementById('modal-google-login');
+
+    if (!overlay || !googleBtn) {
+        console.warn('⚠️ No se encontró la modal estática en el DOM.');
+        return;
     }
+
+    console.log('🛡️ [AuthUI] Configurando listeners de login modal...', { googleBtnExists: !!googleBtn });
+
+    // 1. Cerrar Modal
+    const closeModal = () => { 
+        console.log('🚪 Cerrando modal...');
+        overlay.style.display = 'none'; 
+    };
+    if (closeBtn) closeBtn.onclick = closeModal;
+    overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+    // 2. Lógica de Login Google (OAuth)
+    googleBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🖱️ [AuthUI] Click detectado (addEventListener)');
+        // alert('Hub Academia: Iniciando conexión con Google...'); // Diagnostic alert
+        
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase no inicializado en el momento del click.');
+            alert('Error: El servicio de autenticación no está listo. Por favor, refresca la página.');
+            return;
+        }
+
+        // Feedback Visual
+        const originalContent = googleBtn.innerHTML;
+        googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
+        googleBtn.style.pointerEvents = 'none';
+        googleBtn.style.opacity = '0.7';
+
+        // 🛡️ Flag: evita modales durante la redirección OAuth
+        window._isAuthenticating = true;
+        
+        try {
+            console.log('🌐 Iniciando redirección OAuth a Google...');
+            const { error } = await window.supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { 
+                    redirectTo: window.location.origin + '/',
+                    queryParams: { prompt: 'select_account' } // Forzar selector para mayor claridad
+                }
+            });
+            if (error) throw error;
+        } catch (err) {
+            window._isAuthenticating = false;
+            googleBtn.innerHTML = originalContent;
+            googleBtn.style.pointerEvents = 'auto';
+            googleBtn.style.opacity = '1';
+            console.error('❌ Error OAuth Manual:', err.message);
+            alert('Error al conectar con Google. Por favor, intente de nuevo.');
+        }
+    });
 }
 
 // ✅ FUNCIÓN DE LOGOUT ROBUSTA (Evita bucles y limpia todo)

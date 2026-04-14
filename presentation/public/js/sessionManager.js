@@ -4,6 +4,7 @@ class SessionManager {
     constructor() {
         this.currentUser = null;
         this.onStateChangeCallbacks = [];
+        this.lastSyncTime = 0; // Para throttling global
         this.initSupabaseListener();
     }
 
@@ -17,6 +18,13 @@ class SessionManager {
                     // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización (One Tap vs Listener)
                     if (window._isGlobalSyncing) {
                         console.log('⏳ Sincronización en curso, ignorando evento duplicado.');
+                        return;
+                    }
+
+                    // 🛡️ THROTTLING: Evitar re-sincronizar por refrescos automáticos (Token Refreshed)
+                    const now = Date.now();
+                    if (now - this.lastSyncTime < 60000) { // Bloqueo de 60 segundos
+                        console.log('📡 [SessionGate] Re-sincronización ignorada por seguridad (Throttling 60s).');
                         return;
                     }
 
@@ -35,13 +43,15 @@ class SessionManager {
                         if (syncResponse && syncResponse.user) {
                             console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
                             this.currentUser = syncResponse.user;
+                            this.lastSyncTime = Date.now(); // Marcar éxito para throttling
                             localStorage.setItem('authToken', session.access_token);
                             
                             // Notificar UI
                             this.notifyStateChange();
                             
-                            // Si venimos de un reload de One Tap o similar, limpiar hash
+                            // ✅ LIMPIEZA SEGURA: Solo borramos el hash DESPUÉS de una sincronización exitosa
                             if (window.location.hash.includes('access_token')) {
+                                console.log('🧹 Limpiando URL (Login exitoso)');
                                 window.history.replaceState(null, '', window.location.pathname);
                             }
                         }
@@ -73,10 +83,9 @@ class SessionManager {
     }
 
     async initialize() {
-        // 1. Limpieza rápida de URL
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-            window.history.replaceState(null, '', window.location.pathname + '#home');
-        }
+        // 1. 🛡️ IMPORTANTE: NO borrar el hash aquí. 
+        // Supabase necesita el hash en la URL para leer el token tras el redirect de Google.
+        // Si lo borramos ahora, el login manual "muere" al regresar.
 
         // 2. Recuperar sesión local si existe
         const token = localStorage.getItem('authToken');

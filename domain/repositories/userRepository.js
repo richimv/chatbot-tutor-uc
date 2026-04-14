@@ -81,7 +81,7 @@ class UserRepository {
             
             // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
              if (dbError.code === '23505') {
-                  console.log('🔄 Conflicto de email detectado. Vinculando ID de Google a cuenta existente...');
+                  console.log(`✨ [Identity] Sincronización exitosa: Perfil vinculado para ${email.toLowerCase()}`);
                   const updateQuery = `
                     UPDATE public.users 
                     SET id = $1, name = $2, updated_at = NOW() 

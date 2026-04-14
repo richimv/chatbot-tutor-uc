@@ -23,9 +23,24 @@ Este documento resume el estado actual, las iteraciones realizadas y la arquitec
 - **Estado Actual**: Estable, pero requiere una limpieza más agresiva al cerrar sesión para permitir el cambio de cuenta fluido.
 
 ### C. Botón "Acceder" bloqueado (Resuelto)
-- **Causa**: Un `await` síncrono en la carga de la página impedía que se instalaran los listeners de los botones si el servidor tardaba en responder.
-- **Solución**: Carga no bloqueante (`initialize()` sin await).
-- **Estado Actual**: Botón de Google siempre activo y reactivo.
+## Resolución Final: Auth 2.0 (Direct Flow)
+
+Tras una auditoría exhaustiva, se determinó que la inestabilidad del botón manual no era un fallo de Supabase, sino una carrera crítica (*race condition*) en el frontend.
+
+### 1. El Problema del "Token Robado"
+El `SessionManager` ejecutaba una limpieza de URL (`window.history.replaceState`) antes de que el listener de Supabase pudiera extraer el `access_token` del fragmento `#`.
+**Solución**: Se eliminó la limpieza en `initialize()` y se delegó al evento `SIGNED_IN`, asegurando que el token sea procesado por el proveedor antes de ocultarlo.
+
+### 2. Simplificación de UX
+Se eliminó la modal de HTML intermedia para permitir un flujo de "Un Solo Clic".
+**Solución**: El botón de la cabecera ahora invoca directamente `signInWithOAuth` con el parámetro `prompt: 'select_account'`.
+
+### 3. Optimización de Logs y Throttling
+Se implementó un mapa de tiempo en el cliente para evitar que refrescos de token disparen múltiples peticiones de sincronización al backend en menos de 60 segundos.
+**Solución**: Los logs en Render ahora son limpios y profesionales, reportando "Sincronización Exitosa" en lugar de "Conflicto de Email".
+
+---
+*Documentación generada por Antigravity - Senior FullStack AI.*
 
 ## 3. Resolución Final: Refactorización Atómica de Autenticación
 
