@@ -146,11 +146,10 @@ class Server {
         // ======================
         // ✅ MEJORA: Rutas con "Clean URLs" (sin .html)
         const pages = [
-            'login', 'register', 'admin', 'chat', 'dashboard', 'arena',
+            'login', 'admin', 'chat', 'dashboard', 'arena',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
-            'change-password', 'update-password', 'verification-status', 'profile',
-            'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard', 'simulators',
-            'resource'
+            'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
+            'simulators', 'resource'
         ];
 
         pages.forEach(page => {

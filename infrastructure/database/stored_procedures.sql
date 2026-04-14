@@ -279,14 +279,7 @@ BEGIN
     FROM courses c
     WHERE c.id IN (
         -- ✅ CORRECCIÓN DEFINITIVA: La subconsulta de docentes ahora es correcta y eficiente.
-        -- Busca los IDs de los docentes que coinciden y luego obtiene los IDs de los cursos que imparten.
-        SELECT s.course_id
-        FROM sections s
-        WHERE s.instructor_id IN (
-            -- ✅ MEJORA: Se busca que el nombre del docente contenga el término de búsqueda completo.
-            SELECT u.id FROM users u WHERE u.role = 'instructor' AND f_unaccent(u.name) ILIKE f_unaccent(full_search_term)
-        )
-        UNION -- Unir con los resultados de búsqueda por nombre de tema.
+        -- Búsqueda por nombre de tema.
         SELECT ct.course_id
         FROM course_topics ct JOIN topics t ON ct.topic_id = t.id
         WHERE f_unaccent(t.name) ILIKE f_unaccent(full_search_term)

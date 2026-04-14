@@ -2137,25 +2137,24 @@ class AdminManager {
         }
     }
 
-    // NUEVO: Manejador para restablecer la contraseña de un usuario (docente).
+    // NUEVO: Manejador para restablecer la contraseña de un usuario (alumno/admin).
     async handleResetPassword(userId) {
-        const instructor = this.allInstructors.find(i => i.id === parseInt(userId, 10));
-        if (!instructor) {
-            await window.confirmationModal.showAlert('Error: No se encontró al instructor.', 'Error');
+        // Buscamos en el almacén de alumnos (ahora que los docentes no están activos)
+        const user = this.allStudents.find(s => s.id === userId);
+        if (!user) {
+            await window.confirmationModal.showAlert('Error: No se encontró al usuario.', 'Error');
             return;
         }
 
-        if (!await window.confirmationModal.show(`¿Estás seguro de que quieres restablecer la contraseña para ${instructor.name}? Se generará una nueva contraseña temporal.`, 'Restablecer Contraseña', 'Restablecer', 'Cancelar')) {
+        if (!await window.confirmationModal.show(`¿Estás seguro de que quieres restablecer la contraseña para ${user.name}? Se generará una nueva contraseña temporal.`, 'Restablecer Contraseña', 'Restablecer', 'Cancelar')) {
             return;
         }
 
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/users/${userId}/reset-password`, {
+            const response = await fetch(`${window.AppConfig.API_URL}/api/auth/users/${userId}/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // SOLUCIÓN: Añadir el token de autorización a la cabecera.
-                    // El token se guarda en localStorage al iniciar sesión.
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });

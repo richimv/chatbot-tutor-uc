@@ -15,14 +15,14 @@
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/course.css">
-    <link rel="stylesheet" href="css/hero.css"> <!-- ✅ NUEVO: Estilos Slider -->
-    <link rel="stylesheet" href="css/modules.css"> <!-- ✅ NUEVO: Estilos Hub Modulos -->
-    <!-- Legacy CSS files removed -->
-    <!--Añadir Font Awesome para que se vean los íconos -->
+    <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/modules.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Añadir Favicon para el ícono de la pestaña -->
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <!-- Los estilos del chat se cargan dinámicamente -->
+
+    <!-- ✅ Google Identity Services (One Tap - Solo en index.html) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <link rel="stylesheet" href="css/footer.css">
 </head>
 
@@ -38,30 +38,19 @@
             </button>
         </div>
         <div class="header-nav">
-
             <div id="user-session-controls">
-                <!-- Estado de carga inicial -->
                 <span class="loading-user">Cargando...</span>
             </div>
         </div>
     </header>
 
     <div class="hero-wrapper">
-
-        <!-- HERO SLIDER -->
         <section id="hero-slider">
             <div class="slider-container">
-
-                <!-- SLIDE 1: Hub Académico (Video/Image Hybrid) -->
                 <div class="slide active">
-                    <!-- Video Background (Desktop Only) -->
-                    <!-- Static Image (Desktop) -->
                     <img src="assets/portada.png" alt="Hub Background" class="slide-bg desktop-only">
-                    <!-- Image Fallback (Mobile Only) -->
                     <img src="assets/hero-bg-mobile.png" alt="Hub Background" class="slide-bg mobile-only">
-
                     <div class="slide-overlay"></div>
-
                     <div class="hero-content">
                         <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
                         <p class="hero-subtitle">Acelera tu aprendizaje con nuestros módulos de estudio.</p>
@@ -71,16 +60,11 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- SLIDE 2: Simulador Médico (Premium Feature) -->
                 <div class="slide">
                     <img src="assets/simuladormedicoportada.png" alt="Simulador Médico Background" class="slide-bg">
-
                     <div class="slide-overlay"></div>
-
                     <div class="hero-content">
-                        <h1 class="hero-title">Simulador <span class="highlight-text" style="color: #60a5fa;">Médico
-                                Pro</span></h1>
+                        <h1 class="hero-title">Simulador <span class="highlight-text" style="color: #60a5fa;">Médico Pro</span></h1>
                         <p class="hero-subtitle">Simulacros exactos para ENAM, SERUMS y Residentado.</p>
                         <div class="hero-actions">
                             <a href="/simulator-dashboard?context=MEDICINA" class="btn-gamified"
@@ -90,16 +74,11 @@
                         </div>
                     </div>
                 </div>
-
             </div>
-
-            <!-- Navigation -->
             <div class="slider-nav">
                 <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
                 <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
             </div>
-
-            <!-- Dots -->
             <div class="slider-dots">
                 <div class="dot active"></div>
                 <div class="dot"></div>
@@ -122,18 +101,13 @@
     </div>
 
     <div class="main-container">
-
-        <!-- ✅ Centro de Entrenamiento — 3D Cylindrical Carousel -->
         <section id="training-modules">
             <div class="modules-header">
                 <h2 class="modules-title">Centro de Entrenamiento</h2>
             </div>
-
             <div class="carousel-wrapper">
                 <div class="carousel-scene">
                     <div class="carousel-cylinder">
-
-                        <!-- Card 1: Simuladores -->
                         <a href="/simulators" class="carousel-card card-sim">
                             <span class="module-badge badge-popular">Más Usado</span>
                             <div class="card-img-container">
@@ -141,30 +115,24 @@
                             </div>
                             <div class="module-info">
                                 <h3>Centro de Simulación</h3>
-                                <p>Módulo de entrenamiento: Exámenes médicos ENAM, SERUMS, RESIDENTADO. Y otros
-                                    simuladores especializados.</p>
+                                <p>Módulo de entrenamiento: Exámenes médicos ENAM, SERUMS, RESIDENTADO. Y otros especializados.</p>
                             </div>
                             <div class="module-action action-med">
                                 Entrar al Simulador <i class="fas fa-arrow-right"></i>
                             </div>
                         </a>
-
-                        <!-- Card 2: Flashcards (Repaso) -->
                         <a href="/repaso" class="carousel-card card-repaso">
                             <div class="card-img-container">
                                 <img src="/assets/custom-repaso-bg.png" alt="Repaso Inteligente">
                             </div>
                             <div class="module-info">
                                 <h3>Repaso Inteligente</h3>
-                                <p>Módulo de creación de FLASHCARDS. Optimiza tu retención con Repetición Espaciada
-                                    (SM-2)</p>
+                                <p>Módulo de creación de FLASHCARDS. Optimiza tu retención con Repetición Espaciada (SM-2)</p>
                             </div>
                             <div class="module-action action-flash">
                                 Comenzar Repaso <i class="fas fa-arrow-right"></i>
                             </div>
                         </a>
-
-                        <!-- Card 3: Quiz Battle (Arena) -->
                         <a href="/arena" class="carousel-card card-arena">
                             <span class="module-badge badge-new">Nuevo</span>
                             <div class="card-img-container">
@@ -178,40 +146,25 @@
                                 Jugar Ahora <i class="fas fa-arrow-right"></i>
                             </div>
                         </a>
-
                     </div>
                 </div>
-
-                <!-- Navigation Arrows -->
-                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i
-                        class="fas fa-chevron-left"></i></button>
-                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i
-                        class="fas fa-chevron-right"></i></button>
-
+                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
             </div>
-
-            <!-- Dot Indicators (outside wrapper to avoid mask clipping) -->
             <div class="carousel-indicators"></div>
         </section>
 
         <div id="content-container">
             <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
-
-            <!-- CONTENEDOR TABS Y FILTROS ESTILO MANTA -->
             <div id="manta-navigation" class="manta-navigation-area">
                 <div id="manta-tabs" class="manta-tabs-container"></div>
                 <div id="manta-filters" class="manta-filters-container"></div>
             </div>
-
-            <!-- CONTENEDOR GRILLAS Y BUSQUEDAS -->
             <div id="browse-container"></div>
             <div id="results-container" class="hidden"></div>
         </div>
     </div>
 
-    <!-- (Eliminado: Modal de Login Obsoleto) -->
-
-    <!-- ✅ NUEVO: Modal para filtros en móvil -->
     <div id="filter-modal" class="modal filter-modal modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -222,9 +175,7 @@
         </div>
     </div>
 
-    <!-- ✅ NUEVO: Modal de Confirmación Genérico -->
     <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
-        <!--2147483647 para que este por encima de todo-->
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h2 id="confirmation-modal-title">Confirmación</h2>
@@ -240,21 +191,15 @@
         </div>
     </div>
 
-    <!-- Footer Injection -->
     <footer class="main-footer">
         <div class="footer-container">
-            <!-- Col 1 -->
             <div class="footer-brand">
                 <a href="/" class="footer-logo">
                     <img src="assets/logo.png" alt="Hub Academia Logo">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">
-                    Tu plataforma de entrenamiento médico. Simulacros, flashcards y asistente inteligente.
-                </p>
+                <p class="footer-slogan">Tu plataforma de entrenamiento médico. Simulacros, flashcards y asistente inteligente.</p>
             </div>
-
-            <!-- Col 2 -->
             <div class="footer-links-col">
                 <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
@@ -264,8 +209,6 @@
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
-
-            <!-- Col 3 -->
             <div class="footer-links-col">
                 <h4 class="footer-heading">Legal y Ayuda</h4>
                 <ul class="footer-links-list">
@@ -275,46 +218,86 @@
                 </ul>
             </div>
         </div>
-
         <div class="footer-bottom">
-            <div class="copyright">
-                © 2026 Hub Academia. Todos los derechos reservados.
-            </div>
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
             <div class="footer-socials">
-                <a href="" target="_blank" rel="noopener noreferrer" class="social-link" title="Facebook"><i
-                        class="fab fa-facebook"></i></a>
-                <a href="" target="_blank" rel="noopener noreferrer" class="social-link" title="Instagram"><i
-                        class="fab fa-instagram"></i></a>
-                <a href="" target="_blank" rel="noopener noreferrer" class="social-link" title="TikTok"><i
-                        class="fab fa-tiktok"></i></a>
+                <a href="" target="_blank" class="social-link"><i class="fab fa-facebook"></i></a>
+                <a href="" target="_blank" class="social-link"><i class="fab fa-instagram"></i></a>
+                <a href="" target="_blank" class="social-link"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/ui/components.js?v=38dc494d"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js"></script>
+    <script src="js/services/searchService.js"></script>
+    <script type="module" src="js/search.js?v=38dc494d"></script>
+    <script src="js/chat.js?v=38dc494d"></script>
+    <script src="js/ui/confirmationModal.js"></script>
+    <script src="js/services/libraryService.js"></script>
+    <script src="js/ui/libraryUI.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/hero-slider.js"></script>
+    <script src="js/training-carousel.js"></script>
 
-    <!-- ✅ CORRECCIÓN CRÍTICA: Cargar scripts en el orden correcto y app.js al final -->
-    <script src="js/config.js"></script> <!-- ✅ NUEVO: Configuración global antes de todo -->
+    <!-- ✅ Google One Tap: Login rápido desde la página principal -->
+    <script>
+        /**
+         * Callback de Google One Tap.
+         * Con "Skip nonce checks" activado en Supabase, signInWithIdToken
+         * funciona directamente sin problemas de nonce/FedCM.
+         */
+        async function handleGlobalOneTap(response) {
+            console.log('🔵 One Tap: Verificando identidad...');
+            if (!window.supabaseClient) return;
 
-    <script src="js/ui/components.js?v=38dc494d"></script> <!-- Componentes de UI primero -->
-    <script src="js/services/authApiService.js"></script> <!-- Servicio de API de Auth -->
-    <script src="js/services/analyticsApiService.js"></script> <!-- ✅ NUEVO: Servicio de API de Analytics -->
-    <script src="js/sessionManager.js"></script> <!-- Gestor de sesión -->
-    <script src="js/ui/uiManager.js"></script> <!-- ✅ NUEVO: Gestor de UI y Bloqueo Soft -->
-    <script src="js/services/searchService.js"></script> <!-- ✅ NUEVO: Servicio de búsqueda -->
+            // 🛡️ Flag global: evita que otros listeners (onAuthStateChange, uiManager)
+            // disparen modales mientras la autenticación está en progreso.
+            window._isAuthenticating = true;
 
-    <script type="module" src="js/search.js?v=38dc494d"></script> <!-- Lógica de búsqueda -->
-    <script src="js/chat.js?v=38dc494d"></script> <!-- Lógica del chat -->
-    <script src="js/ui/confirmationModal.js"></script> <!-- ✅ NUEVO: Modal de confirmación -->
-    <!-- Gestor de Citación ELIMINADO -->
+            try {
+                const { data, error } = await window.supabaseClient.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: response.credential
+                });
 
-    <script src="js/services/libraryService.js"></script> <!-- ✅ NUEVO: Servicio de Estado -->
-    <script src="js/ui/libraryUI.js"></script> <!-- ✅ NUEVO: UI Binder -->
-    <script src="js/security.js"></script> <!-- ✅ NUEVO: Escudo de Seguridad -->
-    <script src="js/hero-slider.js"></script> <!-- ✅ NUEVO: Lógica del Slider -->
-    <script src="js/training-carousel.js"></script> <!-- ✅ NUEVO: Carrusel 3D Centro de Entrenamiento -->
-    <script src="js/app.js?v=38dc494d"></script> <!-- Archivo principal de inicialización, al final -->
+                if (error) throw error;
 
+                if (data.session) {
+                    console.log('✅ Auth exitosa via One Tap. Sincronizando...');
+                    await AuthApiService.syncGoogleUser(data.session.user);
+                    // Guardar token silenciosamente (sin disparar eventos de UI)
+                    localStorage.setItem('authToken', data.session.access_token);
+                    // Recargar limpio: sessionManager.initialize() hará todo en orden
+                    window.location.reload();
+                }
+            } catch (err) {
+                window._isAuthenticating = false;
+                console.error('❌ Error One Tap:', err);
+            }
+        }
+
+        // Inicialización programática
+        window.addEventListener('load', () => {
+            if (typeof google !== 'undefined' && !localStorage.getItem('authToken')) {
+                google.accounts.id.initialize({
+                    client_id: "244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com",
+                    callback: handleGlobalOneTap,
+                    context: "signin",
+                    ux_mode: "popup",
+                    itp_support: true,
+                    use_fedcm_for_prompt: false
+                });
+                google.accounts.id.prompt();
+            }
+        });
+    </script>
+
+    <script src="js/app.js?v=38dc494d"></script>
 </body>
-
 </html>

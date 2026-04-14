@@ -70,16 +70,10 @@ router.get('/usage/check-ai-limits', auth, checkAILimits('monthly_flashcards'), 
 router.get('/users/preferences', auth, (req, res) => userPreferencesController.getPreferences(req, res));
 router.post('/users/preferences', auth, (req, res) => userPreferencesController.savePreferences(req, res));
 
-// --- Rutas de Autenticación (Prefijo /api/auth) ---
-router.post('/auth/login', authLimiter, authController.login);
-router.post('/auth/register', authLimiter, authController.register);
+// --- Rutas de Autenticación (Exclusivo Google OAuth) ---
 router.get('/auth/me', auth, authController.getMe);
-router.put('/auth/change-password', auth, authController.changePassword);
-router.post('/auth/forgot-password', authLimiter, authController.forgotPassword); // ✅ NUEVO
-router.post('/auth/sync', authLimiter, authController.syncUser); // ✅ NUEVO: Sync de Google
-router.get('/auth/verify-email', authController.verifyEmail);
-router.post('/auth/users/:id/reset-password', auth, adminOnly, authController.adminResetPassword);
-router.delete('/auth/delete-account', auth, authController.deleteAccount); // ✅ NUEVO: Eliminar cuenta
+router.post('/auth/sync', authLimiter, authController.syncUser); 
+router.delete('/auth/delete-account', auth, authController.deleteAccount);
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
 // SE AGREGA checkAILimits('chat_standard') ANTES DE PROCESS MESSAGE
@@ -127,7 +121,7 @@ mediaEntities.forEach(entity => {
 });
 
 // Entidades simples (sin subida de archivos)
-const simpleEntities = ['student', 'topic'];
+const simpleEntities = ['student', 'admin', 'topic'];
 simpleEntities.forEach(entity => {
     const plural = `${entity}s`;
     router.post(`/${plural}`, auth, adminOnly, (req, res) => coursesController.createEntity(req, res, entity));

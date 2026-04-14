@@ -30,6 +30,9 @@
     window.AppConfig = {
         API_URL: API_URL,
 
+        // ✅ GOOGLE AUTH CLIENT ID
+        GOOGLE_CLIENT_ID: '244839077130-pmqphk8eu7j78qq9icc6folabo5437ga.apps.googleusercontent.com',
+
         // ✅ SUPABASE CONFIG (Credenciales Públicas)
         // Estas claves son seguras para estar en el frontend (Anon Key).
         SUPABASE_URL: 'https://rayjtupppcbhzjizhamn.supabase.co',

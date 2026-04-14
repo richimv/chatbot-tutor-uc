@@ -26,6 +26,11 @@ class AdminService {
     // ==========================================
 
     _getRepository(entityType) {
+        // ✅ MEJORA: Si es un rol de usuario, retornamos el repositorio de usuarios.
+        if (['student', 'admin'].includes(entityType)) {
+            return this.repositories.user;
+        }
+
         const repo = this.repositories[entityType];
         if (!repo) {
             throw new Error(`Tipo de entidad desconocido: ${entityType}`);
@@ -34,7 +39,7 @@ class AdminService {
     }
 
     async getAll(entityType, options = {}) {
-        if (entityType === 'student') {
+        if (['student', 'admin'].includes(entityType)) {
             return this.repositories.user.findByRole(entityType);
         }
         const repo = this._getRepository(entityType);
@@ -43,13 +48,16 @@ class AdminService {
     }
 
     async getById(entityType, id) {
+        if (['student', 'admin'].includes(entityType)) {
+            return this.repositories.user.findById(id);
+        }
         const repo = this._getRepository(entityType);
         const item = await repo.findById(id);
         return item;
     }
 
     async create(entityType, newData) {
-        if (entityType === 'student') {
+        if (['student', 'admin'].includes(entityType)) {
             const { name, email } = newData;
             const tempPassword = Math.random().toString(36).slice(-8);
             console.log(`🔑 Contraseña temporal generada para ${email}: ${tempPassword}`);
@@ -62,7 +70,7 @@ class AdminService {
     }
 
     async update(entityType, id, updatedData) {
-        if (entityType === 'student') {
+        if (['student', 'admin'].includes(entityType)) {
             const { name, email } = updatedData;
             return this.repositories.user.update(id, { name, email, role: entityType });
         }
@@ -72,7 +80,7 @@ class AdminService {
     }
 
     async delete(entityType, id) {
-        if (entityType === 'student') {
+        if (['student', 'admin'].includes(entityType)) {
             return this.repositories.user.delete(id);
         }
         const repo = this._getRepository(entityType);

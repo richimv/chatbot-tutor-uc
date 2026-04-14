@@ -276,9 +276,9 @@ class CoursesController {
 
     async createEntity(req, res, entityType) {
         try {
-            // ✅ LÓGICA MEJORADA: Si se crea un instructor o alumno, devolver la contraseña temporal.
-            if (entityType === 'student') {
-                return this.createInstructorOrStudent(req, res, entityType);
+            // ✅ LÓGICA MEJORADA: Si se crea un usuario (alumno/admin), devolver la contraseña temporal.
+            if (['student', 'admin'].includes(entityType)) {
+                return this.createUserEntity(req, res, entityType);
             }
 
             // ✅ LÓGICA REHECHA: La creación de una entidad ahora solo se encarga de crearla.
@@ -349,7 +349,7 @@ class CoursesController {
     }
 
     // ✅ NUEVO: Método específico para manejar la creación de usuarios y la contraseña temporal.
-    async createInstructorOrStudent(req, res, role) {
+    async createUserEntity(req, res, role) {
         try {
             const newUser = await this.adminService.create(role, req.body);
             res.status(201).json(newUser);
@@ -375,8 +375,8 @@ class CoursesController {
 
     async updateEntity(req, res, entityType) {
         try {
-            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (docentes/alumnos) pero un número para otras entidades.
-            const entityId = (entityType === 'student')
+            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumnos) pero un número para otras entidades.
+            const entityId = (['student', 'admin'].includes(entityType))
                 ? req.params.id
                 : parseInt(req.params.id, 10);
 
@@ -476,8 +476,8 @@ class CoursesController {
 
     async deleteEntity(req, res, entityType) {
         try {
-            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (docentes/alumnos) pero un número para otras entidades.
-            const entityId = (entityType === 'student')
+            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumno) pero un número para otras entidades.
+            const entityId = (['student', 'admin'].includes(entityType))
                 ? req.params.id
                 : parseInt(req.params.id, 10);
 

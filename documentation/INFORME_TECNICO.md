@@ -306,13 +306,15 @@ chatbot-tutor-uc/
 
 La seguridad ha sido una prioridad desde el diseño inicial ("Security by Design"). A continuación, se detallan las medidas implementadas para proteger la integridad del sistema y los datos de los usuarios.
 
-### 8.1. Autenticación y Gestión de Identidad
-*   **Sistema Híbrido Robusto:** Utilizamos **Supabase Auth** como proveedor principal de identidad (IdP), delegando la gestión segura de sesiones y _tokens_ (JWT).
-*   **Validación de Contraseñas (OWASP):** 
-    *   **Complejidad:** Se exige longitud mínima, mayúsculas, minúsculas y números.
-    *   **HIBP Check:** Integración con la API de _"Have I Been Pwned"_ para impedir el uso de contraseñas previamente filtradas en brechas de seguridad conocidas.
-*   **Encriptación Redundante:** Aunque Supabase gestiona las credenciales, mantenemos un hash local (bcrypt salt rounds=10) para redundancia y validación de doble factor en operaciones críticas (como eliminación de cuenta).
-*   **Roles y Permisos:** Sistema de control de acceso basado en roles (RBAC) con tipos: `student`, `teacher`, `admin`.
+### 8.1. Autenticación y Gestión de Identidad (Google-Only v2.0)
+*   **Proveedor Único:** Se utiliza **Google como único proveedor de identidad**, eliminando formularios de registro/login con contraseña. Esto simplifica la UX y delega la seguridad de credenciales a Google.
+*   **Supabase Auth:** Se utiliza como capa de gestión de sesiones (JWT), integrado con Google OAuth 2.0.
+*   **Flujo Dual de Autenticación:**
+    *   **Google One Tap (index.html):** Login instantáneo desde la página principal via `signInWithIdToken`. Requiere "Skip nonce checks" en Supabase para compatibilidad con Chrome 145+ (FedCM).
+    *   **OAuth Redirect (login.html / Modal):** Flujo completo de Google OAuth via `signInWithOAuth` como método alternativo y fallback.
+*   **Flag Anti-Cascada (`window._isAuthenticating`):** Previene que el listener `onAuthStateChange` de Supabase dispare modales de UI (paywall, bienvenida) mientras una autenticación está en progreso.
+*   **Roles y Permisos:** Sistema RBAC con roles `student` y `admin`. Los administradores se asignan via lista blanca (`adminEmails` en `authService.js`).
+*   **Archivos Eliminados (Migración Google-Only):** `register.html`, `change-password.html`, `update-password.html`, `verification-status.html` y sus CSS/JS asociados fueron eliminados por obsolescencia.
 
 ### 8.2. Protección de Base de Datos
 *   **Prevención de SQL Injection:** Uso estricto de **Consultas Parametrizadas** en todas las interacciones con PostgreSQL (driver `pg`). Nunca se concatenan cadenas directamente en las consultas SQL.
@@ -349,14 +351,13 @@ En la versión 3.0, hemos implementado una capa transversal de resiliencia dise�
 El sistema maneja diferentes estados de usuario para ofrecer una experiencia escalonada y monetizable.
 
 ### 9.1. Visitante (No Registrado)
-*   **Acceso:** Limitado exclusivamente a la _Landing Page_, información institucional ("Sobre Nosotros") y vista previa de precios.
+*   **Acceso:** Limitado a la _Landing Page_, información institucional y vista previa de precios.
 *   **Restricciones:** Bloqueo total al Chatbot, Biblioteca y Quiz Arena.
-*   **Objetivo:** Conversión a registro mediante CTAs (Call to Actions) claros.
+*   **Conversión:** Se incentiva el registro mediante **Google One Tap** (modal automático) y botón **"Acceder"** en el header (abre modal de login con OAuth).
 
-### 10.1. Usuario Free (Registrado)
-*   **Registro Estándar vs. Corporativo:**
-    *   **Usuarios Generales (@gmail, etc.):** Requieren validación de correo electrónico obligatoria para activar la cuenta (o intervención manual vía Admin).
-    *   **Usuarios Hub Academia (@hubacademia.com):** Proceso de **Auto-Verificación** mediante Admin API. Sus cuentas se activan inmediatamente al registrarse, eliminando fricción.
+### 10.1. Usuario Free (Registrado via Google)
+    *   **Registro Seamless (Sin Fricción):** Un clic en Google One Tap o "Continuar con Google" crea la cuenta automáticamente. No hay formularios de registro.
+    *   **Sincronización Automática:** Al iniciar sesión, el sistema sincroniza nombre, email y avatar desde Google al backend (`AuthApiService.syncGoogleUser`).
 *   **Límites (Versión 2.0):**
     *   **Consultas al Tutor:** Limitadas a **3 interacciones diarias**.
     *   **Quiz Arena:** Hasta **3 partidas diarias**.

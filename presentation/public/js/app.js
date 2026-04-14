@@ -51,13 +51,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicializar tracking de tráfico
     initTrafficTracking();
 
-    // ✅ 0. INTERCEPTAR RECOVERY LINK (Recuperación de Contraseña)
-    if (window.location.hash && window.location.hash.includes('type=recovery')) {
-        console.log('🔑 Link de recuperación detectado. Redirigiendo a update-password...');
-        window.location.href = '/update-password' + window.location.hash;
-        return; // Detener inicialización normal para evitar logueo silencioso
-    }
-
     // ✅ 0.5 INTERCEPTAR RETORNO DE PAGO EXITOSO
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('payment') === 'success') {
@@ -132,6 +125,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.log('🔄 Estado Auth Supabase:', event);
 
                     if (event === 'SIGNED_IN' && session) {
+                        // 🛡️ Si la autenticación ya la está manejando One Tap o la modal de login,
+                        // no disparar sessionManager.login() aquí (evita modales duplicadas).
+                        if (window._isAuthenticating) return;
+
                         // 🛑 FRENO DE MANO (ANTI-BUCLE):
                         const currentUser = window.sessionManager.getUser();
 
@@ -224,7 +221,10 @@ function updateHeaderUI(user) {
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">
                     <div class="user-menu-header">
-                        <span class="user-menu-name">${displayName}</span>
+                        <span class="user-menu-name">
+                            ${displayName}
+                            <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
+                        </span>
                         <span class="user-menu-email">${user.email}</span>
                          ${user.subscriptionStatus !== 'active' ? `
                             <div class="user-usage-badge">
@@ -235,7 +235,6 @@ function updateHeaderUI(user) {
                     <div class="user-menu-group">
                         ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
                         <a href="/profile" class="user-menu-item"><i class="fas fa-user-cog"></i> Mi Perfil</a>
-                        <a href="/change-password" class="user-menu-item"><i class="fas fa-key"></i> Cambiar Contraseña</a>
                     </div>
 
                     <div class="user-menu-group">
@@ -268,9 +267,108 @@ function updateHeaderUI(user) {
     } else {
         // --- MODO: INVITADO ---
         container.innerHTML = `
-            <a href="/login" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Ingresar</span></a>
-            <a href="/register" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Registrarse</span></a>
+            <button id="open-login-modal" class="btn-primary" style="padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none;">
+                <i class="fas fa-sign-in-alt"></i> <span>Acceder</span>
+            </button>
         `;
+
+        // ✅ Crear modal de login (reutiliza la UI premium de login.html)
+        if (!document.getElementById('login-modal-overlay')) {
+            const modalHTML = `
+                <div id="login-modal-overlay" style="
+                    display: none; position: fixed; inset: 0; z-index: 2147483647;
+                    background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+                    align-items: center; justify-content: center;
+                ">
+                    <div style="
+                        width: 100%; max-width: 440px; background: #121212;
+                        border: 1px solid rgba(255,255,255,0.1); border-radius: 28px;
+                        padding: 3rem 2.5rem; text-align: center;
+                        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                        animation: fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1);
+                        position: relative; margin: 1rem;
+                    ">
+                        <button id="login-modal-close" style="
+                            position: absolute; top: 16px; right: 16px; background: none;
+                            border: none; color: #a1a1aa; font-size: 1.5rem; cursor: pointer;
+                            width: 36px; height: 36px; display: flex; align-items: center;
+                            justify-content: center; border-radius: 50%;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.1)'"
+                           onmouseout="this.style.color='#a1a1aa';this.style.background='none'">
+                            <i class="fas fa-times"></i>
+                        </button>
+
+                        <div style="margin-bottom: 2rem;">
+                            <img src="/assets/logo.png" alt="Hub Academia" style="
+                                width: 80px; height: 80px; object-fit: contain;
+                                filter: drop-shadow(0 0 15px rgba(59,130,246,0.3));
+                            ">
+                        </div>
+
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0 0 1rem 0; color: #fff; letter-spacing: -0.02em;">
+                            ¡Bienvenido!
+                        </h2>
+                        <p style="color: #a1a1aa; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2.5rem; padding: 0 10px;">
+                            Accede a tu cuenta para continuar tu aprendizaje con Hub Academia.
+                        </p>
+
+                        <button id="modal-google-login" style="
+                            width: 100%; display: flex; align-items: center; justify-content: center;
+                            gap: 14px; background: #fff; color: #1a1a1a; border: none;
+                            padding: 1rem; border-radius: 100px; font-size: 1.05rem; font-weight: 700;
+                            cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+                            box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+                        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(255,255,255,0.2)'"
+                           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(255,255,255,0.1)'">
+                            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="Google" style="width: 22px; height: 22px;">
+                            Continuar con Google
+                        </button>
+
+                        <div style="margin-top: 2.5rem; font-size: 0.85rem; color: #a1a1aa; line-height: 1.5;">
+                            Al crear una cuenta, acepto los
+                            <a href="/terms" style="color: #fff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.2);">Términos de Servicio</a> y la
+                            <a href="/privacy" style="color: #fff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.2);">Política de Privacidad</a> de Hub Academia
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            // Eventos de la modal
+            const overlay = document.getElementById('login-modal-overlay');
+            const closeBtn = document.getElementById('login-modal-close');
+            const googleBtn = document.getElementById('modal-google-login');
+
+            // Cerrar con X o clic fuera
+            closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.style.display = 'none';
+            });
+
+            // ✅ Botón "Continuar con Google" → OAuth directo
+            googleBtn.addEventListener('click', async () => {
+                if (window.supabaseClient) {
+                    // 🛡️ Flag: evita modales durante la redirección OAuth
+                    window._isAuthenticating = true;
+                    try {
+                        const { error } = await window.supabaseClient.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: { redirectTo: window.location.origin + '/' }
+                        });
+                        if (error) throw error;
+                    } catch (err) {
+                        window._isAuthenticating = false;
+                        console.error('❌ Error OAuth:', err);
+                    }
+                }
+            });
+        }
+
+        // Abrir modal al hacer clic en "Acceder"
+        document.getElementById('open-login-modal').addEventListener('click', () => {
+            document.getElementById('login-modal-overlay').style.display = 'flex';
+        });
     }
 }
 

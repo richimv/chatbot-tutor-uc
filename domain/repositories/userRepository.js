@@ -41,10 +41,15 @@ class UserRepository {
         return res.rows.map(row => this._mapRowToUser(row));
     }
 
-    async create(email, password, name, role = 'student', externalId = null) {
+    async create(userData) {
+        const { email, name, role = 'student', id: externalId = null } = userData;
+        
+        // Generamos un passwordHash aleatorio e inalcanzable para usuarios de Google
+        // ya que la base de datos (Stored Procedure sp_register_user) lo requiere.
+        const placeholderPassword = crypto.randomBytes(32).toString('hex');
         const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(password, salt);
-        // ✅ MEJORA: Permitir ID externo (Supabase) para mantener sincronización
+        const passwordHash = await bcrypt.hash(placeholderPassword, salt);
+
         const id = externalId || crypto.randomUUID();
 
         const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
@@ -55,7 +60,7 @@ class UserRepository {
             return this._mapRowToUser(res.rows[0]);
         } catch (mapError) {
             console.warn('⚠️ Error al mapear usuario (Database Insert OK, Mapping Fail):', mapError.message);
-            return res.rows[0]; // Retornar data cruda para no romper el flujo
+            return res.rows[0]; 
         }
     }
 
