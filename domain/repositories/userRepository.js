@@ -70,22 +70,27 @@ class UserRepository {
                     VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW())
                     ON CONFLICT (email) 
                     DO UPDATE SET 
-                        id = EXCLUDED.id, -- Sincronizar ID de Supabase si el correo ya existía
+                        id = EXCLUDED.id,
                         name = EXCLUDED.name,
                         updated_at = NOW()
-                    RETURNING *;
+                    RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
                 `;
                 const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role]);
                 return this._mapRowToUser(manualRes.rows[0]);
             }
             
             // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
-            if (dbError.code === '23505') {
-                 console.log('🔄 Conflicto de email detectado. Vinculando ID de Google a cuenta existente...');
-                 const updateQuery = 'UPDATE public.users SET id = $1, name = $2, updated_at = NOW() WHERE lower(email) = $3 RETURNING *';
-                 const res = await db.query(updateQuery, [id, name, email.toLowerCase()]);
-                 return this._mapRowToUser(res.rows[0]);
-            }
+             if (dbError.code === '23505') {
+                  console.log('🔄 Conflicto de email detectado. Vinculando ID de Google a cuenta existente...');
+                  const updateQuery = `
+                    UPDATE public.users 
+                    SET id = $1, name = $2, updated_at = NOW() 
+                    WHERE lower(email) = $3 
+                    RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
+                  `;
+                  const res = await db.query(updateQuery, [id, name, email.toLowerCase()]);
+                  return this._mapRowToUser(res.rows[0]);
+             }
 
             console.error('❌ Error crítico en persistencia de usuario:', dbError.message);
             throw dbError;

@@ -14,24 +14,30 @@ class SessionManager {
                 console.log(`🔄 SessionManager [Evento Supabase]: ${event}`);
 
                 if (event === 'SIGNED_IN' && session) {
-                    // Evitar múltiples sincronizaciones paralelas
-                    if (window._isSyncing) return;
+                    // 🛡️ Prevenir ráfagas de sinco
+                    if (window._isGlobalSyncing) return;
                     if (this.currentUser && this.currentUser.id === session.user.id) return;
 
                     try {
-                        window._isSyncing = true;
-                        window._isAuthenticating = true;
+                        window._isGlobalSyncing = true;
+                        window._isAuthenticating = true; // Para bloquear modales en app.js
 
+                        // 🔄 Paso 1: Sincronización PROFESIONAL con el Backend
+                        console.log('👤 Usuario detectado. Sincronizando privilegios...');
                         const syncResponse = await AuthApiService.syncGoogleUser(session.user);
+                        
                         if (syncResponse && syncResponse.user) {
+                            console.log('✅ Sincronización exitosa:', syncResponse.user.email);
                             this.currentUser = syncResponse.user;
                             localStorage.setItem('authToken', session.access_token);
+                            
+                            // 🚀 Notificar a la UI inmediatamente con los datos reales (Tier, Vidas, etc.)
                             this.notifyStateChange();
                         }
                     } catch (err) {
-                        console.error('❌ Error de sincronización:', err);
+                        console.error('❌ Error crítico de sincronización:', err);
                     } finally {
-                        window._isSyncing = false;
+                        window._isGlobalSyncing = false;
                         window._isAuthenticating = false;
                     }
                 } else if (event === 'SIGNED_OUT') {

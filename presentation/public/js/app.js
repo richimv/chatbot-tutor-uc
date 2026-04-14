@@ -164,10 +164,12 @@ function updateHeaderUI(user) {
     if (!container) return;
 
     if (user) {
-        // ✅ SENIOR FIX: Si entramos, cerramos cualquier modal de login que haya quedado abierta
+        // ✅ SENIOR FIX: Cerramos cualquier rastro de la modal de login inmediatamente
         const loginOverlay = document.getElementById('login-modal-overlay');
         if (loginOverlay) loginOverlay.style.display = 'none';
         
+        // Log de depuración para asegurar que los rangos llegan bien
+        console.log(`👤 Sesión Activa: ${user.email} | Rango: ${user.subscriptionTier} | Status: ${user.subscriptionStatus}`);
         // --- MODO: USUARIO LOGUEADO ---
         // 🔧 FIX: Usamos ui-avatars.com porque via.placeholder.com suele fallar
         const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
@@ -186,10 +188,14 @@ function updateHeaderUI(user) {
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
                         <span class="user-menu-email">${user.email}</span>
-                         ${user.subscriptionStatus !== 'active' ? `
+                         ${(user.subscriptionStatus !== 'active' && user.subscriptionTier === 'free') ? `
                             <div class="user-usage-badge">
                                 🎁 Vistas gratis: ${Math.max(0, (user.max_free_limit || 50) - (user.usage_count || 0))}
-                            </div>` : ''}
+                            </div>` : `
+                            <div class="user-usage-badge premium-badge" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 800; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; margin-top: 5px; display: inline-block;">
+                                ⭐ ${user.subscriptionTier?.toUpperCase() || 'PREMIUM'}
+                            </div>
+                            `}
                     </div>
                     
                     <div class="user-menu-group">
