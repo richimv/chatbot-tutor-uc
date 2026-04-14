@@ -44,13 +44,12 @@ class SessionManager {
 
                     if (data && data.session && data.session.user) {
                         try {
+                            // 🛡️ Flag Crítico: Bloquea modales de bienvenida prematuros
+                            window._isAuthenticating = true;
+
                             // Mostrar loading en UI mientras sincronizamos
                             const userControls = document.getElementById('user-session-controls');
                             if (userControls) userControls.innerHTML = '<span class="loading-user"><i class="fas fa-spinner fa-spin"></i> Sincronizando...</span>';
-
-                        try {
-                            // 🛡️ Flag Crítico: Bloquea modales de bienvenida prematuros
-                            window._isAuthenticating = true;
 
                             // ✅ CORRECCIÓN RACE CONDITION: Esperar respuesta del backend con el perfil REAL
                             const syncResponse = await AuthApiService.syncGoogleUser(data.session.user);
@@ -66,8 +65,8 @@ class SessionManager {
 
                         } catch (syncError) {
                             console.error('❌ Error crítico al sincronizar usuario Google:', syncError);
-                            // 🔍 DEBUG: Comentamos el logout para poder ver el error en la consola
-                            // this.logout();
+                            // 🔍 DEBUG: Si falla el sync, liberamos UI para que el usuario pueda intentar de nuevo
+                            window._isAuthenticating = false;
                             return;
                         }
                     }
