@@ -311,21 +311,9 @@
                     itp_support: true
                 });
 
-                /**
-                 * 🛡️ prompt() silencioso:
-                 * Si Chrome bloquea el prompt (cooldown de FedCM), el error es
-                 * interno de Google y se muestra igual en consola, pero con esta
-                 * captura evitamos que nuestro flujo se detenga o cree logs extras.
-                 */
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed()) {
-                        // Silencio absoluto: el usuario usará el botón "Acceder" normal.
-                        console.info('ℹ️ One Tap auto-suprimido por el navegador.');
-                    }
-                });
+                // 🛡️ prompt() 100% FedCM (Sin callback para evitar warnings)
+                google.accounts.id.prompt();
             } catch (err) {
-                // Silencio: si falla la inicialización de Google (ej. Adblock agresivo)
-                // no queremos llenar la consola de errores rojos.
                 console.warn('ℹ️ Google Identity se cargará de forma manual via modal.');
             }
         });
