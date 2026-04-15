@@ -42,8 +42,8 @@
     ],
     "rewrites": [
         {
-            "source": "/api/:path*",
-            "destination": "https://tutor-ia-backend.onrender.com/api/:path*"
+            "source": "/api/:apiRoute*",
+            "destination": "https://tutor-ia-backend.onrender.com/api/:apiRoute*"
         },
         {
             "source": "/google9e7db62b59fd1348.html",

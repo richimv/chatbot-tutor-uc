@@ -23,7 +23,7 @@
     // 2. Definir URL del Backend (API)
     const API_URL = isLocal
         ? 'http://localhost:3000'
-        : ''; // ✅ PRO: En producción usamos rutas relativas (Vercel lo redirecciona a Render)
+        : 'https://tutor-ia-backend.onrender.com';
 
     // 3. Exponer configuración globalmente
     // Usamos var o window para asegurar que sea global
@@ -57,7 +57,7 @@
         const token = localStorage.getItem('authToken');
         const tokenParam = token ? `&token=${token}` : '';
         
-        return `${window.AppConfig.API_URL}/api/media/gcs?path=${encodeURIComponent(url)}${tokenParam}`;
+        return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}${tokenParam}`;
     };
 
     console.log('✅ Configuración Cargada Exitosamente.');

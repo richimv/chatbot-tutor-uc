@@ -370,7 +370,8 @@ class AdminController {
             
             // Construir la URL completa que usará el frontend para cargar la imagen
             // Usamos el proxy /api/media/gcs para que no dependa de URLs públicas directas de Google
-            const location = `/api/media/gcs?path=${gcsPath}`;
+            // NOTA: Se usa ?file= en vez de ?path= para evitar conflictos con Vercel rules
+            const location = `/api/media/gcs?file=${gcsPath}`;
 
             console.log(`🖼️ Imagen de editor subida con éxito: ${location}`);
             
