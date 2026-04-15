@@ -368,12 +368,14 @@ class AdminController {
             // Subir a GCS en una carpeta dedicada para contenido del editor
             const gcsPath = await mediaController.uploadFile(req.file, 'editor-content');
             
-            // Construir la URL completa que usará el frontend para cargar la imagen
-            // Usamos el proxy /api/media/gcs para que no dependa de URLs públicas directas de Google
-            // NOTA: Se usa ?file= en vez de ?path= para evitar conflictos con Vercel rules
-            const location = `/api/media/gcs?file=${gcsPath}`;
+            // Construir la URL completa absoluta que usará el frontend para cargar la imagen
+            // NOTA CRÍTICA: Usamos la URL ABSOLUTA hacia el Backend (Render) en lugar de una ruta relativa "/api/media...".
+            // Esto evita que TinyMCE la interprete usando el dominio frontal (Vercel) y caiga en bloqueos de proxy,
+            // garantizando que todos los futuros artículos descarguen sus imágenes directamente del motor de máxima velocidad.
+            const backendDomain = process.env.API_URL || 'https://tutor-ia-backend.onrender.com';
+            const location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
 
-            console.log(`🖼️ Imagen de editor subida con éxito: ${location}`);
+            console.log(`🖼️ Imagen de editor subida con éxito (Absoluta): ${location}`);
             
             // TinyMCE espera un JSON con la propiedad 'location'
             res.json({ location });
