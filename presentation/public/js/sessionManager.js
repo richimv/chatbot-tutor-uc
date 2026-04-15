@@ -35,13 +35,13 @@ class SessionManager {
                         window._isGlobalSyncing = true;
                         window._isAuthenticating = true; 
 
-                        console.log('🚀 Iniciando Sincronización Atómica...');
+                        // console.log('🚀 Iniciando Sincronización Atómica...');
                         
                         // Sincronizar unificada
                         const syncResponse = await AuthApiService.syncGoogleUser(session.user);
                         
                         if (syncResponse && syncResponse.user) {
-                            console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
+                            // console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
                             this.currentUser = syncResponse.user;
                             this.lastSyncTime = Date.now(); // Marcar éxito para throttling
                             localStorage.setItem('authToken', session.access_token);

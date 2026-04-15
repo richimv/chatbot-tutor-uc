@@ -39,7 +39,7 @@ class AuthService {
     async syncGoogleUser({ email, name, id }) {
         try {
             // Log nivel INFO - No es error, es éxito de vinculación si ya existe
-            console.log(`📡 [AuthSync] Procesando sesión Google para: ${email.toLowerCase()}`);
+            // console.log(`📡 [AuthSync] Procesando sesión Google para: ${email.toLowerCase()}`);
 
             // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
             const adminEmails = [
@@ -71,7 +71,7 @@ class AuthService {
                 const prefs = await userPreferencesService.getPreferences(id, DEFAULT_DOMAIN);
                 
                 if (!prefs || Object.keys(prefs).length === 0) {
-                    console.log(`✨ Provisionando preferencias iniciales (${DEFAULT_DOMAIN}) para: ${email}`);
+                    // console.log(`✨ Provisionando preferencias iniciales (${DEFAULT_DOMAIN}) para: ${email}`);
                     await userPreferencesService.savePreferences(id, DEFAULT_DOMAIN, {
                         target: 'SERUMS',
                         difficulty: 'Básico',

@@ -50,7 +50,7 @@ class UserRepository {
 
         const id = externalId || crypto.randomUUID();
 
-        console.log(`💾 Persistiendo usuario en DB local: ${email} (${id})`);
+        // console.log(`💾 Persistiendo usuario en DB local: ${email} (${id})`);
 
         try {
             // Intentar usar el Procedimiento Almacenado (Optimizado y Atómico)
@@ -81,7 +81,7 @@ class UserRepository {
             
             // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
              if (dbError.code === '23505') {
-                  console.log(`✨ [Identity] Sincronización exitosa: Perfil vinculado para ${email.toLowerCase()}`);
+                  // console.log(`✨ [Identity] Sincronización exitosa: Perfil vinculado para ${email.toLowerCase()}`);
                   const updateQuery = `
                     UPDATE public.users 
                     SET id = $1, name = $2, updated_at = NOW() 
