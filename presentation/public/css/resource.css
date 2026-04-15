@@ -128,9 +128,9 @@
     font-size: 1rem;
 }
 
-/* Force pasted HTML (Excel/Word) to respect dark mode */
+/* ✅ FIX: Allow TinyMCE tools (colors, backgrounds) by removing !important from the reset */
 .resource-content * {
-    background-color: transparent !important;
+    background-color: transparent;
     color: inherit;
 }
 
@@ -223,9 +223,9 @@
     color: var(--text-secondary);
 }
 
-/* Forzar que cualquier texto pegado de Excel/Word sea legible */
+/* REMOVED: Redundant override that blocked TinyMCE color tools */
 .resource-content span {
-    color: inherit !important;
+    color: inherit;
 }
 
 /* Optimización móvil y diseño minimalista */
