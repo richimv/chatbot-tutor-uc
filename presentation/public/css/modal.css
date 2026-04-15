@@ -315,63 +315,94 @@
 
 /* No necesitamos footer en este modal */
 
-/* --- VIDEO PLAYER MODAL --- */
-#video-player-modal {
-    z-index: 9000;
-    /* High but below Chatbot (10000) */
-    background: rgba(0, 0, 0, 0.95);
-    /* Deep cinematic background */
-    backdrop-filter: blur(10px);
+/* --- VIDEO PLAYER MODAL (GLOBAL UX) --- */
+.video-modal-overlay {
+    z-index: 10001; /* High but below Chatbot (10000) */
+    background: rgba(0, 0, 0, 0.96) !important; /* Deep cinematic background */
+    backdrop-filter: blur(12px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem; /* Margen de seguridad global */
+    overflow-y: auto;
 }
 
-#video-player-modal .modal-content {
-    background: transparent;
-    box-shadow: none;
-    max-width: 900px;
-    width: 95%;
-    border: none;
+.video-modal-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 1000px !important;
+    margin: auto;
     display: flex;
     flex-direction: column;
     gap: 0;
 }
 
-#video-player-modal .modal-header {
-    border-bottom: none;
-    padding: 0.5rem 0;
-    justify-content: flex-end;
-    /* Close button to the right, hidden title */
+/* Evitar que el cuerpo del modal de video actúe como un muelle que estira el iframe 100vh */
+#video-player-modal .modal-body {
+    flex: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
 }
 
-#video-player-modal .modal-close-btn {
-    color: white;
-    font-size: 2rem;
-    opacity: 0.8;
-    background: rgba(255, 255, 255, 0.1);
-    width: 40px;
-    height: 40px;
+/* El botón de cerrar ahora es global y seguro en móviles */
+.video-modal-close-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10002;
+}
+
+.video-modal-close-wrapper .modal-close-btn {
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0,0,0,0.5);
     border-radius: 50%;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-#video-player-modal .modal-close-btn:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
+.video-modal-close-wrapper .modal-close-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.2);
     transform: scale(1.1);
+}
+
+.video-modal-title {
+    color: #f1f5f9;
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    opacity: 0.95;
 }
 
 .video-container-responsive {
     position: relative;
     width: 100%;
+    /* 🔥 HACK INFALIBLE: aspecto 16:9 bloqueando flex-stretch en móviles */
     padding-bottom: 56.25%;
-    /* 16:9 Aspect Ratio */
     height: 0;
+    max-height: calc(100vh - 100px); /* Previene desbordes verticales extraños */
     background: black;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    z-index: 100;
 }
 
 .video-container-responsive iframe {
@@ -412,10 +443,11 @@
     }
 
     .video-container-responsive {
-        height: 100vh;
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
         border-radius: 0;
-        padding-bottom: 0;
-        /* Remove aspect ratio padding */
+        aspect-ratio: auto; /* Liberar ratio en landscape total */
     }
 
     .video-modal-title {

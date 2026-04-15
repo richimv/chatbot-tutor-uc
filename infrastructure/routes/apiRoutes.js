@@ -44,6 +44,7 @@ router.post('/admin/question', auth, adminOnly, upload.fields([{ name: 'question
 router.put('/admin/question/:id', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.updateSingleQuestion);
 router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSingleQuestion);
 router.post('/admin/drive/sync-folder', auth, adminOnly, adminController.syncDriveFolder); // ✅ NUEVO: Scanner de Drive
+router.post('/admin/upload-editor', auth, adminOnly, upload.single('file'), adminController.uploadEditorImage); // ✅ NUEVO: Carga para TinyMCE
 
 // ✅ RUTAS DE PAGOS (Mercado Pago)
 const paymentRoutes = require('./paymentRoutes');

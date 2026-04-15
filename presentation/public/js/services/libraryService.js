@@ -137,7 +137,9 @@ class LibraryService {
     }
 
     _getToken() {
-        return localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken');
+        if (!token || token === 'undefined' || token === 'null') return null;
+        return token;
     }
 
     _dispatchChange() {

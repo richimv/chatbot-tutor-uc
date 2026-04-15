@@ -152,6 +152,14 @@
     border-radius: 12px;
     margin: 2rem 0;
     box-shadow: var(--shadow-md);
+    cursor: zoom-in; /* NEW: Señal interactiva */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.resource-content img:hover {
+    transform: scale(1.01);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.05); /* Efecto sutil de iluminación */
 }
 
 .table-responsive-wrapper {
@@ -239,6 +247,7 @@
         position: static;
         align-items: center;
         text-align: center;
+        gap: 12px;
     }
     /* Limitar ancho de la portada Y su wrapper para que el botón overlay
        no se desborde visualmente más allá del bloque de color */
@@ -250,10 +259,16 @@
         max-width: 100%; /* Hereda el constraint del wrapper */
     }
     .resource-info h1 {
-        font-size: 1.25rem; /* Título más pequeño en móvil */
+        font-size: 1.2rem;
+        margin-bottom: 4px;
     }
     .resource-info p {
-        font-size: 0.95rem; /* Subtítulo más pequeño */
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    .resource-actions {
+        margin-top: 5px;
+        gap: 8px;
     }
     .resource-body {
         padding: 0;
@@ -270,4 +285,102 @@
     .resource-cover-fallback i {
         font-size: 3.5rem;
     }
+}
+
+/* --- MODERN VIDEO POSTER CARD (Hub Academia Style) --- */
+.video-poster-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 2.5rem 0;
+    cursor: pointer;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-poster-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    border-color: var(--primary);
+}
+
+.video-poster-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.6s ease, filter 0.4s ease;
+    filter: brightness(0.8);
+}
+
+.video-poster-card:hover .video-poster-image {
+    transform: scale(1.05);
+    filter: brightness(0.9);
+}
+
+.video-poster-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+    z-index: 2;
+}
+
+.video-poster-play-btn {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.8rem;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+}
+
+.video-poster-play-btn i {
+    margin-left: 6px; /* Ajuste visual del icono Play */
+}
+
+.video-poster-card:hover .video-poster-play-btn {
+    background: var(--primary);
+    transform: scale(1.15);
+    border-color: #fff;
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.6);
+}
+
+.video-poster-hint {
+    margin-top: 15px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.video-poster-card:hover .video-poster-hint {
+    opacity: 1;
+}
+
+/* Fallback for old iframes just in case */
+.resource-content iframe {
+    width: 100% !important;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    border: none;
 }

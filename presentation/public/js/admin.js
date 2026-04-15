@@ -1110,14 +1110,41 @@ class AdminManager {
                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                         'insertdatetime', 'media', 'table', 'help', 'wordcount'
                     ],
-                    toolbar: 'undo redo | blocks | ' +
-                        'bold italic backcolor forecolor | alignleft aligncenter ' +
-                        'alignright alignjustify | bullist numlist outdent indent | ' +
-                        'table | removeformat | help',
+                        'table image media | removeformat | help',
                     skin: 'oxide-dark',
                     content_css: 'dark',
                     branding: false,
                     promotion: false,
+                    
+                    // ✅ NUEVA CONFIGURACIÓN: Carga Segura con Token de Administración
+                    images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+                        const formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                        const headers = { ...this._getAuthHeaders() };
+                        delete headers['Content-Type']; // Dejar que el navegador establezca el boundary
+
+                        fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
+                            method: 'POST',
+                            headers: headers,
+                            body: formData
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error(`Error del Servidor (${response.status})`);
+                            return response.json();
+                        })
+                        .then(json => {
+                            if (json && json.location) resolve(json.location);
+                            else reject('Respuesta de servidor inválida');
+                        })
+                        .catch(err => {
+                            console.error('❌ Error subiendo imagen desde TinyMCE:', err);
+                            reject(`Fallo en la subida: ${err.message}`);
+                        });
+                    }),
+                    automatic_uploads: true,
+                    images_reuse_filename: true,
+                    file_picker_types: 'image',
                     placeholder: 'Escribe el resumen enriquecido aquí (puedes añadir imágenes, tablas de Excel, colores y más)...',
                     content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
                         'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +

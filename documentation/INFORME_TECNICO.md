@@ -885,3 +885,17 @@ Para optimizar la rentabilidad del proyecto, se ha definido una estrategia dual 
 2.  **Material Premium/Propio:** Alojar en **GCS**. Aunque genera un costo marginal, garantiza que el archivo solo sea accesible a travÃ©s de los guardias de nuestra plataforma (`unlockResource`), protegiendo la propiedad intelectual y el modelo de negocio de suscripciones.
 
 ---
+
+### [15/04/2026] Actualización: Optimización Global de Multimedia y Visor Móvil
+
+**Frontend (Multimedia & UX):**
+- **Sistema Lazy-Load para Videos:** Se eliminó la inyección directa de iframes en la página de Recursos. Ahora los videos de YouTube generan dinámicamente 'Carátulas de Póster' interactivas con botones de reproducción. Esto disminuye dramáticamente el tiempo de carga y el consumo de RAM en dispositivos móviles.
+- **Visor Inmersivo de Video (Global):** Se extrajo la estructura del Modal de Video de *course.css* a *modal.css* y *uiManager.js*, volviéndolo una característica universal del sistema. Clica un póster y abrirá el visor flotante.
+- **Corrección 'F11' en Móviles:** En navegadores móviles propensos a errores de flexbox con spect-ratio (Safari/Chrome Mobile), el reproductor se estiraba ocupando 100vh rompiendo la interacción táctil. Se corrigió forzando CSS inline en uiManager.js con el método infalible de padding-bottom: 56.25% y anulando lex:1 en .modal-body.
+- **Interacciones Táctiles Liberadas:** Se eliminaron las capas de safe-wrapper que interceptaban los toques (pointer-events), y se añadieron parámetros de YouTube playsinline=1 y s=0 para evitar que el navegador envíe el video automáticamente a pantalla completa nativa.
+- **Scope Global (Bugfix):** Se expusieron las funciones openResourceLink y saveResource globalmente en window al final de esource.js tras salir del bloque de seguridad de DOMContentLoaded, reparando los botones de 'Ver Recurso'.
+
+**Seguridad & Backend (authMiddleware.js):**
+- **Smart Token Error Handling:** Se documentó que Supabase a veces emite errores HTTP 400 (AuthSessionMissingError) durante recargas de la tabla en clientes con sesión rota. El middleware interpretará correctamente esto como un Status 401 Unauthorized normal, limitando inmensamente el ruido rojo (? Supabase Auth Connectivity Error) en la consola central.
+
+- **Intercepción Nativa de TinyMCE (GCS):** Se completó la integración silenciosa del Content-Editor. Al copiar y pegar (Ctrl+V) imágenes directamente en el panel de texto enriquecido, el interceptor de imágenes del administrador sube el archivo binario automáticamente a Google Cloud Storage mediante /api/media/upload, convirtiéndolo a WebP nativo y devolviendo una etiqueta <img src> optimizada en CND sin interrupción del UX para el adminstrador.

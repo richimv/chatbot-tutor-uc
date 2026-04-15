@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${visualHTML}
                     
                     <div class="resource-cover-overlay-btn">
-                        <button onclick="openResourceLink(${resource.id}, '${resource.url}', ${resource.is_premium})" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
+                        <button onclick="openResourceLink(${resource.id}, '${resource.url}', ${resource.is_premium}, '${resource.resource_type}')" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
                             <i class="fas fa-external-link-alt"></i> Ver Recurso
                         </button>
                     </div>
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
                 
-                <div class="resource-actions" style="margin-top: 20px;">
+                <div class="resource-actions">
                     <!-- Integración con Mi Biblioteca / LibraryUI -->
                     <button class="btn-save btn-primary js-library-btn action-save" data-id="${resource.id}" data-type="book" data-action="save">
                         <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => {
             const contentBody = document.getElementById('resource-content-body');
             if (contentBody) {
+                // MEJORA 1: Tablas Responsivas
                 const tables = contentBody.querySelectorAll('table');
                 tables.forEach(table => {
                     const wrapper = document.createElement('div');
@@ -141,15 +142,87 @@ document.addEventListener('DOMContentLoaded', async () => {
                     table.parentNode.insertBefore(wrapper, table);
                     wrapper.appendChild(table);
                 });
+
+                // MEJORA 2: Visor de Imágenes (Lightbox)
+                const images = contentBody.querySelectorAll('img');
+                images.forEach(img => {
+                    img.style.cursor = 'zoom-in';
+                    img.title = 'Hacer clic para ampliar';
+                    img.addEventListener('click', () => {
+                        if (window.uiManager && window.uiManager.showMediaViewer) {
+                            window.uiManager.showMediaViewer(img.src, resource.title);
+                        } else {
+                            window.open(img.src, '_blank');
+                        }
+                    });
+                });
+
+                // MEJORA 3: Lazy-Loading de Videos (Poster + Modal)
+                // Reemplazar iframes pesados por carátulas interactivas
+                const iframes = contentBody.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
+                iframes.forEach(iframe => {
+                    const src = iframe.src;
+                    const videoId = _extractYoutubeId(src);
+                    if (!videoId) return;
+
+                    const posterWrapper = document.createElement('div');
+                    posterWrapper.className = 'video-poster-card';
+                    posterWrapper.innerHTML = `
+                        <div class="video-poster-image" style="background-image: url('https://img.youtube.com/vi/${videoId}/maxresdefault.jpg')"></div>
+                        <div class="video-poster-overlay">
+                            <div class="video-poster-play-btn">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <span class="video-poster-hint">Hacer clic para reproducir</span>
+                        </div>
+                    `;
+
+                    // Al hacer clic, abrir el modal inmersivo oficial
+                    posterWrapper.addEventListener('click', () => {
+                        if (window.uiManager && window.uiManager.openVideoModal) {
+                            window.uiManager.openVideoModal(src, resource.title);
+                        } else {
+                            window.open(src, '_blank');
+                        }
+                    });
+
+                    // Reemplazar el iframe original
+                    iframe.parentNode.replaceChild(posterWrapper, iframe);
+                });
             }
         }, 0);
     }
-});
 
-function openResourceLink(id, url, isPremium) {
+    /**
+     * Ayudante para extraer el ID de video de YouTube desde diversas URLs
+     */
+    function _extractYoutubeId(url) {
+    if (!url) return null;
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname.includes('youtube.com')) {
+            const v = urlObj.searchParams.get('v');
+            if (v) return v;
+            if (urlObj.pathname.includes('/embed/')) {
+                return urlObj.pathname.split('/embed/')[1].split('?')[0];
+            }
+        } else if (urlObj.hostname.includes('youtu.be')) {
+            return urlObj.pathname.slice(1).split('?')[0];
+        }
+    } catch (e) {
+        // Si no es una URL válida, intentar regex simple
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
+    return null;
+}
+
+window.openResourceLink = function(id, url, isPremium, type = 'book') {
     if (!url) return;
     if (window.uiManager) {
-        window.uiManager.unlockResource(id, 'book', isPremium, `Recurso ${id}`);
+        window.uiManager.registerMaterial(id, url);
+        window.uiManager.unlockResource(id, type, isPremium, `Recurso ${id}`);
     } else {
         window.open(url, '_blank');
     }
@@ -177,3 +250,9 @@ async function saveResource(id, btn) {
         alert("Error al guardar en la biblioteca.");
     }
 }
+
+// Exponer funciones globales
+window.openResourceLink = openResourceLink;
+window.saveResource = saveResource;
+
+});

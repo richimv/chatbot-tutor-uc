@@ -419,8 +419,12 @@ class UIManager {
             const urlObj = new URL(url);
             if (urlObj.hostname.includes('youtube.com')) {
                 videoId = urlObj.searchParams.get('v');
+                // Soporte para URLs de inserción (embed/ID)
+                if (!videoId && urlObj.pathname.includes('/embed/')) {
+                    videoId = urlObj.pathname.split('/embed/')[1].split('?')[0];
+                }
             } else if (urlObj.hostname.includes('youtu.be')) {
-                videoId = urlObj.pathname.slice(1);
+                videoId = urlObj.pathname.slice(1).split('?')[0];
             }
         } catch (e) { console.warn('Invalid Video URL'); }
 
@@ -436,15 +440,14 @@ class UIManager {
         if (modal && container) {
             // Limpiar y preparar contenido con un "safe area" inferior
             container.innerHTML = `
-                <div class="video-player-wrapper-safe" style="padding-bottom: 40px;">
-                    <div class="video-container-responsive">
-                        <iframe 
-                            src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=1" 
-                            title="${title || 'Video Hub Academia'}" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure" 
-                            allowfullscreen>
-                        </iframe>
-                    </div>
+                <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 12px; overflow: hidden; max-height: calc(100vh - 80px);">
+                    <iframe 
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&fs=0&modestbranding=1" 
+                        title="${title || 'Video Hub Academia'}" 
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen>
+                    </iframe>
                 </div>
             `;
             if (titleEl) {
@@ -519,8 +522,9 @@ class UIManager {
         // LÓGICA SMART ROUTING SENIOR
         const isOurContent = this.isOurResource(url);
 
-        // 1. Si NO es nuestro recurso (Excluye GCS) -> ABRIR EN PESTAÑA NUEVA (Seguro y Oficial)
-        if (!isOurContent || this.isDriveLink(url)) {
+        // 1. Si NO es nuestro recurso y no es imagen -> ABRIR EN PESTAÑA NUEVA
+        // Pero si ES una imagen, siempre intentamos usar el modal para mejor UX
+        if ((!isOurContent || this.isDriveLink(url)) && !this.isImage(url)) {
             window.open(url, '_blank');
             return;
         }
@@ -747,7 +751,11 @@ class UIManager {
     isImage(url) {
         if (!url) return false;
         const cleanUrl = url.split('?')[0].toLowerCase();
-        return /\.(png|jpe?g|webp|gif|svg)$/i.test(cleanUrl);
+        // Extensiones estándar
+        if (/\.(png|jpe?g|webp|gif|svg)$/i.test(cleanUrl)) return true;
+        // ✅ MEJORA: Detectar imágenes servidas por nuestra API (GCS/AI)
+        if (url.includes('/api/media/gcs') || url.includes('/api/media/explanation') || url.includes('/api/admin/upload-editor')) return true;
+        return false;
     }
 
     isPDF(url) {
@@ -770,7 +778,8 @@ class UIManager {
     isOurResource(url) {
         if (!url) return false;
         if (!url.startsWith('http')) return true; // Relative GCS path
-        if (url.includes(window.AppConfig.API_URL)) return true; // Already resolved GCS path
+        // ✅ MEJORA: Detectar si es una URL servida por nuestro proxy GCS
+        if (url.includes(window.AppConfig.API_URL) || url.includes('/api/media/gcs') || url.includes('/api/media/explanation')) return true;
         return false;
     }
 

@@ -29,6 +29,9 @@ A partir de la actualización de Marzo 2026, el flujo de trabajo ha sido central
 - Puedes escribir una ruta de GCS (ej: `my-internal-file.jpg`) o una URL externa.
 - **Legacy**: Aún es posible escribir `assets/imagen.png` si el archivo ya existe físicamente en el servidor, pero este método está **depreciado** para contenido nuevo.
 
+### **Integración Automática con TinyMCE (Portapapeles)**
+- Si el administrador pega (`Ctrl+V`) una imagen directamente en el cuerpo del editor **TinyMCE**, el panel intercepta nativamente el archivo binario, lo sube automáticamente en segundo plano a Google Cloud Storage transformándolo en WebP de alta fidelidad, e incrusta de inmediato el enlace público (CDN) en el texto. Esto significa que **arrastrar, soltar o pegar capturas de pantalla funciona de la misma forma mágica que en Word**, pero subiendo a la nube de manera blindada.
+
 ## 4. Integración en Administración 🛠️
 El panel de control (`admin.js`) ha sido blindado para la integridad de datos:
 - **Protección de Datos**: Los campos como `career`, `subtopic` y las 5 opciones de Residentado están protegidos contra sobreescrituras accidentales con `null`.

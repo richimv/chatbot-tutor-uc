@@ -271,6 +271,44 @@ class CoursesController {
         }
         return null;
     }
+
+    /**
+     * ✅ NUEVO: Extrae todas las rutas de GCS de un bloque de HTML.
+     * Busca el patrón path=xxx en las URLs.
+     */
+    _extractGcsPaths(html) {
+        if (!html || typeof html !== 'string') return [];
+        const paths = [];
+        const regex = /path=([^"&>\s]+)/g;
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            paths.push(match[1]);
+        }
+        return [...new Set(paths)]; // Eliminar duplicados
+    }
+
+    /**
+     * ✅ NUEVO: Compara dos versiones de HTML y elimina las imágenes de GCS 
+     * que estaban en la vieja pero ya no en la nueva (huérfanos).
+     */
+    async _cleanupOrphanedImages(oldHtml, newHtml) {
+        try {
+            const oldPaths = this._extractGcsPaths(oldHtml);
+            const newPaths = this._extractGcsPaths(newHtml);
+
+            // Filtrar caminos que están en old pero NO en new
+            const orphanedPaths = oldPaths.filter(path => !newPaths.includes(path));
+
+            if (orphanedPaths.length > 0) {
+                console.log(`🗑️ Detectados ${orphanedPaths.length} archivos descatalogados en editor. Limpiando GCS...`);
+                for (const gcsPath of orphanedPaths) {
+                    await mediaController.deleteFile(gcsPath);
+                }
+            }
+        } catch (error) {
+            console.error('⚠️ Error en limpieza de imágenes de editor:', error);
+        }
+    }
  
     // --- Métodos CRUD Genéricos para el Panel de Administración ---
 
@@ -466,6 +504,18 @@ class CoursesController {
                 const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
                 if (driveThumb) req.body.image_url = driveThumb;
             }
+
+            // --- NUEVO: GESTIÓN DE IMÁGENES DENTRO DEL EDITOR (TinyMCE) ---
+            if (entityType === 'book' || entityType === 'course') {
+                const oldItem = await this.adminService.getById(entityType, entityId);
+                const oldContent = oldItem?.content_html || '';
+                const newContent = req.body.content_html || '';
+
+                if (oldContent !== newContent) {
+                    // Acción asíncrona (no bloqueante para el Admin) para limpiar huérfanos
+                    this._cleanupOrphanedImages(oldContent, newContent);
+                }
+            }
  
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);
             res.json(updatedItem);
@@ -483,11 +533,21 @@ class CoursesController {
 
             // ✅ CLEANUP: Borrar imagen de GCS si existe
             const oldItem = await this.adminService.getById(entityType, entityId);
-            if (oldItem && oldItem.image_url) {
-                try {
-                    await mediaController.deleteFile(oldItem.image_url);
-                } catch (err) {
-                    console.error('Error deleting image on entity delete:', err);
+            if (oldItem) {
+                // 1. Borrar portada (Cover)
+                if (oldItem.image_url) {
+                    try { await mediaController.deleteFile(oldItem.image_url); } 
+                    catch (err) { console.error('Error deleting cover image:', err); }
+                }
+
+                // 2. Borrar todas las imágenes internas del editor (TinyMCE)
+                if (oldItem.content_html) {
+                    try {
+                        const contentPaths = this._extractGcsPaths(oldItem.content_html);
+                        for (const gcsPath of contentPaths) {
+                            await mediaController.deleteFile(gcsPath);
+                        }
+                    } catch (err) { console.error('Error deleting editor images:', err); }
                 }
             }
 

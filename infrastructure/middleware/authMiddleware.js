@@ -45,10 +45,17 @@ async function auth(req, res, next) {
             sbUser = result.user;
         } catch (err) {
             const msg = err.message || '';
+            const status = err.status || 0;
             
-            // 1. Errores de Cliente (Token)
-            if (msg.includes('invalid JWT') || msg.includes('expired') || msg.includes('invalid claim')) {
-                console.warn('⚠️ Token inválido o expirado:', msg);
+            // 1. Errores de Cliente (Token inválido/expirado o sesión perdida)
+            const isClientError = msg.includes('invalid JWT') || 
+                                  msg.includes('expired') || 
+                                  msg.includes('invalid claim') || 
+                                  msg.includes('Auth session missing') || 
+                                  status === 400; // Supabase suele devolver 400 para sesiones rotas
+
+            if (isClientError) {
+                console.warn('⚠️ Sesión de usuario inválida:', msg);
                 return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
             }
 
@@ -57,7 +64,8 @@ async function auth(req, res, next) {
             if (isConnectionError) {
                 console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
             } else {
-                console.error('❌ Supabase Auth Connectivity Error:', err);
+                // Solo loguear como ERROR si es algo realmente inesperado (5xx o crash)
+                console.error('❌ Supabase Auth unexpected error:', err);
             }
             return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
         }

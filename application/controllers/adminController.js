@@ -354,6 +354,33 @@ class AdminController {
             res.status(500).json({ error: 'Error del servidor al sincronizar carpeta de Drive.' });
         }
     }
+
+    /**
+     * ✅ NUEVO: Maneja la subida de imágenes desde el editor TinyMCE.
+     * Sube a GCS y devuelve la URL para ser insertada en el HTML.
+     */
+    async uploadEditorImage(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
+            }
+
+            // Subir a GCS en una carpeta dedicada para contenido del editor
+            const gcsPath = await mediaController.uploadFile(req.file, 'editor-content');
+            
+            // Construir la URL completa que usará el frontend para cargar la imagen
+            // Usamos el proxy /api/media/gcs para que no dependa de URLs públicas directas de Google
+            const location = `/api/media/gcs?path=${gcsPath}`;
+
+            console.log(`🖼️ Imagen de editor subida con éxito: ${location}`);
+            
+            // TinyMCE espera un JSON con la propiedad 'location'
+            res.json({ location });
+        } catch (error) {
+            console.error('❌ Error en uploadEditorImage:', error);
+            res.status(500).json({ error: 'Error al procesar la imagen del editor.' });
+        }
+    }
 }
 
 const controller = new AdminController();
@@ -367,5 +394,6 @@ module.exports = {
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),
     deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller),
-    syncDriveFolder: controller.syncDriveFolder.bind(controller)
+    syncDriveFolder: controller.syncDriveFolder.bind(controller),
+    uploadEditorImage: controller.uploadEditorImage.bind(controller)
 };
