@@ -87,6 +87,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p>Este recurso no tiene un resumen detallado aún.</p>
         </div>`;
 
+        // INTERCEPTOR DE RENDIMIENTO (BYPASS VERCEL):
+        // Reemplaza las rutas relativas almacenadas en la DB por el Endpoint directo del Backend
+        // Esto salta la estructura proxy de Vercel, entregando la imagen a máxima velocidad y evitando bugs 404
+        let safeHTML = resource.content_html || defaultContent;
+        if (window.AppConfig && window.AppConfig.API_URL) {
+            safeHTML = safeHTML.replace(/src="\/api\/media\//g, `src="${window.AppConfig.API_URL}/api/media/`);
+        }
+
         // Configurar la URL en el uiManager
         if (window.uiManager && resource.url) {
             window.uiManager.registerMaterial(resource.id, resource.url);
@@ -124,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             <div class="resource-body">
                 <div class="resource-content" id="resource-content-body">
-                    ${resource.content_html || defaultContent}
+                    ${safeHTML}
                 </div>
             </div>
         `;
