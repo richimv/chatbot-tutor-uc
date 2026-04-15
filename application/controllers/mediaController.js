@@ -7,16 +7,27 @@ const driveService = require('../../domain/services/driveService');
 
 class MediaController {
     constructor() {
-        // ✅ MEJORA: Autenticación robusta (Usa variable de entorno o fallback local)
+        // ✅ MEJORA: Autenticación Multi-Entorno (Soporta JSON directo o archivo físico)
         const storageOptions = {};
-        if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        
+        if (process.env.GCS_SERVICE_ACCOUNT_JSON) {
+            try {
+                storageOptions.credentials = JSON.parse(process.env.GCS_SERVICE_ACCOUNT_JSON);
+                console.log('☁️ GCS: Autenticación por JSON (Env Var) detectada.');
+            } catch (e) {
+                console.error('❌ Error parseando GCS_SERVICE_ACCOUNT_JSON:', e.message);
+            }
+        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
             storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+            console.log('☁️ GCS: Autenticación por GOOGLE_APPLICATION_CREDENTIALS detectada.');
         } else {
             storageOptions.keyFilename = path.join(__dirname, '../../service-account-key.json');
+            console.log('☁️ GCS: Autenticación por archivo local detectada.');
         }
 
         this.storage = new Storage(storageOptions);
         this.bucketName = process.env.GCS_BUCKET_NAME || 'chatbot-tutor-medical-images';
+        console.log(`☁️ GCS Bucket configurado: ${this.bucketName}`);
     }
 
     /**
@@ -114,6 +125,47 @@ class MediaController {
     }
 
     /**
+     * ✅ NUEVO: Proxy para imágenes de EXPLICACIONES por ID.
+     * GET /api/media/explanation/:id
+     */
+    async serveExplanationImage(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await db.query('SELECT explanation_image_url FROM questions WHERE id = $1', [id]);
+            const path = result.rows[0]?.explanation_image_url;
+
+            if (!path) return res.status(404).send('La explicación no tiene imagen asignada.');
+            
+            // Re-inyectar en req.query para usar la lógica genérica
+            req.query.path = path;
+            return this._serveGCSByPath(req, res, false);
+        } catch (error) {
+            console.error('❌ Error en serveExplanationImage:', error);
+            res.status(500).send('Error interno.');
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Proxy para imágenes de RECURSOS (Books/Videos/Docs) por ID.
+     * GET /api/media/resource/:id
+     */
+    async serveResourceImage(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await db.query('SELECT image_url FROM resources WHERE id = $1', [id]);
+            const path = result.rows[0]?.image_url;
+
+            if (!path) return res.status(404).send('El recurso no tiene imagen asignada.');
+
+            req.query.path = path;
+            return this._serveGCSByPath(req, res, false);
+        } catch (error) {
+            console.error('❌ Error en serveResourceImage:', error);
+            res.status(500).send('Error interno.');
+        }
+    }
+
+    /**
      * Lógica interna compartida para servir archivos de GCS por ruta.
      */
     async _serveGCSByPath(req, res, isAdminOnly = false) {
@@ -127,7 +179,7 @@ class MediaController {
 
             const [exists] = await file.exists();
             if (!exists) {
-                // Silencioso o 404 estándar
+                console.warn(`🔍 GCS: Archivo no encontrado en bucket [${this.bucketName}]: ${gcsPath}`);
                 return res.status(404).send('Archivo no encontrado en GCS.');
             }
 

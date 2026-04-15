@@ -899,3 +899,13 @@ Para optimizar la rentabilidad del proyecto, se ha definido una estrategia dual 
 - **Smart Token Error Handling:** Se documentó que Supabase a veces emite errores HTTP 400 (AuthSessionMissingError) durante recargas de la tabla en clientes con sesión rota. El middleware interpretará correctamente esto como un Status 401 Unauthorized normal, limitando inmensamente el ruido rojo (? Supabase Auth Connectivity Error) en la consola central.
 
 - **Intercepción Nativa de TinyMCE (GCS):** Se completó la integración silenciosa del Content-Editor. Al copiar y pegar (Ctrl+V) imágenes directamente en el panel de texto enriquecido, el interceptor de imágenes del administrador sube el archivo binario automáticamente a Google Cloud Storage mediante /api/media/upload, convirtiéndolo a WebP nativo y devolviendo una etiqueta <img src> optimizada en CND sin interrupción del UX para el adminstrador.
+
+## Requisitos de Despliegue en Render (IMPORTANTE)
+
+Para que las imágenes y recursos de GCS funcionen en el servidor de producción (Render), se DEBEN configurar las siguientes variables de entorno en el Dashboard de Render:
+
+1. **GCS_BUCKET_NAME**: El nombre del bucket de producción (ej: chatbot-tutor-medical-images).
+2. **GCS_SERVICE_ACCOUNT_JSON**: Pega el contenido íntegro del archivo JSON de tu Service Account de Google Cloud. El sistema ahora lo parseará automáticamente para autenticarse sin necesidad del archivo físico en el servidor.
+
+> [!TIP]
+> Si tras configurar estas variables el error 404 persiste, verifica que la Service Account tenga el rol 'Storage Object Viewer' en el bucket correspondiente.

@@ -23,7 +23,7 @@
     // 2. Definir URL del Backend (API)
     const API_URL = isLocal
         ? 'http://localhost:3000'
-        : 'https://tutor-ia-backend.onrender.com';
+        : ''; // ✅ PRO: En producción usamos rutas relativas (Vercel lo redirecciona a Render)
 
     // 3. Exponer configuración globalmente
     // Usamos var o window para asegurar que sea global
