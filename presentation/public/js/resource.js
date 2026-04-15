@@ -87,14 +87,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p>Este recurso no tiene un resumen detallado aún.</p>
         </div>`;
 
-        // INTERCEPTOR DE RENDIMIENTO (BYPASS VERCEL):
-        // Reemplaza las rutas relativas o con dominio almacenadas en la DB por el Endpoint directo del Backend
-        // Esto salta la estructura proxy de Vercel (que asfixia el streaming y da 404), entregando la imagen directo de Render
+        // INTERCEPTOR DE RENDIMIENTO Y ESCAPE DE VERCEL (DOM PARSER):
+        // En lugar de usar Regex (que es frágil ante diferentes codificaciones HTML de TinyMCE),
+        // parseamos el HTML real y reescribimos los sources explícitamente para saltarnos Vercel.
         let safeHTML = resource.content_html || defaultContent;
-        if (window.AppConfig && window.AppConfig.API_URL) {
-            safeHTML = safeHTML.replace(/src=(["'])(?:https?:\/\/[^\/]+)?\/api\/media\//g, `src=$1${window.AppConfig.API_URL}/api/media/`);
+        if (window.AppConfig && window.AppConfig.API_URL && safeHTML !== defaultContent) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(safeHTML, 'text/html');
+                const images = doc.querySelectorAll('img');
+                
+                images.forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (src && src.includes('/api/media/')) {
+                        // Extraemos solo la parte del endpoint (ej. /api/media/gcs?path=...)
+                        const endpointMatch = src.match(/\/api\/media\/.*/);
+                        if (endpointMatch) {
+                            // Inyectar forzosamente el dominio directo de Render (Saltando Vercel y sus cache/404s)
+                            img.setAttribute('src', window.AppConfig.API_URL + endpointMatch[0]);
+                        }
+                    }
+                });
+                safeHTML = doc.body.innerHTML;
+            } catch (e) {
+                console.error("Error al interceptar imágenes del recurso:", e);
+            }
         }
-
 
         // Configurar la URL en el uiManager
         if (window.uiManager && resource.url) {
