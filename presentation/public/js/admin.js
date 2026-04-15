@@ -1102,6 +1102,7 @@ class AdminManager {
                 }
 
                 tinymce.init({
+                    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table image media | removeformat | help',
                     selector: '#generic-content-html',
                     height: 400,
                     menubar: 'edit insert view format table tools help',
@@ -1110,7 +1111,6 @@ class AdminManager {
                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                         'insertdatetime', 'media', 'table', 'help', 'wordcount'
                     ],
-                        'table image media | removeformat | help',
                     skin: 'oxide-dark',
                     content_css: 'dark',
                     branding: false,
@@ -1118,8 +1118,12 @@ class AdminManager {
                     
                     // ✅ NUEVA CONFIGURACIÓN: Carga Segura con Token de Administración
                     images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+                        const blob = blobInfo.blob();
+                        const fileName = blobInfo.filename();
+                        console.log(`🚀 Iniciando subida de imagen de editor: ${fileName} (${blob.size} bytes)`);
+
                         const formData = new FormData();
-                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+                        formData.append('file', blob, fileName);
 
                         const headers = { ...this._getAuthHeaders() };
                         delete headers['Content-Type']; // Dejar que el navegador establezca el boundary
@@ -1129,21 +1133,34 @@ class AdminManager {
                             headers: headers,
                             body: formData
                         })
-                        .then(response => {
-                            if (!response.ok) throw new Error(`Error del Servidor (${response.status})`);
+                        .then(async response => {
+                            console.log(`📡 Respuesta de servidor recibida. Status: ${response.status}`);
+                            if (!response.ok) {
+                                const errText = await response.text();
+                                throw new Error(`Servidor retorno ${response.status}: ${errText}`);
+                            }
                             return response.json();
                         })
                         .then(json => {
-                            if (json && json.location) resolve(json.location);
-                            else reject('Respuesta de servidor inválida');
+                            if (json && json.location) {
+                                console.log('✅ Imagen subida con éxito:', json.location);
+                                resolve(json.location);
+                            } else {
+                                console.error('❌ Respuesta inválida de servidor:', json);
+                                reject('Respuesta de servidor inválida');
+                            }
                         })
                         .catch(err => {
-                            console.error('❌ Error subiendo imagen desde TinyMCE:', err);
+                            console.error('❌ Error crítico en subida de TinyMCE:', err);
                             reject(`Fallo en la subida: ${err.message}`);
                         });
                     }),
                     automatic_uploads: true,
                     images_reuse_filename: true,
+                    paste_data_images: true, // ✅ NUEVO: Permitir pegar imágenes directamente (Ctrl+V)
+                    relative_urls: false,    // ✅ NUEVO: Forzar URLs absolutas para evitar que GCS se rompa
+                    remove_script_host: false,
+                    convert_urls: false,     // ✅ NUEVO: Evitar que TinyMCE modifique nuestras URLs de Render
                     file_picker_types: 'image',
                     placeholder: 'Escribe el resumen enriquecido aquí (puedes añadir imágenes, tablas de Excel, colores y más)...',
                     content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +

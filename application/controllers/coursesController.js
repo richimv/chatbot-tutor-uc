@@ -279,7 +279,8 @@ class CoursesController {
     _extractGcsPaths(html) {
         if (!html || typeof html !== 'string') return [];
         const paths = [];
-        const regex = /path=([^"&>\s]+)/g;
+        // ✅ MEJORA: Soporta tanto el parámetro nuevo 'file=' como el legacy 'path='
+        const regex = /(?:file|path)=([^"&>\s]+)/g;
         let match;
         while ((match = regex.exec(html)) !== null) {
             paths.push(match[1]);
