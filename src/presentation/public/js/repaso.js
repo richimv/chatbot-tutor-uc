@@ -224,8 +224,8 @@ class RepasoManager {
                 const data = await res.json();
                 return data.decks || [];
             } finally {
-                // Limpiar la promesa después de un pequeño delay para permitir nuevas cargas si hay cambios
-                setTimeout(() => delete this._sharedRequests.decks[key], 5000);
+                // Limpiar inmediatamente la promesa en curso al completarse para evitar retención de datos desfasados
+                delete this._sharedRequests.decks[key];
             }
         })();
 
@@ -912,8 +912,10 @@ class RepasoManager {
 
             if (res.ok) {
                 window.uiManager.showToast('¡Mazo clonado con éxito!', 'success');
-                // Reload explorer to show new deck
-                this.explorer.loadTree();
+                // 1. Invalidar caché en memoria y pools de peticiones compartidas de inmediato
+                this.invalidateCache();
+                // 2. Sincronizar árbol del explorador lateral con await
+                await this.explorer.loadTree();
                 if (window.sessionManager) {
                     // Sincronización gestionada por NetworkService
                 }
@@ -2142,6 +2144,7 @@ class RepasoManager {
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
                     this.invalidateCache(parentId);
+                    await this.explorer.loadTree();
                     if (parentId) await this.loadFolder(parentId, false);
                     else await this.loadDashboard(false);
                     // Sincronización gestionada por NetworkService

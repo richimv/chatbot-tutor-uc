@@ -16,6 +16,12 @@ Este documento define las reglas visuales, componentes interactivos, tokens CSS 
 5. [✨ Micro-interacciones y Efectos](#5--micro-interacciones-y-efectos)
 6. [🚀 Reglas UX Mandatorias](#6--reglas-ux-mandatorias)
 7. [🎨 Iconografía (Font Awesome 6.4.0)](#7--iconografía-font-awesome-640)
+8. [📱 Mobile Design Systems: HubDocenteApp & HubSaludApp](#8--mobile-design-systems-hubdocenteapp--hubsaludapp-light-theme)
+9. [📋 Sistema de Revisión de Examen (Correction Mode & Dual-Theme UI)](#9--sistema-de-revisión-de-examen-correction-mode--dual-theme-ui)
+10. [🔔 Sistema Centralizado de Alertas, Toasts y Vidas en Tiempo Real](#10--sistema-centralizado-de-alertas-toasts-y-vidas-en-tiempo-real)
+11. [💬 Sistema Centralizado de Tooltips y Onboarding Guía](#11--sistema-centralizado-de-tooltips-y-onboarding-guía-tooltipmanager)
+12. [📐 Motor Universal de Tipografía Matemática, Científica y Notación Química](#12--motor-universal-de-tipografía-matemática-científica-y-notación-química-katex--markdownrenderer)
+13. [🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración & Subcontenedores Avanzados](#13-️-arquitectura-y-estándar-visual-del-panel-de-gestión--administración-admin-panel--subcontenedores-avanzados-de-modales)
 
 ---
 
@@ -481,3 +487,148 @@ El mismo canal de renderizado rige de manera homogénea en:
 * **Tarjetas de Flashcards y Mazos de Repaso (`flashcards.js`, `repaso.js`)**.
 * **Visualizador de Recursos Educativos (`resource.js`)**.
 * **Panel de Administración y Previsualización (`admin.js`)**.
+
+---
+
+## 13. 🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración (Admin Panel) & Subcontenedores Avanzados de Modales
+
+El Panel de Gestión (`/admin`, `admin.html`, `admin.js`, `admin.css`) es la consola maestra de administración de Hub Academia. Su arquitectura visual y funcional debe mantener paridad estricta con el resto del ecosistema mediante el Dual-Theme Engine, adaptación responsiva extrema y diseño modular.
+
+### 13.1. Layout del Panel y Contenedor Maestro
+* **Contenedor Maestro (`.admin-container`):** `max-width: 1440px; margin: 0 auto; padding: 1.5rem 1.75rem; width: 100%; box-sizing: border-box;`. En dispositivos móviles (`<= 768px`) reduce el padding a `1rem 0.75rem` para maximizar el ancho útil sin generar desbordamiento lateral.
+* **Barra de Pestañas con Desplazamiento Táctil (`.admin-tabs`):**
+  * Desplazamiento horizontal nativo en pantallas estrechas: `overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: 8px; scrollbar-width: none;`.
+  * Pestañas `.tab-link`: Fondo transparente o `var(--surface-hover)`, radio `10px`, padding `0.65rem 1.1rem`, tipografía `0.88rem` SemiBold (600), texto en `var(--text-secondary)`.
+  * **Estado Activo (`.tab-link.active`):** Fondo `var(--bg-tertiary)`, color `var(--primary)`, borde inferior activo o contorno de acento de 2px, garantizando contraste 100% nítido en modo claro (`#2563eb` sobre fondo Slate) y modo oscuro (`#3b82f6` sobre Matte Black).
+* **Contenedor de Contenido (`.tab-content`):** Transición suave entre pestañas con display condicional (`display: none` / `display: block`).
+
+### 13.2. Controles de Cabecera, Buscador Universal y Filtros Dinámicos
+* **Barra de Herramientas (`.tab-header-controls`):** Flexbox adaptativo con `display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem;`.
+* **Agrupador de Búsqueda y Orden (`.search-sort-wrapper`):** Flexbox con `display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 280px;`.
+* **Buscador Universal (`.admin-search-input`):**
+  * Contenedor `.search-bar-container` con icono FontAwesome a la izquierda `16px`, input con `background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 10px; height: 40px; padding-left: 2.25rem;`.
+  * **Placeholders Contextuales por Pestaña:**
+    * Alumnos (`tab-students`): `"Buscar por nombre o correo..."`.
+    * Recursos (`tab-books`): `"Buscar recursos..."`.
+    * General: `"Buscar..."`.
+  * **Algoritmo de Búsqueda Multiatributo (`applySearchFilterForTab`):** Evalúa concurrentemente `item.textContent`, `item.dataset.email` y `item.dataset.name` para coincidencias instantáneas sin peticiones redundantes a la base de datos.
+* **Filtros Selectores (`.admin-type-filter`, `.tab-sort-select`):** Altura estándar `40px`, radio `10px`, fondo `var(--input-bg)`, borde `var(--input-border)`, color `var(--text-main)`.
+
+### 13.3. Tarjetas de Elementos de Administración (`.admin-item-card`)
+* **Superficie de Tarjeta:** Fondo `var(--card-bg)`, borde `1px solid var(--border-color)`, radio `14px`, padding `1rem 1.25rem`, sombra suave `var(--shadow-sm)`.
+* **Checkbox Masivo (`.admin-item-checkbox-wrapper`):** Contenedor a la izquierda con checkbox personalizado de `18x18px` para selección y ejecución de operaciones en bloque (eliminación masiva, encadenamiento de casos).
+* **Thumbnail de Previsualización (`.admin-item-thumbnail`):** Cuadrado de `44x44px` con radio `8px`, fondo `var(--bg-tertiary)`, borde `1px solid var(--border-color)`, imagen optimizada WebP o fallback iconográfico `<i class="fas fa-image-slash"></i>`.
+* **Cuerpo de Información (`.item-card-content`):**
+  * Título principal: tipografía `0.95rem` SemiBold (600), `line-height: 1.4`, color `var(--text-main)`.
+  * Subtítulos: tipografía `0.82rem`, color `var(--text-muted)`.
+* **Semáforo de Tres Puntos en Recursos (`.admin-item-indicators`):**
+  * Punto Dorado / Corona (`.premium-badge`): Acceso Premium que descuenta vidas a usuarios gratuitos.
+  * Punto Verde / Ojo (`.visibility-badge`): Recurso activo y visible en el catálogo de estudiantes.
+  * Punto Azul / Rayo (`.direct-badge`): Apertura directa e inmersiva en visor modal (omite página de detalle).
+* **Sistema Estandarizado de Badges Semánticos (`.admin-badge`):**
+  * `.admin-badge-blue`: Azul marca (`var(--primary)` translúcido), usado para Plan BASIC y dominio EDUCACIÓN.
+  * `.admin-badge-purple`: Violeta/Índigo translúcido, usado para Plan ADVANCED y casuísticas.
+  * `.admin-badge-green`: Esmeralda translúcido, usado para estado ACTIVE, dominio SALUD y contador de preguntas.
+  * `.admin-badge-danger`: Carmesí translúcido con texto `#f87171`, usado para estado EXPIRED y avisos críticos.
+  * `.admin-badge-muted`: Slate neutro (`var(--bg-tertiary)`), usado para Plan FREE, nombres de curso y fecha de caducidad (`📅 Expira: DD/MM/AAAA`).
+  * `.admin-badge-cyan`: Cian translúcido, usado para nombres de tema o etiquetas pedagógicas.
+
+### 13.4. Arquitectura Avanzada de Modales del Panel de Gestión (`.modal`, `.modal-content`)
+Todas las modales operadas por `openGenericModal()` y `saveGenericForm()` se adhieren al siguiente estándar universal:
+* **Erradicación de Colores Rígidos:** Prohibido el uso de `#0f0f13` o fondos oscuros hardcodeados. El cuerpo modal consume estrictamente:
+  ```css
+  background: var(--modal-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  box-shadow: var(--shadow-xl);
+  ```
+* **Regla Estructural de Padding Cero (`padding: 0 !important`):**
+  El contenedor `.modal-content` debe poseer `padding: 0 !important; display: flex; flex-direction: column; overflow: hidden;` para que `.modal-header`, `.modal-body` y `.modal-footer` anclen de borde a borde sin espacios muertos ni doble padding.
+* **Scroll Confinado a `.modal-body`:**
+  * `.modal-body` cuenta con `overflow-y: auto; flex: 1; min-height: 0; padding: 1.5rem;`.
+  * Barra de desplazamiento estandarizada: `scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;`.
+  * **Regla Crítica:** Queda estrictamente prohibido que la barra de desplazamiento rebase hacia el header o el footer, o que existan contenedores anidados con scrolls redundantes.
+
+### 13.5. Subcontenedores Internos dentro de las Modales
+* **1. Tarjetas de Selección de Método (`.import-method-card`):**
+  * Fondo `var(--bg-tertiary)`, borde `1px solid var(--border-color)`, radio `12px`, padding `1.25rem`.
+  * Micro-interacción: Al posar el cursor, aplica elevación `transform: translateY(-2px)`, borde iluminado en `var(--primary)` y halo suave.
+* **2. Contenedores Condicionales de IA (`#ai-domain-container`, `.ai-specialty-container`):**
+  * Fondo `var(--bg-tertiary)`, borde `1px solid var(--border-color)`, esquinas redondeadas `12px`, padding `1rem 1.25rem`.
+  * Checkboxes de área estilizados como pills interactivas con `display: flex; align-items: center; gap: 8px;`.
+* **3. Chips de Elementos Seleccionados (`.selected-chip`):**
+  * Fondo `var(--bg-tertiary)` con borde `1px solid var(--border-color)`, radio `8px`, padding `6px 12px`.
+  * Texto de alto contraste obligatorio: `color: #ffffff !important;` en modo oscuro y Slate en modo claro.
+  * Botón de deselección con cruz accesible `fa-times` y hover interactivo.
+* **4. Zona de Carga y Acciones de Imágenes (`.image-upload-actions`, `.image-preview-wrapper`):**
+  * Contenedor flex con `display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px;`.
+  * Previsualización con marco redondeado de `10px`, borde dinámico `var(--border-color)`.
+  * Botón de eliminación de imagen con token de peligro oficial `var(--danger)` (prohibido variables huérfanas como `--danger-color`).
+* **5. Switches Estilo iOS (`.switch-container`, `.switch-slider`):**
+  * Track en `var(--bg-tertiary)`, borde `1px solid var(--border-color)`, slider activo en `var(--primary)` (o ámbar `--warning` para Acceso Premium).
+
+### 13.6. Adaptabilidad Móvil y Colapso Automático de Cuadrículas
+* **Ancho Perimetral Seguro en Dispositivos Móviles:**
+  * En pantallas medianas y tabletas (`@media (max-width: 768px)`):
+    ```css
+    .modal-content {
+        width: calc(100% - 20px) !important;
+        max-width: calc(100% - 20px) !important;
+        margin: 10px auto !important;
+    }
+    ```
+  * En celulares ultracompactos (`@media (max-width: 480px)`):
+    ```css
+    .modal-content {
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin: 8px auto !important;
+    }
+    ```
+* **Colapso Mandatorio de Grillas Internas:**
+  Toda grilla interna declarada con `grid-template-columns: 1fr 1fr;` (ej. campos en dos columnas como Tipo/Sector, Tier/Estado, opciones A/B/C/D) colapsa obligatoriamente a una columna fluida en móvil para evitar que los inputs o selects queden comprimidos o desborden el contenedor:
+  ```css
+  @media (max-width: 768px) {
+      .modal-body div[style*="grid-template-columns"] {
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
+      }
+  }
+  ```
+
+### 13.7. Editor Científico TinyMCE 6 Dual-Theme Dinámico (`getStandardTinyMCEConfig`)
+* **Detección Reactiva de Tema:**
+  ```javascript
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  ```
+* **Configuración Diferencial de Skins y Contenido:**
+  * **Modo Oscuro (Matte Black 🌙):**
+    * `skin: 'oxide-dark'`, `content_css: 'dark'`.
+    * Fondo de redacción `#0a0a0a` / `#121212`, tipografía `#ffffff` / `#f8fafc`.
+  * **Modo Claro (Studio Slate ☀️):**
+    * `skin: 'oxide'`, `content_css: 'default'`.
+    * Fondo de redacción `#ffffff`, tipografía `#0f172a`.
+* **Sanitización y Carga de Medios:** Las imágenes pegadas (`Ctrl+V` o Base64) se interceptan y suben exclusivamente al guardar a Google Cloud Storage (GCS) en formato WebP, impidiendo payloads pesados en base de datos.
+
+### 13.8. Modal Canónica de Confirmación (`#confirmation-modal` / `.confirmation-modal-card`)
+La modal universal de confirmación implementa una jerarquía accesible de alta legibilidad:
+* **Estructura Estricta:**
+  * Contenedor tarjeta: `.confirmation-modal-card` con `max-width: 440px; border-radius: 20px;`.
+  * Cabecera: `.confirmation-modal-header` con `.confirmation-title-wrap` e icono semántico en contenedor `.confirmation-modal-icon` (interrogación azul, advertencia ámbar, peligro rojo, éxito verde).
+  * Botón de cierre: `.modal-close-btn` con atributo accesible `aria-label="Cerrar modal"`.
+  * Cuerpo: `.confirmation-modal-body` con mensaje tipográfico en `var(--text-secondary)`.
+  * Pie: `.confirmation-modal-footer` con botón secundario `.btn-secondary` ("Cancelar") a la izquierda y primario `.btn-primary` ("Confirmar") a la derecha.
+
+### 13.9. Arquitectura y Reglas de la Pestaña de Gestión de Alumnos / Usuarios
+* **Autenticación Exclusiva Google OAuth:**
+  * Hub Academia opera exclusivamente mediante **Google OAuth** (`signInWithIdToken` / `signInWithOAuth`).
+  * Los alumnos creados por el administrador en el panel acceden directamente autenticándose con su correo Google. Se erradica por completo el concepto de contraseñas locales o botones rotos de reseteo.
+* **Sincronización Bidireccional de Suscripciones:**
+  * **Frontend Dinámico (`admin.js`):**
+    * Seleccionar `Plan Básico` fuerza estado `Activo` y fecha actual + 2 meses.
+    * Seleccionar `Plan Avanzado` fuerza estado `Activo` y fecha actual + 4 meses.
+    * Seleccionar `Gratuito (Free)` fuerza estado `Inactivo/Pending` y vacía la fecha.
+    * Cambiar manualmente a `Inactivo` o `Expirado` degrada el tier a `Free` y limpia la fecha.
+  * **Backend Atómico (`adminService.js`):**
+    * Red de seguridad de negocio (`resolveSubscriptionConsistency`): fuerza consistencia de tiers y calcula expiración (+2m basic, +4m advanced) si no fue enviada.
+    * **Fidelización Automática:** Al activar un usuario (`subscriptionStatus: 'active'`), se restablecen a cero (`0`) todos los contadores de consumo (`usageCount = 0`, `dailyAiUsage = 0`, `dailyRagUsage = 0`, `dailySimulatorUsage = 0`, `monthlyFlashcardsUsage = 0`) para garantizar un ciclo de membresía limpio e íntegro.

@@ -304,10 +304,177 @@ body.modal-open {
     color: var(--text-main) !important;
 }
 
-/* Variante premium */
+/* Variante premium (retrocompatibilidad) */
 .auth-prompt-modal .modal-content.premium-variant {
-    border: 2px solid #f59e0b !important;
-    box-shadow: var(--shadow-xl), 0 0 25px rgba(245, 158, 11, 0.25) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+/* ==========================================================================
+   MODAL PAYWALL MODERNO (Design System v3.5)
+   Dual-Theme Engine: Dark Mode Matte Black / Light Mode Clean Slate
+   ========================================================================== */
+.auth-prompt-modal.paywall-overlay {
+    background: var(--modal-overlay-bg) !important;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}
+
+.modal-content.paywall-modal-content {
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--shadow-xl) !important;
+    width: 92% !important;
+    max-width: 420px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    animation: modalScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.paywall-glow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.paywall-header {
+    position: relative;
+    z-index: 1;
+    padding: 1.35rem 1.4rem 0.25rem 1.4rem;
+}
+
+.paywall-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.paywall-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: var(--primary);
+}
+
+.paywall-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main) !important;
+    margin: 0;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+.paywall-body {
+    position: relative;
+    z-index: 1;
+    padding: 0.4rem 1.4rem 1.1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.paywall-description {
+    font-size: 0.88rem;
+    color: var(--text-secondary) !important;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.paywall-features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin: 0.15rem 0;
+}
+
+.paywall-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    font-size: 0.86rem;
+    color: var(--text-main);
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+[data-theme="light"] .paywall-feature-item {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.paywall-feature-icon {
+    color: #10b981;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.paywall-footer {
+    position: relative;
+    z-index: 1;
+    padding: 0 1.4rem 1.4rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-paywall-primary {
+    width: 100%;
+    background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-paywall-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.btn-paywall-secondary {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px;
+    text-align: center;
+    transition: color 0.2s ease;
+}
+
+.btn-paywall-secondary:hover {
+    color: var(--text-main);
 }
 
 .auth-prompt-modal .modal-header {

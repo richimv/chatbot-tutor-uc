@@ -1,22 +1,32 @@
-const db = require('../../infrastructure/database/db');
 const axios = require('axios');
 const { GoogleAuth } = require('google-auth-library');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 /**
- * 🚀 RAG SERVICE V6.1: Motor Vectorial Puro (Pinecone + Vertex AI)
- * - Eliminado FTS local (PostgreSQL) para centralizar en búsqueda semántica.
+ * 🚀 RAG SERVICE V6.2: Motor Vectorial Puro (Pinecone + Vertex AI)
+ * - Eliminado FTS local y dependencias huérfanas de PostgreSQL.
  * - Agentic Rewriter Multi-Dominio (Medicina / Educación).
  * - Sincronizado con text-multilingual-embedding-002 (768 dim).
+ * - Resiliencia ante variables de entorno dinámicas y credenciales cloud/locales.
  */
 class RagService {
     constructor() {
         this._rewriterModel = null;
+        resolveGoogleAuthOptions('RagService');
         this._auth = new GoogleAuth({ scopes: 'https://www.googleapis.com/auth/cloud-platform' });
 
-        this.PINECONE_HOST = process.env.PINECONE_HOST;
-        this.PINECONE_KEY = process.env.PINECONE_API_KEY;
+        this._pineconeHost = process.env.PINECONE_HOST;
+        this._pineconeKey = process.env.PINECONE_API_KEY;
 
-        console.log("✅ RagService V6.1: Motor Híbrido (Pinecone) inicializado.");
+        console.log("✅ RagService V6.2: Motor Híbrido (Pinecone) inicializado.");
+    }
+
+    get pineconeHost() {
+        return process.env.PINECONE_HOST || this._pineconeHost;
+    }
+
+    get pineconeKey() {
+        return process.env.PINECONE_API_KEY || this._pineconeKey;
     }
 
     /**
@@ -61,9 +71,18 @@ class RagService {
 
             return parsed.terms || [];
         } catch (error) {
-            console.warn("⚠️ Rewriter IA falló (RagService). Usando fallback.");
-            // Fallback: extraer palabras clave básicas si falla la IA
-            return message.split(/\s+/).filter(w => w.length > 4).slice(0, 5);
+            console.warn("⚠️ Rewriter IA falló (RagService). Usando fallback heurístico.");
+            // Fallback: extraer palabras clave significativas sin stop words ni caracteres de formato
+            const cleaned = String(message || '').replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, ' ');
+            const stopWords = new Set([
+                'modo', 'tutor', 'simulador', 'examen', 'para', 'como', 'sobre', 'este', 
+                'esta', 'estos', 'estas', 'cual', 'quien', 'donde', 'cuando', 'porque', 
+                'pregunta', 'respuesta', 'estudiante', 'opcion', 'clave', 'eres', 'elite'
+            ]);
+            return cleaned.split(/\s+/)
+                .map(w => w.trim())
+                .filter(w => w.length > 3 && !stopWords.has(w.toLowerCase()))
+                .slice(0, 5);
         }
     }
 
@@ -73,6 +92,7 @@ class RagService {
      */
     async _getEmbedding(text) {
         try {
+            resolveGoogleAuthOptions('RagService');
             const client = await this._auth.getClient();
             const tokenRes = await client.getAccessToken();
             const url = `https://${process.env.GOOGLE_CLOUD_LOCATION}-aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_CLOUD_PROJECT}/locations/${process.env.GOOGLE_CLOUD_LOCATION}/publishers/google/models/text-multilingual-embedding-002:predict`;
@@ -98,7 +118,7 @@ class RagService {
         const namespace = filters.namespace || specialization;
         const target = (filters.target || "").toUpperCase();
 
-        console.log(`🔍 RAG V6.1 [SEMANTIC | NS: ${namespace}]: "${queryText.substring(0, 40)}..."`);
+        console.log(`🔍 RAG V6.2 [SEMANTIC | NS: ${namespace}]: "${queryText.substring(0, 40)}..."`);
 
         // 1. Optimizar términos de búsqueda (Usar predefinidos si existen para evitar doble llamada a IA)
         const smartTerms = filters.predefinedTerms || await this.extractSmartTerms(queryText, specialization, target);
@@ -112,6 +132,14 @@ class RagService {
      * Ejecuta la consulta a Pinecone.
      */
     async _executeSemanticSearch(query, limit, target, namespace) {
+        const host = this.pineconeHost;
+        const key = this.pineconeKey;
+
+        if (!host || !key) {
+            console.warn(`⚠️ [RagService] PINECONE_HOST o PINECONE_API_KEY no configurados. Omitiendo búsqueda vectorial.`);
+            return "";
+        }
+
         let activeNamespace = namespace;
         if (activeNamespace === 'educacion') activeNamespace = 'education';
 
@@ -119,13 +147,13 @@ class RagService {
             const vector = await this._getEmbedding(query);
             if (!vector) return "";
 
-            const response = await axios.post(`https://${this.PINECONE_HOST}/query`, {
+            const response = await axios.post(`https://${host}/query`, {
                 vector: vector,
                 topK: limit,
                 includeMetadata: true,
                 namespace: activeNamespace
             }, {
-                headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
+                headers: { 'Api-Key': key, 'Content-Type': 'application/json' }
             });
 
             const matches = response.data.matches || [];

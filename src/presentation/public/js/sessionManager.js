@@ -7,7 +7,9 @@ class SessionManager {
         this.lastSyncTime = 0; // Para throttling global de peticiones pasivas
         this.lastSyncAttemptTime = 0;
         this._listenerAttached = false;
+        this._visibilityAttached = false;
         this.initSupabaseListener();
+        this._setupVisibilityListener();
         this.initPromise = null;
     }
 
@@ -44,6 +46,11 @@ class SessionManager {
                     && !localStorage.getItem('authToken');
 
                 if ((event === 'SIGNED_IN' || needsInitialRecovery) && session) {
+                    // Guardar de inmediato el token emitido por Supabase para evitar desincronización
+                    if (session.access_token) {
+                        localStorage.setItem('authToken', session.access_token);
+                    }
+
                     // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización concurrente
                     if (window._isGlobalSyncing || this.isSyncing) {
                         console.log('⏳ Sincronización en curso, ignorando evento duplicado.');
@@ -60,8 +67,8 @@ class SessionManager {
                     }
                     this.lastSyncAttemptTime = now;
 
-                    // Si ya tenemos el mismo usuario cargado y el token es igual, no re-sincronizar
-                    if (this.currentUser && this.currentUser.id === session.user.id && localStorage.getItem('authToken') === session.access_token) {
+                    // Si ya tenemos el mismo usuario cargado de forma definitiva (no optimista) y el token es igual, no re-sincronizar
+                    if (this.currentUser && !this.currentUser._isOptimistic && this.currentUser.id === session.user.id && localStorage.getItem('authToken') === session.access_token) {
                         console.log('📡 [SessionGate] Usuario y token ya vigentes, omitiendo sync.');
                         return;
                     }
@@ -75,14 +82,19 @@ class SessionManager {
                         // Mostrar avatar y nombre al instante con los metadatos de Supabase mientras se sincroniza con el backend
                         if (!this.currentUser) {
                             const meta = session.user?.user_metadata || {};
+                            const adminEmails = ['hubacademia01@gmail.com'];
+                            const userEmail = (session.user?.email || '').toLowerCase();
+                            const isAutoAdmin = adminEmails.includes(userEmail);
+
                             this.currentUser = {
                                 id: session.user.id,
                                 email: session.user.email,
                                 name: meta.full_name || meta.name || session.user.email.split('@')[0],
                                 avatar_url: meta.avatar_url || meta.picture || null,
-                                subscriptionTier: 'free',
-                                subscriptionStatus: 'active',
-                                role: 'student'
+                                subscriptionTier: isAutoAdmin ? 'admin' : 'unknown',
+                                subscriptionStatus: isAutoAdmin ? 'active' : 'pending',
+                                role: isAutoAdmin ? 'admin' : 'student',
+                                _isOptimistic: true // 🛡️ Protege la UI de parpadeos de vidas o modales prematuras
                             };
                             this.notifyStateChange();
                         }
@@ -94,7 +106,10 @@ class SessionManager {
                         );
                         
                         if (syncResponse && syncResponse.user) {
-                            this.currentUser = syncResponse.user;
+                            this.currentUser = {
+                                ...syncResponse.user,
+                                _isOptimistic: false
+                            };
                             this.lastSyncTime = Date.now();
                             localStorage.setItem('authToken', session.access_token);
                             
@@ -135,6 +150,25 @@ class SessionManager {
         this.notifyStateChange();
     }
 
+    // ✅ Refresco proactivo al retomar la pestaña tras inactividad
+    _setupVisibilityListener() {
+        if (typeof document === 'undefined' || this._visibilityAttached) return;
+        this._visibilityAttached = true;
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible') {
+                const token = localStorage.getItem('authToken');
+                if (token && window.AuthApiService && typeof window.AuthApiService.getValidToken === 'function') {
+                    try {
+                        const freshToken = await window.AuthApiService.getValidToken();
+                        if (freshToken && this.currentUser && typeof this.refreshUser === 'function') {
+                            this.refreshUser().catch(() => {});
+                        }
+                    } catch (_) {}
+                }
+            }
+        });
+    }
+
     initialize() {
         this.initSupabaseListener();
         if (!this.initPromise) {
@@ -147,6 +181,9 @@ class SessionManager {
 
                 if (isOAuthReturn) {
                     console.log('⚡ [SessionManager] Retorno OAuth detectado en URL. Delegando a onAuthStateChange...');
+                    if (this.currentUser) {
+                        this.notifyStateChange();
+                    }
                     return this.currentUser;
                 }
 
@@ -156,6 +193,9 @@ class SessionManager {
                     try {
                         // No bloqueamos desesperadamente, intentamos recuperar
                         this.currentUser = await AuthApiService.getMe();
+                        if (this.currentUser) {
+                            this.currentUser._isOptimistic = false;
+                        }
                     } catch (err) {
                         this.currentUser = null;
                         localStorage.removeItem('authToken');
@@ -233,21 +273,19 @@ class SessionManager {
 
     decrementUsage(amount = 1) {
         if (this.currentUser) {
-            const usage = this.currentUser.usageCount !== undefined ? this.currentUser.usageCount : (this.currentUser.usage_count || 0);
-            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 10);
+            const usage = Number(this.currentUser.usageCount !== undefined ? this.currentUser.usageCount : (this.currentUser.usage_count || 0));
+            const limit = Number(this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 10));
+            const numAmount = Number(amount) || 1;
             
             const tier = String(this.currentUser.subscriptionTier || this.currentUser.subscription_tier || 'free').toLowerCase();
             const status = String(this.currentUser.subscriptionStatus || this.currentUser.subscription_status || 'pending').toLowerCase();
-            const isPaidActive = (tier === 'basic' || tier === 'advanced') && status === 'active';
-            const isFree = !isPaidActive && this.currentUser.role !== 'admin';
+            const isPaidActive = (tier === 'basic' || tier === 'advanced' || tier === 'premium') && status === 'active';
+            const isFree = !isPaidActive && this.currentUser.role !== 'admin' && tier !== 'admin';
 
             if (isFree) {
-                const newUsage = Math.min(limit, usage + amount);
-                if (this.currentUser.usageCount !== undefined) {
-                    this.currentUser.usageCount = newUsage;
-                } else {
-                    this.currentUser.usage_count = newUsage;
-                }
+                const newUsage = Math.min(limit, usage + numAmount);
+                this.currentUser.usageCount = newUsage;
+                this.currentUser.usage_count = newUsage;
                 const remaining = Math.max(0, limit - newUsage);
                 console.log(`⚡ [SessionManager] Descuento optimista aplicado localmente: ${remaining}/${limit}`);
                 this.notifyStateChange();
@@ -298,6 +336,13 @@ class SessionManager {
 
     onStateChange(callback) {
         this.onStateChangeCallbacks.push(callback);
+        if (this.currentUser) {
+            try {
+                callback(this.currentUser);
+            } catch (e) {
+                console.warn('⚠️ [SessionManager] Error en callback de onStateChange:', e);
+            }
+        }
     }
 
     notifyStateChange() {

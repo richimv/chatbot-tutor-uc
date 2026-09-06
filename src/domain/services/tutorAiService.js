@@ -399,8 +399,19 @@ class TutorAiService {
 
             // 1. EXTRAER TEMAS INTELIGENTES (Solo para medicina y educación con RAG, no para flashcards multidisciplinarias)
             let smartTopics = [];
+            let ragQuerySeed = message;
+            if (filters.context && filters.context.type === 'quiz_tutor') {
+                const qTopic = filters.context.topic || filters.context.area || '';
+                const qText = (filters.context.questionText || '').replace(/<[^>]*>/g, ' ').trim();
+                const studentDoubt = (filters.rawUserMessage || '').trim();
+                ragQuerySeed = `${qTopic ? `Tema: ${qTopic}. ` : ''}${qText}. Consulta: ${studentDoubt}`.trim();
+                if (!ragQuerySeed) ragQuerySeed = message;
+            } else if (filters.rawUserMessage) {
+                ragQuerySeed = filters.rawUserMessage;
+            }
+
             if (specialization !== 'flashcard_tutor') {
-                smartTopics = await RagService.extractSmartTerms(message, specialization, target);
+                smartTopics = await RagService.extractSmartTerms(ragQuerySeed, specialization, target);
                 
                 // LÓGICA DE PERSISTENCIA: Si no hay temas nuevos pero hay historial, recuperar últimos temas
                 if ((!smartTopics || smartTopics.length === 0 || smartTopics[0].toLowerCase() === 'ninguno') && this._topicCache.has(conversationId)) {
@@ -412,7 +423,7 @@ class TutorAiService {
                 }
             }
 
-            const mainSearchQuery = (smartTopics && smartTopics.length > 0) ? smartTopics.join(' ') : message;
+            const mainSearchQuery = (smartTopics && smartTopics.length > 0) ? smartTopics.join(' ') : ragQuerySeed;
             console.log(`🧠 [TutorAiService] Temas finales: ${smartTopics?.join(', ') || 'ninguno'}`);
 
             // 2. Determinar Contexto de Estudio (Ruta Express vs RAG Híbrido Multiuso)

@@ -1,4 +1,4 @@
-# 🌲 Guía Maestro: Arquitectura RAG Vectorial (V6.1)
+# 🌲 Guía Maestro: Arquitectura RAG Vectorial (V6.5)
 
 Este documento define el funcionamiento del motor de Inteligencia Artificial de **Hub Academia**. Detalla cómo el sistema utiliza la búsqueda semántica en la nube para garantizar que cada respuesta y cada pregunta generada tenga un sustento técnico irrefutable (Médico o Pedagógico).
 
@@ -34,13 +34,12 @@ Antes de buscar en Pinecone, el sistema utiliza un sub-proceso de Gemini para tr
 Los términos limpios se convierten en un vector de **768 dimensiones** usando el modelo `text-multilingual-embedding-002` de Google Vertex AI.
 
 ### Paso 3: Búsqueda en Namespace
-Se consulta a Pinecone filtrando por el namespace correspondiente. El sistema recupera los **8 fragmentos más relevantes**.
+Se consulta a Pinecone filtrando por el namespace correspondiente (`education` o `medicine`). El sistema recupera hasta **20 fragmentos más relevantes** para garantizar máxima profundidad técnica y cobertura curricular/clínica (V6.5).
 
-### Paso 4: Inyección Contextual (Few-Shot)
-La IA recibe un prompt que contiene:
-1.  **Reglas de Dominio**: (Ej: No repetir opciones, estilo pedagógico).
-2.  **Fragmentos RAG**: Información técnica recuperada.
-3.  **Ejemplos de Estilo**: 2-3 preguntas reales recuperadas de Pinecone para que la IA "copie" el tono del examen (Nombramiento, ENAM, etc.).
+### Paso 4: Inyección Contextual
+La IA recibe un prompt estructurado según el servicio:
+1.  **TutorAiService (Chat en Exámenes y Repaso):** Inyecta los fragmentos RAG recuperados, las citas oficiales (documento, página) y los esquemas del catálogo visual de imágenes de la plataforma junto a la pregunta y opciones.
+2.  **AdminAiService (Generador de Reactivos):** Inyecta 2-3 preguntas reales recuperadas de Pinecone como ejemplos Few-Shot para que la IA replique el tono del examen oficial (Nombramiento, ENAM, etc.).
 
 ---
 
@@ -68,4 +67,4 @@ Cada pregunta generada por el `AdminAiService` debe cumplir:
 - **Opciones Balanceadas**: Longitud similar para evitar sesgos de extensión.
 
 ---
-**Documentación Actualizada: Mayo 2026 - Versión 6.1 (Pure Vector Architecture)**
+**Documentación Sincronizada: Septiembre 2026 - Versión 6.5 (Inmersive Pure Vector Architecture)**

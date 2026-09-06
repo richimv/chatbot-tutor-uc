@@ -121,7 +121,8 @@ describe('Flujo de autenticación del cliente', () => {
             expect(global.localStorage.setItem).toHaveBeenCalledWith('authToken', futureToken);
             expect(global.window.sessionManager.getUser()).toEqual({
                 id: 'local-user',
-                email: 'persona@example.com'
+                email: 'persona@example.com',
+                _isOptimistic: false
             });
         }
     );

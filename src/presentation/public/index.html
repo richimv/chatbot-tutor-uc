@@ -43,18 +43,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- ✅ Hojas de Estilos -->
-    <link rel="stylesheet" href="/css/theme.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/base.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/components.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/search.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/browse.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/results.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/header.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/modal.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/chat.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/course.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/hero.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/modules.css?v=fb1f3b52db0f">
+    <link rel="stylesheet" href="/css/theme.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/base.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/components.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/search.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/browse.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/results.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/header.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/modal.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/chat.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/course.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/hero.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/modules.css?v=db4d175ef956">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/assets/logo.png">
@@ -62,17 +62,17 @@
     <!-- ✅ Google Identity Services (One Tap - Solo en index.html) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <link rel="stylesheet" href="/css/markdown-content.css?v=fb1f3b52db0f"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/markdown-content.css?v=db4d175ef956"> <!-- ✅ Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="/css/footer.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/sidebar.css?v=fb1f3b52db0f">
+    <link rel="stylesheet" href="/css/footer.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/sidebar.css?v=db4d175ef956">
 
     <!-- ✅ Utilidades Globales -->
-    <script src="/js/config.js?v=fb1f3b52db0f"></script>
-    <script src="/js/utils/themeManager.js?v=fb1f3b52db0f"></script>
+    <script src="/js/config.js?v=db4d175ef956"></script>
+    <script src="/js/utils/themeManager.js?v=db4d175ef956"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=fb1f3b52db0f"></script>
+    <script src="/js/utils/markdown-renderer.js?v=db4d175ef956"></script>
 
     <!-- ✅ Schema.org / Datos Estructurados JSON-LD -->
     <script type="application/ld+json">
@@ -145,12 +145,12 @@
                 <!-- Top Category Pills -->
                 <div class="hero-ecosystem-pills">
                     <a href="#salud-section" class="ecosystem-pill pill-salud">
-                        <i class="fas fa-stethoscope"></i>
-                        <span>Salud (SERUMS)</span>
+                        <i class="fas fa-stethoscope"></i>                        
+                        <span>Salud</span>
                     </a>
                     <a href="#docente-section" class="ecosystem-pill pill-educacion">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        <span>Educación (Ascenso Docente)</span>
+                        <i class="fas fa-chalkboard-teacher"></i>                        
+                        <span>Educación</span>
                     </a>
                 </div>
 
@@ -695,15 +695,20 @@
     </div>
 
     <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2 id="confirmation-modal-title">Confirmación</h2>
-                <button class="modal-close-btn modal-close">×</button>
+        <div class="modal-content confirmation-modal-card" style="max-width: 440px;">
+            <div class="modal-header confirmation-modal-header">
+                <div class="confirmation-title-wrap">
+                    <div id="confirmation-modal-icon-container" class="confirmation-modal-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h2 id="confirmation-modal-title">Confirmación</h2>
+                </div>
+                <button class="modal-close-btn modal-close" aria-label="Cerrar modal">×</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body confirmation-modal-body">
                 <p id="confirmation-modal-message">¿Estás seguro de realizar esta acción?</p>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer confirmation-modal-footer">
                 <button id="confirmation-modal-cancel" class="btn-secondary">Cancelar</button>
                 <button id="confirmation-modal-confirm" class="btn-primary">Confirmar</button>
             </div>
@@ -742,18 +747,18 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/ui/components.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/networkService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/authApiService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/analyticsApiService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/sessionManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/uiManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/tooltipManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/chat.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/confirmationModal.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/libraryService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/security.js?v=fb1f3b52db0f"></script>
-    <script src="/js/home-animations.js?v=fb1f3b52db0f"></script>
+    <script src="/js/ui/components.js?v=db4d175ef956"></script>
+    <script src="/js/services/networkService.js?v=db4d175ef956"></script>
+    <script src="/js/services/authApiService.js?v=db4d175ef956"></script>
+    <script src="/js/services/analyticsApiService.js?v=db4d175ef956"></script>
+    <script src="/js/sessionManager.js?v=db4d175ef956"></script>
+    <script src="/js/ui/uiManager.js?v=db4d175ef956"></script>
+    <script src="/js/ui/tooltipManager.js?v=db4d175ef956"></script>
+    <script src="/js/chat.js?v=db4d175ef956"></script>
+    <script src="/js/ui/confirmationModal.js?v=db4d175ef956"></script>
+    <script src="/js/services/libraryService.js?v=db4d175ef956"></script>
+    <script src="/js/security.js?v=db4d175ef956"></script>
+    <script src="/js/home-animations.js?v=db4d175ef956"></script>
 
     <!-- ✅ Google One Tap: Login rápido desde la página principal -->
     <script>
@@ -838,12 +843,11 @@
                     context: "signin",
                     ux_mode: "popup",
                     auto_select: false,
-                    use_fedcm_for_prompt: false, // 🛡️ Evita bloqueos experimentales de FedCM en navegadores no-Chrome
                     itp_support: true,
                     cancel_on_tap_outside: false
                 });
 
-                // Intentar mostrar One Tap, pero sin forzar si el navegador lo bloquea
+                // Intentar mostrar One Tap de forma no bloqueante (FedCM standard)
                 google.accounts.id.prompt();
             } catch (err) {
                 console.warn('ℹ️ Google Identity se cargará de forma manual via modal.');
@@ -851,8 +855,8 @@
         });
     </script>
 
-    <script src="/js/ui/sidebar.js?v=fb1f3b52db0f"></script>
-    <script src="/js/app.js?v=fb1f3b52db0f"></script>
+    <script src="/js/ui/sidebar.js?v=db4d175ef956"></script>
+    <script src="/js/app.js?v=db4d175ef956"></script>
 
 </body>
 

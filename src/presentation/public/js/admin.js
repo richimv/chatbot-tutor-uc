@@ -534,7 +534,7 @@ class AdminManager {
     displayStudents() {
         const container = document.getElementById('tab-students');
         const sortedStudents = this.sortData(this.allStudents, 'student', 'tab-students');
-        const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`, true)).join('');
+        const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`)).join('');
         const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') +
             `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay alumnos.</p>'}</div>`;
         container.innerHTML = content;
@@ -1172,18 +1172,18 @@ class AdminManager {
                         </select>
                     </div>
 
-                    <h4 style="margin-bottom:12px; font-size: 1rem; display: flex; align-items: center; gap: 10px; color: var(--accent-color);">
+                    <h4 style="margin-bottom:12px; font-size: 1rem; display: flex; align-items: center; gap: 10px; color: var(--primary);">
                         <i class="fas fa-layer-group"></i> <span id="ai-areas-title">Configuración de Áreas de Estudio (Ejes MINSA/ENAM)</span>
                     </h4>
                     
-                    <div id="ai-domain-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; background: rgba(0,0,0,0.15); margin-bottom: 20px;">
+                    <div id="ai-domain-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; background: var(--bg-tertiary); margin-bottom: 20px;">
                         
                         <!-- ═══ MEDICINA ═══ -->
                         <div id="ai-areas-medicine">
                             <div class="ai-study-group" data-group="A" style="margin-bottom: 25px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #6366f1; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">A</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Básicas</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Básicas</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Anatomía"> Anatomía</label>
@@ -1195,9 +1195,9 @@ class AdminManager {
                                 </div>
                             </div>
                             <div class="ai-study-group" data-group="B" style="margin-bottom: 25px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #a855f7; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">B</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Clínicas (Las 4 Grandes)</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Clínicas (Las 4 Grandes)</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Medicina Interna"> Medicina Interna</label>
@@ -1207,9 +1207,9 @@ class AdminManager {
                                 </div>
                             </div>
                             <div class="ai-study-group" data-group="C" style="margin-bottom: 25px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #38bdf8; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">C</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Especialidades Clínicas</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Especialidades Clínicas</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Cardiología"> Cardiología</label>
@@ -1224,9 +1224,9 @@ class AdminManager {
                                 </div>
                             </div>
                             <div class="ai-study-group" data-group="D">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #22c55e; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">D</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Salud Pública y Gestión</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Salud Pública y Gestión</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Salud Pública"> Salud Pública</label>
@@ -1241,9 +1241,9 @@ class AdminManager {
                         <!-- ═══ EDUCACIÓN ═══ -->
                         <div id="ai-areas-education" style="display: none;">
                             <div class="ai-study-group" data-group="ASCENSO" style="display: block;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">★</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Prueba Nacional Integrada (Ascenso)</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Prueba Nacional Integrada (Ascenso)</strong>
                                 </div>
                                 <div style="display: flex; flex-direction: column; gap: 15px;">
                                     <div>
@@ -1282,17 +1282,17 @@ class AdminManager {
                                 </div>
                             </div>
                             <div class="ai-study-group" data-group="NOMBRAMIENTO" style="display: none; margin-top: 20px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #10b981; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">A</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Habilidades Generales</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Habilidades Generales</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Comprensión Lectora"> Comprensión Lectora</label>
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Razonamiento Lógico"> Razonamiento Lógico</label>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0 12px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                                     <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">B</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Conocimientos Pedagógicos</strong>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Conocimientos Pedagógicos</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
                                     <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Teorías del Aprendizaje y Desarrollo"> Teorías del Aprendizaje</label>
@@ -1535,7 +1535,7 @@ class AdminManager {
 
                 fieldsHTML = `
                     <div class="admin-item-card" style="padding: 15px; text-align: left; background: rgba(66, 133, 244, 0.1); border: 1px solid rgba(66, 133, 244, 0.2); margin-bottom: 20px; border-radius: 12px;">
-                        <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                        <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">
                             <i class="fab fa-google-drive" style="color: #4285f4; font-size: 1.2rem; margin-right: 8px;"></i>
                             <strong>Instrucciones:</strong> Ingresa el ID de la carpeta de Drive (el código al final de la URL). 
                             El sistema escaneará todos los archivos y los añadirá automáticamente al Hub.
@@ -1762,9 +1762,15 @@ class AdminManager {
         setTimeout(() => {
             const modalContent = this.genericModal.querySelector('.modal-content');
             if (modalContent) {
-                modalContent.style.maxWidth = '1100px';
-                modalContent.style.width = '95%';
-                modalContent.style.maxHeight = '95vh';
+                if (window.innerWidth <= 768) {
+                    modalContent.style.maxWidth = '100%';
+                    modalContent.style.width = 'calc(100% - 16px)';
+                    modalContent.style.maxHeight = '94vh';
+                } else {
+                    modalContent.style.maxWidth = '1100px';
+                    modalContent.style.width = '95%';
+                    modalContent.style.maxHeight = '92vh';
+                }
             }
         }, 0);
 
@@ -1813,11 +1819,11 @@ class AdminManager {
                         _info.replaceChildren();
                         const icon = document.createElement('i');
                         icon.className = 'fas fa-check-circle';
-                        icon.style.color = 'var(--success-color)';
+                        icon.style.color = 'var(--success)';
                         const label = document.createElement('span');
                         label.textContent = ` Archivo listo: ${_input.files[0].name} (Se ignorará el texto)`;
                         _info.append(icon, label);
-                        _info.style.color = 'var(--success-color)';
+                        _info.style.color = 'var(--success)';
                     }
                 };
             }
@@ -1970,6 +1976,12 @@ class AdminManager {
     getStandardTinyMCEConfig(selector, options = {}) {
         const height = options.height || 260;
         const placeholder = options.placeholder || 'Escribe aquí (puedes pegar imágenes de Word o Portapapeles, tablas, etc.)...';
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        const bodyTextColor = isDark ? '#f8fafc' : '#0f172a';
+        const bodyBgColor = isDark ? '#121212' : '#ffffff';
+        const tableBorderColor = isDark ? '#475569' : '#cbd5e1';
+        const tableHeaderBg = isDark ? '#334155' : '#f1f5f9';
+        const tableHeaderColor = isDark ? '#ffffff' : '#0f172a';
 
         return {
             entity_encoding: 'raw',
@@ -1982,8 +1994,8 @@ class AdminManager {
                 'insertdatetime', 'media', 'table', 'help', 'wordcount'
             ],
             toolbar: options.toolbar || 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | table image link | removeformat | code help',
-            skin: 'oxide-dark',
-            content_css: 'dark',
+            skin: isDark ? 'oxide-dark' : 'oxide',
+            content_css: isDark ? 'dark' : 'default',
             branding: false,
             promotion: false,
 
@@ -2016,10 +2028,7 @@ class AdminManager {
             remove_script_host: false,
             convert_urls: false,     // ✅ Evita alteraciones de URLs de Render/CDN
             placeholder: placeholder,
-            content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
-                'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +
-                'table th, table td { border: 1px solid #475569; padding: 8px; } ' +
-                'table th { background-color: #334155; }',
+            content_style: `body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: ${bodyTextColor}; background-color: ${bodyBgColor}; padding: 10px; } table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } table th, table td { border: 1px solid ${tableBorderColor}; padding: 8px; } table th { background-color: ${tableHeaderBg}; color: ${tableHeaderColor}; }`,
             setup: (editor) => {
                 if (typeof options.setup === 'function') {
                     options.setup(editor);
@@ -2037,9 +2046,9 @@ class AdminManager {
         const escapedPreviewUrl = this.escapeHtml(safeExternalUrl || '');
 
         return `
-            <div class="form-group image-upload-group" data-image-upload-id="${this.escapeHtml(id)}" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
+            <div class="form-group image-upload-group" data-image-upload-id="${this.escapeHtml(id)}" style="margin-bottom: 20px; border: 1.5px dashed var(--border-color); padding: 15px; border-radius: 12px; background: var(--bg-tertiary);">
                 <label for="${id}-url" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-                    <i class="fas fa-image" style="color: var(--accent-color);"></i> ${label}
+                    <i class="fas fa-image" style="color: var(--primary);"></i> ${label}
                 </label>
                 
                 <input type="hidden" id="${id}-delete-flag" value="false">
@@ -2090,8 +2099,8 @@ class AdminManager {
         this.revokePreviewObjectUrl(previewImg);
 
         if (info) {
-            info.innerHTML = `<i class="fas fa-trash" style="color: var(--danger-color);"></i> Imagen marcada para eliminar al guardar.`;
-            info.style.color = 'var(--danger-color)';
+            info.innerHTML = `<i class="fas fa-trash" style="color: var(--danger);"></i> Imagen marcada para eliminar al guardar.`;
+            info.style.color = 'var(--danger)';
         }
     }
 
@@ -3100,7 +3109,9 @@ class AdminManager {
                 throw new Error(errorMsg);
             }
 
-            const successMessage = method === 'POST' && responseData.tempPassword ? `¡Guardado con éxito! La contraseña temporal es: ${responseData.tempPassword}` : '¡Guardado con éxito!';
+            const successMessage = (type === 'student' && method === 'POST')
+                ? '¡Alumno registrado con éxito! El usuario podrá ingresar directamente con su cuenta de Google.'
+                : '¡Guardado con éxito!';
             await window.confirmationModal.showAlert(successMessage, 'Éxito');
 
             this.closeGenericModal();
@@ -3150,35 +3161,14 @@ class AdminManager {
         }
     }
 
-    // NUEVO: Manejador para restablecer la contraseña de un usuario (alumno/admin).
+    // Manejador informativo para usuarios (Hub Academia utiliza Google OAuth exclusivamente)
     async handleResetPassword(userId) {
-        // Buscamos en el almacén de alumnos (ahora que los docentes no están activos)
         const user = this.allStudents.find(s => s.id === userId);
-        if (!user) {
-            await window.confirmationModal.showAlert('Error: No se encontró al usuario.', 'Error');
-            return;
-        }
-
-        if (!await window.confirmationModal.show(`¿Estás seguro de que quieres restablecer la contraseña para ${user.name}? Se generará una nueva contraseña temporal.`, 'Restablecer Contraseña', 'Restablecer', 'Cancelar')) {
-            return;
-        }
-
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/auth/users/${userId}/reset-password`, {
-                method: 'POST'
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'No se pudo restablecer la contraseña.');
-            }
-
-            const { newPassword } = await response.json();
-            await window.confirmationModal.showAlert(`¡Éxito! La nueva contraseña temporal para ${user.name} es:\n\n${newPassword}\n\nPor favor, compártela de forma segura.`, 'Contraseña Restablecida');
-        } catch (error) {
-            console.error('❌ Error al restablecer la contraseña:', error);
-            await window.confirmationModal.showAlert(`Error: ${error.message}`, 'Error');
-        }
+        const userName = user ? user.name : 'este usuario';
+        await window.confirmationModal.showAlert(
+            `Hub Academia utiliza autenticación exclusiva mediante Google OAuth. ${userName} puede acceder directamente haciendo clic en "Continuar con Google" con su correo vinculado, por lo que no requiere contraseñas locales ni restablecimiento manual.`,
+            'Autenticación Google OAuth'
+        );
     }
 
     renderTopicResources(resources) {
@@ -3227,6 +3217,8 @@ class AdminManager {
                         </select>
                         ` : '';
 
+        const searchPlaceholder = tabId === 'tab-students' ? 'Buscar por nombre o correo...' : 'Buscar...';
+
         return `
             <div class="tab-header-controls">
                 <div class="search-sort-wrapper">
@@ -3234,7 +3226,7 @@ class AdminManager {
                         <i class="fas fa-search"></i>
                         <input type="text"
                             class="admin-search-input"
-                            placeholder="Buscar..."
+                            placeholder="${searchPlaceholder}"
                             data-target-tab="${tabId}">
                     </div>
                     ${sortSelectHTML}
@@ -3749,9 +3741,16 @@ class AdminManager {
 
         // Apply visual display filters
         const items = tabContent.querySelectorAll('.admin-item-card, .item-card');
+        const searchVal = (state.search || '').trim().toLowerCase();
+
         items.forEach(item => {
-            const textContent = item.textContent.toLowerCase();
-            const matchesText = textContent.includes(state.search.toLowerCase());
+            let matchesText = true;
+            if (searchVal) {
+                const textContent = item.textContent.toLowerCase();
+                const emailAttr = (item.dataset.email || '').toLowerCase();
+                const nameAttr = (item.dataset.name || '').toLowerCase();
+                matchesText = textContent.includes(searchVal) || emailAttr.includes(searchVal) || nameAttr.includes(searchVal);
+            }
 
             let matchesType = true;
             if (state.filter !== 'all') {

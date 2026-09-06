@@ -24,6 +24,7 @@ const checkAILimits = (type) => {
             // Obtener estado completo del usuario actual
             const result = await pool.query(`
                 SELECT 
+                    role,
                     subscription_tier, 
                     subscription_status,
                     usage_count,
@@ -45,11 +46,13 @@ const checkAILimits = (type) => {
             }
 
             let user = result.rows[0];
-            let tier = user.subscription_tier || 'free';
+            const userRole = user.role || req.user?.role || 'student';
+            const isAdmin = (userRole === 'admin' || user.subscription_tier === 'admin' || req.user?.role === 'admin');
+            let tier = isAdmin ? 'admin' : (user.subscription_tier || 'free');
             const status = user.subscription_status || 'pending';
 
             // 0. RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
-            if (tier === 'free' || status === 'pending' || status === 'expired') {
+            if (!isAdmin && (tier === 'free' || status === 'pending' || status === 'expired')) {
                 try {
                     const wasRenewed = await usageService.renewWeeklyLivesIfNeeded(userId);
                     
@@ -96,7 +99,7 @@ const checkAILimits = (type) => {
                 }
             }
 
-            req.userTier = user.subscription_tier;
+            req.userTier = isAdmin ? 'admin' : (user.subscription_tier || 'free');
 
             // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES)
             if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
@@ -148,11 +151,11 @@ const checkAILimits = (type) => {
             // - Básico: 10 intentos/mes.
             // - Avanzado: 30 intentos/mes.
 
-            const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
+            const userLimits = LIMITS[tier] || (isAdmin ? LIMITS.advanced : LIMITS.free);
 
             // 4. BIFURCACIÓN MAESTRA DE SUBSCRIPCIÓN
-            // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo.
-            const isActiveAccount = user.subscription_status === 'active' && user.subscription_tier !== 'free';
+            // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo, o si es Admin.
+            const isActiveAccount = (user.subscription_status === 'active' && user.subscription_tier !== 'free') || isAdmin;
             const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 10);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
@@ -170,14 +173,14 @@ const checkAILimits = (type) => {
                             req.cost = 0;
                             req.fallbackToStatic = true;
                         } else {
-                            // 🚀 Plan Avanzado / Admin Activo: Diagnóstico Dinámico Gemini (1 token daily_ai_usage si hay saldo)
-                            if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                            // 🚀 Plan Avanzado / Admin Activo: Diagnóstico Dinámico Gemini (1 token daily_ai_usage si hay saldo, Admin siempre saldo)
+                            if (!isAdmin && (user.daily_ai_usage || 0) >= userLimits.chat_standard) {
                                 req.usageType = null;
                                 req.cost = 0;
                                 req.fallbackToStatic = true;
                             } else {
-                                req.usageType = 'daily_ai_usage';
-                                req.cost = 1;
+                                req.usageType = isAdmin ? null : 'daily_ai_usage';
+                                req.cost = isAdmin ? 0 : 1;
                             }
                         }
                     } else {
@@ -200,8 +203,8 @@ const checkAILimits = (type) => {
 
                     if (isTutorChat) {
                         if (isActiveAccount) {
-                            // 🛡️ CONTROL DE LÍMITE DIARIO DE CONSULTAS IA PARA PLANES BASIC Y ADVANCED
-                            if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                            // 🛡️ CONTROL DE LÍMITE DIARIO DE CONSULTAS IA PARA PLANES BASIC Y ADVANCED (Admin exento)
+                            if (!isAdmin && (user.daily_ai_usage || 0) >= userLimits.chat_standard) {
                                 return res.status(403).json({
                                     error: `Has alcanzado tu límite diario de consultas al Tutor IA (${userLimits.chat_standard} mensajes/día). Vuelve mañana o mejora tu plan.`,
                                     reason: 'DAILY_LIMIT_EXHAUSTED',
@@ -212,22 +215,23 @@ const checkAILimits = (type) => {
                             // 🧠 REGLAS DE USO RAG:
                             // - Usuario Basic (tier === 'basic'): NO usa RAG (0 msgs/día RAG, sin excepciones).
                             // - Usuario Advanced (tier === 'advanced' / 'admin'): Usa RAG hasta 25 msgs/día. Si se agota, degrada a IA Estándar sin RAG.
-                            const isAdvancedTier = (tier === 'advanced' || tier === 'admin');
+                            // - Usuario Admin: RAG habilitado con exención de límites.
+                            const isAdvancedTier = (tier === 'advanced' || tier === 'admin' || isAdmin);
                             const ragLimit = userLimits.daily_rag_limit || 25;
                             const currentRagUsage = user.daily_rag_usage || 0;
                             const isFlashcardTutor = (context && context.type === 'flashcard_tutor') || spec === 'flashcard_tutor';
 
                             // Flashcard Tutor es multidisciplinario (cero Pinecone RAG); no consume cuota diaria de RAG
-                            if (isAdvancedTier && !isFlashcardTutor && currentRagUsage < ragLimit) {
+                            if (isAdvancedTier && !isFlashcardTutor && (isAdmin || currentRagUsage < ragLimit)) {
                                 req.useRag = true;
-                                req.incrementRag = true;
+                                req.incrementRag = !isAdmin;
                             } else {
                                 req.useRag = false;
                                 req.incrementRag = false;
                             }
 
-                            req.usageType = 'daily_ai_usage';
-                            req.cost = 1;
+                            req.usageType = isAdmin ? null : 'daily_ai_usage';
+                            req.cost = isAdmin ? 0 : 1;
                         } else {
                             // 🪙 CONTROL DE VIDAS DE PRUEBA PARA USUARIOS FREE PENDING
                             if ((user.usage_count || 0) >= (user.max_free_limit || 10)) {
@@ -288,22 +292,22 @@ const checkAILimits = (type) => {
                     const isBatchImport = req.path.includes('/batch');
 
                     if (isAiGeneration) {
-                        if (tier !== 'advanced' && tier !== 'admin') {
+                        if (!isAdmin && tier !== 'advanced' && tier !== 'admin') {
                             return res.status(403).json({
                                 error: 'La Generación de Flashcards con IA es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para crear cientos de tarjetas al instante!',
                                 reason: 'PREMIUM_ONLY_FEATURE',
                                 paywall: true
                             });
                         }
-                        if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
+                        if (!isAdmin && (user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
                             return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
                         }
-                        req.usageType = 'monthly_flashcards_usage';
+                        req.usageType = isAdmin ? null : 'monthly_flashcards_usage';
                     } else if (isBatchImport) {
-                        if ((user.daily_import_usage || 0) >= userLimits.batch_import) {
+                        if (!isAdmin && (user.daily_import_usage || 0) >= userLimits.batch_import) {
                             return res.status(403).json({ error: `Límite diario de importación masiva alcanzado (${userLimits.batch_import}). Vuelve mañana o mejora tu plan.`, reason: 'DAILY_LIMIT_EXHAUSTED' });
                         }
-                        req.usageType = 'daily_import_usage';
+                        req.usageType = isAdmin ? null : 'daily_import_usage';
                     } else {
                         req.usageType = null;
                     }
@@ -317,10 +321,10 @@ const checkAILimits = (type) => {
                         return res.status(403).json({ error: 'Límite de simulacros de Prueba agotado. Mejora tu plan para continuar.', reason: 'FREE_LIVES_EXHAUSTED' });
                     }
                 } else {
-                    if ((user.daily_simulator_usage || 0) >= userLimits.simulator) {
+                    if (!isAdmin && (user.daily_simulator_usage || 0) >= userLimits.simulator) {
                         return res.status(403).json({ error: 'Límite diario de simulacros alcanzado. Vuelve mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
                     }
-                    req.usageType = 'daily_simulator_usage';
+                    req.usageType = isAdmin ? null : 'daily_simulator_usage';
                 }
             }
             // Todo Ok. Se le pasa el control a la ruta. Luego el controlador DEBE sumar +1 al req.usageType

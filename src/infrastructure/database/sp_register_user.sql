@@ -30,6 +30,10 @@ BEGIN
     DO UPDATE SET
         id = EXCLUDED.id, -- Sincronizar el ID de Supabase Auth
         name = EXCLUDED.name,
+        role = CASE 
+            WHEN EXCLUDED.role = 'admin' THEN 'admin'
+            ELSE public.users.role
+        END,
         avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url),
         updated_at = NOW()
     RETURNING *;

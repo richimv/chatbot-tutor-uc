@@ -56,7 +56,7 @@ class AuthApiService {
                     }
                 }
 
-                if (session && session.access_token) {
+                if (session && session.access_token && !this.isTokenExpired(session.access_token)) {
                     const freshToken = session.access_token;
                     localStorage.setItem('authToken', freshToken);
                     return freshToken;

@@ -270,4 +270,54 @@ describe('Check Limits Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
     });
+
+    describe('Admin Privileges and RAG Access', () => {
+        it('should activate RAG for Admin even if subscription_tier is free or status is pending in Quiz Tutor', async () => {
+            mockReq.body = { context: { type: 'quiz_tutor' } };
+            dbUser.role = 'admin';
+            dbUser.subscription_tier = 'free';
+            dbUser.subscription_status = 'pending';
+            dbUser.daily_ai_usage = 0;
+            dbUser.daily_rag_usage = 0;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.userTier).toBe('admin');
+            expect(mockReq.useRag).toBe(true);
+            expect(mockReq.incrementRag).toBe(false);
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should NOT block Admin when daily_ai_usage exceeds standard limit and keep RAG active', async () => {
+            mockReq.body = { context: { type: 'quiz_tutor' } };
+            dbUser.role = 'admin';
+            dbUser.subscription_tier = 'admin';
+            dbUser.subscription_status = 'active';
+            dbUser.daily_ai_usage = 500; // Well above standard 100
+            dbUser.daily_rag_usage = 100;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.userTier).toBe('admin');
+            expect(mockReq.useRag).toBe(true);
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockRes.status).not.toHaveBeenCalledWith(403);
+        });
+
+        it('should keep Flashcard Tutor without RAG for Admin (0% Pinecone pollution)', async () => {
+            mockReq.body = { context: { type: 'flashcard_tutor' } };
+            dbUser.role = 'admin';
+            dbUser.subscription_tier = 'admin';
+            dbUser.subscription_status = 'active';
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.userTier).toBe('admin');
+            expect(mockReq.useRag).toBe(false);
+            expect(mockNext).toHaveBeenCalled();
+        });
+    });
 });

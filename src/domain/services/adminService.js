@@ -111,10 +111,8 @@ class AdminService {
     async create(entityType, newData) {
         if (['student', 'admin'].includes(entityType)) {
             const { name, email, subscriptionTier, subscriptionStatus, subscriptionExpiresAt } = newData;
-            const tempPassword = Math.random().toString(36).slice(-8);
-            console.log(`🔑 Contraseña temporal generada para ${email}: ${tempPassword}`);
             
-            // ✅ BUGFIX: UserRepository.create recibe un objeto userData unificado, no argumentos posicionales
+            // ✅ Persistencia inicial en repositorio (atómica y compatible con Google OAuth)
             let newUser = await this.repositories.user.create({
                 id: null,
                 email: email.toLowerCase(),
@@ -133,7 +131,7 @@ class AdminService {
                 });
             }
 
-            return { ...newUser, tempPassword };
+            return newUser;
         }
         const repo = this._getRepository(entityType);
         const createdItem = await repo.create(newData);
@@ -196,7 +194,6 @@ class AdminService {
                 updatePayload.dailyArenaUsage = 0;
                 updatePayload.dailySimulatorUsage = 0;
                 updatePayload.monthlyFlashcardsUsage = 0;
-                updatePayload.lastFreeRenewal = new Date();
             }
 
             return this.repositories.user.update(id, updatePayload);

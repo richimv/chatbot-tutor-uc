@@ -57,7 +57,7 @@ class UserRepository {
                 max_free_limit = 10,
                 last_free_renewal = CURRENT_TIMESTAMP
             WHERE id = $1
-              AND (subscription_tier = 'free' OR subscription_status IN ('pending', 'expired'))
+              AND subscription_tier = 'free'
               AND (
                    last_free_renewal IS NULL
                    OR (last_free_renewal AT TIME ZONE 'America/Lima')::date
@@ -139,6 +139,10 @@ class UserRepository {
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
+                        role = CASE 
+                            WHEN EXCLUDED.role = 'admin' THEN 'admin'
+                            ELSE public.users.role
+                        END,
                         avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url),
                         updated_at = NOW()
                     RETURNING *;

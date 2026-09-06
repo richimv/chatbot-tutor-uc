@@ -436,13 +436,14 @@ class UIManager {
         if (!user && !token) return true;
 
         if (user) {
-            const status = user.subscriptionStatus || user.subscription_status;
+            const status = String(user.subscriptionStatus || user.subscription_status || '').toLowerCase();
+            const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
             // Si es active (Premium) o admin, NUNCA está bloqueado
-            if (status === 'active' || user.role === 'admin') return false;
+            if ((status === 'active' && tier !== 'free') || user.role === 'admin' || tier === 'admin') return false;
 
-            // Freemium: Solo bloquear si ya no tiene usos
-            const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
+            // Freemium / Pending / Expired: Solo bloquear si ya no tiene usos (0 vidas restantes)
+            const usage = Number(user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0));
+            const limit = Number(user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10));
             return usage >= limit;
         }
 
@@ -1150,13 +1151,18 @@ class UIManager {
         if (!user) return true;
 
         // 🛡️ DETECCIÓN DE TIER Y PROPIEDADES (Robusto: camelCase o snake_case)
-        const userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
-        const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
-        const dailySimUsage = user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0);
+        const userTier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+        const userStatus = String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase();
+        const isAdmin = user.role === 'admin' || userTier === 'admin';
+        if (isAdmin) return true;
 
-        // 1. Lógica para Usuarios FREE (Vidas Globales)
-        if (userTier === 'free') {
+        const isPaidActive = (userTier === 'basic' || userTier === 'advanced' || userTier === 'premium') && userStatus === 'active';
+        const usageCount = Number(user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0));
+        const maxFreeLimit = Number(user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10));
+        const dailySimUsage = Number(user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0));
+
+        // 1. Lógica para Usuarios FREE / PENDING / EXPIRED (Vidas Globales)
+        if (!isPaidActive) {
             if (usageCount >= maxFreeLimit) {
                 if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
@@ -1171,8 +1177,8 @@ class UIManager {
         // 2. Lógica para Usuarios PREMIUM (Límites Diarios)
         if (type === 'simulator' || type === 'diagnostic') {
             const limits = user.limits || {};
-            const limit = limits.simulator !== undefined ? limits.simulator : (userTier === 'basic' ? 15 : 50);
-            if (userTier !== 'admin' && dailySimUsage >= limit) {
+            const limit = Number(limits.simulator !== undefined ? limits.simulator : (userTier === 'basic' ? 15 : 50));
+            if (dailySimUsage >= limit) {
                 if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1182,10 +1188,10 @@ class UIManager {
                 return false;
             }
         } else if (type === 'chat_standard' || type === 'chat' || type === 'flashcard_tutor' || type === 'quiz_tutor') {
-            const dailyAiUsage = user.dailyAiUsage !== undefined ? user.dailyAiUsage : (user.daily_ai_usage || 0);
+            const dailyAiUsage = Number(user.dailyAiUsage !== undefined ? user.dailyAiUsage : (user.daily_ai_usage || 0));
             const limits = user.limits || {};
-            const limit = limits.chat_standard !== undefined ? limits.chat_standard : (userTier === 'basic' ? 50 : 100);
-            if (userTier !== 'admin' && dailyAiUsage >= limit) {
+            const limit = Number(limits.chat_standard !== undefined ? limits.chat_standard : (userTier === 'basic' ? 50 : 100));
+            if (dailyAiUsage >= limit) {
                 if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1206,17 +1212,21 @@ class UIManager {
         let userTier = 'free';
         try {
             const user = window.sessionManager?.getUser();
-            if (user) userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+            if (user) userTier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase().trim();
         } catch (e) { }
 
-        // CONFIGURACIÓN POR DEFECTO (Free / Global)
+        // CONFIGURACIÓN BASE
         let config = {
             title: '¡Desbloquea el Acceso Premium! 💎',
             message: customMsg || 'Suscríbete hoy y accede a todos los beneficios y herramientas ilimitadas de Hub Academia.',
             btnText: 'Ver Planes Premium',
             btnUrl: '/pricing',
-            icon: 'fa-crown'
+            icon: 'fa-crown',
+            badgeText: 'Acceso Premium',
+            badgeIcon: 'fa-crown'
         };
+
+        let features = [];
 
         // BIFURCACIÓN POR CONTEXTO Y TIER
         if (context === 'chat_standard' || context === 'chat' || context === 'flashcard_tutor' || context === 'quiz_tutor') {
@@ -1227,12 +1237,24 @@ class UIManager {
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
+                config.badgeText = 'Plan Avanzado';
+                config.badgeIcon = 'fa-rocket';
+                features = [
+                    { icon: 'fa-check-circle', text: '100 consultas diarias al Tutor IA' },
+                    { icon: 'fa-check-circle', text: 'Tutoría especializada en Salud y Educación' }
+                ];
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus consultas diarias al Tutor IA para el Plan Avanzado (100 consultas/día). ¡Mañana se renovará automáticamente tu cuota!';
                 config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
+                config.badgeText = 'Meta Diaria';
+                config.badgeIcon = 'fa-medal';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Cuota diaria de consultas completada al 100%' },
+                    { icon: 'fa-check-circle', text: 'Tus notas y flashcards continúan disponibles' }
+                ];
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Prueba Gratuita Finalizada! 💎';
@@ -1240,6 +1262,12 @@ class UIManager {
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
+                config.badgeText = 'Acceso Ilimitado';
+                config.badgeIcon = 'fa-crown';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Consultas continuas sin esperas semanales' },
+                    { icon: 'fa-check-circle', text: 'Retroalimentación detallada y resolución de dudas 24/7' }
+                ];
             }
         } else if (context === 'simulator' || context === 'diagnostic') {
             config.icon = 'fa-chart-pie';
@@ -1249,12 +1277,24 @@ class UIManager {
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
+                config.badgeText = 'Plan Avanzado';
+                config.badgeIcon = 'fa-rocket';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Hasta 50 simulacros diarios con cronómetro' },
+                    { icon: 'fa-check-circle', text: 'Diagnósticos inteligentes de preguntas falladas' }
+                ];
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus diagnósticos y simulacros de hoy. ¡Mañana se renovará automáticamente tu cuota!';
                 config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
+                config.badgeText = 'Meta Diaria';
+                config.badgeIcon = 'fa-medal';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Simulacros del día completados con éxito' },
+                    { icon: 'fa-check-circle', text: 'Historial y estadísticas guardados en tu perfil' }
+                ];
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Desbloquea el Acceso Premium! 💎';
@@ -1262,6 +1302,12 @@ class UIManager {
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
+                config.badgeText = 'Acceso Premium';
+                config.badgeIcon = 'fa-crown';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Simulacros ilimitados con banco oficial de preguntas' },
+                    { icon: 'fa-check-circle', text: 'Diagnósticos inteligentes y retroalimentación IA' }
+                ];
             }
         } else if (context === 'flashcards' || context === 'monthly_flashcards' || context === 'study') {
             if (userTier === 'basic') {
@@ -1270,18 +1316,36 @@ class UIManager {
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
+                config.badgeText = 'Plan Avanzado';
+                config.badgeIcon = 'fa-rocket';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Generación asistida de flashcards con IA' },
+                    { icon: 'fa-check-circle', text: 'Narración con audio TTS HD e imágenes' }
+                ];
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Cuota Mensual Completada! 🏆';
                 config.message = customMsg || 'Has alcanzado tu límite mensual de generación de flashcards con IA. Tu cuota se renovará automáticamente el próximo mes.';
                 config.btnText = 'Entendido';
                 config.btnUrl = '/repaso';
                 config.icon = 'fa-medal';
+                config.badgeText = 'Cuota Completada';
+                config.badgeIcon = 'fa-medal';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Repaso espaciado inteligente siempre disponible' },
+                    { icon: 'fa-check-circle', text: 'Creación y edición manual ilimitada' }
+                ];
             } else {
                 config.title = '¡Desbloquea el Acceso Premium! 💎';
                 config.message = customMsg || 'Has consumido tus vidas de prueba gratuitas. Suscríbete hoy a un plan premium para repasar tus flashcards sin interrupciones.';
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
+                config.badgeText = 'Acceso Premium';
+                config.badgeIcon = 'fa-crown';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Sesiones de repaso espaciado ilimitadas' },
+                    { icon: 'fa-check-circle', text: 'Sincronización en la nube multidispositivo' }
+                ];
             }
         } else {
             // Contexto Autoevaluación / Default
@@ -1291,73 +1355,120 @@ class UIManager {
                 config.btnText = 'Mejorar Plan';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
+                config.badgeText = 'Plan Avanzado';
+                config.badgeIcon = 'fa-rocket';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Capacidad ampliada en todas las herramientas del Hub' },
+                    { icon: 'fa-check-circle', text: 'Tutoría pedagógica y médica profunda' }
+                ];
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus autoevaluaciones de hoy. ¡Mañana volvemos con más desafíos!';
                 config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
+                config.badgeText = 'Meta Diaria';
+                config.badgeIcon = 'fa-medal';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Meta de práctica diaria completada al 100%' },
+                    { icon: 'fa-check-circle', text: 'Tu biblioteca y notas siguen disponibles' }
+                ];
+            } else {
+                config.badgeText = 'Acceso Premium';
+                config.badgeIcon = 'fa-crown';
+                features = [
+                    { icon: 'fa-check-circle', text: 'Acceso ilimitado a todas las herramientas' },
+                    { icon: 'fa-check-circle', text: 'Tutoría IA disponible para resolver tus dudas' }
+                ];
             }
         }
 
+        const featuresHTML = features.map(f => `
+            <div class="paywall-feature-item">
+                <i class="fas ${f.icon} paywall-feature-icon"></i>
+                <span>${this._escapeHtml(f.text)}</span>
+            </div>
+        `).join('');
+
+        const isDismissible = userTier !== 'advanced' && userTier !== 'admin';
+        const secondaryBtnText = isDismissible ? 'Quizás más tarde' : 'Cerrar';
+
         if (!modal) {
             const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
-                <div class="modal-content premium-variant">
-                    <div class="modal-header">
-                        <h2 id="${modalId}-title" style="background: linear-gradient(90deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${config.title}</h2>
-                        <button class="modal-close-btn" onclick="window.uiManager.popModalState('${modalId}'); document.getElementById('${modalId}').style.display='none'">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
-                           <i id="${modalId}-icon" class="fas ${config.icon}" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));"></i>
+            <div id="${modalId}" class="auth-prompt-modal paywall-overlay" style="display:flex;">
+                <div class="modal-content paywall-modal-content">
+                    <div class="paywall-glow"></div>
+                    <div class="paywall-header">
+                        <div class="paywall-header-top">
+                            <span class="paywall-badge">
+                                <i id="${modalId}-badge-icon" class="fas ${config.badgeIcon}"></i>
+                                <span id="${modalId}-badge-text">${config.badgeText}</span>
+                            </span>
+                            <button class="modal-close-btn" onclick="window.uiManager.closePaywallModal('${modalId}')" aria-label="Cerrar modal">&times;</button>
                         </div>
-                        <div id="${modalId}-text" class="auth-prompt-main-text" style="font-size: 1.05rem; color: var(--text-main); line-height: 1.6;">
+                        <h2 id="${modalId}-title" class="paywall-title">${config.title}</h2>
+                    </div>
+                    <div class="paywall-body">
+                        <p id="${modalId}-text" class="paywall-description">
                             ${this._escapeHtml(config.message)}
+                        </p>
+                        <div id="${modalId}-features" class="paywall-features-list">
+                            ${featuresHTML}
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button id="${modalId}-btn" class="btn-primary" style="
-                            width: 100%; 
-                            background: linear-gradient(45deg, #ffd700, #ffa500); 
-                            color: #000; 
-                            font-weight: 800; 
-                            border: none;
-                            padding: 14px; 
-                            font-size: 1rem;
-                            border-radius: 12px;
-                            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
-                            cursor: pointer;
-                            transition: transform 0.2s;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 10px;
-                        " onclick="window.location.href='${config.btnUrl}'">
-                            <i class="fas fa-rocket"></i> <span id="${modalId}-btn-text">${config.btnText}</span>
+                    <div class="paywall-footer">
+                        <button id="${modalId}-btn" class="btn-paywall-primary" onclick="window.location.href='${config.btnUrl}'">
+                            <span id="${modalId}-btn-text">${config.btnText}</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button id="${modalId}-secondary-btn" class="btn-paywall-secondary" onclick="window.uiManager.closePaywallModal('${modalId}')">
+                            ${secondaryBtnText}
                         </button>
                     </div>
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             modal = document.getElementById(modalId);
+
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) this.closePaywallModal(modalId);
+                });
+            }
         } else {
             // Actualizar contenido si ya existe
             const titleEl = document.getElementById(`${modalId}-title`);
             const textEl = document.getElementById(`${modalId}-text`);
-            const iconEl = document.getElementById(`${modalId}-icon`);
+            const badgeTextEl = document.getElementById(`${modalId}-badge-text`);
+            const badgeIconEl = document.getElementById(`${modalId}-badge-icon`);
             const btnEl = document.getElementById(`${modalId}-btn`);
             const btnTextEl = document.getElementById(`${modalId}-btn-text`);
+            const secondaryBtnEl = document.getElementById(`${modalId}-secondary-btn`);
+            const featuresEl = document.getElementById(`${modalId}-features`);
 
             if (titleEl) titleEl.innerText = config.title;
             if (textEl) textEl.textContent = config.message;
-            if (iconEl) iconEl.className = `fas ${config.icon}`;
+            if (badgeTextEl) badgeTextEl.innerText = config.badgeText;
+            if (badgeIconEl) badgeIconEl.className = `fas ${config.badgeIcon}`;
             if (btnEl) btnEl.onclick = () => window.location.href = config.btnUrl;
             if (btnTextEl) btnTextEl.innerText = config.btnText;
+            if (secondaryBtnEl) secondaryBtnEl.innerText = secondaryBtnText;
+            if (featuresEl) featuresEl.innerHTML = featuresHTML;
 
             modal.style.display = 'flex';
         }
         this.pushModalState(modalId);
+    }
+
+    /**
+     * Cierra el modal de Paywall de forma segura revirtiendo el historial.
+     */
+    closePaywallModal(modalId = 'paywall-modal') {
+        this.popModalState(modalId);
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
 
@@ -1638,11 +1749,12 @@ class UIManager {
         const bar = document.getElementById('freemium-status-bar');
         const countSpan = document.getElementById('free-usage-count');
 
-        const tier = user ? String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase() : 'free';
-        const status = user ? String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase() : 'pending';
+        const tier = user ? String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase().trim() : 'free';
+        const status = user ? String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase().trim() : 'pending';
         const isPaidActive = user && (tier === 'basic' || tier === 'advanced') && status === 'active';
+        const isOptimistic = Boolean(user && user._isOptimistic);
 
-        if (isExcludedPage || !user || isPaidActive || user.role === 'admin') {
+        if (isExcludedPage || !user || isPaidActive || user.role === 'admin' || isOptimistic || tier === 'unknown') {
             if (bar) bar.style.display = 'none';
             document.body.classList.remove('has-trial-mode'); // ✅ Remove class
             return;
@@ -1762,18 +1874,20 @@ class UIManager {
      * @param {number} limit - Límite total (10)
      */
     showLifeDecrementToast(remaining, limit = 10) {
-        if (remaining <= 0) {
-            this.showToast('Has agotado tus vidas de prueba semanal.', 'error', 4000);
-            setTimeout(() => {
-                this.showPaywallModal();
-            }, 800);
+        const numRemaining = Number(remaining);
+        const numLimit = Number(limit) || 10;
+
+        if (numRemaining <= 0) {
+            // Informar que consumió la última vida sin bloquear ni mostrar modal prematuramente.
+            // El modal solo aparecerá cuando intente una NUEVA acción con 0 vidas.
+            this.showToast('Has consumido tu última vida de prueba semanal. Te quedan 0 vidas.', 'warning', 4000);
             return;
         }
 
-        if (remaining === 1 || remaining === 2) {
-            this.showToast(`¡Atención! Te quedan solo ${remaining}/${limit} vidas de prueba.`, 'warning', 3500);
+        if (numRemaining === 1 || numRemaining === 2) {
+            this.showToast(`¡Atención! Te quedan solo ${numRemaining}/${numLimit} vidas de prueba.`, 'warning', 3500);
         } else {
-            this.showToast(`1 crédito utilizado. Te quedan ${remaining}/${limit} vidas de prueba.`, 'life', 2800);
+            this.showToast(`1 crédito utilizado. Te quedan ${numRemaining}/${numLimit} vidas de prueba.`, 'life', 2800);
         }
     }
 
@@ -1801,11 +1915,23 @@ class UIManager {
      * Muestra el modal de bienvenida o renovación de vidas semanal para usuarios free.
      */
     checkAndShowWelcomeModal(user) {
-        if (!user) return;
-        // Solo para usuarios free/pending (o cuentas expiradas que quedan free)
-        const tier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
-        const status = user.subscriptionStatus || user.subscription_status;
-        if (tier !== 'free' || status === 'active') return;
+        if (!user || user._isOptimistic) return;
+
+        // Excluir de páginas de examen y estudio para no interrumpir simulacros ni flashcards
+        const isExcludedPage = window.location.pathname.includes('/flashcards') || 
+                               window.location.pathname.includes('/quiz') || 
+                               window.location.pathname.includes('/simulator') ||
+                               window.location.pathname.endsWith('flashcards.html') || 
+                               window.location.pathname.endsWith('quiz.html') ||
+                               window.location.pathname.endsWith('simulator-dashboard.html');
+        if (isExcludedPage) return;
+
+        // Solo para usuarios estrictamente free (nunca para basic, advanced ni admin)
+        if (user.role === 'admin') return;
+
+        const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase().trim();
+        const status = String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase().trim();
+        if (tier !== 'free' || tier === 'basic' || tier === 'advanced' || status === 'active') return;
 
         // Solo mostrar si usage_count es 0 (indica vidas completas, es decir, inicio o renovación)
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);

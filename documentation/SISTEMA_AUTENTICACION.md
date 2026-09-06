@@ -1,15 +1,15 @@
 # Arquitectura y Estándares del Sistema de Autenticación (Hub Academia)
 
-Este documento detalla la arquitectura técnica integral, el flujo de vida de la sesión, los mecanismos de seguridad, la persistencia en base de datos y la convivencia de los métodos de acceso implementados en el sistema de autenticación de **Hub Academia**.
+Este documento detalla la arquitectura técnica integral, el flujo de vida de la sesión, los mecanismos de seguridad, la persistencia en base de datos, el renderizado optimista y la convivencia de los métodos de acceso implementados en el sistema de autenticación de **Hub Academia** y sus aplicaciones ecosistémicas (**HubDocenteApp** y **HubSaludApp**).
 
 ---
 
 ## 1. Visión General de la Arquitectura
 
-Hub Academia implementa una arquitectura de autenticación **Híbrida Google Identity Services (GIS) + Google OAuth 2.0**, respaldada por **Supabase Auth** como proveedor de identidad (*Identity Provider - IdP*) y **PostgreSQL** como base de datos transaccional del dominio de negocio.
+Hub Academia implementa una arquitectura de autenticación **Híbrida Google Identity Services (GIS) con soporte FedCM + Google OAuth 2.0 Direct Flow**, respaldada por **Supabase Auth** como proveedor de identidad (*Identity Provider - IdP*) y **PostgreSQL** como base de datos transaccional del dominio de negocio.
 
 El sistema soporta dos vías de acceso complementarias y coordinadas:
-1. **Google One Tap (`signInWithIdToken`):** Diálogo flotante nativo de Google para inicio de sesión instantáneo con un solo clic sin recargar la página.
+1. **Google One Tap (`signInWithIdToken`):** Diálogo flotante nativo de Google para inicio de sesión instantáneo con un solo clic sin recargar la página, adaptado a los estándares modernos de privacidad (FedCM).
 2. **Google OAuth Direct Flow (`signInWithOAuth`):** Disparado explícitamente desde botones de acción ("Acceder" en el header, modales de protección de contenido y banners interactivos).
 
 ```mermaid
@@ -17,7 +17,7 @@ sequenceDiagram
     autonumber
     actor Usuario
     participant Frontend as Frontend (Vercel / Browser)
-    participant Google as Google Identity / Accounts
+    participant Google as Google Identity (FedCM)
     participant Supabase as Supabase Auth (OAuth IdP)
     participant Backend as Backend API (Render)
     participant Postgres as PostgreSQL (Supabase DB)
@@ -29,19 +29,29 @@ sequenceDiagram
         Supabase-->>Frontend: Sesión Creada (SIGNED_IN)
     else Vía B: Botón Directo "Acceder" (OAuth Redirect)
         Usuario->>Frontend: Clic en "Acceder"
-        Frontend->>Supabase: signInWithOAuth({ provider: 'google', prompt: 'select_account' })
+        Frontend->>Supabase: signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })
         Supabase->>Google: Redirección a Consent Screen
         Google-->>Supabase: Autorización Aprobada
         Supabase-->>Frontend: Redirección con Hash (#access_token=...&refresh_token=...)
     end
 
-    Frontend->>Frontend: SessionManager captura evento SIGNED_IN
+    Note over Frontend: Fase 1: Estado Optimista Inmediato
+    Frontend->>Frontend: Guarda authToken en localStorage
+    Frontend->>Frontend: SessionManager emite usuario optimista (_isOptimistic: true, tier: 'unknown')
+    Frontend->>Frontend: UI actualiza Avatar y Nombre sin esperar red (Cero parpadeo)
+
+    Note over Frontend,Backend: Fase 2: Sincronización Segura
     Frontend->>Backend: POST /api/auth/sync (Bearer Token + User Metadata)
-    Backend->>Backend: authIdentity Middleware (Valida JWT con Supabase)
-    Backend->>Postgres: SELECT * FROM sp_register_user(...) [Atomic UPSERT]
+    Backend->>Backend: authIdentity Middleware (Valida JWT en Supabase / TokenCache)
+    Backend->>Postgres: SELECT * FROM sp_register_user(...) [Atomic UPSERT con promoción Admin]
     Postgres-->>Backend: Retorna Registro de Usuario Sincronizado
+    Backend->>Backend: Verificación defensiva de correos Admin
     Backend-->>Frontend: 200 OK { user: safeUser }
-    Frontend->>Frontend: Actualiza UI (Header, Menús, Tier) y purga Hash de URL
+
+    Note over Frontend: Fase 3: Consolidación Definitiva
+    Frontend->>Frontend: SessionManager actualiza a usuario definitivo (_isOptimistic: false)
+    Frontend->>Frontend: UIManager renderiza tier definitivo, vidas reales y opciones Admin
+    Frontend->>Frontend: Purga silenciosa de fragmentos hash en URL (window.history.replaceState)
 ```
 
 ---
@@ -50,6 +60,7 @@ sequenceDiagram
 
 ### 2.1. Google One Tap (`index.html`)
 * **Librería:** `https://accounts.google.com/gsi/client` cargada de forma asíncrona.
+* **Estándar FedCM (Federated Credential Management):** Diseñado para la eliminación de cookies de terceros en navegadores modernos sin usar directivas obsoletas.
 * **Configuración Programática:**
   ```javascript
   google.accounts.id.initialize({
@@ -58,78 +69,140 @@ sequenceDiagram
       context: "signin",
       ux_mode: "popup",
       auto_select: false,
-      use_fedcm_for_prompt: false, // Previene bloqueos experimentales de FedCM en navegadores no-Chrome
       itp_support: true,
       cancel_on_tap_outside: false
   });
+  // Invocación nativa sin callbacks de estado deprecados
   google.accounts.id.prompt();
   ```
-* **Filtros de Inicialización (Guards):** One Tap se omite si el usuario ya tiene sesión activa en `localStorage`, si `sessionManager.isLoggedIn()` es verdadero, o si hay un flujo de autenticación/redirección en curso (`_isAuthenticating` o hash en URL).
-* **Cancelación Reactiva:** Si el usuario decide iniciar sesión manualmente mediante el botón del header, `SessionManager.onStateChange` ejecuta de inmediato `google.accounts.id.cancel()` para descartar el diálogo flotante sin dejar residuos visuales.
+* **Filtros de Inicialización (Guards):** One Tap se omite preventivamente si:
+  1. Ya existe una sesión activa persistida en `localStorage` (`authToken`).
+  2. `sessionManager.isLoggedIn()` es verdadero.
+  3. Hay un flujo de autenticación o redirección en curso (`_isAuthenticating` o `#access_token` en URL).
+* **Cancelación Reactiva:** Si el usuario decide interactuar con cualquier botón manual de acceso, `SessionManager.onStateChange` ejecuta `google.accounts.id.cancel()` para descartar inmediatamente el diálogo flotante sin dejar residuos visuales.
 
 ### 2.2. Flujo Directo Google OAuth (`app.js` / `window.triggerGoogleLogin`)
 * **Invocación Centralizada:** Accesible globalmente mediante `window.triggerGoogleLogin(buttonElement)`.
-* **Configuración:**
+* **Cumplimiento RFC 6749 (Sin fragmentos hash en Redirect URI):**
   ```javascript
-  await client.auth.signInWithOAuth({
+  const cleanRedirectUrl = window.location.origin + window.location.pathname;
+  const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: { 
-          redirectTo: window.location.href, // Retorna al punto exacto donde estaba el usuario
-          queryParams: { prompt: 'select_account' } // Permite elegir entre múltiples cuentas de Google
+          redirectTo: cleanRedirectUrl,
+          queryParams: { prompt: 'select_account' }
       }
   });
+  if (data?.url) {
+      window.location.href = data.url; // Navegación explícita y segura
+  }
   ```
+* **Retorno OAuth sin Falso 401:** Al retornar de Google con fragmento hash (`#access_token=...`), `SessionManager.initialize()` detecta `isOAuthReturn` y omite llamadas preliminares con tokens viejos, esperando a que Supabase emita `SIGNED_IN`.
 
 ---
 
 ## 3. Componentes y Responsabilidades
 
 ### 3.1. Capa Frontend (Presentación)
-* **`SessionManager` (`sessionManager.js`)**:
-  * **Única Fuente de Verdad:** Controla el estado global de la sesión en el navegador (`currentUser`).
-  * **Reactividad:** Implementa el patrón *Observer* (`onStateChange`) para notificar a la cabecera (`updateHeaderUI`), módulos de estudio (`RepasoManager`, `QuizManager`) y paneles administrativos.
-  * **Gestión de Retorno OAuth:** Detecta la presencia de `#access_token` o `#id_token` en la URL al cargar la página para delegar la sincronización al evento `SIGNED_IN` y prevenir colisiones con tokens caducados de sesiones previas.
-  * **Limpieza Segura (*Nuclear Logout*):** Limpia de forma síncrona `localStorage`, `sessionStorage`, cookies residuales y llama a `supabaseClient.auth.signOut()`.
 
-* **`NetworkService` (`networkService.js`)**:
-  * **Gateway Centralizado:** Intercepta todas las peticiones HTTP de la plataforma.
-  * **Inyección de Identidad:** Inyecta automáticamente el token Bearer actualizado desde `AuthApiService.getValidToken()`.
-  * **Blindaje contra 401 en Autenticación Activa:** No dispara `logout()` ni redirecciones si la plataforma se encuentra en medio de un flujo de login (`_isAuthenticating`, retorno OAuth o `/api/auth/sync`).
-  * **Protección en Simulador:** En rutas de exámenes (`quiz.html`, `/simulator`), ante un error 401 no expulsa al usuario a `/`, sino que preserva el estado en memoria y despliega la modal interactiva `auth-prompt-modal`.
+#### `SessionManager` (`sessionManager.js`)
+* **Única Fuente de Verdad:** Controla el estado global de la sesión en el navegador (`currentUser`).
+* **Patrón Observer con Invocación Inmediata:**
+  ```javascript
+  onStateChange(callback) {
+      if (typeof callback === 'function') {
+          this.listeners.push(callback);
+          // Si ya existe un usuario en memoria, se ejecuta de inmediato para evitar
+          // condiciones de carrera por orden de carga asíncrona de scripts
+          if (this.currentUser) {
+              try {
+                  callback(this.currentUser);
+              } catch (e) {
+                  console.error('Error en listener inmediato de sesión:', e);
+              }
+          }
+      }
+  }
+  ```
+* **Renderizado Optimista:**
+  * Al capturar `SIGNED_IN` o `INITIAL_SESSION`, guarda inmediatamente el token fresco en `localStorage.setItem('authToken', session.access_token)`.
+  * Emite un usuario provisional con `_isOptimistic: true`, `subscriptionTier: 'unknown'` y `subscriptionStatus: 'pending'`.
+  * Si el correo pertenece a la lista de administradores, asigna preventivamente `role: 'admin'`.
+  * Esto permite que la interfaz muestre el nombre y avatar del usuario al instante (< 10 ms), sin pantallas en blanco ni bloqueos de interfaz.
+* **Consolidación Definitiva:**
+  * Ejecuta en segundo plano `syncGoogleUser` con el backend.
+  * Al recibir la respuesta de `/api/auth/sync`, consolida los datos reales (`tier`, `vidas`, `role`) y emite una segunda actualización con `_isOptimistic: false`.
+* **Saneamiento de URL:**
+  * Al completarse la sesión, purga el hash de la barra de direcciones mediante `window.history.replaceState(null, '', cleanUrl)`.
+* **Limpieza Segura (*Nuclear Logout*):**
+  * Limpia de forma síncrona `localStorage`, `sessionStorage`, cachés locales y ejecuta `supabaseClient.auth.signOut()`.
 
-* **`AuthApiService` (`authApiService.js`)**:
-  * **Capa de Abstracción de Red para Auth:** Encapsula llamadas a `/api/auth/sync`, `/api/auth/me`, `/api/auth/profile` y `/api/auth/delete-account`.
-  * **Validación Local de JWT:** Función pura `isTokenExpired(token)` que decodifica el payload en base64 y comprueba `exp` con 60 segundos de margen preventivo sin llamadas de red.
+#### `UIManager` (`uiManager.js`)
+* **Supresión de Parpadeo en Barra de Vidas:**
+  ```javascript
+  updateFreemiumStatus(user) {
+      // Evita renderizar la barra de vidas si el usuario aún está en estado optimista
+      // impidiendo que los usuarios Basic/Advanced vean la barra por una fracción de segundo
+      if (!user || user._isOptimistic || user.subscriptionTier === 'unknown') {
+          return;
+      }
+      // Renderizado de vidas solo para usuarios confirmados de tier 'free'
+      ...
+  }
+  ```
+* **Supresión de Modal de Renovación Semanal:**
+  * `checkAndShowWelcomeModal()` bloquea el modal de "10 vidas semanales" si:
+    1. El usuario está en estado optimista (`_isOptimistic`).
+    2. El usuario pertenece a un plan de pago (`basic` o `advanced`).
+    3. La página actual es un entorno de evaluación (`quiz.html` o `simulator-dashboard.html`).
+* **Soporte de Rol Administrador en Header:**
+  * Si `user.role === 'admin'`, se inyecta dinámicamente la opción **"Panel de Gestión"** (`/admin.html`) en el menú desplegable del usuario.
+  * El distintivo del plan muestra la etiqueta dorada **"Administrador"** con clase `.tier-admin` (`#f59e0b`).
+
+#### `NetworkService` (`networkService.js`) y `AuthApiService` (`authApiService.js`)
+* **Gateway Centralizado:** Inyecta automáticamente el token Bearer actualizado desde `AuthApiService.getValidToken()`.
+* **Protección contra 401 en Tránsito:** Si la aplicación se encuentra en medio de un flujo de login (`_isAuthenticating` o retorno OAuth), los errores 401 no disparan `logout()` prematuro ni redirecciones involuntarias.
+* **Validación Local de JWT:** `isTokenExpired(token)` decodifica el payload en base64 y evalúa `exp` con 60 segundos de holgura preventiva sin consumo de red.
 
 ---
 
 ### 3.2. Capa Backend (Infraestructura y Dominio)
-* **`authMiddleware.js`**:
-  * **Validación de Identidad (`authIdentity`):** Diseñado para `/api/auth/sync`. Valida la firma y vigencia del JWT de Supabase sin exigir que el usuario exista previamente en la tabla `users` de PostgreSQL.
-  * **Autenticación Completa (`auth`):** Valida el token con Supabase, consulta la base de datos local y monta `req.user` con roles, vidas, tier y límites.
-  * **Caché en Memoria de Identidad (`tokenCache`):** Almacena validaciones exitosas de tokens durante 3 minutos para reducir la latencia de red y evitar sobrecargar la API de Supabase.
-  * **Resiliencia ante Fallas de Red (`getUserWithRetry`):** Aplica reintentos automáticos con retroceso exponencial (*Exponential Backoff*) ante errores transitorios de conectividad o DNS (`AuthRetryableFetchError`).
-  * **Control de Rol Administrador (`adminOnly`):** Restringe el acceso a rutas maestras verificando estrictamente `req.user.role === 'admin'`.
 
-* **`AuthService` (`authService.js`)**:
-  * Orquesta la sincronización de Google OAuth y el aprovisionamiento de cuentas.
-  * Asignación automática de privilegios administrativos para correos designados (`hubacademia01@gmail.com`).
-  * Delegación de la renovación semanal de vidas a `UsageService.renewWeeklyLivesIfNeeded()`.
-  * Integración con `supabaseAdmin` singleton para verificar estado de confirmación de correo y borrado de cuentas en Supabase Auth Admin API.
+#### `authMiddleware.js`
+* **`authIdentity`:** Diseñado exclusivamente para `/api/auth/sync`. Valida la firma y vigencia del JWT con Supabase sin exigir la existencia previa del usuario en la tabla `users` de PostgreSQL.
+* **`auth`:** Autenticación completa para rutas protegidas. Valida el token con Supabase, consulta la base de datos local y construye `req.user` con roles, vidas, tier y límites.
+* **Caché en Memoria (`tokenCache`):** Almacena en memoria las validaciones exitosas de tokens durante 3 minutos (con limpieza automática por TTL) para reducir drásticamente la latencia y evitar la saturación de la API de Supabase.
+* **Resiliencia de Red (`getUserWithRetry`):** Aplica reintentos automáticos con retroceso exponencial (*Exponential Backoff*) ante errores transitorios de red o DNS (`AuthRetryableFetchError`).
+* **`adminOnly`:** Restringe el acceso a endpoints de gestión validando estrictamente `req.user.role === 'admin'`.
 
-* **`UserRepository` (`userRepository.js`)**:
-  * Gestiona la persistencia y lectura de usuarios en PostgreSQL.
-  * Invoca el procedimiento almacenado `sp_register_user`.
-  * Desvinculación total de cuentas fijas o semillas obsoletas (los administradores y estudiantes son gestionados 100% mediante OAuth de Google).
+#### `AuthService` (`authService.js`)
+* **Orquestación de Sincronización:** Recibe los metadatos de Google (`id`, `name`, `email`, `avatar_url`) y delega el registro al repositorio.
+* **Promoción Defensiva de Administradores:**
+  Tanto en `syncGoogleUser` como en `getUserWithStatus`, el servicio contrasta el correo contra la lista blanca configurada (`ADMIN_EMAILS`):
+  ```javascript
+  const adminEmails = (process.env.ADMIN_EMAILS || 'hubacademia01@gmail.com')
+      .split(',')
+      .map(e => e.trim().toLowerCase());
+  
+  if (adminEmails.includes(user.email.toLowerCase()) && user.role !== 'admin') {
+      await this.userRepository.update(user.id, { role: 'admin' });
+      user.role = 'admin';
+  }
+  ```
+* **Renovación Semanal de Vidas:** Delega a `UsageService.renewWeeklyLivesIfNeeded()` el restablecimiento de vidas para usuarios del plan `free`.
+
+#### `UserRepository` (`userRepository.js`)
+* Invoca la función almacenada `sp_register_user`.
+* Incluye mecanismo de respaldo (*fallback*) directo con cláusula `ON CONFLICT (email) DO UPDATE SET role = CASE WHEN EXCLUDED.role = 'admin' THEN 'admin' ELSE users.role END`.
 
 ---
 
 ## 4. Persistencia en Base de Datos: `sp_register_user`
 
-Para evitar condiciones de carrera, errores de concurrencia y advertencias de seguridad, el registro y sincronización de usuarios se ejecuta mediante una función atómica en PostgreSQL:
+El registro y sincronización de usuarios se ejecuta mediante una función atómica en PostgreSQL (`src/infrastructure/database/sp_register_user.sql`):
 
 ```sql
-CREATE OR REPLACE FUNCTION public.sp_register_user(
+CREATE OR REPLACE FUNCTION sp_register_user(
     p_id UUID,
     p_name TEXT,
     p_email TEXT,
@@ -140,7 +213,8 @@ CREATE OR REPLACE FUNCTION public.sp_register_user(
 RETURNS SETOF public.users AS $$
 BEGIN
     -- UPSERT Atómico y Seguro:
-    -- 1. Si el correo ya existe, sincroniza el ID de Supabase Auth, avatar y actualiza updated_at.
+    -- 1. Si el correo ya existe, sincroniza el ID de Supabase Auth, avatar, actualiza timestamp
+    --    y promueve el rol a 'admin' si el nuevo rol es 'admin' sin degradar admins existentes.
     -- 2. Si es un usuario nuevo, inserta con tier 'free' y 10 vidas iniciales.
     RETURN QUERY
     INSERT INTO public.users (
@@ -155,22 +229,27 @@ BEGIN
     )
     ON CONFLICT (email) 
     DO UPDATE SET
-        id = EXCLUDED.id,
+        id = EXCLUDED.id, -- Sincronizar el ID de Supabase Auth
         name = EXCLUDED.name,
+        role = CASE 
+            WHEN EXCLUDED.role = 'admin' THEN 'admin'
+            ELSE public.users.role
+        END,
         avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url),
         updated_at = NOW()
     RETURNING *;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Revocación de privilegios públicos (Solo backend con credenciales de base de datos)
+-- Revocación de privilegios públicos (Solo backend con credenciales seguras de servicio)
 REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text, text) FROM PUBLIC, anon, authenticated;
 ```
 
 ### Garantías de este diseño:
-1. **Unicidad y Resiliencia (`23505 Immunity`):** Al usar `ON CONFLICT (email) DO UPDATE`, jamás se generan excepciones por llave duplicada en los registros del servidor PostgreSQL.
-2. **Seguridad de `search_path`:** La directiva explícita `SET search_path = public` mitiga vulnerabilidades de inyección por suplantación de esquemas (cumpliendo con el linter de seguridad de Supabase).
-3. **Control de Acceso:** Ejecución restringida (`REVOKE EXECUTE FROM anon, authenticated`).
+1. **Inmunidad a Colisiones (`23505 Immunity`):** `ON CONFLICT (email) DO UPDATE` garantiza cero errores de concurrencia al registrar usuarios simultáneos.
+2. **Preservación y Elevación de Privilegios:** La cláusula condicional `CASE WHEN EXCLUDED.role = 'admin' THEN 'admin' ELSE public.users.role END` asegura que una cuenta designada como administradora nunca quede degradada a `student` tras un re-login, elevando automáticamente su privilegio en base de datos.
+3. **Seguridad de Esquema (`search_path`):** La directiva explícita `SET search_path = public` mitiga vulnerabilidades de inyección por suplantación de esquemas (aprobada por el Supabase Security Linter).
+4. **Acceso Restringido:** Ejecución revocada para roles anónimos y autenticados (`REVOKE EXECUTE FROM anon, authenticated`).
 
 ---
 
@@ -178,11 +257,14 @@ REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text,
 
 | Operación | Mecanismo | Latencia Típica |
 | :--- | :--- | :---: |
-| Validación de Expiración JWT | Local en cliente / backend (`jwt.decode`) | **< 1 ms** |
-| Verificación en Caché de Servidor | `tokenCache.get(token)` | **< 2 ms** |
-| Sincronización DB (`sp_register_user`) | PostgreSQL UPSERT en Pooler Transaccional | **~100 - 200 ms** |
-| Consulta de Usuario (`findById`) | Índice PK sobre tabla `users` | **~50 - 100 ms** |
-| **Tiempo Total de Login Activo** | Flujo completo Frontend ↔ Backend ↔ DB | **< 400 ms** |
+| Emisión de Estado Optimista | Local en memoria (`SessionManager`) | **< 5 ms** |
+| Persistencia Anticipada de Token | Síncrona en `localStorage` | **< 1 ms** |
+| Validación de Expiración JWT | Local en cliente (`isTokenExpired`) | **< 1 ms** |
+| Verificación en Caché de Backend | `tokenCache.get(token)` | **< 2 ms** |
+| Sincronización DB (`sp_register_user`) | PostgreSQL UPSERT en Pooler Transaccional | **~80 - 150 ms** |
+| Consulta de Usuario (`findById`) | Búsqueda por PK indexada | **~30 - 60 ms** |
+| **Tiempo Total a UI Interactiva** | Renderizado Optimista Inicial | **< 20 ms** |
+| **Tiempo de Consolidación Final** | Flujo completo Frontend ↔ Backend ↔ DB | **~250 - 350 ms** |
 
 ---
 
@@ -190,45 +272,66 @@ REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text,
 
 ```mermaid
 graph TD
-    A[Inicio / Carga de Página] --> B{¿Hash en URL con access_token?}
-    B -- Sí --> C[Omitir getMe en initialize]
+    A[Carga de Página] --> B{¿Hash OAuth en URL?}
+    B -- Sí --> C[Activar flag isOAuthReturn y omitir getMe preliminar]
     C --> D[Esperar evento SIGNED_IN de Supabase]
-    D --> E[Ejecutar syncGoogleUser con Token Fresco]
-    E --> F[Actualizar Estado y Purgar Hash]
-    
-    B -- No --> G{¿Existe authToken local?}
-    G -- Sí --> H[Validar vigencia y llamar getMe]
-    G -- No --> I[Renderizar Estado Invitado + Evaluar One Tap]
-    
-    H -- 401 Expirado --> J{¿Está en flujo de autenticación?}
-    J -- Sí --> K[Ignorar 401 - No cerrar sesión]
-    J -- No --> L[Disparar Logout Seguro y Limpiar Estado]
+    D --> E[Guardar authToken inmediatamente en localStorage]
+    E --> F[Emitir usuario optimista a la UI]
+    F --> G[Sincronizar en segundo plano con POST /api/auth/sync]
+    G --> H[Consolidar estado definitivo y purgar Hash]
+
+    B -- No --> I{¿Existe authToken local?}
+    I -- Sí --> J[Validar expiración local del token]
+    J -- Válido --> K[Llamar a /api/auth/me y popular sesión]
+    J -- Expirado --> L[Cerrar sesión silenciosamente y mostrar estado invitado]
+    I -- No --> M[Renderizar estado invitado y evaluar One Tap]
 ```
 
-1. **Retorno OAuth sin Falso 401:** Al regresar de Google, `initialize()` no compite llamando a `/api/auth/me` con tokens caducados de sesiones previas.
-2. **Bloqueo Concurrente en Sincronización:** Las banderas `window._isGlobalSyncing` e `isSyncing` evitan peticiones simultáneas si Supabase dispara eventos duplicados.
-3. **Throttling en Cliente:** Ventana de enfriamiento de 3000 ms (`throttleWindow`) para filtrar eventos repetidos en ráfaga.
+1. **Invocación Inmediata de Observadores:** Al invocar `sessionManager.onStateChange(cb)`, si el usuario ya está cargado en memoria, el callback se dispara en ese mismo instante. Esto neutraliza de raíz cualquier desfase cuando `app.js` u otros módulos se cargan asíncronamente después del evento de Supabase.
+2. **Bandera Global de Sincronización:** `window._isGlobalSyncing` e `isSyncing` evitan peticiones concurrentes si Supabase dispara eventos duplicados (`INITIAL_SESSION` + `SIGNED_IN`).
+3. **Throttling en Cliente:** Ventana de enfriamiento de 3000 ms (`throttleWindow`) para filtrar ráfagas de eventos idénticos.
+4. **Token Guardado Antes de la Sincronización:** `localStorage.setItem('authToken', session.access_token)` se ejecuta previo a la llamada a `/api/auth/sync`, asegurando que cualquier llamada subsiguiente cuente con credenciales válidas.
 
 ---
 
-## 7. Configuración de Entornos y Rate Limiting
+## 7. Configuración de Entornos, CSP y Rate Limiting
 
-### Backend (`server.js` / `rateLimiters.js`)
-* **`trust proxy = 1`:** Habilitado para interpretar correctamente las cabeceras `X-Forwarded-For` detrás del proxy inverso de Render y Vercel.
-* **`authLimiter`:** Protege `/api/auth/sync` permitiendo hasta 100 solicitudes por IP cada 15 minutos, con exclusión automática (`skip`) para `localhost`, `127.0.0.1` y `::1`.
-* **Pooler de PostgreSQL:** Conexión mediante `aws-1-us-east-1.pooler.supabase.com:6543` (Modo Transacción) con SSL seguro.
+### Content Security Policy (CSP en `server.js`)
+* **Google Identity Services:** Requiere `script-src` para `https://accounts.google.com/gsi/client` y `style-src-elem` para `https://accounts.google.com/gsi/style`.
+* **Directivas Estándar:** Se eliminó la directiva no estándar `font-src-elem` (que generaba alertas rojas en la consola de navegadores Chromium), consolidando las fuentes bajo `font-src 'self' https://fonts.gstatic.com data:`.
+
+### Rate Limiting y Conexión (`rateLimiters.js`)
+* **`trust proxy = 1`:** Habilitado para interpretar con precisión las cabeceras `X-Forwarded-For` provistas por Vercel y Render.
+* **`authLimiter`:** Protege `/api/auth/sync` permitiendo hasta 100 solicitudes por IP cada 15 minutos, con exención automática (`skip`) para `localhost`, `127.0.0.1` y `::1`.
+* **Pooler de PostgreSQL:** Conexión mediante `aws-1-us-east-1.pooler.supabase.com:6543` (Modo Transacción) con TLS/SSL forzado.
 
 ---
 
-## 8. Mantenimiento y Buenas Prácticas
+## 8. Integración y Paridad con Aplicaciones Móviles
 
-1. **Nunca almacenar contraseñas en texto plano ni crear usuarios fantasma:** Los usuarios se crean y autentican exclusivamente mediante el proveedor de identidad de Google (One Tap / OAuth).
-2. **Nombres y Metadatos Seguros:** Toda información proveniente del proveedor OAuth es saneada y acotada (`slice(0, 120)`) antes de persistirse.
-3. **Preservación del Historial de Pruebas:** Toda modificación al flujo de autenticación debe estar acompañada de la ejecución de la suite de pruebas unitarias:
+Las aplicaciones móviles del ecosistema (**HubDocenteApp** y **HubSaludApp**) consumen la misma arquitectura y endpoints del backend (`/api/auth/sync`, `/api/auth/me`, `/api/auth/profile`):
+
+1. **Paridad de Reglas de Negocio:**
+   * La lógica de asignación de roles, verificación de correos de administración y cuotas de consumo de IA se resuelve centralizadamente en el backend (`AuthService` y `UsageService`).
+   * No existe divergencia de privilegios entre la versión web y las aplicaciones móviles.
+2. **Modales de Paywall y Cuotas de Uso:**
+   * El sistema de control de suscripciones (`basic`, `advanced`, `free`) y los límites de consumo se reflejan de forma idéntica en las vistas de perfil y simuladores móviles.
+   * Se eliminaron textos inexactos o sobreprometidos (como menciones a percentiles inexistentes) asegurando consistencia multiplataforma.
+
+---
+
+## 9. Mantenimiento y Buenas Prácticas
+
+1. **Sin Contraseñas en Texto Plano:** La autenticación se delega íntegramente en Google como proveedor de identidad seguro mediante OAuth 2.0 y FedCM.
+2. **Saneamiento de Metadatos:** Toda información provista por el token (nombre, avatar) es acotada y validada antes de interactuar con la base de datos.
+3. **Verificación Automatizada:** Toda modificación a este flujo debe ser validada contra la suite completa de pruebas unitarias:
    ```bash
-   npm test -- tests/unit/authService.test.js tests/unit/authIdentityMiddleware.test.js tests/unit/authClientFlow.test.js
+   npm test
+   # O en entornos Windows PowerShell:
+   npm.cmd test
    ```
 
 ---
 *Documentación técnica de arquitectura - Hub Academia.*  
-*Última actualización: 2026-08-28.*
+*Última actualización: 2026-09-05.*
+

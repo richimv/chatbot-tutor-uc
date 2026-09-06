@@ -156,6 +156,18 @@ describe('app.js Presentation Orchestrator', () => {
             });
         });
 
+        test('debe retornar Administrador y tier-admin para usuario con role admin', () => {
+            const userAdmin = {
+                role: 'admin',
+                subscriptionTier: 'free',
+                subscriptionStatus: 'pending'
+            };
+            expect(appModule.getTierBadgeConfig(userAdmin)).toEqual({
+                tierLabel: 'Administrador',
+                tierClass: 'tier-admin'
+            });
+        });
+
         test('debe retornar Plan Gratuito para cuentas con status pending o tier free', () => {
             const userPending = {
                 subscriptionTier: 'basic',

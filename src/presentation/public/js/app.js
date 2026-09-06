@@ -27,22 +27,23 @@ function getTierBadgeConfig(user) {
     const tier = (user.subscriptionTier || 'free').toLowerCase();
     const isActive = user.subscriptionStatus === 'active';
 
-    if (!isActive || tier === 'free') {
-        return { tierLabel: 'Plan Gratuito', tierClass: 'tier-free' };
-    }
-
     if (tier === 'advanced' || tier === 'avanzado') {
-        return { tierLabel: 'Plan Avanzado', tierClass: 'tier-advanced' };
+        if (isActive) {
+            return { tierLabel: 'Plan Avanzado', tierClass: 'tier-advanced' };
+        }
     }
 
     if (tier === 'basic' || tier === 'basico') {
-        return { tierLabel: 'Plan Básico', tierClass: 'tier-basic' };
+        if (isActive) {
+            return { tierLabel: 'Plan Básico', tierClass: 'tier-basic' };
+        }
     }
 
-    return {
-        tierLabel: 'Plan Básico',
-        tierClass: 'tier-basic'
-    };
+    if (user.role === 'admin' || tier === 'admin') {
+        return { tierLabel: 'Administrador', tierClass: 'tier-admin' };
+    }
+
+    return { tierLabel: 'Plan Gratuito', tierClass: 'tier-free' };
 }
 
 /**
@@ -253,11 +254,26 @@ function updateHeaderUI(user) {
 
             const menuName = container.querySelector('.user-menu-name');
             if (menuName) {
-                menuName.innerHTML = `${displayName} <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>`;
+                menuName.innerHTML = `${displayName}`;
             }
 
             const menuEmail = container.querySelector('.user-menu-email');
             if (menuEmail) menuEmail.textContent = user.email || '';
+
+            // 🛡️ Actualizar reactivamente el enlace al Panel de Gestión para administradores
+            const adminItem = container.querySelector('.user-menu-admin-item');
+            const menuGroup = container.querySelector('.user-menu-group');
+            if (user.role === 'admin') {
+                if (!adminItem && menuGroup) {
+                    const adminLink = document.createElement('a');
+                    adminLink.href = '/admin';
+                    adminLink.className = 'user-menu-item user-menu-admin-item';
+                    adminLink.innerHTML = '<i class="fas fa-shield-alt"></i> Panel de Gestión';
+                    menuGroup.prepend(adminLink);
+                }
+            } else if (adminItem) {
+                adminItem.remove();
+            }
 
             return;
         }
@@ -282,7 +298,7 @@ function updateHeaderUI(user) {
                     </div>
                     
                     <div class="user-menu-group">
-                        ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item"><i class="fas fa-shield-alt"></i> Panel de Gestión</a>' : ''}
+                        ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item user-menu-admin-item"><i class="fas fa-shield-alt"></i> Panel de Gestión</a>' : ''}
                         <a href="/profile" class="user-menu-item"><i class="fas fa-user-cog"></i> Mi Perfil</a>
                     </div>
 
@@ -352,15 +368,22 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
 
     window._isAuthenticating = true;
 
+    // 🛡️ Normalizar URL de retorno: nunca incluir hash (#) ni fragmentos que violen RFC 6749
+    const cleanRedirectTo = window.location.origin + window.location.pathname;
+
     try {
-        const { error } = await client.auth.signInWithOAuth({
+        const { data, error } = await client.auth.signInWithOAuth({
             provider: 'google',
             options: { 
-                redirectTo: window.location.href,
+                redirectTo: cleanRedirectTo,
                 queryParams: { prompt: 'select_account' }
             }
         });
         if (error) throw error;
+        // 🛡️ Redirección explícita de seguridad por si el entorno no navega automáticamente
+        if (data && data.url) {
+            window.location.href = data.url;
+        }
     } catch (err) {
         window._isAuthenticating = false;
         if (buttonElement && buttonElement.dataset.originalHtml) {

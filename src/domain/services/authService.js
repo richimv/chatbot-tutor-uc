@@ -17,8 +17,14 @@ class AuthService {
         // ✅ RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
         await this.usageService.renewWeeklyLivesIfNeeded(userId);
 
-        const user = await this.userRepository.findById(userId);
+        let user = await this.userRepository.findById(userId);
         if (!user) return null;
+
+        // 🛡️ Auto-admin check defensivo en getUserWithStatus (/api/auth/me):
+        const adminEmails = ['hubacademia01@gmail.com'];
+        if (user.email && adminEmails.includes(user.email.toLowerCase()) && user.role !== 'admin') {
+            user = await this.userRepository.update(user.id, { role: 'admin' });
+        }
 
         try {
             const supabaseAdmin = supabase.supabaseAdmin || (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -81,6 +87,11 @@ class AuthService {
 
             if (!user) {
                 throw new Error('No se pudo crear o recuperar el usuario de la base de datos.');
+            }
+
+            // 🛡️ Blindaje para asegurar rol de administrador en DB si es auto-admin
+            if (isAutoAdmin && user.role !== 'admin') {
+                user = await this.userRepository.update(user.id, { role: 'admin' });
             }
 
             // 2. Eliminada la provisión automática de preferencias.

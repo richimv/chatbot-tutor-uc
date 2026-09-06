@@ -295,6 +295,10 @@ body {
     color: #10b981;
 }
 
+.user-header-tier.tier-admin {
+    color: #f59e0b;
+}
+
 .user-header-tier.tier-pro {
     color: #8b5cf6;
 }

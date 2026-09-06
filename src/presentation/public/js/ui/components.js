@@ -572,9 +572,9 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
             subtitle = cleanDesc.length > 120 ? cleanDesc.substring(0, 120) + '...' : cleanDesc;
         }
     } else if (type === 'question' && !subtitle && item.case_title) {
-        subtitle = `<span style="color: #94a3b8; font-size: 0.8rem;"><i class="fas fa-layer-group" style="color:#818cf8; margin-right: 4px;"></i>Caso: <strong>${item.case_title}</strong></span>`;
+        subtitle = `<span style="color: var(--text-muted, #94a3b8); font-size: 0.8rem;"><i class="fas fa-layer-group" style="color:#818cf8; margin-right: 4px;"></i>Caso: <strong>${item.case_title}</strong></span>`;
     }
-    const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.25rem;">${subtitle}</div>` : '';
+    const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.82rem; color: var(--text-muted, #94a3b8); margin-top: 0.25rem;">${subtitle}</div>` : '';
 
     const resourceTypeAttr = type === 'book' ? `data-resource-type="${item.resource_type || item.type || 'other'}"` : `data-resource-type="${type}"`;
 
@@ -602,7 +602,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         }
 
         return `
-            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr}>
+            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr} data-name="${safeHtmlValue(item.title || item.name || displayName || '')}">
                 <div class="admin-item-checkbox-wrapper">
                     <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
                 </div>
@@ -639,7 +639,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     }
 
     return `
-        <div class="admin-item-card item-card" ${resourceTypeAttr}>
+        <div class="admin-item-card item-card" ${resourceTypeAttr} data-email="${safeHtmlValue(item.email || '')}" data-name="${safeHtmlValue(item.name || displayName || '')}">
             <div class="admin-item-checkbox-wrapper">
                 <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
             </div>

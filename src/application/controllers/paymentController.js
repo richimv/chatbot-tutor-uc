@@ -198,8 +198,7 @@ exports.handleWebhook = async (req, res) => {
                             monthly_flashcards_usage = 0,
                             daily_simulator_usage = 0,
                             last_usage_reset = $4,
-                            payment_id = $2,
-                            last_free_renewal = CURRENT_TIMESTAMP
+                            payment_id = $2
                         WHERE id = $3
                         RETURNING id
                     `;

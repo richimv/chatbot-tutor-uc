@@ -10,10 +10,10 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/base.css?v=fb1f3b52db0f">
-    <script src="/js/config.js?v=fb1f3b52db0f"></script>
-    <script src="/js/utils/themeManager.js?v=fb1f3b52db0f"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/base.css?v=db4d175ef956">
+    <script src="/js/config.js?v=db4d175ef956"></script>
+    <script src="/js/utils/themeManager.js?v=db4d175ef956"></script>
     <style>
         :root {
             --primary-bg: var(--bg-main);
@@ -204,9 +204,9 @@
 
     <!-- Scripts de Lógica -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/authApiService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/sessionManager.js?v=fb1f3b52db0f"></script>
+    <script src="/js/services/networkService.js?v=db4d175ef956"></script>
+    <script src="/js/services/authApiService.js?v=db4d175ef956"></script>
+    <script src="/js/sessionManager.js?v=db4d175ef956"></script>
 
     <script>
         /**
@@ -238,11 +238,14 @@
                         redirectTo += '?openChat=true';
                     }
                     try {
-                        const { error } = await client.auth.signInWithOAuth({
+                        const { data, error } = await client.auth.signInWithOAuth({
                             provider: 'google',
                             options: { redirectTo, queryParams: { prompt: 'select_account' } }
                         });
                         if (error) throw error;
+                        if (data && data.url) {
+                            window.location.href = data.url;
+                        }
                     } catch (err) {
                         googleBtn.innerHTML = originalHTML;
                         googleBtn.style.pointerEvents = 'auto';

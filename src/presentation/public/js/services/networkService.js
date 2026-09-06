@@ -69,13 +69,16 @@ class NetworkService {
 
             const currentUser = window.sessionManager.getUser();
             if (currentUser && currentUser.role !== 'admin') {
-                const tier = String(currentUser.subscriptionTier || currentUser.subscription_tier || 'free').toLowerCase();
-                const status = String(currentUser.subscriptionStatus || currentUser.subscription_status || 'pending').toLowerCase();
-                const isPaidActive = (tier === 'basic' || tier === 'advanced') && status === 'active';
+                // Si el usuario está en fase optimista inicial, esperar confirmación del backend para no penalizar a usuarios de pago
+                if (!currentUser._isOptimistic) {
+                    const tier = String(currentUser.subscriptionTier || currentUser.subscription_tier || 'free').toLowerCase();
+                    const status = String(currentUser.subscriptionStatus || currentUser.subscription_status || 'pending').toLowerCase();
+                    const isPaidActive = (tier === 'basic' || tier === 'advanced') && status === 'active';
 
-                if (!isPaidActive) {
-                    window.sessionManager.decrementUsage(1);
-                    optimisticallyDecremented = true;
+                    if (!isPaidActive) {
+                        window.sessionManager.decrementUsage(1);
+                        optimisticallyDecremented = true;
+                    }
                 }
             }
         }

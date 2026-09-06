@@ -2,6 +2,89 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-09-05] - Auditoría de Arquitectura en Gestión de Alumnos, Limpieza de Código Muerto y Expansión Oficial de DESIGN_SYSTEM.md
+
+- **👥 Auditoría y Limpieza Integral en Gestión de Alumnos / Usuarios ([adminService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/adminService.js), [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js), [MANAGEMENT_PANEL_GUIDE.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/MANAGEMENT_PANEL_GUIDE.md)):**
+  - **Erradicación de Código Muerto de Contraseñas:** Tras la migración arquitectónica a Google-Only Authentication (`commit 8f0bd08`), el sistema de contraseñas locales fue completamente retirado del backend y frontend. Se removió la generación artificial de `tempPassword` en `adminService.create('student')` y se retiró el botón de restablecimiento de contraseña (`.reset-pass-btn-small`) de las tarjetas de alumnos en `displayStudents()`, evitando el error HTTP 404 al hacer clic.
+  - **Modal Informativo sobre Google OAuth:** `handleResetPassword(userId)` ahora informa con claridad al administrador que el estudiante puede ingresar directamente con su cuenta de Google mediante autenticación federada segura sin necesidad de credenciales locales.
+  - **Mensajería Limpia al Crear Alumnos:** `saveGenericForm()` actualiza su mensaje de éxito para orientar al administrador sobre el acceso directo mediante cuenta Google del estudiante.
+  - **Corrección de Plazo en Plan Avanzado (+4 meses):** Se corrigió la discrepancia documental histórica en `MANAGEMENT_PANEL_GUIDE.md` (que indicaba erróneamente 6 meses), alineándola con la verdad técnica del backend (`adminService.js`), frontend (`admin.js`) y política tarifaria oficial (`SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md`): exactamente **4 meses** para el Plan Avanzado y **2 meses** para el Plan Básico.
+  - **Consistencia Bidireccional y Fidelización:** Validado el flujo atómico donde la asignación de un plan de pago activa el estado a `'active'`, calcula la expiración y resetea automáticamente a cero todas las cuotas de IA, simuladores y flashcards.
+- **🎨 Expansión Formal de la Sección 13 en DESIGN_SYSTEM.md ([DESIGN_SYSTEM.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/DESIGN_SYSTEM.md)):**
+  - Se incorporó la **Sección 13: 🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración (Admin Panel) & Subcontenedores Avanzados de Modales**, consolidando la fuente de verdad técnica para toda la plataforma:
+    1. **13.1. Layout del Panel y Contenedor Maestro:** `.admin-container` fluido hasta 1440px y pestañas `.admin-tabs` con scroll horizontal táctil nativo (`scrollbar-width: none`).
+    2. **13.2. Controles de Cabecera y Buscador Universal:** Flexbox adaptativo con debounce y placeholders contextuales (`Buscar por nombre o correo...`).
+    3. **13.3. Tarjetas de Elementos de Administración:** Estructura con checkboxes masivos, thumbnails WebP, semáforo de 3 puntos (Premium, Visible, Apertura Directa) y matriz de badges semánticos (`.admin-badge-blue`, `.admin-badge-purple`, `.admin-badge-green`, `.admin-badge-danger`, `.admin-badge-muted`, `.admin-badge-cyan`).
+    4. **13.4. Arquitectura Avanzada de Modales:** Erradicación total de `#0f0f13`, adopción estricta de `var(--modal-bg)`, `var(--border-color)`, `var(--shadow-xl)` y regla mandatoria `padding: 0 !important;` en `.modal-content` con scroll estrictamente confinado a `.modal-body`.
+    5. **13.5. Subcontenedores Internos dentro de las Modales:** Documentación formal de `.import-method-card`, `#ai-domain-container`, `.selected-chip` (con `#ffffff !important`), `.image-upload-actions` (con `flex-wrap: wrap` y token oficial `var(--danger)`) y switches iOS.
+    6. **13.6. Adaptabilidad Móvil y Colapso Automático de Cuadrículas:** Márgenes simétricos `calc(100% - 20px)` en ≤768px y `calc(100% - 16px)` en ≤480px, junto con la regla de colapso automático `grid-template-columns: 1fr !important;` para cualquier grilla interna en pantallas móviles.
+    7. **13.7. Editor Científico TinyMCE 6 Dual-Theme Dinámico:** Configuración `isDark ? oxide-dark : oxide` con tipografía y fondos de contraste calibrados para evitar texto invisible.
+    8. **13.8. Modal Canónica de Confirmación:** Estandarización de `#confirmation-modal` con `.confirmation-modal-card` y `max-width: 440px`.
+    9. **13.9. Arquitectura y Reglas de Gestión de Alumnos / Usuarios:** Integración 100% Google OAuth, fidelización con reseteo de cuotas y búsqueda multiatributo.
+- **🧪 Cobertura de Pruebas Unitarias ([adminStudentManagement.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/adminStudentManagement.test.js)):**
+  - 10 pruebas unitarias nuevas cubriendo: creación limpia de alumnos sin contraseñas, reactividad y consistencia de planes y suscripciones (+2m basic, +4m advanced, degradación a free en expirados), omisión del botón de reseteo en las tarjetas de alumno, modal informativo de Google OAuth y verificación de la Sección 13 en `DESIGN_SYSTEM.md`.
+  - **48/48 suites Jest en verde (369/369 pruebas al 100%)**.
+
+---
+
+### 🟢 [2026-09-05] - Verificación de Arquitectura, Modales Responsivas Adaptables y Alto Contraste Dual-Theme en Panel de Gestión
+
+- **🎨 Estandarización Dual-Theme y Alto Contraste en Modales ([admin.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/admin.css) & [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - **Erradicación de Fondo Oscuro Hardcodeado:** Se eliminó el `background: #0f0f13 !important` de `.modal-content`, sustituyéndolo por tokens semánticos oficiales `var(--modal-bg)`, `var(--border-color)` y `var(--shadow-xl)`. Esto solucionó la incompatibilidad visual donde las ventanas modales permanecían forzosamente negras incluso en modo claro (`data-theme="light"`).
+  - **Arquitectura de Caja Estricta:** Se aplicó `padding: 0 !important; overflow: hidden;` en `.modal-content` y se asignó el scroll exclusivamente al `.modal-body`, garantizando que el header y footer queden perfectamente anclados a los extremos del modal sin dobles barras de desplazamiento ni paddings redundantes.
+  - **Subcontenedores y Tarjetas Internas:** Los componentes `.import-method-card`, `#ai-domain-container`, `.image-upload-group` y `.switch-container` adoptaron `background: var(--bg-tertiary)` y bordes `1px solid var(--border-color)`, asegurando contraste nítido, fondos distinguidos y tipografía legible (`var(--text-main)` y `var(--text-secondary)`) en ambos temas.
+  - **Corrección de Chips y Switches:** `.selected-chip` ahora fuerza `color: #ffffff !important` sobre su fondo `var(--primary)`, erradicando el texto negro ilegible en modo oscuro. En modo claro, los switches inactivos usan `#cbd5e1` con perilla blanca `#ffffff` y al activarse conmutan a `var(--primary)` o `#f59e0b`.
+  - **Normalización de Variables CSS:** Erradicadas variables huérfanas o no definidas (`var(--danger-color)`, `var(--accent-color)`, `var(--text-primary)`, `var(--success-color)`), reemplazándolas por sus tokens vigentes (`var(--danger)`, `var(--primary)`, `var(--text-main)`, `var(--success)`).
+- **📱 Responsividad y Ancho Adaptativo de Modales en Móviles y Tabletas ([admin.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/admin.css) & [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - **Ajuste Perimetral en Pantallas Angostas:** En tablets (≤ 768px), `.modal-content` toma `width: calc(100% - 20px) !important; margin: 10px auto;`. En celulares (360px–480px), toma `width: calc(100% - 16px) !important; margin: 8px auto;`, garantizando márgenes simétricos de 8px a cada lado sin cortes en los bordes.
+  - **Colapso Universal de Cuadrículas Multi-Columna:** Se implementó `.modal-body div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 12px !important; }`, impidiendo que los formularios con campos en 2 o 3 columnas (Área/Subtema, Examen/Target, Opciones A/B/C/D, etc.) se compriman en teléfonos.
+  - **Controles de Carga de Imágenes Adaptables:** `.image-upload-actions` ahora utiliza `flex-wrap: wrap`, permitiendo que el input de URL ocupe el ancho completo (`flex: 1 1 100%`) y los botones de acción se acomoden confortablemente.
+  - **Redimensionamiento Reactivo en `openGenericModal`:** Se incorporó detección de pantalla móvil (`window.innerWidth <= 768`) para aplicar `calc(100% - 16px)` en lugar de forzar el ancho de escritorio (`1100px`).
+- **📝 Integración Dinámica Dual-Theme con TinyMCE ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - `getStandardTinyMCEConfig` evalúa dinámicamente `data-theme`: en modo claro aplica skin `oxide`, hoja de estilo `default`, fondo `#ffffff` y texto `#0f172a`; en modo oscuro aplica `oxide-dark`, `dark`, fondo `#121212` y texto `#f8fafc`.
+- **🛡️ Modal de Confirmación Accesible ([admin.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/admin.html) & [index.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/index.html)):**
+  - Se sincronizó la estructura markup con `.confirmation-modal-card`, `.confirmation-modal-header`, `.confirmation-title-wrap`, `#confirmation-modal-icon-container` y `.confirmation-modal-footer`, vinculándola a las elevaciones y contrastes de `modal.css`.
+- **🧪 Cobertura de Pruebas Unitarias y Cache-Busting ([adminModals.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/adminModals.test.js)):**
+  - Nueva suite con 12 pruebas unitarias que validan la erradicación del fondo oscuro estático, la implementación de tokens Dual-Theme, la arquitectura de caja con `padding: 0`, los márgenes responsivos móviles, el colapso de cuadrículas, la configuración dinámica de TinyMCE y el marcado de confirmación.
+  - Sincronización de los 17 archivos HTML con `update-cache.js` (hash `8d5aaa97f3bb`).
+  - **47/47 suites Jest en verde (356/356 pruebas al 100%)**.
+
+---
+
+### 🟢 [2026-09-05] - Optimización Responsiva Móvil del Panel de Gestión, Limpieza de CSS y Búsqueda de Alumnos por Correo
+
+- **📱 Rediseño Responsivo Integral del Panel de Gestión ([admin.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/admin.css)):**
+  - **Alineación con Sistema de Diseño Dual-Theme ([DESIGN_SYSTEM.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/DESIGN_SYSTEM.md)):** Se erradicaron colores hexadecimales estáticos (`#111116`, `#18181b`, `#27272a`, `#ffffff`) en los componentes clave del panel de administración (`.admin-bulk-actions-bar`, modales, tarjetas y contenedores), reemplazándolos por tokens semánticos oficiales (`var(--card-bg)`, `var(--bg-tertiary)`, `var(--border-color)`, `var(--text-main)`, `var(--shadow-xl)`), garantizando contraste y legibilidad óptima tanto en temas claros como oscuros.
+  - **Reestructuración de Cascada y Eliminación de Código Muerto:** Conforme a `.agents/rules/code-health-rules.md`, se eliminó la regla huérfana `.curriculum-link-icon` (0 referencias en el proyecto) y se removió un bloque media-query obsoleto e intermedio (líneas 724–786) que era sobreescrito por definiciones posteriores. Se consolidó un único bloque responsivo al final de la hoja de estilos.
+  - **Optimización para Celulares (360px – 480px) y Tabletas (hasta 768px):**
+    - Se implementó `.hide-mobile` para ocultar elementos secundarios en pantallas angostas.
+    - Se adaptó `.item-card.resource-item-card` a diseño en columna vertical táctil con espaciados ergonómicos (12px), evitando el desbordamiento de badges e indicadores.
+    - La barra de acciones masivas (`.admin-bulk-actions-bar`) se reajustó a `width: calc(100% - 24px)` con `max-width: 460px`, centrada y elevada en la parte inferior de la pantalla para evitar colisiones con menús del navegador móvil.
+    - Se reconfiguraron los encabezados de pestañas (`.tab-header-controls`, `.search-sort-wrapper`, `.action-buttons`) a esquemas en cuadrícula/flex adaptativo sin colapsos horizontales.
+    - Los diálogos modales (`.modal-content`, `.modal-footer`) ahora cuentan con botones a ancho completo (`width: 100%`) y padding optimizado para dedos.
+- **🔍 Búsqueda de Usuarios/Alumnos por Correo Electrónico y Nombre ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js) & [components.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js)):**
+  - **Atributos de Datos Semánticos en Tarjetas:** Se enriqueció el generador `createAdminItemCardHTML` para estampar los atributos `data-email="${safeHtmlValue(item.email || '')}"` y `data-name="${safeHtmlValue(item.name || displayName || '')}"` directamente en el contenedor `.admin-item-card`.
+  - **Placeholder Dinámico Contextual:** La caja de búsqueda del panel asigna automáticamente `placeholder="Buscar por nombre o correo..."` cuando el usuario se encuentra en la pestaña de alumnos (`tab-students`).
+  - **Filtrado Reactivo Multi-Criterio:** La función `applySearchFilterForTab` evalúa concurrentemente el texto visible (`textContent`), `item.dataset.email` y `item.dataset.name`, permitiendo ubicar alumnos instantáneamente tipeando prefijos de correo, dominios (`@universidad.edu.pe`) o nombres.
+- **🧪 Cobertura de Pruebas Automatizadas y Cache-Busting ([adminUserSearch.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/adminUserSearch.test.js)):**
+  - Se implementó una nueva suite de pruebas unitarias que valida la presencia de atributos `data-email` y `data-name`, el placeholder dinámico del buscador, la lógica de coincidencia en `applySearchFilterForTab` y la simulación de filtrado por dominios y prefijos.
+  - Se sincronizaron las 17 plantillas HTML de la plataforma mediante `update-cache.js` con el hash determinista `d9eb41e3db37`.
+  - **45/45 suites Jest en verde (321/321 pruebas al 100%)**.
+
+---
+
+### 🟢 [2026-09-05] - Sincronización Inmediata al Clonar Mazos de Comunidad y Auditoría de Código Muerto
+
+- **⚡ Sincronización Reactiva Inmediata al Clonar Mazos ([repaso.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/repaso.js)):**
+  - **Invalidación de Caché en Mutaciones (`cloneDeck`):** Se incorporó `this.invalidateCache()` inmediatamente tras la respuesta exitosa del backend (`res.ok`) al clonar un mazo de la comunidad. Anteriormente, la ausencia de esta llamada provocaba que navegar a "Mis Mazos" reutilizara la lista en memoria previa a la clonación.
+  - **Eliminación de Promesas Zombie en `fetchDecksShared`:** Se erradicó el temporizador artificial `setTimeout(() => delete this._sharedRequests.decks[key], 5000)`. La clave de desduplicación de promesas en vuelo (in-flight) ahora se limpia de manera síncrona e inmediata en el bloque `finally`, permitiendo que peticiones inmediatas tras una clonación soliciten los datos actualizados sin ser bloqueadas por promesas resueltas obsoletas.
+  - **Espera Asíncrona Garantizada (`await this.explorer.loadTree()`):** Se aseguró la espera con `await` en `cloneDeck()` y `handleCreateDeck()`, garantizando que el árbol de navegación lateral en el explorador se actualice antes de realizar el renderizado del dashboard.
+- **🧹 Limpieza de Arquitectura y Eliminación de Código Muerto ([deckService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/deckService.js)):**
+  - Conforme a `@code-health-rules`, se eliminó la consulta redundante a la base de datos `await this.trainingRepository.getDeckById('GUEST', publicDeckId)` asignada a la variable huérfana `originalDeck`, que nunca era utilizada antes del SQL directo de clonación.
+- **🧪 Cobertura de Pruebas Unitarias ([deckCloneSync.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/deckCloneSync.test.js)):**
+  - Suite unitaria dedicada que valida la invalidación de caché, el `await` de `loadTree()`, la limpieza síncrona en `finally` de `_sharedRequests` y la ausencia de consultas redundantes en `deckService`.
+  - **44/44 suites Jest en verde (317/317 pruebas al 100%)**.
+
 ---
 
 ### 🟢 [2026-08-31] - Calificación Resiliente de Exámenes (10qs, 20qs, 60qs), Casuísticas Anidadas y Corrección de KPIs de Evolución

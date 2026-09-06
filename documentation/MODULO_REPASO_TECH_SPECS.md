@@ -427,6 +427,26 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Creada y ampliada la suite `tests/unit/deckIdiomasAndSecurity.test.js` y `tests/unit/flashcardScope.test.js` cubriendo normalización de Idiomas, filtrado de comunidad, rechazo IDOR, clonación fiel, integridad de `.modal-header`, presencia de `.pill-deck-icon` en metadatos, categoría dinámica en tarjetas, botón "Guía", selectores sin emojis, icono SVG de estrellitas IA, prevención de texto blanco en hover, alto contraste en botón de audio, resolución de voces Studio/Italiano en TTS, limpieza de archivos huérfanos vía `_cleanOrphanMedia`, prevención de duplicación en `tts_cache` con `{ cache: false }`, escala generosa en PC (`1.75rem`), estabilidad anti-encogimiento en `toggleFlip`, listas de ancho completo sin transición CSS, desplazamiento táctil directo por arrastre en tarjetas, propiedades táctiles en CSS, reversión silenciosa en `popModalState` y prevención de parpadeo por esqueletos.
     - 43 suites de prueba pasando (313/313 pruebas al 100%).
 
+- **Sincronización Reactiva Inmediata al Clonar Mazos de Comunidad y Purga de Código Muerto (V44)**:
+  - **Diagnóstico de Causa Raíz (@code-health-rules)**:
+    - **Omisión de Invalidación de Caché**: En `src/presentation/public/js/repaso.js`, el método `cloneDeck()` no invocaba `this.invalidateCache()`, a diferencia de todas las demás operaciones de mutación (`createDeck`, `updateDeck`, `deleteDeck`, `addCard`). Esto provocaba que las peticiones posteriores a `renderRootDecks()` reutilizaran estructuras obsoletas en memoria.
+    - **Stale Promise / Caché Fantasma en `fetchDecksShared`**: El método `fetchDecksShared` implementaba un patrón de desduplicación con un temporizador diferido `setTimeout(() => { delete this._sharedRequests.decks[key]; }, 5000)`. Al clonar un mazo e inmediatamente hacer clic en "Mis Mazos" (`loadDashboard`), la llamada a `fetchDecksShared(null)` retornaba la promesa ya resuelta antes de la clonación, devolviendo la lista de mazos previa sin el nuevo mazo clonado.
+    - **Promesa Flotante en Explorador**: `this.explorer.loadTree()` era invocado sin `await` dentro de `cloneDeck`, causando una carrera asíncrona donde la vista cambiaba antes de actualizarse el árbol de navegación.
+    - **Código Muerto en Backend (`deckService.js`)**: En `DeckService.cloneDeck`, existía una consulta redundante a la base de datos `await this.trainingRepository.getDeckById('GUEST', publicDeckId)` asignada a la variable no utilizada `originalDeck`, antes de la ejecución del SQL directo de clonación.
+  - **Solución e Implementación Arquitectónica**:
+    - **Invalidación Obligatoria**: Se integró `this.invalidateCache()` en `cloneDeck()` inmediatamente después de recibir la respuesta exitosa del servidor (`res.ok`).
+    - **Sincronización Asíncrona Garantizada**: Se añadió `await this.explorer.loadTree()` tanto en `cloneDeck()` como en `handleCreateDeck()`, asegurando que el árbol lateral de carpetas y mazos refleje el nuevo mazo antes de la renderización del dashboard.
+    - **Desduplicación In-Flight Efímera**: Se eliminó el temporizador artificial de 5000ms en `fetchDecksShared`. La clave de desduplicación se elimina de forma síncrona en el bloque `finally` tan pronto como la promesa se asienta (resuelve o rechaza). Esto previene colisiones concurrentes legítimas sin congelar el estado de la aplicación.
+    - **Limpieza de Backend (@code-health-rules)**: Se eliminó la variable `originalDeck` y la consulta huérfana en `deckService.js`, optimizando el consumo de conexiones a PostgreSQL.
+  - **Verificación de Pruebas Unitarias**:
+    - Se creó la suite dedicada `tests/unit/deckCloneSync.test.js` con 4 pruebas automatizadas que certifican:
+      1. Invocación de `invalidateCache` tras clonación exitosa.
+      2. Espera asíncrona (`await`) de `explorer.loadTree()`.
+      3. Limpieza inmediata de promesas en `_sharedRequests.decks` en `finally` sin temporizadores de 5 segundos.
+      4. Ausencia de llamadas redundantes a `getDeckById` en `DeckService.cloneDeck`.
+    - 44/44 suites de prueba Jest pasando (317/317 pruebas al 100%).
+
 ---
 
 **Documentación Técnica Actualizada - Septiembre 2026.**
+

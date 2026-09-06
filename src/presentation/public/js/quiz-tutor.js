@@ -188,6 +188,14 @@ class QuizTutor {
         const text = (overrideText || this.dom.input.value).trim();
         if (!text || this.isTyping) return;
 
+        // ✅ Prevenir envío proactivo si ya no tiene vidas de prueba (Paywall solo cuando realmente está en cero)
+        if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function' && window.uiManager.isResourceLocked(true)) {
+            if (typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba semanal. ¡Mejora tu plan para mantener acceso ilimitado!', 'quiz_tutor');
+            }
+            return;
+        }
+
         if (!overrideText) {
             this.dom.input.value = '';
             this.dom.input.style.height = 'auto';
@@ -195,6 +203,13 @@ class QuizTutor {
 
         this._addMessage(text, 'user');
         this._setTyping(true);
+
+        // Asegurar token de autenticación vigente para evitar degradación a visitante por inactividad
+        if (window.AuthApiService && typeof window.AuthApiService.getValidToken === 'function') {
+            try {
+                await window.AuthApiService.getValidToken();
+            } catch (_) {}
+        }
 
         try {
             const spec = this.getSpecialization();
@@ -272,6 +287,11 @@ class QuizTutor {
                 // Mantener límite de historial de la sesión para evitar payloads gigantes
                 if (this.history.length > 10) {
                     this.history.splice(0, 2);
+                }
+
+                // ✅ Refrescar vidas en el header sin interrumpir al usuario con modales
+                if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                    window.sessionManager.refreshUser().catch(() => {});
                 }
             } else {
                 throw new Error("Sin respuesta del tutor");

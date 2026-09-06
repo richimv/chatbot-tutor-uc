@@ -73,8 +73,8 @@ class ChatController {
             }
             const targetExam = (context && context.target) || req.body.target || req.userTarget || (finalSpecialization === 'education' ? 'ASCENSO' : 'SERUMS');
 
-            // RAG solo se activa si req.useRag fue evaluado como true en checkLimitsMiddleware
-            const hasRAGAccess = (isQuizTutor || isFlashcardTutor) ? (req.useRag === true) : false;
+            // RAG solo se activa si req.useRag fue evaluado como true en checkLimitsMiddleware (exclusivo para Quiz Tutor)
+            const hasRAGAccess = isQuizTutor ? (req.useRag === true) : false;
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (Multidisciplinario y Especializado)
             let processedMessage = message;
@@ -248,6 +248,7 @@ ${message}`;
 
                 // Llamada al servicio especializado con el mensaje procesado
                 aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
+                    rawUserMessage: message,
                     target: targetExam,
                     specialization: finalSpecialization,
                     category: (context && context.deckCategory) || null,

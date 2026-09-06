@@ -29,19 +29,32 @@ function getPool() {
 
         console.log('🔧 Creando pool de conexiones a PostgreSQL...');
         pool = new Pool({
-            connectionString: process.env.NODE_DATABASE_URL, // <--- AQUÍ
+            connectionString: process.env.NODE_DATABASE_URL,
             ssl: getSslConfig(),
             max: 5,
 
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 10000,
             keepAlive: true,
+            keepAliveInitialDelayMillis: 10000,
         });
 
-        // Manejador de errores (Tu lógica original se mantiene igual)
+        // Manejador de errores del pool (distinguir desconexiones idle normales de fallos fatales)
         pool.on('error', (err, client) => {
             const currentPool = pool;
-            if (currentPool && (err.code === 'XX000' || err.message.includes('terminat'))) {
+            const isIdleDisconnect = err.message && (
+                err.message.includes('terminat') || 
+                err.message.includes('closed') || 
+                err.code === 'ECONNRESET'
+            );
+
+            if (isIdleDisconnect) {
+                // Desconexión normal por inactividad de Supavisor/PgBouncer
+                console.warn('⚠️ [Postgres Pool] Cliente inactivo desconectado por el servidor. El pool reciclará la conexión bajo demanda.');
+                return;
+            }
+
+            if (currentPool && err.code === 'XX000') {
                 console.error('❌ Error fatal detectado en el pool. Recreando...', err.message);
                 console.log('🔥 Destruyendo el pool de conexiones defectuoso...');
                 pool = null;
@@ -52,7 +65,25 @@ function getPool() {
     return pool;
 }
 
+async function safeQuery(text, params) {
+    try {
+        return await getPool().query(text, params);
+    } catch (err) {
+        const isTerminated = err.message && (
+            err.message.includes('terminat') || 
+            err.message.includes('closed') || 
+            err.code === 'ECONNRESET' ||
+            err.code === '57P01'
+        );
+        if (isTerminated) {
+            console.warn(`🔄 [db.js] Conexión interrumpida (${err.message}). Reintentando consulta con conexión fresca...`);
+            return await getPool().query(text, params);
+        }
+        throw err;
+    }
+}
+
 module.exports = {
-    query: (text, params) => getPool().query(text, params),
+    query: safeQuery,
     pool: () => getPool()
 };

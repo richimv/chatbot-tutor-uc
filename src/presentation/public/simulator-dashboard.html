@@ -40,21 +40,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/base.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/header.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/footer.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/dashboard.css?v=fb1f3b52db0f">
+    <link rel="stylesheet" href="/css/theme.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/base.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/header.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/footer.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/dashboard.css?v=db4d175ef956">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/sidebar.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/components.css?v=fb1f3b52db0f">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=fb1f3b52db0f"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/modal.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/sidebar.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/components.css?v=db4d175ef956">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=db4d175ef956"> <!-- ✅ Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="/css/quiz.css?v=fb1f3b52db0f">
-    <script src="/js/config.js?v=fb1f3b52db0f"></script>
-    <script src="/js/utils/themeManager.js?v=fb1f3b52db0f"></script>
+    <link rel="stylesheet" href="/css/quiz.css?v=db4d175ef956">
+    <script src="/js/config.js?v=db4d175ef956"></script>
+    <script src="/js/utils/themeManager.js?v=db4d175ef956"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -581,15 +581,15 @@
                 <!-- Modo de Configuración (Examen Oficial vs Personalizado) -->
                 <div class="config-section" id="config-mode-selection-container">
                     <h4 class="modal-section-title">Modo de Configuración</h4>
-                    <div class="config-mode-toggle" style="display: flex; gap: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 0.5rem; margin-bottom: 0.5rem;">
-                        <label class="mode-toggle-option active" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--primary); background: var(--card-bg); box-shadow: var(--shadow-sm); transition: all 0.2s;">
+                    <div class="config-mode-toggle">
+                        <label class="mode-toggle-option active">
                             <input type="radio" name="configMode" value="default" checked style="display: none;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
                                 <i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Modo Examen Oficial
                             </span>
                             <span style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.35;">Todas las áreas integradas de forma equilibrada según el examen real (Recomendado).</span>
                         </label>
-                        <label class="mode-toggle-option" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.85rem; border-radius: 10px; border: 1px solid transparent; background: transparent; transition: all 0.2s;">
+                        <label class="mode-toggle-option">
                             <input type="radio" name="configMode" value="custom" style="display: none;">
                             <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
                                 <i class="fas fa-sliders-h"></i> Práctica Personalizada
@@ -650,23 +650,23 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=fb1f3b52db0f"></script>
+    <script src="/js/services/networkService.js?v=db4d175ef956"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/authApiService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/services/analyticsApiService.js?v=fb1f3b52db0f"></script>
-    <script src="/js/sessionManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/uiManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/tooltipManager.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/components.js?v=fb1f3b52db0f"></script>
-    <script src="/js/ui/sidebar.js?v=fb1f3b52db0f"></script>
-    <script src="/js/app.js?v=fb1f3b52db0f"></script>
+    <script src="/js/utils/markdown-renderer.js?v=db4d175ef956"></script>
+    <script src="/js/services/authApiService.js?v=db4d175ef956"></script>
+    <script src="/js/services/analyticsApiService.js?v=db4d175ef956"></script>
+    <script src="/js/sessionManager.js?v=db4d175ef956"></script>
+    <script src="/js/ui/uiManager.js?v=db4d175ef956"></script>
+    <script src="/js/ui/tooltipManager.js?v=db4d175ef956"></script>
+    <script src="/js/ui/components.js?v=db4d175ef956"></script>
+    <script src="/js/ui/sidebar.js?v=db4d175ef956"></script>
+    <script src="/js/app.js?v=db4d175ef956"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=fb1f3b52db0f"></script>
+    <script src="/js/simulator-dash.js?v=db4d175ef956"></script>
 </body>
 
 </html>

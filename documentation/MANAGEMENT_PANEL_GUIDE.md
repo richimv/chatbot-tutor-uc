@@ -108,24 +108,25 @@ Gestión de la malla curricular y su relación con el material de estudio.
 ## 5. 👥 Módulo de Alumnos
 Administración de la base de usuarios de la plataforma y control administrativo de membresías.
 
-*   **Registro Admin y Contraseñas:** Permite dar de alta alumnos manualmente. El sistema genera automáticamente una **contraseña temporal de 8 caracteres** alfanuméricos para su primer acceso.
+*   **Registro Admin y Autenticación Segura (Google OAuth):** Permite dar de alta alumnos manualmente vinculando su correo electrónico. Dado que la plataforma opera bajo una arquitectura de autenticación exclusiva mediante **Google OAuth**, el estudiante accede de forma instantánea y segura haciendo clic en *"Continuar con Google"*; no se requieren contraseñas locales ni links de reseteo manual.
+*   **Buscador Rápido por Nombre y Correo Electrónico:** La barra de búsqueda (`admin-search-input`) cuenta con placeholder contextual (*"Buscar por nombre o correo..."*) y evalúa en tiempo real `data-name`, `data-email` y el contenido textual para localizar estudiantes instantáneamente sin recarga de página.
 *   **Gestión Manual de Suscripciones (Campos de Plan y Fechas):** Al crear o editar a cualquier estudiante desde el modal del panel, el administrador puede modificar:
     *   **Nivel de Membresía:** `Gratuito (Free)`, `Plan Básico` o `Plan Avanzado`.
     *   **Estado de Suscripción:** `Inactivo`, `Activo` o `Expirado`.
     *   **Fecha de Expiración:** Selector tipo `date` para asignar el término exacto de la membresía.
 *   **Cálculo Dinámico e Interactividad (Frontend):** 
     *   Al seleccionar **Plan Básico**, el sistema cambia automáticamente el estado a **Activo** y calcula el término sumando exactamente **2 meses** a la fecha actual.
-    *   Al seleccionar **Plan Avanzado**, el sistema cambia automáticamente el estado a **Activo** y calcula el término sumando exactamente **6 meses** a la fecha actual.
+    *   Al seleccionar **Plan Avanzado**, el sistema cambia automáticamente el estado a **Activo** y calcula el término sumando exactamente **4 meses** a la fecha actual (alineado con la política oficial de tarifas de 4 meses).
     *   Al seleccionar **Gratuito (Free)**, el sistema cambia automáticamente el estado a **Inactivo / Pending** y borra el campo de fecha de expiración.
     *   Si se cambia manualmente el estado de suscripción a **Expirado** o **Inactivo/Pending**, el sistema degrada automáticamente el Nivel de Membresía a **Gratuito (Free)** y borra la fecha de expiración.
 *   **Reglas de Consistencia Blindadas (Backend):**
     *   Como red de seguridad, el backend (`adminService.js`) re-valida y fuerza la integridad de los datos: no se permiten estados inconsistentes (como un plan Premium con estado `pending` o un plan Free con estado `active`).
-    *   Si el tier es Premium y no se proporciona fecha de expiración, el backend la calcula automáticamente (+2 meses para Básico y +6 meses para Avanzado).
+    *   Si el tier es Premium y no se proporciona fecha de expiración, el backend la calcula automáticamente (+2 meses para Básico y +4 meses para Avanzado).
 *   **Auditoría Visual (Badges Dinámicos):** Cada tarjeta de alumno en la lista muestra badges distintivos:
     *   *Plan:* Gris para `FREE`, azul para `BASIC`, morado para `ADVANCED`.
     *   *Estado:* Verde para `ACTIVE`, rojo para `EXPIRED`, amarillo para `PENDING`.
     *   *Fecha:* Muestra la fecha exacta formateada en `es-ES` (ej: `📅 Expira: 25/12/2026`).
-*   **Lógica de Fidelización (Reseteo Automático):** Cuando el administrador activa el estado de la suscripción a `'active'`, el backend (`adminService.js`) automáticamente restablece a `0` todas las vidas y cuotas de consumo diario/mensual del estudiante (`usageCount`, `dailyAiUsage`, `dailyArenaUsage`, `dailySimulatorUsage`, `monthlyFlashcardsUsage`) e inicializa su última renovación para que inicie su membresía con el pool de recursos libre y limpio.
+*   **Lógica de Fidelización (Reseteo Automático):** Cuando el administrador activa el estado de la suscripción a `'active'`, el backend (`adminService.js`) automáticamente restablece a `0` todas las vidas y cuotas de consumo diario/mensual del estudiante (`usageCount`, `dailyAiUsage`, `dailyRagUsage`, `dailySimulatorUsage`, `monthlyFlashcardsUsage`) e inicializa su última renovación para que inicie su membresía con el pool de recursos libre y limpio.
 
 ---
 

@@ -161,6 +161,14 @@ class FlashcardTutor {
         const text = this.dom.input.value.trim();
         if (!text || this.isTyping) return;
 
+        // ✅ Prevenir envío proactivo si ya no tiene vidas de prueba (Paywall solo cuando realmente está en cero)
+        if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function' && window.uiManager.isResourceLocked(true)) {
+            if (typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba semanal. ¡Mejora tu plan para mantener acceso ilimitado!', 'flashcards');
+            }
+            return;
+        }
+
         this.dom.input.value = '';
         this._addMessage(text, 'user');
         this._setTyping(true);
@@ -218,17 +226,9 @@ class FlashcardTutor {
                 // Limitar historial para no saturar el contexto (ej. últimos 10 mensajes)
                 if (this.history.length > 10) this.history.shift(); 
 
-                // ✅ Refrescar vidas en el header y mostrar Paywall Modal si consumió su última vida sin expulsarlo del estudio
+                // ✅ Refrescar vidas en el header sin interrumpir al usuario con modales si consumió su última vida
                 if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                    window.sessionManager.refreshUser().then(() => {
-                        if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function' && window.uiManager.isResourceLocked(true)) {
-                            if (!this._hasShownZeroLivesPaywall) {
-                                this._hasShownZeroLivesPaywall = true;
-                                console.log('⚡ [FlashcardTutor] Consumió su última vida en el chat. Mostrando Paywall Modal sin interrumpir el estudio.');
-                                window.uiManager.showPaywallModal('Has consumido tu última vida de prueba. ¡Mejora tu plan para mantener acceso ilimitado!', 'flashcards');
-                            }
-                        }
-                    });
+                    window.sessionManager.refreshUser().catch(() => {});
                 }
             } else {
                 throw new Error("Sin respuesta del tutor");

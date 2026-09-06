@@ -91,14 +91,7 @@ class DeckService {
     }
 
     async cloneDeck(userId, publicDeckId) {
-        // 1. Fetch original public deck
-        // Using 'GUEST' role to bypass user ownership check but we must ensure it's public.
-        // Actually, we'll fetch it using a raw or direct DB call if needed, or getDeckById if we adapt it.
-        // Let's adapt trainingRepository.getDeckById to allow fetching if public.
-        const originalDeck = await trainingRepository.getDeckById('GUEST', publicDeckId);
-        // Note: Our GUEST logic in getDeckById only allows 'SYSTEM' decks. 
-        // We need a specific fetch for public cloning. Let's do it directly here or adjust repo.
-        // For safety, let's use the DB pool directly or add a new repo method.
+        // 1. Obtener mazo público original
         const db = require('../../infrastructure/database/db');
         const deckQuery = `SELECT * FROM decks WHERE id = $1 AND is_public = true`;
         const deckRes = await db.query(deckQuery, [publicDeckId]);

@@ -181,10 +181,14 @@ Se ha consolidado el control de accesos y modales Paywall mediante `uiManager.js
   * **Al Alcanzar Límite (100/100)**: Se muestra el modal de reconocimiento (*"¡Meta Diaria Alcanzada! 🏆"*), invitando a continuar al día siguiente sin mensajes confusos de renovar suscripción.
   * **Flashcards IA (30/mes)**: Al agotar la cuota mensual de 30 pedidos con Gemini, se informa amigablemente el reinicio de la cuota para el próximo mes.
 
-* **Usuarios Plan Gratuito / Pending (`subscription_tier === 'free'`)**:
-  * **Pool de Vidas**: Operan con **10 vidas de prueba** (`usage_count`).
-  * **Estudio y Chat**: Si consumen su última vida mientras chatean con el Tutor IA dentro de una tarjeta de repaso, reciben el modal Paywall de aviso y **mantienen el acceso para terminar de repasar su sesión actual de flashcards**.
-  * **Bloqueo Proactivo**: Al tener 0 vidas, se impide el inicio de nuevas sesiones de estudio o simulacros desplegando el modal Paywall de suscripción.
+* **Usuarios Plan Gratuito / Pending (`subscription_tier === 'free'` o estado `pending` / `expired`)**:
+  * **Pool de Vidas**: Operan con **10 vidas de prueba** (`usage_count`) que se descuentan al iniciar repasos, simulacros o enviar mensajes al Tutor IA.
+  * **Regla de la Última Vida (Vida 10 de 10)**:
+    * **Uso Ininterrumpido**: Cuando el usuario tiene 1 vida restante (`usageCount === 9`, `maxFreeLimit === 10`), el sistema le permite iniciar su sesión de estudio de flashcards o consultar al Tutor IA sin ninguna interrupción.
+    * **Prevención de Popups Prematuros en Toast**: `showLifeDecrementToast` emite una notificación de advertencia informativa (*"Has consumido tu última vida de prueba semanal. Te quedan 0 vidas."*) y **nunca** programa `showPaywallModal()` en temporizadores asíncronos (`setTimeout`).
+    * **Experiencia en Tutores IA (Quiz Tutor y Repaso Flashcard Tutor)**: Al recibir la respuesta del modelo de la última vida, el mensaje se añade al chat y el usuario puede leerlo con total tranquilidad. El modal Paywall **no** cubre la pantalla tras responder.
+    * **Bloqueo Proactivo y Justo**: El modal Paywall solo se dispara cuando el usuario se encuentra **realmente en 0 vidas** e intenta iniciar una **nueva** acción que requiera vidas (abrir un nuevo mazo de repaso, iniciar otro simulacro o enviar un nuevo mensaje en el chat del tutor).
+    * **Coerción Numérica Estricta**: Todas las comparaciones (`usage >= limit`) se ejecutan obligatoriamente mediante `Number()`, evitando trampas de coerción en JavaScript (donde el string `'9' >= '10'` evalúa a `true`).
 
 ---
-*Última actualización de la documentación consolidada: 29 de Agosto de 2026 (Consolidación de Paywall por Tier en Tutor IA y Módulo Repaso)*
+*Última actualización de la documentación consolidada: 5 de Septiembre de 2026 (Corrección de la Última Vida de Prueba, Prevención de Paywall Prematuro y Blindaje de Tutores IA)*

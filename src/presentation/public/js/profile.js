@@ -1,67 +1,74 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    // Check Auth
-    await window.sessionManager.initialize();
-    const user = window.sessionManager.getUser();
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check Auth
+        if (window.sessionManager) {
+            await window.sessionManager.initialize();
+        }
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
 
-    if (!user) {
-        window.location.href = '/login';
-        return;
-    }
-
-    // Fill Data
-    document.getElementById('user-name').textContent = user.name || 'Usuario';
-    const emailEl = document.getElementById('user-email');
-    emailEl.textContent = user.email || '';
-
-    const avatarBadge = document.getElementById('user-avatar-badge');
-    if (avatarBadge) {
-        const displayName = user.name || 'Usuario';
-        const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
-        const rawPhoto = user.picture || user.avatar_url || user.avatarUrl;
-        let safePhotoUrl = fallbackAvatar;
-        if (rawPhoto && typeof rawPhoto === 'string') {
-            const trimmed = rawPhoto.trim();
-            if (trimmed !== '' && trimmed !== 'null' && trimmed !== 'undefined') {
-                safePhotoUrl = getSafeProfileImageUrl(trimmed) || fallbackAvatar;
+        if (!user) {
+            if (typeof window !== 'undefined' && window.location) {
+                window.location.href = '/login';
             }
+            return;
         }
 
-        const image = document.createElement('img');
-        image.src = safePhotoUrl;
-        image.alt = displayName;
-        image.className = 'profile-avatar-img';
-        image.referrerPolicy = 'no-referrer';
-        image.onerror = () => {
-            image.onerror = null;
-            image.src = fallbackAvatar;
-        };
-        avatarBadge.replaceChildren(image);
-    }
+        // Fill Data
+        const nameEl = document.getElementById('user-name');
+        if (nameEl) nameEl.textContent = user.name || 'Usuario';
+        const emailEl = document.getElementById('user-email');
+        if (emailEl) emailEl.textContent = user.email || '';
 
-    const badgeContainer = document.getElementById('plan-badge-container');
-    const tier = String(user.subscriptionTier || 'free').toLowerCase();
+        const avatarBadge = document.getElementById('user-avatar-badge');
+        if (avatarBadge) {
+            const displayName = user.name || 'Usuario';
+            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
+            const rawPhoto = user.picture || user.avatar_url || user.avatarUrl;
+            let safePhotoUrl = fallbackAvatar;
+            if (rawPhoto && typeof rawPhoto === 'string') {
+                const trimmed = rawPhoto.trim();
+                if (trimmed !== '' && trimmed !== 'null' && trimmed !== 'undefined') {
+                    safePhotoUrl = getSafeProfileImageUrl(trimmed) || fallbackAvatar;
+                }
+            }
 
-    if (user.role === 'admin') {
-        badgeContainer.innerHTML = '<span class="badge-premium" style="background: var(--primary);"><i class="fas fa-shield-alt"></i> Administrador Global</span>';
-    } else if (tier === 'advanced') {
-        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff;"><i class="fas fa-crown"></i> Plan Advanced</span>';
-    } else if (tier === 'basic') {
-        badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
-    } else {
-        badgeContainer.innerHTML = '<span class="badge-free">Plan Gratuito</span>';
-    }
+            const image = document.createElement('img');
+            image.src = safePhotoUrl;
+            image.alt = displayName;
+            image.className = 'profile-avatar-img';
+            image.referrerPolicy = 'no-referrer';
+            image.onerror = () => {
+                image.onerror = null;
+                image.src = fallbackAvatar;
+            };
+            avatarBadge.replaceChildren(image);
+        }
 
-    // Update Security & Role Info
-    const roleValEl = document.getElementById('user-role-val');
-    if (roleValEl) {
-        if (user.role === 'admin') roleValEl.textContent = 'Administrador Global';
-        else if (user.role === 'teacher') roleValEl.textContent = 'Docente';
-        else roleValEl.textContent = 'Estudiante';
-    }
+        const badgeContainer = document.getElementById('plan-badge-container');
+        const tier = String(user.subscriptionTier || 'free').toLowerCase();
 
-    renderSubscriptionDetails(user);
-    renderUsageDetails(user);
-});
+        if (user.role === 'admin') {
+            badgeContainer.innerHTML = '<span class="badge-premium" style="background: var(--primary);"><i class="fas fa-shield-alt"></i> Administrador Global</span>';
+        } else if (tier === 'advanced') {
+            badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff;"><i class="fas fa-crown"></i> Plan Advanced</span>';
+        } else if (tier === 'basic') {
+            badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
+        } else {
+            badgeContainer.innerHTML = '<span class="badge-free">Plan Gratuito</span>';
+        }
+
+        // Update Security & Role Info
+        const roleValEl = document.getElementById('user-role-val');
+        if (roleValEl) {
+            if (user.role === 'admin') roleValEl.textContent = 'Administrador Global';
+            else if (user.role === 'teacher') roleValEl.textContent = 'Docente';
+            else roleValEl.textContent = 'Estudiante';
+        }
+
+        renderSubscriptionDetails(user);
+        renderUsageDetails(user);
+    });
+}
 
 function getSafeProfileImageUrl(value) {
     if (!value || typeof value !== 'string') return null;
@@ -205,112 +212,144 @@ function renderSubscriptionDetails(user) {
     }
 }
 
-// Modal de eliminación simplificado (Solo Google)
-const modal = document.getElementById('delete-modal');
-const deleteInput = document.getElementById('delete-password');
-const deleteError = document.getElementById('delete-error');
+if (typeof document !== 'undefined') {
+    // Modal de eliminación simplificado (Solo Google)
+    const modal = typeof document !== 'undefined' ? document.getElementById('delete-modal') : null;
+    const deleteInput = typeof document !== 'undefined' ? document.getElementById('delete-password') : null;
+    const deleteError = typeof document !== 'undefined' ? document.getElementById('delete-error') : null;
 
-function openDeleteModal() {
-    modal.style.display = 'flex';
-    deleteInput.value = '';
-    deleteError.style.display = 'none';
-    const btn = document.getElementById('confirm-delete-btn');
-    if (btn) {
-        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
-        btn.disabled = false;
-    }
-    deleteInput.focus();
-}
-
-function closeDeleteModal() {
-    modal.style.display = 'none';
-}
-
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeDeleteModal();
-});
-
-document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-    if (deleteInput.value !== 'ELIMINAR') {
-        deleteError.innerHTML = '<i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.';
-        deleteError.style.display = 'block';
-        return;
+    function openDeleteModal() {
+        if (modal) modal.style.display = 'flex';
+        if (deleteInput) deleteInput.value = '';
+        if (deleteError) deleteError.style.display = 'none';
+        const btn = typeof document !== 'undefined' ? document.getElementById('confirm-delete-btn') : null;
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
+            btn.disabled = false;
+        }
+        if (deleteInput) deleteInput.focus();
     }
 
-    const btn = document.getElementById('confirm-delete-btn');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
-    btn.disabled = true;
-
-    try {
-        await AuthApiService.deleteAccount();
-        await window.sessionManager.logout();
-    } catch (error) {
-        console.error(error);
-        deleteError.textContent = error.message || 'Error al eliminar cuenta';
-        deleteError.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
-        btn.disabled = false;
-    }
-});
-
-// Modal de edición de nombre
-const editNameModal = document.getElementById('edit-name-modal');
-const newNameInput = document.getElementById('new-name-input');
-const editNameError = document.getElementById('edit-name-error');
-
-function openEditNameModal() {
-    editNameModal.style.display = 'flex';
-    const currentName = document.getElementById('user-name').textContent;
-    newNameInput.value = currentName !== 'Cargando...' ? currentName : '';
-    editNameError.style.display = 'none';
-    newNameInput.focus();
-}
-
-function closeEditNameModal() {
-    editNameModal.style.display = 'none';
-}
-
-editNameModal.addEventListener('click', (e) => {
-    if (e.target === editNameModal) closeEditNameModal();
-});
-
-async function submitNameChange() {
-    const newName = newNameInput.value.trim();
-    if (newName.length < 2) {
-        editNameError.textContent = 'El nombre debe tener al menos 2 caracteres.';
-        editNameError.style.display = 'block';
-        return;
+    function closeDeleteModal() {
+        if (modal) modal.style.display = 'none';
     }
 
-    const btn = document.getElementById('confirm-edit-name-btn');
-    btn.textContent = 'Guardando...';
-    btn.disabled = true;
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeDeleteModal();
+        });
+    }
 
-    try {
-        await AuthApiService.updateProfile(newName);
-        // Actualizar UI
-        document.getElementById('user-name').textContent = newName;
-        // Actualizar sesión local
-        if (window.sessionManager) {
-            const user = window.sessionManager.getUser();
-            if (user) {
-                user.name = newName;
-                window.sessionManager.setUser(user);
+    const confirmDeleteBtn = typeof document !== 'undefined' ? document.getElementById('confirm-delete-btn') : null;
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (!deleteInput || deleteInput.value !== 'ELIMINAR') {
+                if (deleteError) {
+                    deleteError.innerHTML = '<i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.';
+                    deleteError.style.display = 'block';
+                }
+                return;
+            }
+
+            const btn = document.getElementById('confirm-delete-btn');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+                btn.disabled = true;
+            }
+
+            try {
+                await AuthApiService.deleteAccount();
+                await window.sessionManager.logout();
+            } catch (error) {
+                console.error(error);
+                if (deleteError) {
+                    deleteError.textContent = error.message || 'Error al eliminar cuenta';
+                    deleteError.style.display = 'block';
+                }
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
+                    btn.disabled = false;
+                }
+            }
+        });
+    }
+
+    // Modal de edición de nombre
+    const editNameModal = typeof document !== 'undefined' ? document.getElementById('edit-name-modal') : null;
+    const newNameInput = typeof document !== 'undefined' ? document.getElementById('new-name-input') : null;
+    const editNameError = typeof document !== 'undefined' ? document.getElementById('edit-name-error') : null;
+
+    function openEditNameModal() {
+        if (editNameModal) editNameModal.style.display = 'flex';
+        const currentNameEl = typeof document !== 'undefined' ? document.getElementById('user-name') : null;
+        const currentName = currentNameEl ? currentNameEl.textContent : '';
+        if (newNameInput) {
+            newNameInput.value = currentName !== 'Cargando...' ? currentName : '';
+            newNameInput.focus();
+        }
+        if (editNameError) editNameError.style.display = 'none';
+    }
+
+    function closeEditNameModal() {
+        if (editNameModal) editNameModal.style.display = 'none';
+    }
+
+    if (editNameModal) {
+        editNameModal.addEventListener('click', (e) => {
+            if (e.target === editNameModal) closeEditNameModal();
+        });
+    }
+
+    async function submitNameChange() {
+        if (!newNameInput) return;
+        const newName = newNameInput.value.trim();
+        if (newName.length < 2) {
+            if (editNameError) {
+                editNameError.textContent = 'El nombre debe tener al menos 2 caracteres.';
+                editNameError.style.display = 'block';
+            }
+            return;
+        }
+
+        const btn = document.getElementById('confirm-edit-name-btn');
+        if (btn) {
+            btn.textContent = 'Guardando...';
+            btn.disabled = true;
+        }
+
+        try {
+            await AuthApiService.updateProfile(newName);
+            // Actualizar UI
+            const nameEl = document.getElementById('user-name');
+            if (nameEl) nameEl.textContent = newName;
+            // Actualizar sesión local
+            if (window.sessionManager) {
+                const user = window.sessionManager.getUser();
+                if (user) {
+                    user.name = newName;
+                    window.sessionManager.setUser(user);
+                }
+            }
+            closeEditNameModal();
+        } catch (error) {
+            console.error(error);
+            if (editNameError) {
+                editNameError.textContent = error.message || 'Error al actualizar el nombre.';
+                editNameError.style.display = 'block';
+            }
+        } finally {
+            if (btn) {
+                btn.textContent = 'Guardar Cambios';
+                btn.disabled = false;
             }
         }
-        closeEditNameModal();
-    } catch (error) {
-        console.error(error);
-        editNameError.textContent = error.message || 'Error al actualizar el nombre.';
-        editNameError.style.display = 'block';
-    } finally {
-        btn.textContent = 'Guardar Cambios';
-        btn.disabled = false;
     }
 }
 
 /**
- * Genfunction createUsageCardHTML({ title, colorHex, badge, countVal, percentage, labelLeft, labelRight }) {
+ * Genera el componente HTML para una tarjeta de métrica de consumo
+ */
+function createUsageCardHTML({ title, colorHex, badge, countVal, percentage, labelLeft, labelRight }) {
     return `
         <div class="usage-item">
             <div class="usage-item-header">
@@ -488,4 +527,13 @@ function renderUsageDetails(user) {
             </div>
         `;
     }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        createUsageCardHTML,
+        renderUsageDetails,
+        getNextFreeRenewalInfo,
+        getSafeProfileImageUrl
+    };
 }

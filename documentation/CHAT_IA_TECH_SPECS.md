@@ -35,9 +35,15 @@ El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitectur
   - **Tutor Clínico (`medicine`):** Especialista en Medicina Peruana (MINSA, EsSalud, SERUMS, ENAM, Residentado). Consulta en el namespace `medicine` de Pinecone (NTS, GPC, Harrison).
   - **Tutor Pedagógico (`education`):** Especialista en Educación Peruana (MINEDU, CNEB, Ley 29944, RVM 094-2020). Consulta en el namespace `education` de Pinecone.
 - **Acceso a RAG Vectorial por Tier:**
+  - **Admin:** RAG Semántico Puro 100% activo en Quiz Tutor con exención de límites de cuota diaria (cuenta activa garantizada independientemente de los valores de `subscription_tier` o `subscription_status` en la base de datos).
   - **Advanced / Elite:** RAG Semántico Puro activo en Pinecone (hasta 25 consultas RAG/día). Si se agota, degrada automáticamente a IA generativa estándar sin RAG hasta los 100 mensajes diarios.
   - **Basic:** IA generativa experta optimizada **sin RAG** (50 mensajes/día).
   - **Free:** IA generativa experta **sin RAG**, descontando 1 vida por consulta de su pool de 10 vidas.
+- **Aislamiento de Semilla Semántica (ragQuerySeed):** La búsqueda vectorial en Pinecone y la extracción de temas técnicos se alimentan exclusivamente del enunciado del reactivo, área/tema y la duda específica del estudiante (`filters.rawUserMessage`), evitando inyectar el prompt con meta-instrucciones del sistema para prevenir la dilución y contaminación de embeddings.
+- **Blindaje de Conexión y Retención de Sesión:**
+  - `SessionManager`: Refresco proactivo de sesión y token JWT mediante listeners de `visibilitychange` y `focus` al regresar a la pestaña tras periodos de inactividad prolongada (> 1 hora).
+  - `QuizTutor`: Verificación proactiva de token válido antes de emitir llamadas a `/api/chat` para prevenir degradación silenciosa a modo visitante por expiración de JWT.
+  - `Postgres Pool (db.js)`: Configuración con `keepAliveInitialDelayMillis: 10000` y reintentos defensivos transparentes para evitar caídas ante timeouts del pooler transaccional de Supabase.
 - **Capacidades Visuales Proactivas:** Capacidad de insertar hasta 3 imágenes/esquemas del catálogo visual de Postgres/GCS cuando el tema clínico o pedagógico lo amerite.
 
 ### 3.3 🧠 Modalidad 3: Flashcard Tutor (Tutor en Módulo de Repaso - `flashcard_tutor`)
