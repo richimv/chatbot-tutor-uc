@@ -131,14 +131,11 @@ class GoogleOneTapService {
                 context: 'signin'
             });
 
-            // Invocar el prompt escuchando el ciclo de vida del momento para degradación elegante
+            // Invocar el prompt cumpliendo estrictamente con la migración FedCM de Google Identity
             google.accounts.id.prompt((notification) => {
-                if (typeof notification?.isNotDisplayed === 'function' && notification.isNotDisplayed()) {
-                    console.log('ℹ️ [GoogleOneTapService] Prompt no mostrado:', notification.getNotDisplayedReason?.() || 'desconocido');
-                } else if (typeof notification?.isSkippedMoment === 'function' && notification.isSkippedMoment()) {
-                    console.log('ℹ️ [GoogleOneTapService] Prompt omitido:', notification.getSkippedReason?.() || 'desconocido');
-                } else if (typeof notification?.isDismissedMoment === 'function' && notification.isDismissedMoment()) {
-                    console.log('ℹ️ [GoogleOneTapService] Prompt cerrado por el usuario.');
+                if (typeof notification?.isDismissedMoment === 'function' && notification.isDismissedMoment()) {
+                    const reason = typeof notification.getDismissedReason === 'function' ? notification.getDismissedReason() : 'desconocido';
+                    console.log('ℹ️ [GoogleOneTapService] Prompt cerrado:', reason);
                 }
             });
 

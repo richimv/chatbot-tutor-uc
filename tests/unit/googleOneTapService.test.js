@@ -171,15 +171,15 @@ describe('GoogleOneTapService - Pruebas Unitarias', () => {
             expect(mockGoogle.accounts.id.prompt).toHaveBeenCalledWith(expect.any(Function));
         });
 
-        test('ejecuta momentListener de forma segura sin arrojar errores', () => {
+        test('ejecuta momentListener compatible con FedCM sin arrojar errores', () => {
             GoogleOneTapService.initialize();
             const promptCallback = mockGoogle.accounts.id.prompt.mock.calls[0][0];
 
-            // Simular notificaciones
+            // Simular notificaciones FedCM
             expect(() => {
-                promptCallback({ isNotDisplayed: () => true, getNotDisplayedReason: () => 'opt_out_or_no_session' });
-                promptCallback({ isNotDisplayed: () => false, isSkippedMoment: () => true, getSkippedReason: () => 'user_cancel' });
-                promptCallback({ isNotDisplayed: () => false, isSkippedMoment: () => false, isDismissedMoment: () => true });
+                promptCallback({ isDismissedMoment: () => false });
+                promptCallback({ isDismissedMoment: () => true, getDismissedReason: () => 'credential_returned' });
+                promptCallback(null);
             }).not.toThrow();
         });
 
