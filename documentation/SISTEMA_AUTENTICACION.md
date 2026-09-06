@@ -6,34 +6,27 @@ Este documento detalla la arquitectura técnica integral, el flujo de vida de la
 
 ## 1. Visión General de la Arquitectura
 
-Hub Academia implementa una arquitectura de autenticación **Híbrida Google Identity Services (GIS) con soporte FedCM + Google OAuth 2.0 Direct Flow**, respaldada por **Supabase Auth** como proveedor de identidad (*Identity Provider - IdP*) y **PostgreSQL** como base de datos transaccional del dominio de negocio.
+Hub Academia implementa una arquitectura de autenticación estandarizada basada en **Google OAuth 2.0 Direct Flow** con selector explícito de cuentas (`prompt: 'select_account'`), respaldada por **Supabase Auth** como proveedor de identidad (*Identity Provider - IdP*) y **PostgreSQL** como base de datos transaccional del dominio de negocio.
 
-El sistema soporta dos vías de acceso complementarias y coordinadas:
-1. **Google One Tap (`signInWithIdToken`):** Diálogo flotante nativo de Google para inicio de sesión instantáneo con un solo clic sin recargar la página, adaptado a los estándares modernos de privacidad (FedCM).
-2. **Google OAuth Direct Flow (`signInWithOAuth`):** Disparado explícitamente desde botones de acción ("Acceder" en el header, modales de protección de contenido y banners interactivos).
+Toda la plataforma web y los entornos educativos utilizan un flujo de autenticación unificado, robusto y multiplataforma:
+* **Google OAuth Direct Flow (`signInWithOAuth`):** Disparado explícitamente desde botones de acción ("Acceder" en el header, modales de protección de contenido y banners interactivos).
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Usuario
     participant Frontend as Frontend (Vercel / Browser)
-    participant Google as Google Identity (FedCM)
+    participant Google as Google Identity / Accounts
     participant Supabase as Supabase Auth (OAuth IdP)
     participant Backend as Backend API (Render)
     participant Postgres as PostgreSQL (Supabase DB)
 
-    alt Vía A: Google One Tap (Prompt Flotante)
-        Usuario->>Google: Selecciona cuenta en One Tap
-        Google-->>Frontend: ID Token JWT (credential)
-        Frontend->>Supabase: client.auth.signInWithIdToken({ provider: 'google', token })
-        Supabase-->>Frontend: Sesión Creada (SIGNED_IN)
-    else Vía B: Botón Directo "Acceder" (OAuth Redirect)
-        Usuario->>Frontend: Clic en "Acceder"
-        Frontend->>Supabase: signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })
-        Supabase->>Google: Redirección a Consent Screen
-        Google-->>Supabase: Autorización Aprobada
-        Supabase-->>Frontend: Redirección con Hash (#access_token=...&refresh_token=...)
-    end
+    Usuario->>Frontend: Clic en "Acceder" o CTA protegido
+    Frontend->>Supabase: signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })
+    Supabase->>Google: Redirección a Consent Screen de Google
+    Note over Google: Selector de cuentas nativo (Elige cuenta sin conflicto de sesión)
+    Google-->>Supabase: Autorización Aprobada
+    Supabase-->>Frontend: Redirección con Hash (#access_token=...&refresh_token=...)
 
     Note over Frontend: Fase 1: Estado Optimista Inmediato
     Frontend->>Frontend: Guarda authToken en localStorage
@@ -56,32 +49,57 @@ sequenceDiagram
 
 ---
 
-## 2. Métodos de Acceso y Coexistencia
+## 2. Métodos de Acceso: Flujo Directo y Google One Tap Resiliente (FedCM)
 
-### 2.1. Google One Tap (`index.html`)
-* **Librería:** `https://accounts.google.com/gsi/client` cargada de forma asíncrona.
-* **Estándar FedCM (Federated Credential Management):** Diseñado para la eliminación de cookies de terceros en navegadores modernos sin usar directivas obsoletas.
-* **Configuración Programática:**
+### 2.1. Diagnóstico Técnico de FedCM y Resolución de Error 400 (`invalid_user`)
+En versiones modernas de Chromium (Google Chrome 120 a 145+), Google forzó la API **FedCM (Federated Credential Management)** en modo pasivo (`mode=passive`) para los flujos de Google One Tap.
+
+**Causa Raíz de los Fallos Anteriores en Google Chrome:**
+1. **Conflicto Multi-Cuenta (`Error 400: invalid_user`):** Chrome mantiene un registro interno de identidades (`login_hint`). Si el usuario tiene múltiples cuentas de Google abiertas o su cookie de sesión cambió de índice, la API FedCM emite:
+   > `FedCM request failed to identify a unique session`
+2. **Ventanas Emergentes Bloqueantes por `itp_support: true`:** La implementación anterior utilizaba `itp_support: true` o intentaba forzar `ux_mode: 'popup'`. Ante la falla de aserción pasiva, la librería externa de Google intentaba recuperarse abriendo automáticamente un popup a `accounts.google.com/signin/oauth/error`, mostrando la pantalla negra de *"Acceso bloqueado: error de autorización (Error 400: invalid_user)"*, interrumpiendo la navegación.
+
+**Solución Arquitectónica: `GoogleOneTapService` (`googleOneTapService.js`):**
+Para restituir el acceso rápido sin riesgos de error o bloqueo, se diseñó un servicio modular, aislado y testeado con cobertura unitaria completa:
+* **Configuración Blindada:** Se elimina estrictamente `itp_support: true` y no se fuerza `ux_mode: 'popup'` en `initialize()`. La inicialización utiliza configuración mínima y limpia:
   ```javascript
   google.accounts.id.initialize({
-      client_id: window.AppConfig.GOOGLE_CLIENT_ID,
-      callback: handleGlobalOneTap,
-      context: "signin",
-      ux_mode: "popup",
+      client_id: clientId,
+      callback: (res) => this.handleCredential(res),
       auto_select: false,
-      itp_support: true,
-      cancel_on_tap_outside: false
+      cancel_on_tap_outside: true,
+      context: 'signin'
   });
-  // Invocación nativa sin callbacks de estado deprecados
-  google.accounts.id.prompt();
   ```
-* **Filtros de Inicialización (Guards):** One Tap se omite preventivamente si:
-  1. Ya existe una sesión activa persistida en `localStorage` (`authToken`).
-  2. `sessionManager.isLoggedIn()` es verdadero.
-  3. Hay un flujo de autenticación o redirección en curso (`_isAuthenticating` o `#access_token` en URL).
-* **Cancelación Reactiva:** Si el usuario decide interactuar con cualquier botón manual de acceso, `SessionManager.onStateChange` ejecuta `google.accounts.id.cancel()` para descartar inmediatamente el diálogo flotante sin dejar residuos visuales.
+* **Degradación Silenciosa con `momentListener`:** El prompt se invoca capturando el estado de la notificación:
+  ```javascript
+  google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed()) {
+          console.log('ℹ️ [GoogleOneTapService] Prompt no mostrado:', notification.getNotDisplayedReason?.());
+      } else if (notification.isSkippedMoment()) {
+          console.log('ℹ️ [GoogleOneTapService] Prompt omitido:', notification.getSkippedReason?.());
+      } else if (notification.isDismissedMoment()) {
+          console.log('ℹ️ [GoogleOneTapService] Prompt cerrado por el usuario.');
+      }
+  });
+  ```
+  Si FedCM no puede resolver la identidad unívoca de forma pasiva, **degrada en completo silencio**, sin lanzar excepciones ni abrir popups molestos.
+* **Condiciones de Guarda (`canPrompt()`):** Se evalúa preventivamente:
+  * Si el usuario ya cuenta con sesión activa (`localStorage.getItem('authToken')` o `sessionManager.isLoggedIn()`), el prompt no se muestra.
+  * Si existe una navegación OAuth en curso (`_isAuthenticating` o fragmentos hash `#access_token=...`), se omite.
+* **Integración Nativa con Supabase (`handleCredential`):**
+  Al recibir el ID Token (JWT) desde One Tap, se envía directamente a Supabase:
+  ```javascript
+  const { data, error } = await client.auth.signInWithIdToken({
+      provider: 'google',
+      token: response.credential
+  });
+  ```
+  Esto dispara de inmediato el evento `SIGNED_IN` en `SessionManager`, activando el pipeline habitual de renderizado optimista, sincronización con backend y consolidación en PostgreSQL.
+* **Cancelación Reactiva (`cancel()`):** Si el usuario inicia sesión mediante cualquier otro botón o CTA, el observer de `SessionManager` invoca automáticamente `GoogleOneTapService.cancel()`.
 
 ### 2.2. Flujo Directo Google OAuth (`app.js` / `window.triggerGoogleLogin`)
+Es el canal explícito principal, activado manualmente por el usuario ("Acceder" en el header, modales de protección de contenido y botones de simulacros).
 * **Invocación Centralizada:** Accesible globalmente mediante `window.triggerGoogleLogin(buttonElement)`.
 * **Cumplimiento RFC 6749 (Sin fragmentos hash en Redirect URI):**
   ```javascript
@@ -90,7 +108,7 @@ sequenceDiagram
       provider: 'google',
       options: { 
           redirectTo: cleanRedirectUrl,
-          queryParams: { prompt: 'select_account' }
+          queryParams: { prompt: 'select_account' } // Permite elegir entre múltiples cuentas sin ambigüedad
       }
   });
   if (data?.url) {
@@ -98,6 +116,10 @@ sequenceDiagram
   }
   ```
 * **Retorno OAuth sin Falso 401:** Al retornar de Google con fragmento hash (`#access_token=...`), `SessionManager.initialize()` detecta `isOAuthReturn` y omite llamadas preliminares con tokens viejos, esperando a que Supabase emita `SIGNED_IN`.
+
+### 2.3. Estado y Compatibilidad en Aplicaciones Móviles (HubDocenteApp y HubSaludApp)
+* **Aislamiento de Entorno:** Las aplicaciones móviles del ecosistema están construidas en React Native (Expo) y gestionan la autenticación mediante el módulo nativo `WebBrowser.openAuthSessionAsync` acoplado a deep linking (`Linking.createURL`).
+* **Inmunidad a FedCM:** La biblioteca DOM `accounts.google.com/gsi/client` y el protocolo FedCM son APIs del navegador web. Las aplicaciones móviles se conectan directamente vía browser modal nativo del sistema operativo (Custom Tabs en Android / ASWebAuthenticationSession en iOS), por lo que **no requieren modificaciones ni están expuestas a los conflictos de FedCM/One Tap del navegador web**.
 
 ---
 
@@ -284,7 +306,7 @@ graph TD
     I -- Sí --> J[Validar expiración local del token]
     J -- Válido --> K[Llamar a /api/auth/me y popular sesión]
     J -- Expirado --> L[Cerrar sesión silenciosamente y mostrar estado invitado]
-    I -- No --> M[Renderizar estado invitado y evaluar One Tap]
+    I -- No --> M[Renderizar estado invitado y habilitar botón Acceder]
 ```
 
 1. **Invocación Inmediata de Observadores:** Al invocar `sessionManager.onStateChange(cb)`, si el usuario ya está cargado en memoria, el callback se dispara en ese mismo instante. Esto neutraliza de raíz cualquier desfase cuando `app.js` u otros módulos se cargan asíncronamente después del evento de Supabase.
@@ -297,7 +319,7 @@ graph TD
 ## 7. Configuración de Entornos, CSP y Rate Limiting
 
 ### Content Security Policy (CSP en `server.js`)
-* **Google Identity Services:** Requiere `script-src` para `https://accounts.google.com/gsi/client` y `style-src-elem` para `https://accounts.google.com/gsi/style`.
+* **Google OAuth:** Soporte seguro para `https://accounts.google.com` en `form-action`, `frame-src` y redirecciones OAuth 2.0.
 * **Directivas Estándar:** Se eliminó la directiva no estándar `font-src-elem` (que generaba alertas rojas en la consola de navegadores Chromium), consolidando las fuentes bajo `font-src 'self' https://fonts.gstatic.com data:`.
 
 ### Rate Limiting y Conexión (`rateLimiters.js`)
@@ -322,7 +344,7 @@ Las aplicaciones móviles del ecosistema (**HubDocenteApp** y **HubSaludApp**) c
 
 ## 9. Mantenimiento y Buenas Prácticas
 
-1. **Sin Contraseñas en Texto Plano:** La autenticación se delega íntegramente en Google como proveedor de identidad seguro mediante OAuth 2.0 y FedCM.
+1. **Sin Contraseñas en Texto Plano:** La autenticación se delega íntegramente en Google como proveedor de identidad seguro mediante Google OAuth 2.0.
 2. **Saneamiento de Metadatos:** Toda información provista por el token (nombre, avatar) es acotada y validada antes de interactuar con la base de datos.
 3. **Verificación Automatizada:** Toda modificación a este flujo debe ser validada contra la suite completa de pruebas unitarias:
    ```bash
@@ -333,5 +355,6 @@ Las aplicaciones móviles del ecosistema (**HubDocenteApp** y **HubSaludApp**) c
 
 ---
 *Documentación técnica de arquitectura - Hub Academia.*  
-*Última actualización: 2026-09-05.*
+*Última actualización: 2026-09-06.*
+
 
