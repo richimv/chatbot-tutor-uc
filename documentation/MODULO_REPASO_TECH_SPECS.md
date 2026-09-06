@@ -446,7 +446,35 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
       4. Ausencia de llamadas redundantes a `getDeckById` en `DeckService.cloneDeck`.
     - 44/44 suites de prueba Jest pasando (317/317 pruebas al 100%).
 
+- **Resolución Jerárquica de Tiers (Admin/Basic), Ordenación Cronológica Reciente y Depuración Clean Code (V45)**:
+  - **Diagnóstico y Contexto**:
+    - En la base de datos, los usuarios administradores cuentan con `users.role = 'admin'` mientras su `users.subscription_tier` es habitualmente `'free'` al no ser una suscripción comercial de pago.
+    - En `repaso.js`, el getter `userTier` únicamente inspeccionaba `user.subscriptionTier || user.subscription_tier`, resolviendo `'free'`. Al intentar ingresar a la pestaña de Carga Masiva (`switchCardMode('bulk')`), la condición `if (mode === 'bulk' && this.userTier === 'free')` bloqueaba erróneamente al administrador mostrándole la modal de paywall de usuario gratuito.
+    - Los mazos y tarjetas se ordenaban ascendentemente (`created_at ASC`), forzando al usuario a desplazarse hasta el fondo para encontrar los mazos o tarjetas recién creados.
+  - **Solución e Implementación Arquitectónica (4 Capas)**:
+    - **Capa de Presentación (`sessionManager.js`, `repaso.js`)**:
+      - `SessionManager.isAdmin()`: Valida `role === 'admin' || subscriptionTier === 'admin'`.
+      - `RepasoManager.userTier`: Resuelve prioritariamente `'admin'` cuando `user.role === 'admin'` o `subscriptionTier === 'admin'`, desacoplando el rol de privilegios de la suscripción de pago.
+      - `RepasoManager.isAdvancedOrAdmin`: Getter centralizado reutilizado a lo largo del módulo (`syncTtsLanguageSelectors`, `renderDeckHeader`, `saveCard`, `handleImageUpload`, `_saveBulkCards`).
+      - `RepasoManager.switchCardMode(mode)`: Gating riguroso acorde al sistema de monetización:
+        - `admin`: Acceso directo total sin paywall.
+        - `basic`: Acceso directo a carga masiva (texto sin TTS, hasta 3 archivos/día).
+        - `advanced`: Acceso directo con soporte TTS opcional.
+        - `free`: Muestra modal de paywall instando a subir de nivel.
+        - Invitado: Muestra modal de inicio de sesión (`showAuthPromptModal`).
+      - **Clean Code (@code-health-rules)**: Eliminación definitiva del método muerto y huérfano `switchMode(mode)` que generaba confusión con `switchCardMode(mode)`.
+    - **Capa de Infraestructura y Repositorio (`flashcardRepository.js`)**:
+      - `getDecks` y `getAllUserDecks`: Actualizados para ordenar por `COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC`, con bloque defensivo ante error `42703`.
+      - `getDeckCards`: Actualizado para ordenar por `sort_order ASC, created_at DESC`, situando inmediatamente las nuevas tarjetas en la cabecera de la tabla de estudio.
+      - `touchDeck(deckId)`: Método atómico para actualizar `updated_at = NOW()` en la tabla `decks` de forma protegida.
+    - **Capa de Dominio (`deckService.js`)**:
+      - Invocación de `trainingRepository.touchDeck(deckId)` en `addCard` y `addBulkCards`, provocando que el mazo modificado escale a la primera posición de la biblioteca.
+  - **Verificación de Pruebas Unitarias**:
+    - Se creó la suite dedicada `tests/unit/repasoTierAndOrdering.test.js` (11 pruebas unitarias cubriendo resolución de admin, gating por tier en carga masiva, ordenación SQL reciente y llamadas a `touchDeck`).
+    - 45/45 suites de prueba pasando al 100%.
+
 ---
 
 **Documentación Técnica Actualizada - Septiembre 2026.**
+
 

@@ -1,6 +1,31 @@
 # Informe Técnico y Historial de Mejoras Continuas
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
+### 🟢 [2026-09-06] - Resolución Jerárquica de Tiers (Admin/Basic), Carga Masiva y Ordenación Cronológica Reciente en Repaso
+
+- **👑 Desacoplamiento de Rol Admin y Gating por Tiers en Carga Masiva ([sessionManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/sessionManager.js) & [repaso.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/repaso.js)):**
+  - **Diagnóstico:** Los usuarios administradores en PostgreSQL poseen `users.role = 'admin'`, pero su `subscription_tier` se registra frecuentemente como `'free'` (no tienen suscripción comercial). En `repaso.js`, el getter `userTier` únicamente leía `subscription_tier`, catalogando erróneamente al administrador como usuario gratuito y bloqueándole la pestaña de Carga Masiva mediante la modal de paywall.
+  - **Método `SessionManager.isAdmin()`:** Implementado en la capa de presentación para verificar de forma segura `currentUser.role === 'admin' || subscriptionTier === 'admin'`.
+  - **Resolución Prioritaria en `RepasoManager.userTier`:** Retorna de forma prioritaria `'admin'` cuando `user.role === 'admin'` o `subscriptionTier === 'admin'`, desacoplando la jerarquía administrativa del tier de facturación.
+  - **Getter Unificado `RepasoManager.isAdvancedOrAdmin`:** Evalúa `this.userTier === 'advanced' || this.userTier === 'admin'`, sustituyendo cálculos duplicados y fragmentados a lo largo de todo el módulo (`syncTtsLanguageSelectors`, `renderDeckHeader`, `saveCard`, `handleImageUpload`, `_saveBulkCards`).
+  - **Control de Acceso Riguroso en `switchCardMode(mode)`:**
+    - `admin`: Ingreso irrestricto sin paywall.
+    - `basic`: Ingreso permitido a carga masiva (hasta 3 archivos/día, texto puro hasta 1,000 caracteres, conforme a `SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md`).
+    - `advanced`: Ingreso permitido con soporte opcional de audio TTS.
+    - `free`: Despliega modal paywall educativa invitando a ascender a Basic o Advanced.
+    - Invitados sin sesión: Despliega modal de inicio de sesión (`showAuthPromptModal`).
+  - **Limpieza de Código Muerto (@code-health-rules):** Eliminado el método huérfano y obsoleto `switchMode(mode)` en `repaso.js`, previniendo colisiones y garantizando Clean Code.
+
+- **⏱️ Ordenación Cronológica Reciente de Mazos y Tarjetas ([flashcardRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/flashcardRepository.js) & [deckService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/deckService.js)):**
+  - **Priorización de Mazos Recientes:** En `getDecks` y `getAllUserDecks`, se actualizó la consulta SQL a `ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC` con fallback defensivo ante ausencia de columna (código `42703`).
+  - **Priorización de Tarjetas Recientes:** En `getDeckCards`, se ajustó la consulta a `ORDER BY sort_order ASC, created_at DESC`, permitiendo que tanto tarjetas individuales recién agregadas como lotes de carga masiva aparezcan inmediatamente en la parte superior de la tabla del mazo.
+  - **Actualización de Marca Temporal (`touchDeck`):** Se creó el método `touchDeck(deckId)` en `flashcardRepository` y se invocó tras la creación exitosa de tarjetas en `DeckService.addCard` y `DeckService.addBulkCards`, garantizando que cualquier mazo modificado o enriquecido pase al primer lugar del catálogo de "Mis Mazos" y del explorador lateral.
+  - **Creación Segura de Mazos (`createDeck`):** Se blindó `createDeck` con bloque `try/catch` defensivo ante error `42703` para compatibilidad de esquemas.
+
+- **🧪 Cobertura de Pruebas Unitarias ([repasoTierAndOrdering.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/repasoTierAndOrdering.test.js)):**
+  - Creada nueva suite con 11 pruebas unitarias que verifican la detección de administradores, la resolución jerárquica de tiers, el gating de carga masiva por plan, la ausencia de código muerto, la cláusula SQL de ordenación reciente y las llamadas a `touchDeck`.
+
+---
 
 ### 🟢 [2026-09-05] - Auditoría de Arquitectura en Gestión de Alumnos, Limpieza de Código Muerto y Expansión Oficial de DESIGN_SYSTEM.md
 

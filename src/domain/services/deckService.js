@@ -39,7 +39,9 @@ class DeckService {
         if (!deck) {
             throw new Error('Mazo no encontrado o acceso denegado');
         }
-        return await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
+        const card = await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
+        await trainingRepository.touchDeck(deckId);
+        return card;
     }
 
     async updateCard(userId, cardId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
@@ -79,7 +81,9 @@ class DeckService {
         if (!deck) {
             throw new Error('Mazo no encontrado o acceso denegado');
         }
-        return await trainingRepository.createFlashcardsManualBatch(userId, deckId, cards);
+        const createdCards = await trainingRepository.createFlashcardsManualBatch(userId, deckId, cards);
+        await trainingRepository.touchDeck(deckId);
+        return createdCards;
     }
 
     async getPublicDecks(page = 1, limit = 20, category = 'ALL') {

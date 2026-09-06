@@ -7,7 +7,7 @@ class FlashcardRepository {
             return [];
         }
 
-        let query = `
+        const buildQuery = (orderByClause) => `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
                 COALESCE(d.category, 'General') as category,
@@ -19,18 +19,21 @@ class FlashcardRepository {
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
             WHERE d.user_id = $1 AND d.type <> 'SYSTEM'
+            ${parentId ? 'AND d.parent_id = $2' : 'AND d.parent_id IS NULL'}
+            GROUP BY d.id ${orderByClause}
         `;
 
-        const params = [userId];
-        if (parentId) {
-            query += ` AND d.parent_id = $2`;
-            params.push(parentId);
-        } else {
-            query += ` AND d.parent_id IS NULL`;
+        const params = parentId ? [userId, parentId] : [userId];
+        try {
+            const result = await db.query(buildQuery('ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC'), params);
+            return result.rows;
+        } catch (error) {
+            if (error.code === '42703') {
+                const fallbackResult = await db.query(buildQuery('ORDER BY d.created_at DESC'), params);
+                return fallbackResult.rows;
+            }
+            throw error;
         }
-        query += ` GROUP BY d.id ORDER BY d.created_at ASC`;
-        const result = await db.query(query, params);
-        return result.rows;
     }
 
     async getAllUserDecks(userId) {
@@ -38,7 +41,7 @@ class FlashcardRepository {
             return [];
         }
 
-        const query = `
+        const buildQuery = (orderByClause) => `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
                 COALESCE(d.category, 'General') as category,
@@ -51,10 +54,19 @@ class FlashcardRepository {
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
             WHERE d.user_id = $1 AND d.type <> 'SYSTEM'
             GROUP BY d.id 
-            ORDER BY d.created_at ASC
+            ${orderByClause}
         `;
-        const result = await db.query(query, [userId]);
-        return result.rows;
+
+        try {
+            const result = await db.query(buildQuery('ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC'), [userId]);
+            return result.rows;
+        } catch (error) {
+            if (error.code === '42703') {
+                const fallbackResult = await db.query(buildQuery('ORDER BY d.created_at DESC'), [userId]);
+                return fallbackResult.rows;
+            }
+            throw error;
+        }
     }
 
     async getDeckById(userId, deckId) {
@@ -87,13 +99,26 @@ class FlashcardRepository {
     }
 
     async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null, category = 'General') {
-        const query = `
-            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-            RETURNING id, name, icon, color, parent_id, description, category, created_at, updated_at
-        `;
-        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color, category || 'General']);
-        return result.rows[0];
+        try {
+            const query = `
+                INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                RETURNING id, name, icon, color, parent_id, description, category, created_at, updated_at
+            `;
+            const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color, category || 'General']);
+            return result.rows[0];
+        } catch (error) {
+            if (error.code === '42703') {
+                const fallbackQuery = `
+                    INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    RETURNING id, name, icon, color, parent_id, description, category, created_at
+                `;
+                const fallbackResult = await db.query(fallbackQuery, [userId, name, type, sourceModule, icon, parentId, description, color, category || 'General']);
+                return fallbackResult.rows[0];
+            }
+            throw error;
+        }
     }
 
     async updateDeck(userId, deckId, name, icon, description = null, color = null, category = 'General') {
@@ -314,10 +339,19 @@ class FlashcardRepository {
         const query = `
             SELECT * FROM user_flashcards 
             WHERE deck_id = $1 
-            ORDER BY sort_order ASC, created_at ASC
+            ORDER BY sort_order ASC, created_at DESC
         `;
         const result = await db.query(query, [deckId]);
         return result.rows;
+    }
+
+    async touchDeck(deckId) {
+        if (!deckId) return;
+        try {
+            await db.query('UPDATE decks SET updated_at = NOW() WHERE id = $1', [deckId]);
+        } catch (e) {
+            // Silencioso si la columna updated_at no existe o fallo temporal
+        }
     }
 
     async createFlashcard(userId, deckId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {

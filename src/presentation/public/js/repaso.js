@@ -40,7 +40,16 @@ class RepasoManager {
 
     get userTier() {
         const user = window.sessionManager?.getUser();
-        return (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
+        if (!user) return 'free';
+        const role = String(user.role || '').toLowerCase();
+        const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+        if (role === 'admin' || tier === 'admin') return 'admin';
+        return tier;
+    }
+
+    get isAdvancedOrAdmin() {
+        const tier = this.userTier;
+        return tier === 'advanced' || tier === 'admin';
     }
 
     /**
@@ -274,7 +283,7 @@ class RepasoManager {
     }
 
     syncTtsLanguageSelectors() {
-        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
+        const isAdvanced = this.isAdvancedOrAdmin;
 
         const ttsFront = document.getElementById('card-tts-front');
         const langFront = document.getElementById('card-tts-lang-front');
@@ -932,9 +941,7 @@ class RepasoManager {
     renderDeckHeader(deck, cards = []) {
         if (!deck) return;
 
-        const user = window.sessionManager ? window.sessionManager.getUser() : null;
-        const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
-        const isAdvancedOrAdmin = ['advanced', 'admin'].includes(userTier);
+        const isAdvancedOrAdmin = this.isAdvancedOrAdmin;
 
         const container = document.getElementById('folder-header');
         const total = cards?.length || 0;
@@ -1626,43 +1633,6 @@ class RepasoManager {
         }
     }
 
-    switchMode(mode) {
-        // 🛡️ PROTECCIÓN PREMIUM: Carga masiva bloqueada para Free
-        if (mode === 'bulk' && this.userTier === 'free') {
-            if (window.uiManager && window.uiManager.showAuthPromptModal) {
-                window.uiManager.showAuthPromptModal('La Carga Masiva (Excel) es una función exclusiva para usuarios Premium. ¡Ahorra tiempo mejorando tu plan!');
-            } else {
-                if (window.uiManager) window.uiManager.showToast('La Carga Masiva es una función Premium.', 'warning');
-                else alert('La Carga Masiva es una función Premium.');
-            }
-            return;
-        }
-
-        const tabs = document.querySelectorAll('.card-mode-tab');
-        const total = document.querySelectorAll('.card-item-checkbox').length;
-        const masterCb = document.getElementById('select-all-cards');
-        if (masterCb) {
-            masterCb.checked = (checked.length === total && total > 0);
-            masterCb.indeterminate = (checked.length > 0 && checked.length < total);
-        }
-
-        // ✅ MANEJO DE HISTORIAL PARA MÓVILES (Descartar selección con botón atrás)
-        if (this.isSelectionMode) {
-            // Si acabamos de entrar en modo selección, empujamos un estado
-            if (!this._lastSelectionState) {
-                if (window.history && window.history.pushState) {
-                    window.history.pushState({ selectionMode: true }, '', '');
-                }
-                this._lastSelectionState = true;
-            }
-        } else {
-            // Si salimos del modo selección estando en la misma página
-            if (this._lastSelectionState) {
-                this._lastSelectionState = false;
-            }
-        }
-    }
-
     /**
      * Interceptor for browser navigation (Back/Forward) and selection mode.
      */
@@ -2205,7 +2175,7 @@ class RepasoManager {
         const generateTtsFront = (document.getElementById('card-tts-front')?.checked && front.length >= 2) || false;
         const generateTtsBack = (document.getElementById('card-tts-back')?.checked && back.length >= 2) || false;
 
-        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
+        const isAdvanced = this.isAdvancedOrAdmin;
         const hasMedia = imageUrl || backImageUrl || this._pendingFiles.front || this._pendingFiles.back || generateTtsFront || generateTtsBack;
 
         if (hasMedia && !isAdvanced) {
@@ -2443,6 +2413,13 @@ class RepasoManager {
     }
 
     switchCardMode(mode) {
+        if (!this.token) {
+            if (window.uiManager?.showAuthPromptModal) {
+                window.uiManager.showAuthPromptModal();
+            }
+            return;
+        }
+
         if (mode === 'bulk' && this.userTier === 'free') {
             if (window.uiManager?.showPaywallModal) {
                 window.uiManager.showPaywallModal('La Carga Masiva (Excel) es una función para usuarios con plan Basic o Advanced. ¡Ahorra tiempo mejorando tu plan!', 'flashcards');
@@ -2486,7 +2463,7 @@ class RepasoManager {
      * ✅ CARGA INTELIGENTE: Solo genera previsualización local.
      */
     async handleImageUpload(input, side) {
-        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
+        const isAdvanced = this.isAdvancedOrAdmin;
         if (!isAdvanced) {
             input.value = '';
             if (window.uiManager?.showPaywallModal) {
@@ -2630,7 +2607,7 @@ class RepasoManager {
     }
 
     async _saveBulkCards(deckId) {
-        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
+        const isAdvanced = this.isAdvancedOrAdmin;
         const generateTtsFront = document.getElementById('bulk-tts-front')?.checked || false;
         const generateTtsBack = document.getElementById('bulk-tts-back')?.checked || false;
 

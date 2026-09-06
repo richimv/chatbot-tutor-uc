@@ -334,6 +334,10 @@ class SessionManager {
         return this.currentUser;
     }
 
+    isAdmin() {
+        return this.currentUser?.role === 'admin' || String(this.currentUser?.subscriptionTier || '').toLowerCase() === 'admin';
+    }
+
     onStateChange(callback) {
         this.onStateChangeCallbacks.push(callback);
         if (this.currentUser) {
