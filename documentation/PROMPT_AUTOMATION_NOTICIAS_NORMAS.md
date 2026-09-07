@@ -288,6 +288,19 @@ Responde de forma clara y directa:
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 07 de septiembre de 2026 (Curaduría Semanal MINEDU: 31/08/2026 al 07/09/2026)
+- **Responsable:** Antigravity AI Curador Oficial
+- **Estado de Ingesta:** ✅ Exitosa (2 recursos ingestados)
+- **Recursos Ingestados:**
+  1. **MINEDU (education):** [Evaluación Nacional del Concurso de Ascenso Docente se aplicará el 25 de octubre](https://www.gob.pe/institucion/minedu/noticias/1440040-evaluacion-nacional-del-concurso-de-ascenso-docente-se-aplicara-el-25-de-octubre) (Noticia)
+  2. **MINEDU (education):** [Resolución Viceministerial N.° 157-2026-MINEDU](https://www.gob.pe/institucion/minedu/normas-legales/8563323-157-2026-minedu) (Norma Legal)
+- **Recursos Descartados (Filtro temático/temporal):**
+  - 1 Noticia de la semana descartada (*Evaluaciones docentes no provocarán despido de maestros, asegura ministro de Educación*) por versar sobre evaluación periódica de desempeño docente ordinario y no sobre concursos de Nombramiento, Ascenso o Cargos Directivos.
+  - Otras noticias de la semana descartadas por temáticas no magisteriales (conectividad satelital en Loreto, violencia escolar, sismo en Ayacucho, proyectos de innovación escolar).
+  - 22 Normas Legales emitidas en la semana descartadas (RVM 158-2026 sobre Institutos Tecnológicos; RM 526, 525, 524, 522, 521, 520, 519, 518, 517, 516, 514, 513, 512, 511, 510, 509, 508, 507 por materias de presupuesto, personal de confianza ministerial, licenciamientos y concursos de proyectos escolares).
+  - 28 Informes/Publicaciones de la semana descartados por corresponder a licitaciones de compras de la Unidad Ejecutora 118 y obras de infraestructura universitaria.
+- **Detalle:** Se incorporó la reprogramación oficial de la Evaluación Nacional del Concurso de Ascenso Docente 2026 fijada para el domingo 25 de octubre de 2026 para más de 162 000 postulantes, respaldada jurídicamente por la Resolución Viceministerial N.° 157-2026-MINEDU.
+
 - **Fecha:** 31 de agosto de 2026
 - **MINSA (medicine):** Sin nuevas noticias ni normas legales sobre SERUMS, ENAM o Residentado publicadas durante el día de hoy (6 noticias oficiales descartadas por temática general/asistencial: *Hospital Lima Este atención digital, trasplante renal asistido por robot en Hospital Dos de Mayo, farmacovigilancia DIGEMID, primeros auxilios psicológicos Fenómeno El Niño, campaña 10 minutos contra el dengue, equipamiento tecnológico Diris Lima Norte*; 9 normas legales descartadas: Resoluciones Ministeriales N.° 754, 753, 742, 741-2026 y Resoluciones Directorales N.° 308, 307, 305, 304, 303-2026-OGA sobre trámites administrativos, presupuestos y afectaciones en uso).
 - **Estado de Ingesta:** ✅ Monitoreo de Salud al día. 0 recursos ingestados por estricta política de cero inserciones forzadas.
@@ -299,6 +312,16 @@ Responde de forma clara y directa:
 - **Fecha:** 30 de agosto de 2026
 - **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Acceso a Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no magisterial: *Minedu refuerza prevención de violencia escolar en Huancayo*).
 - **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política estricta de cero inserciones forzadas.
+
+- **Fecha:** 7 de setiembre de 2026
+- **MINSA (medicine):** Curaduría semanal (últimos 7 días: 31 de agosto al 7 de setiembre de 2026). Se evaluaron exhaustivamente las 3 fuentes oficiales de MINSA (Noticias, Normas Legales e Informes/Publicaciones).
+  - *Descartes:* Más de 50 noticias oficiales (campañas de vacunación, donación de órganos, salud mental, Fenómeno El Niño, etc.) y 25 resoluciones ministeriales/directorales descartadas por temática ajena a SERUMS, ENAM o Residentado Médico.
+  - *Calificados e Ingestados (4 recursos oficiales sobre SERUMS 2026-II):*
+    1. **Noticia:** [Minsa publica lista de postulantes aptos y observados para el Proceso de Adjudicación de Plazas Serums 2026-II](https://www.gob.pe/institucion/minsa/noticias/1438313-minsa-publica-lista-de-postulantes-aptos-y-observados-para-el-proceso-de-adjudicacion-de-plazas-serums-2026-ii) (2 de setiembre de 2026).
+    2. **Guía/Informe Oficial:** [Lista de Postulantes Aptos y Observados al Proceso SERUMS 2026 – II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8551838-lista-de-postulantes-aptos-y-observados-al-proceso-serums-2026-ii) (2 de setiembre de 2026).
+    3. **Guía Oficial:** [Guía De Subsanación para los postulantes Observados al Proceso SERUMS 2026 – II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8551841-guia-de-subsanacion-para-los-postulantes-observados-al-proceso-serums-2026-ii) (2 de setiembre de 2026).
+    4. **Guía/Comunicado Oficial:** [Subsanación de Observaciones – SERUMS 2026-II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8551851-subsanacion-de-observaciones-serums-2026-ii) (2 de setiembre de 2026).
+- **Estado de Ingesta:** ✅ 4/4 Recursos oficiales verificados (HTTP 200, validación anti-Soft 404, deduplicación en BD) e ingestados exitosamente en la tabla `resources` de PostgreSQL.
 
 - **Fecha:** 28 de agosto de 2026
 - **MINSA (medicine):** Sin nuevas noticias ni normas legales sobre SERUMS, ENAM o Residentado publicadas durante el día de hoy (4 noticias oficiales publicadas hoy descartadas por temática general no relacionada: cardiopatías congénitas, SAMU emergencias, PIAS aérea Loreto, DIGESA/Unicef; normas legales: ninguna publicada hoy).

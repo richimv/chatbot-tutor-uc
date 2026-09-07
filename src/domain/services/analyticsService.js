@@ -526,32 +526,32 @@ class AnalyticsService {
             if (isEducacion) {
                 strengths = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.12); color:#3b82f6; border:1px solid rgba(59,130,246,0.25);">ESTÁNDAR OFICIAL CNEB</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(59,130,246,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(59,130,246,0.25)); text-transform:uppercase; letter-spacing:0.04em;">ESTÁNDAR OFICIAL CNEB</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El temario oficial de la Carrera Pública Magisterial evalúa competencias fundamentales para la prueba nacional:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Fundamentos de <strong>Planificación Curricular</strong>, diseño de situaciones significativas y mediación pedagógica.</span>
                         </li>
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Principios del CNEB para <strong>Convivencia Democrática</strong>, inclusión y clima de aula.</span>
                         </li>
                     </ul>
                 `;
                 weaknesses = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25);">CALIBRACIÓN PENDIENTE</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">CALIBRACIÓN PENDIENTE</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es fundamental establecer tu línea base de rendimiento mediante una primera evaluación:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Sin calibración en <strong>Evaluación Formativa y Rúbricas</strong> (retroalimentación descriptiva vs reflexiva).</span>
                         </li>
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Casuísticas complejas de <strong>Teorías y Procesos del Aprendizaje</strong> (Piaget, Vygotsky, Bruner).</span>
                         </li>
                     </ul>
@@ -565,32 +565,32 @@ class AnalyticsService {
             } else {
                 strengths = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.12); color:#3b82f6; border:1px solid rgba(59,130,246,0.25);">ESTÁNDAR OFICIAL MINSA / ASPEFAM</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">ESTÁNDAR OFICIAL MINSA / ASPEFAM</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas (SERUMS/ENAM) ponderan con alta carga las siguientes especialidades troncales:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Diagnóstico y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong> basada en guías clínicas.</span>
                         </li>
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Manejo de algoritmos de shock, soporte vital y emergencias en el primer nivel de atención.</span>
                         </li>
                     </ul>
                 `;
                 weaknesses = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25);">CALIBRACIÓN PENDIENTE</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">CALIBRACIÓN PENDIENTE</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es necesario medir tu nivel inicial para identificar qué áreas requieren mayor refuerzo:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Sin calibración en <strong>Salud Pública, Epidemiología y Gestión</strong> (Grupo D del SERUMS).</span>
                         </li>
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Casos de alto riesgo materno-perinatal en <strong>Ginecología y Obstetricia</strong>.</span>
                         </li>
                     </ul>
@@ -620,18 +620,18 @@ class AnalyticsService {
 
                 strengths = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${readinessLevel.toUpperCase()}</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(59,130,246,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(59,130,246,0.25)); text-transform:uppercase; letter-spacing:0.04em;">${readinessLevel.toUpperCase()}</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has consolidado un sólido criterio pedagógico en tus áreas con mayor efectividad:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Dominio consolidado en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de efectividad${bestTotalStr1}. Evidencias buen manejo de procesos didácticos y mediación del aprendizaje.</span>
                         </li>
                         ${best2 ? `
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Rendimiento favorable en <strong>${best2.subject}</strong> con <strong>${best2.accuracy}%</strong> de precisión${bestTotalStr2}, reflejando criterio formativo consistente.</span>
                         </li>` : ''}
                     </ul>
@@ -639,17 +639,17 @@ class AnalyticsService {
 
                 weaknesses = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CRÍTICO PRIORITARIO</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">FOCO CRÍTICO PRIORITARIO</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se identificaron áreas de alta incidencia en la prueba que presentan oportunidades de mejora inmediata:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Brecha detectada en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Conviene repasar criterios de retroalimentación formativa y rúbricas.</span>
                         </li>
                         ${worst2 ? `
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Vulnerabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de efectividad${worstFailStr2}), donde los distractores teóricos reducen tu puntaje.</span>
                         </li>` : ''}
                     </ul>
@@ -669,18 +669,18 @@ class AnalyticsService {
 
                 strengths = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${readinessLevel.toUpperCase()}</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">${readinessLevel.toUpperCase()}</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de respuestas refleja solvencia diagnóstica y criterio clínico en tus áreas top:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Excelente precisión clínica en <strong>${best1.subject}</strong> con un <strong>${best1.accuracy}%</strong> de aciertos${bestTotalStr1}. Evidencias buen manejo de algoritmos diagnósticos y tratamiento.</span>
                         </li>
                         ${best2 ? `
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Buen criterio clínico en <strong>${best2.subject}</strong> (${best2.accuracy}% de efectividad${bestTotalStr2}), manteniendo una base terapéutica sólida.</span>
                         </li>` : ''}
                     </ul>
@@ -688,17 +688,17 @@ class AnalyticsService {
 
                 weaknesses = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CLÍNICO PRIORITARIO</span>
+                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">FOCO CLÍNICO PRIORITARIO</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se detectaron áreas clínicas críticas con margen de error que deben reforzarse:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Foco de refuerzo inmediato en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Requiere repaso de normas técnicas y manejo de casos complejos.</span>
                         </li>
                         ${worst2 ? `
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Inestabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de aciertos${worstFailStr2}), donde los distractores farmacológicos aumentan la tasa de fallo.</span>
                         </li>` : ''}
                     </ul>
@@ -715,13 +715,13 @@ class AnalyticsService {
 
         // Llamado a Suscripción Avanzada
         const upgradeCallout = `
-            <div style="margin-top:1.25rem; padding:1.1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:12px;">
+            <div style="margin-top:1.25rem; padding:1.1rem; background:var(--surface-hover); border:1px solid var(--border-color); border-radius:12px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
-                    <span style="font-weight:800; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em;">👑 Auditoría Cognitiva IA (Plan Avanzado)</span>
-                    <span style="font-size:0.7rem; background:rgba(139,92,246,0.2); color:#ddd6fe; padding:2px 6px; border-radius:6px; font-weight:700;">Deep Reasoning</span>
+                    <span style="font-weight:700; color:var(--text-main); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">👑 Auditoría Cognitiva IA (Plan Avanzado)</span>
+                    <span style="font-size:0.7rem; background:var(--primary-glow-sm, rgba(59,130,246,0.12)); color:var(--primary); border:1px solid var(--primary-glow, rgba(59,130,246,0.25)); padding:2px 6px; border-radius:6px; font-weight:700;">Deep Reasoning</span>
                 </div>
                 <p style="color:var(--text-secondary); margin:0 0 0.75rem 0; font-size:0.83rem; line-height:1.5;">Desbloquea análisis en tiempo real generados por Gemini con <strong>detección de sesgos de razonamiento</strong>, <strong>píldoras High-Yield</strong> y <strong>auditoría de preguntas trampa</strong>.</p>
-                <a href="/pricing" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:700; color:#8b5cf6; text-decoration:none;">Activar Plan Avanzado <i class="fas fa-arrow-right"></i></a>
+                <a href="/pricing" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:700; color:var(--primary); text-decoration:none;">Activar Plan Avanzado <i class="fas fa-arrow-right"></i></a>
             </div>
         `;
 

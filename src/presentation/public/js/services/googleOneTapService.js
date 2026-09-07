@@ -131,13 +131,8 @@ class GoogleOneTapService {
                 context: 'signin'
             });
 
-            // Invocar el prompt cumpliendo estrictamente con la migración FedCM de Google Identity
-            google.accounts.id.prompt((notification) => {
-                if (typeof notification?.isDismissedMoment === 'function' && notification.isDismissedMoment()) {
-                    const reason = typeof notification.getDismissedReason === 'function' ? notification.getDismissedReason() : 'desconocido';
-                    console.log('ℹ️ [GoogleOneTapService] Prompt cerrado:', reason);
-                }
-            });
+            // Invocar el prompt de forma nativa sin callbacks de momento para suprimir completamente la advertencia [GSI_LOGGER]
+            google.accounts.id.prompt();
 
             // Cancelar One Tap reactivamente si el usuario se autentica por otro canal
             if (typeof window !== 'undefined' && window.sessionManager && typeof window.sessionManager.onStateChange === 'function') {

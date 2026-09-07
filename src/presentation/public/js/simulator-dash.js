@@ -2202,25 +2202,21 @@ const SimulatorDash = (() => {
 
                     if (isEducacion) {
                         guestStrengths = `
-                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">MODO PRUEBA DEMO</span>
-                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-arrow-trend-up"></i> MODO PRUEBA DEMO</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has demostrado criterio pedagógico en tu simulacro de prueba:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Dominio en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de aciertos (${best1.correct}/${best1.total} correctas).</span>
                                 </li>
                             </ul>
                         `;
                         guestWeaknesses = `
-                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO DE MEJORA</span>
-                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-crosshairs"></i> FOCO DE MEJORA</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Oportunidad de refuerzo detectada en tu evaluación:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
                                     <span>Precisión del <strong>${worst1.accuracy}%</strong> en <strong>${worst1.subject}</strong> (${worst1.total - worst1.correct} fallas). Conviene repasar criterios del CNEB.</span>
                                 </li>
                             </ul>
@@ -2233,25 +2229,21 @@ const SimulatorDash = (() => {
                         ];
                     } else {
                         guestStrengths = `
-                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">MODO PRUEBA DEMO</span>
-                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-arrow-trend-up"></i> MODO PRUEBA DEMO</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de prueba muestra buen razonamiento clínico inicial:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Buen acierto en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de precisión (${best1.correct}/${best1.total} correctas).</span>
                                 </li>
                             </ul>
                         `;
                         guestWeaknesses = `
-                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CLÍNICO</span>
-                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-crosshairs"></i> FOCO CLÍNICO</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Área prioritaria de mejora según tu sesión de prueba:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
                                     <span>Efectividad del <strong>${worst1.accuracy}%</strong> en <strong>${worst1.subject}</strong> (${worst1.total - worst1.correct} errores). Conviene repasar protocolos clínicos.</span>
                                 </li>
                             </ul>
@@ -2269,11 +2261,11 @@ const SimulatorDash = (() => {
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El marco oficial de la Carrera Pública Magisterial evalúa competencias clave:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Fundamentos de <strong>Planificación Curricular</strong> y diseño de sesiones.</span>
                                 </li>
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Principios del CNEB para <strong>Convivencia Democrática</strong> y clima de aula.</span>
                                 </li>
                             </ul>
@@ -2282,7 +2274,7 @@ const SimulatorDash = (() => {
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Completa tu simulacro diario para diagnosticar tus áreas de mayor riesgo:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
                                     <span>Evaluación de casuísticas complejas en <strong>Rúbricas de Evaluación Formativa</strong>.</span>
                                 </li>
                             </ul>
@@ -2293,11 +2285,11 @@ const SimulatorDash = (() => {
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas ponderan con alta carga las siguientes especialidades:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Diagnóstico diferencial y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong>.</span>
                                 </li>
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                                     <span>Algoritmos de urgencia y guías clínicas basadas en evidencia.</span>
                                 </li>
                             </ul>
@@ -2306,7 +2298,7 @@ const SimulatorDash = (() => {
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Realiza tu prueba gratuita para medir tu tasa de acierto por especialidad:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
                                     <span>Toma de decisiones rápidas en <strong>Salud Pública, Epidemiología y Ginecología</strong>.</span>
                                 </li>
                             </ul>
@@ -2316,10 +2308,10 @@ const SimulatorDash = (() => {
                 }
 
                 const guestUpgradeCallout = `
-                    <div style="margin-top:1.25rem; padding:1.1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:12px;">
-                        <span style="font-weight:800; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Acceso Avanzado con IA</span>
-                        <p style="color:var(--text-secondary); margin:0 0 0.75rem 0; font-size:0.83rem; line-height:1.5;">Regístrate de forma gratuita para guardar tu historial o activa el <strong>Plan Avanzado</strong> para desbloquear diagnósticos en tiempo real generados por IA basados en tus propios simulacros.</p>
-                        <a href="/login" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:700; color:#8b5cf6; text-decoration:none;">Crear Cuenta Gratis <i class="fas fa-arrow-right"></i></a>
+                    <div style="margin-top:1.25rem; padding:1rem 1.15rem; background:var(--surface-hover); border:1px solid var(--border-color); border-radius:10px;">
+                        <span style="font-weight:700; color:var(--text-main); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:0.4rem; margin-bottom:0.35rem;"><i class="fas fa-sparkles" style="color:var(--primary);"></i> Acceso Avanzado con IA</span>
+                        <p style="color:var(--text-secondary); margin:0 0 0.75rem 0; font-size:0.82rem; line-height:1.5;">Regístrate de forma gratuita para guardar tu historial o activa el <strong>Plan Avanzado</strong> para desbloquear diagnósticos en tiempo real generados por IA basados en tus propios simulacros.</p>
+                        <a href="/login" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.78rem; font-weight:700; color:var(--primary); text-decoration:none;">Crear Cuenta Gratis <i class="fas fa-arrow-right"></i></a>
                     </div>
                 `;
                 guestWeaknesses += guestUpgradeCallout;

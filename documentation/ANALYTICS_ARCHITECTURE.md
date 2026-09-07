@@ -203,6 +203,15 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
 *   **Calificación Híbrida de Respuestas (`gradeForSubmission`):** El backend sincroniza de forma segura las respuestas enviadas en lote (`clientAnswers`) contra las claves maestras (`answer_payload.correct_option_index`) almacenadas en base de datos. Si el cliente respondió de forma local/offline, se evalúa y persiste el estado `is_correct` en `quiz_session_questions`, garantizando que puntajes legítimos (ej. 3/10 o 7/10) se almacenen con exactitud matemática y se proyecten en el KPI de evolución vigesimal (`6.0` y `14.0` sobre 20).
 *   **Preservación de Casuísticas / Casos Anidados:** Al agrupar preguntas encadenadas a una misma viñeta clínica o situación pedagógica (`case_id`), el sistema incluye todas las preguntas hermanas consecutivamente y ajusta dinámicamente el límite del examen (`state.maxQuestions`) para que ninguna pregunta del caso sea omitida ni cortada intempestivamente.
 
+### F. Rediseño Minimalista y Coherencia Visual de Analíticas (v3.1 - Septiembre 2026)
+1. **Tarjetas KPI Principales (`simulator-dashboard.html`):**
+   - Se removieron los iconos decorativos redundantes de la esquina superior derecha (`.stat-icon`) en las tres tarjetas analíticas (*Puntuación Promedio*, *Precisión Global* y *Volumen de Respuestas*). Las ilustraciones temáticas de fondo ya proveen identidad visual limpia y reducen la carga cognitiva.
+2. **Diagnóstico Inteligente por IA (Patrones de Error):**
+   - **Eliminación de Colores Arcoíris:** Se eliminaron los colores estridentes y no contextuales (`#10b981`, `#f87171`, `#34d399`, `#fbbf24`, `#8b5cf6`, `#c4b5fd`).
+   - **Tokens de Diseño Cohesivos:** Toda la tarjeta (`#ai-diagnosis-card`), sus badges de estado, el anillo de preparación (`.ai-readiness-ring`), las áreas de fortalezas/debilidades y el bloque de upgrade utilizan las variables del sistema (`var(--primary)`, `var(--surface-hover)`, `var(--border-color)`, `var(--text-muted)`).
+   - **Adaptabilidad Modular:** El diagnóstico respeta la identidad cromática del módulo en curso: Verde Esmeralda/Teal (`#0d9488`) para **Salud (Medicina)** y Azul Cobalto (`#3b82f6`) para **Educación**.
+   - **Tipografía y Jerarquía:** Badges de micro-temas y focos prioritarios en tipografía uppercase con padding refinado (`0.25rem 0.65rem`) y bordes sutiles.
+
 ---
 > [!IMPORTANT]
-> Esta arquitectura ha sido verificada y respaldada con 38 suites de tests unitarios (248 tests pasando) al 31 de agosto de 2026.
+> Esta arquitectura ha sido verificada y respaldada con 51 suites de tests unitarios (401 tests pasando) al 7 de septiembre de 2026.

@@ -711,6 +711,10 @@ class LibraryUI {
         modal.addEventListener('click', (e) => { if (e.target === modal) this.closeNoteModal(); });
     }
 
+    openNoteModal(noteId = null) {
+        this.openNoteEditor(noteId);
+    }
+
     openNoteEditor(noteId = null) {
         this.editingNoteId = noteId;
         const viewer = document.getElementById('note-modal-viewer');

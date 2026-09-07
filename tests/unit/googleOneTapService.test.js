@@ -167,20 +167,13 @@ describe('GoogleOneTapService - Pruebas Unitarias', () => {
             expect(initArgs.itp_support).toBeUndefined();
             expect(initArgs.ux_mode).toBeUndefined();
 
-            // Verificar que prompt se invoca con un callback de notificación
-            expect(mockGoogle.accounts.id.prompt).toHaveBeenCalledWith(expect.any(Function));
+            // Verificar que prompt se invoca de forma limpia
+            expect(mockGoogle.accounts.id.prompt).toHaveBeenCalled();
         });
 
-        test('ejecuta momentListener compatible con FedCM sin arrojar errores', () => {
+        test('invoca prompt sin callbacks de momento para garantizar silencio de GSI_LOGGER', () => {
             GoogleOneTapService.initialize();
-            const promptCallback = mockGoogle.accounts.id.prompt.mock.calls[0][0];
-
-            // Simular notificaciones FedCM
-            expect(() => {
-                promptCallback({ isDismissedMoment: () => false });
-                promptCallback({ isDismissedMoment: () => true, getDismissedReason: () => 'credential_returned' });
-                promptCallback(null);
-            }).not.toThrow();
+            expect(mockGoogle.accounts.id.prompt).toHaveBeenCalledWith();
         });
 
         test('no inicializa repetidamente si ya fue inicializado', () => {

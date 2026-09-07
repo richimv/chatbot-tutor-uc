@@ -83,6 +83,7 @@ La biblioteca adapta sus pestañas según el estado de la sesión del usuario:
 ## 5. 🛠️ Tablón de Notas Personales y Tutor IA
 
 - **Guardado Directo desde el Chat:** Cada respuesta generada por el Tutor IA incluye el control de un clic **"Guardar como Nota"**, formateando y almacenando el contenido en la biblioteca del estudiante.
+- **Creación Manual de Notas (`openNoteModal`):** Permite al estudiante redactar notas de estudio desde cero a través del botón "Nueva Nota" en el tablón, delegando limpiamente a `openNoteEditor(noteId)` en `libraryUI.js`.
 - **Visualización en Tarjetas Modernas (`.note-card`):** Sustituye los listados planos por tarjetas visuales con indicador cromático.
 - **Herramientas de Tablón (`.notes-toolbar`):**
   - **Buscador de Notas:** Filtrado en caliente por palabras clave en título o contenido.
