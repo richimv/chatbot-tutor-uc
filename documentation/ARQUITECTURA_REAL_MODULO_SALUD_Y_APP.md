@@ -356,8 +356,11 @@ CREATE TABLE public.users (
   - Ubicado en `app/(tabs)/home.tsx`, permite al postulante médico extraer un informe estructurado de rendimiento clínico basado en sus simulacros reales.
   - **Índice de Preparación Oficial (`Readiness Index %`)**: Visualiza un score ponderado de efectividad correlacionado con la escala vigesimal y badge de competencia (`Sobresaliente`, `Competente`, `En Desarrollo`, `Inicial`).
   - **Fortalezas y Oportunidades de Mejora**: Tarjetas analíticas con conteo de reactivos correctos/fallados y sustento normativo oficial MINSA/ASPEFAM renderizadas mediante `RichMarkdown.tsx`.
-  - **Píldora High-Yield Oficial (Exclusiva Plan Avanzado)**: Perla clínica o concepto clave de alta recurrencia en el examen nacional con acento ámbar.
+  - **Píldora High-Yield Oficial (Exclusiva Plan Avanzado)**: Perla clínica oficial renderizada con fondo suave `#f0fdfa`, borde `#ccfbf1` y acento en Verde Esmeralda/Teal (`#0d9488`).
   - **Sprint Táctico en 3 Pasos**: Ruta accionable estructurada (Refuerzo Conceptual, Modo Estudio 20q y Velocidad en 10q).
+- **Paleta Cromática Unificada (Cero Efecto Arcoíris)**:
+  - En sincronía con la plataforma web, se eliminaron los colores estridentes/no contextuales (púrpuras `#8b5cf6`, amarillos `#fde68a`, etc.).
+  - Todos los elementos visuales del diagnóstico (`tierBadgeAdvanced`, `highYieldBox`, `sprintBadge`, `upgradeCallout`, `extractBtn`) utilizan la paleta médica Verde Esmeralda / Teal (`#0d9488`, `SaludPalette.primary`), garantizando sobriedad clínica de alto nivel.
 - **Gestión de Cuotas y Vidas en Móvil**:
   - **Cuentas Free**: Consume 1 vida semanal al generar el diagnóstico, dispara el toast flotante `LifeToast` (`⚡ 1 vida utilizada en diagnóstico. Te quedan X vidas.`) y sincroniza el perfil con `refreshProfile()`. Si las vidas llegan a 0, despliega la alerta con acceso a `/pricing`.
   - **Plan Básico**: Diagnóstico heurístico estático ilimitado (0 tokens de IA).

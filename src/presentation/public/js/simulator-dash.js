@@ -701,15 +701,14 @@ const SimulatorDash = (() => {
         if (btnArcade) {
             const separator = baseParams.includes('?') ? '&' : '?';
             const demoFlag = !token ? '&demo=true' : '';
-            btnArcade.href = `quiz${baseParams}${separator}limit=10${demoFlag}`;
+            btnArcade.href = `quiz${baseParams}${separator}limit=10&mode=arcade${demoFlag}`;
         }
 
         // 2. Study Mode (20 questions)
         const btnStudy = document.getElementById('btn-mode-study');
         if (btnStudy) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            const demoFlag = !token ? '&demo=true' : '';
-            btnStudy.href = `quiz${baseParams}${separator}limit=20${demoFlag}`;
+            btnStudy.href = `quiz${baseParams}${separator}limit=20&mode=study`;
         }
 
         // 3. Real Mock (60 or 100 questions - STRICTLY DB ONLY)

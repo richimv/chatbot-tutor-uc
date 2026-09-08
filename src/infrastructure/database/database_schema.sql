@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
     domain VARCHAR(255) DEFAULT 'GENERAL'::character varying,
     topic VARCHAR(100) NOT NULL,
-    difficulty VARCHAR(50) DEFAULT 'Intermedio'::character varying,
+    difficulty VARCHAR(50) DEFAULT 'Senior'::character varying,
     question_text TEXT NOT NULL,
     options JSONB NOT NULL,
     correct_option_index INTEGER NOT NULL,

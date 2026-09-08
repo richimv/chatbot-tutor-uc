@@ -1042,12 +1042,13 @@ window.UIComponents.createReviewCardHTML = function (config) {
                 ${expTextHTML}
             </div>
             ${expImageHTML}
+            ${!isDemo && !(typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('demo=true')) ? `
             <div class="review-tutor-action-row">
                 <button type="button" class="btn-review-tutor-trigger" onclick="window.openTutorForReviewQuestion(${index})">
                     <img src="/assets/hubifrente.png" alt="Hubi" class="btn-review-tutor-icon">
                     <span>Consultar Tutor IA</span>
                 </button>
-            </div>
+            </div>` : ''}
         </div>
     </div>`;
 };

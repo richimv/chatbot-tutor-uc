@@ -630,8 +630,11 @@ Para replicar con precisión las funcionalidades de la web en la aplicación mó
   - Ubicado en `app/(tabs)/home.tsx`, permite al docente extraer un informe estructurado de rendimiento pedagógico basado en sus simulacros reales.
   - **Índice de Preparación Oficial (`Readiness Index %`)**: Visualiza un score ponderado de efectividad correlacionado con la escala vigesimal y badge de competencia (`Sobresaliente`, `Competente`, `En Desarrollo`, `Inicial`).
   - **Fortalezas y Oportunidades de Mejora**: Tarjetas analíticas con conteo de reactivos correctos/fallados y sustento normativo oficial CNEB/MINEDU renderizadas mediante `RichMarkdown.tsx`.
-  - **Píldora High-Yield Oficial (Exclusiva Plan Avanzado)**: Consejo doctrinal de alta recurrencia en la prueba nacional con acento ámbar.
+  - **Píldora High-Yield Oficial (Exclusiva Plan Avanzado)**: Consejo doctrinal oficial renderizado con fondo suave `#eff6ff`, borde `#bfdbfe` y acento en Azul Cobalto (`#3b82f6` / `#2563eb`).
   - **Sprint Táctico en 3 Pasos**: Ruta accionable estructurada (Refuerzo Conceptual, Modo Estudio 20q y Velocidad en 10q).
+- **Paleta Cromática Unificada (Cero Efecto Arcoíris)**:
+  - En sincronía con la plataforma web, se eliminaron los colores estridentes/no contextuales (púrpuras `#8b5cf6`, amarillos `#fde68a`, etc.).
+  - Todos los elementos visuales del diagnóstico (`tierBadgeAdvanced`, `highYieldBox`, `sprintBadge`, `upgradeCallout`, `extractBtn`, `readinessNumber`) utilizan la paleta pedagógica Azul Cobalto (`#3b82f6`), garantizando elegancia y máxima sobriedad docente.
 - **Gestión de Cuotas y Vidas en Móvil**:
   - **Cuentas Free**: Consume 1 vida semanal al generar el diagnóstico, dispara el toast flotante `LifeToast` (`⚡ 1 vida utilizada en diagnóstico. Te quedan X vidas.`) y sincroniza el perfil con `refreshProfile()`. Si las vidas llegan a 0, despliega la alerta con acceso a `/pricing`.
   - **Plan Básico**: Diagnóstico heurístico estático ilimitado (0 tokens de IA).

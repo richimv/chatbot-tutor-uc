@@ -57,9 +57,13 @@ Dado que el simulador guarda el progreso en `localStorage` para permitir recarga
   - Los visitantes pueden abrir el modal de configuración de exámenes y aplicar una configuración general bajo el **"Modo Examen Oficial"**. La configuración se guarda localmente en `localStorage` (`simActiveConfig_[context]`).
   - No se permite seleccionar "Práctica Personalizada"; al intentarlo, se muestra el modal de registro y se revierte la selección.
   - Al igual que un usuario registrado, si un visitante no ha aplicado una configuración previamente, no se le permitirá iniciar el simulacro de 10qs, y en su lugar se abrirá y agitará el modal de configuración.
-- **Filtrado en Motor Demo**:
+- **Filtrado y Empaquetado Estricto de 10 Preguntas (`packDemoBatch`)**:
   - Los endpoints `/api/medico/demo` y `/api/docente/demo` reciben parámetros de consulta opcionales (`target`, `career`, `difficulty`, `areas`) del cliente.
-  - Si existen, el motor demo filtra dinámicamente las preguntas del banco real para adaptar el simulacro al examen configurado.
+  - El motor demo utiliza el algoritmo modular `packDemoBatch` para asegurar que las casuísticas anidadas (`case_scenarios`) se incluyan completas solo si encajan en el cupo restante sin romper la integridad del caso ni exceder bajo ninguna circunstancia el límite de 10 preguntas.
+  - Se garantiza que el lote demo devuelto contenga exactamente 10 preguntas (nunca sobrecargas de 18 a 20 preguntas).
+- **Aislamiento de Modo Ciego y Supresión de Tutor IA**:
+  - El simulacro de prueba para visitantes se ejecuta estrictamente como **Modo Rápido / Arcade Ciego** (`mode=arcade`, `maxQuestions=10`).
+  - Se desactiva cualquier activación inadvertida del "Modo Estudio" (20 preguntas) y se ocultan el panel de explicaciones durante el examen y el botón "Consultar Tutor IA", reservando los tokens y el asistente para usuarios registrados y autorizados.
 - **Indicador Visual de Prueba y Bloqueos en Modo Visitante**:
   - Cuando el visitante tiene disponible su intento gratuito diario (`GuestSessionManager.canTakeDailyDemo() === true`), la tarjeta del **Simulacro Rápido (10 Preguntas)** (`#btn-mode-arcade`) parpadea dinámicamente con una animación de brillo dorado/amarillo (`.mode-card--trial-pulse`) y mantiene el botón *"Iniciar simulacro →"*.
   - Una vez rendido el simulacro, la animación se apaga y el botón pasa al estado *"Prueba completada 🔒"*, bloqueando intentos adicionales hasta el siguiente día calendario (`America/Lima`) y solicitando el registro de cuenta.

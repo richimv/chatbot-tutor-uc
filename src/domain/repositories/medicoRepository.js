@@ -143,6 +143,67 @@ class MedicoRepository {
         }));
     }
 
+    packDemoBatch(candidateRows, siblingRows, limit) {
+        if (!candidateRows || candidateRows.length === 0) return [];
+
+        const siblingMap = new Map();
+        (siblingRows || []).forEach(sq => {
+            if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
+            siblingMap.get(sq.case_id).push(sq);
+        });
+
+        siblingMap.forEach(siblings => {
+            siblings.sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
+        });
+
+        const processedCaseIds = new Set();
+        const reassembled = [];
+
+        // 1. Empacar respetando la integridad del caso y el límite estricto
+        for (const q of candidateRows) {
+            if (reassembled.length >= limit) break;
+
+            if (!q.case_id) {
+                if (limit - reassembled.length >= 1) {
+                    reassembled.push(q);
+                }
+            } else if (!processedCaseIds.has(q.case_id)) {
+                processedCaseIds.add(q.case_id);
+                const siblings = siblingMap.get(q.case_id) || [q];
+                const spaceLeft = limit - reassembled.length;
+                if (siblings.length <= spaceLeft) {
+                    reassembled.push(...siblings);
+                }
+            }
+        }
+
+        // 2. Si quedan cupos libres (porque hubo casos que excedían el espacio restante), rellenar con preguntas sueltas
+        if (reassembled.length < limit) {
+            const addedIds = new Set(reassembled.map(r => r.id));
+            for (const q of candidateRows) {
+                if (reassembled.length >= limit) break;
+                if (!q.case_id && !addedIds.has(q.id)) {
+                    addedIds.add(q.id);
+                    reassembled.push(q);
+                }
+            }
+        }
+
+        // 3. Salvaguarda final: si aún no se alcanza el límite y quedan candidatas no añadidas
+        if (reassembled.length < limit) {
+            const addedIds = new Set(reassembled.map(r => r.id));
+            for (const q of candidateRows) {
+                if (reassembled.length >= limit) break;
+                if (!addedIds.has(q.id)) {
+                    addedIds.add(q.id);
+                    reassembled.push(q);
+                }
+            }
+        }
+
+        return reassembled.slice(0, limit);
+    }
+
     async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, areas = null) {
         let sanitizedExcludeIds = [];
         if (excludeIds && Array.isArray(excludeIds)) {
@@ -196,14 +257,15 @@ class MedicoRepository {
             paramIdx++;
         }
 
+        const candidatePoolLimit = Math.max(limit * 3, 30);
         query += ` ORDER BY RANDOM() LIMIT $${paramIdx}`;
-        params.push(limit);
+        params.push(candidatePoolLimit);
 
         const res = await db.query(query, params);
-        let questions = res.rows;
+        const candidateRows = res.rows;
 
-        // Cluster cases in demo if present
-        const caseIdsInBatch = [...new Set(questions.filter(q => q.case_id).map(q => q.case_id))];
+        let siblingRows = [];
+        const caseIdsInBatch = [...new Set(candidateRows.filter(q => q.case_id).map(q => q.case_id))];
         if (caseIdsInBatch.length > 0) {
             try {
                 const siblingRes = await db.query(`
@@ -217,30 +279,13 @@ class MedicoRepository {
                     WHERE qb.case_id = ANY($1::uuid[])
                     ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC
                 `, [caseIdsInBatch]);
-
-                const siblingMap = new Map();
-                siblingRes.rows.forEach(sq => {
-                    if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
-                    siblingMap.get(sq.case_id).push(sq);
-                });
-
-                const processedCaseIds = new Set();
-                const reassembled = [];
-
-                for (const q of questions) {
-                    if (!q.case_id) {
-                        reassembled.push(q);
-                    } else if (!processedCaseIds.has(q.case_id)) {
-                        processedCaseIds.add(q.case_id);
-                        const siblings = siblingMap.get(q.case_id) || [q];
-                        reassembled.push(...siblings);
-                    }
-                }
-                questions = reassembled;
+                siblingRows = siblingRes.rows;
             } catch (e) {
-                console.error("⚠️ Error clusterizando demo cases en MedicoRepo:", e.message);
+                console.error("⚠️ Error consultando demo case siblings en MedicoRepo:", e.message);
             }
         }
+
+        const questions = this.packDemoBatch(candidateRows, siblingRows, limit);
 
         return questions.map(row => ({
             id: row.id,

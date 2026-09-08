@@ -447,12 +447,22 @@ async function init() {
     }
 
     // 🎯 Mode Selection: 
-    // ?limit=5  -> Quick Mode
-    // ?limit=20 -> Study Mode (Default)
+    // ?limit=10 -> Quick / Arcade Mode (Modo Demo para visitantes)
+    // ?limit=20 -> Study Mode
     // ?limit=100 -> Real Mock
+    const isDemoParam = urlParams.get('demo') === 'true';
     const limitParam = parseInt(urlParams.get('limit'));
     if (!isNaN(limitParam) && limitParam > 0) {
         state.maxQuestions = limitParam;
+    }
+    if (isDemoParam) {
+        state.isDemo = true;
+        state.maxQuestions = 10;
+        state.mode = 'arcade';
+    } else if (state.maxQuestions === 10 && !state.mode) {
+        state.mode = 'arcade';
+    } else if (state.maxQuestions === 20 && !state.mode) {
+        state.mode = 'study';
     }
     if (elements.maxQ) elements.maxQ.textContent = state.maxQuestions;
 
@@ -839,6 +849,10 @@ async function startQuiz() {
     };
 
     if (isDemo) {
+        state.isDemo = true;
+        state.maxQuestions = 10;
+        state.mode = 'arcade';
+
         // --- 📊 DEMO ANTI-REPETITION & LÍMITE (1 intento por día para visitantes) ---
         if (window.GuestSessionManager && !window.GuestSessionManager.canTakeDailyDemo()) {
             elements.loadingOverlay.classList.add('hidden');
@@ -858,7 +872,7 @@ async function startQuiz() {
         };
         const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
         const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');
-        fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=${state.maxQuestions}&excludeIds=${seenIds.join(',')}`;
+        fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=10&excludeIds=${seenIds.join(',')}`;
         if (state.targetExam) fetchUrl += `&target=${encodeURIComponent(state.targetExam)}`;
         if (state.career) fetchUrl += `&career=${encodeURIComponent(state.career)}`;
         if (state.difficulty) fetchUrl += `&difficulty=${encodeURIComponent(state.difficulty)}`;
@@ -874,6 +888,9 @@ async function startQuiz() {
                 localStorage.removeItem(`guest_seen_ids_${domainParam}`);
                 throw new Error("No hay preguntas disponibles para la demo.");
             }
+
+            // Asegurar que el lote demo nunca exceda 10 preguntas
+            data.questions = data.questions.slice(0, 10);
 
             // Registrar intento de sesión diaria de visitante de forma centralizada
             if (window.GuestSessionManager) {
@@ -1004,10 +1021,17 @@ async function startQuiz() {
         return;
     }
 
-    state.questions = data.questions;
-    if (data.questions && Array.isArray(data.questions)) {
-        state.maxQuestions = Math.max(state.maxQuestions, data.questions.length);
+    state.questions = Array.isArray(data.questions) ? data.questions : [];
+    if (state.isDemo || state.mode === 'arcade' || state.maxQuestions === 10) {
+        state.maxQuestions = 10;
+        state.mode = 'arcade';
+        if (state.questions.length > 10) {
+            state.questions = state.questions.slice(0, 10);
+        }
+    } else if (state.questions.length > state.maxQuestions) {
+        state.questions = state.questions.slice(0, state.maxQuestions);
     }
+    if (elements.maxQ) elements.maxQ.textContent = state.maxQuestions;
     state.quizSessionId = data.quizSessionId || null;
     // 💡 ACTUALIZACIÓN DE TEMA: Si el backend rotó el tema (ej: Medicina -> Cardiología), actualizamos el estado.
     if (data.topic) {
@@ -1459,7 +1483,7 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
     // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
     // Simulacro Real (>= 50qs o mode=real) y Modo Rápido (10qs o mode=arcade) son Modo Ciego estricto
     const isRealMock = state.mode === 'real' || Number(state.maxQuestions) >= 50;
-    const isStudyMode = !isRealMock && (Number(state.maxQuestions) === 20 || state.mode === 'study');
+    const isStudyMode = !isRealMock && !state.isDemo && state.mode !== 'arcade' && Number(state.maxQuestions) !== 10 && (Number(state.maxQuestions) === 20 || state.mode === 'study');
 
     if (isStudyMode) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
@@ -1512,11 +1536,13 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
         nextContainer.style.display = 'flex';
     }
 
-    // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido ni simulacro real)
+    // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido, modo ciego, simulacro real ni modo demo/visitante)
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) {
-        const isBlindMode = isRealMock || Number(state.maxQuestions) === 10 || state.mode === 'arcade';
-        if (isBlindMode) {
+        const isBlindMode = isRealMock || Number(state.maxQuestions) <= 10 || state.mode === 'arcade' || Boolean(state.isDemo);
+        const isGuest = Boolean(state.isDemo) || new URLSearchParams(window.location.search).get('demo') === 'true' || 
+                        (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
+        if (isBlindMode || isGuest) {
             tutorBtn.classList.add('hidden');
             tutorBtn.style.display = 'none';
         } else {
