@@ -636,13 +636,16 @@ La modal universal de confirmación implementa una jerarquía accesible de alta 
 ### 13.10. Estándar de Tipografía Justificada Profesional en Simuladores de Exámenes (Web y Móvil)
 Para maximizar la sobriedad, legibilidad y estética profesional durante la resolución y análisis de exámenes pedagógicos y médicos:
 * **Regla Tipográfica Universal en Web:**
-  * Todos los bloques de texto de examen aplican justificación con separación silábica balanceada:
+  * Todos los bloques de texto de examen aplican justificación de párrafos conservando las palabras completas e intactas (sin guiones divisores de sílabas):
     ```css
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
+    overflow-wrap: break-word;
+    word-break: normal;
     ```
+    *Nota:* El uso de `hyphens: none` y `word-break: normal` previene la partición de palabras al borde del contenedor (e.g. "Du-rante", "agrí-colas"), mientras que `text-justify: inter-word` distribuye limpiamente el espaciado inter-palabra.
   * **Elementos alcanzados en Toma Activa (`quiz.html` / `quiz.css`):**
     * Casuísticas anidadas y viñetas clínicas (`.case-description-body`, `.case-description-body p`).
     * Enunciados de preguntas (`.question-text`, `.question-text p`, y cuadrículas con imagen `.question-layout-grid.has-image .question-text`).

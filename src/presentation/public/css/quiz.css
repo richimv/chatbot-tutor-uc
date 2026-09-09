@@ -406,8 +406,8 @@ body.quiz-body {
     color: var(--quiz-text);
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .question-layout-grid {
@@ -432,8 +432,8 @@ body.quiz-body {
     margin-bottom: 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
     font-size: 1.4rem;
 }
 
@@ -518,8 +518,8 @@ body.quiz-body {
     margin-bottom: 1.2rem;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .question-text p:last-child, #explanationText p:last-child, .feedback-explanation-text p:last-child, .review-explanation-body p:last-child {
@@ -659,8 +659,8 @@ body.quiz-body {
     .question-layout-grid.has-image .question-text {
         text-align: justify;
         text-justify: inter-word;
-        hyphens: auto;
-        -webkit-hyphens: auto;
+        hyphens: none;
+        -webkit-hyphens: none;
         font-size: 1.25rem;
     }
 }
@@ -710,16 +710,16 @@ body.quiz-body {
     line-height: 1.5;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .option-text p {
     margin: 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .option-btn:hover:not(:disabled) {
@@ -903,8 +903,8 @@ body.module-educacion .feedback-badge {
     margin: 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 [data-theme="light"] .feedback-explanation-text,
@@ -918,8 +918,8 @@ body.module-educacion .feedback-badge {
     line-height: 1.65;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 #explanationText p:first-child {
@@ -1315,8 +1315,8 @@ body.module-educacion .feedback-badge {
     font-family: var(--font-main);
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-options {
@@ -1360,19 +1360,20 @@ body.module-educacion .feedback-badge {
 .review-opt-text {
     flex: 1;
     min-width: 0;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-opt-text p {
     margin: 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-opt-status-badge {
@@ -1512,8 +1513,8 @@ body.module-educacion .review-opt-status-badge.correct {
     line-height: 1.65;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-explanation-body p {
@@ -1521,8 +1522,8 @@ body.module-educacion .review-opt-status-badge.correct {
     color: var(--text-secondary);
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-explanation-body p:last-child {
@@ -2129,11 +2130,12 @@ body.module-educacion .review-opt-status-badge.correct {
     font-size: 1.08rem;
     line-height: 1.7;
     font-weight: 450;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 [data-theme="light"] .case-description-body {
@@ -2144,8 +2146,8 @@ body.module-educacion .review-opt-status-badge.correct {
     margin: 0 0 0.55rem 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .case-description-body p:last-child {
@@ -2381,11 +2383,12 @@ body.module-educacion .review-case-pill {
     color: var(--text-secondary, #cbd5e1);
     font-size: 0.92rem;
     line-height: 1.6;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 [data-theme="light"] .review-case-body {
@@ -2396,8 +2399,8 @@ body.module-educacion .review-case-pill {
     margin: 0 0 0.5rem 0;
     text-align: justify;
     text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 .review-case-body p:last-child {
