@@ -80,11 +80,12 @@ El panel detecta el contexto y ajusta los formularios automáticamente:
 
 ### 3.4 Gestión de Casuísticas Agrupadas y Encadenamiento de Preguntas (Agosto 2026)
 *   **Concepto de Casuística (Case Scenario):** Permite agrupar reactivos del examen oficial MINEDU / MINSA donde varias preguntas se presentan de forma consecutiva o comparten un contexto común.
-*   **Enunciado y Título 100% Opcionales:** Si el docente desea colocar el enunciado dentro de cada pregunta individual o simplemente necesita encadenar y ordenar preguntas correlativas en el examen sin mostrar una tarjeta de enunciado superior, los campos `Texto de la Situación` y `Título` son completamente **opcionales** tanto en frontend como en backend.
+*   **Enunciado y Título Opcionales con Fallback al Código:** Si el docente no digita un título explícito al crear una casuística, el sistema adopta como título directamente el **código del caso** (`code`), garantizando que nunca se use un fragmento o extracto del enunciado como título.
+*   **Topic Desacoplado ('General'):** Las casuísticas pueden agrupar preguntas pertenecientes a múltiples y diversas áreas temáticas. Por tanto, su columna `topic` se estandariza en `'General'` a nivel de base de datos, API, parser y plantillas descargables de Excel, evitando que un caso herede incorrectamente el tópico restrictivo de una pregunta individual.
 *   **Integración Completa con TinyMCE 6:** El campo de situación del caso cuenta con el editor profesional **TinyMCE** en modo oscuro, permitiendo:
     1.  **Tablas Visuales:** Creación de tablas complejas y pegado directo desde Microsoft Word o Excel (`Ctrl+V`), eliminando la necesidad de textareas HTML manuales.
     2.  **Imágenes y Gráficos:** Carga automática y pegado de imágenes en el cuerpo del texto con almacenamiento seguro en Google Cloud Storage (GCS).
-*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional con soporte TinyMCE para tablas e imágenes), `image_url`, `domain`, `target`, `topic`.
+*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional con soporte TinyMCE para tablas e imágenes), `image_url`, `domain`, `target`, `topic` (por defecto `'General'`).
 *   **Encadenamiento Visual desde el Panel:**
     1.  El administrador selecciona 2 o más preguntas desde los checkboxes de la pestaña *Preguntas*.
     2.  Aparece el botón flotante **"🔗 Encadenar en Caso (# seleccionadas)"**.

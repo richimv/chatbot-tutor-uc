@@ -157,6 +157,35 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
             expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
         });
 
+        it('saveBulkQuestionBankAdmin creates new case_scenario with General topic when case does not exist in DB', async () => {
+            const items = [
+                {
+                    domain: 'education',
+                    target: 'ASCENSO',
+                    topic: 'Matemática y Lógica',
+                    question_text: '¿Cuánto es 2 + 2?',
+                    options: ['3', '4', '5'],
+                    correct_answer: 1,
+                    codigo_caso: 'CASO-NUEVO-99',
+                    enunciado_caso: 'Enunciado de caso nuevo...',
+                    orden_caso: 1
+                }
+            ];
+
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // 1. BEGIN
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // 2. SELECT case by code (empty)
+            mockClient.query.mockResolvedValueOnce({ rows: [{ id: 'new-case-uuid' }] }); // 3. INSERT case_scenario
+            mockClient.query.mockResolvedValueOnce({ rows: [{ id: 1001 }] }); // 4. INSERT question_bank
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // 5. COMMIT
+
+            const result = await adminRepository.saveBulkQuestionBankAdmin(items);
+            expect(result.inserted).toBe(1);
+            expect(mockClient.query).toHaveBeenCalledWith(
+                expect.stringContaining('INSERT INTO case_scenarios'),
+                expect.arrayContaining(['CASO-NUEVO-99', 'General'])
+            );
+        });
+
         it('saveBulkCasesAdmin inserts or updates bulk case scenarios in transaction', async () => {
             const cases = [
                 {
@@ -343,6 +372,44 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 expect.objectContaining({
                     success: true,
                     case: expect.objectContaining({ id: 'case-chain-123', code: 'CASO-CHAIN-01' })
+                })
+            );
+        });
+
+        it('createCase sets code as title and topic to General when title is omitted (never text excerpt)', async () => {
+            const req = {
+                body: {
+                    code: 'CASO-SIN-TITULO',
+                    description_text: '<p>Este es un texto largo que antes era recortado indebidamente para ser usado como título del caso...</p>'
+                }
+            };
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            };
+
+            db.query.mockResolvedValueOnce({
+                rows: [{
+                    id: 'case-code-title-id',
+                    code: 'CASO-SIN-TITULO',
+                    title: 'CASO-SIN-TITULO',
+                    topic: 'General'
+                }]
+            });
+
+            await adminController.createCase(req, res);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('INSERT INTO case_scenarios'),
+                expect.arrayContaining(['CASO-SIN-TITULO', 'CASO-SIN-TITULO', 'General'])
+            );
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    case: expect.objectContaining({
+                        title: 'CASO-SIN-TITULO',
+                        topic: 'General'
+                    })
                 })
             );
         });

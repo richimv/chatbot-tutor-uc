@@ -1099,7 +1099,7 @@ class AdminManager {
                                 <span class="import-method-title">Editor JSON Directo</span>
                             </div>
                             <p class="import-method-desc">Copia y pega un array JSON de casuísticas/casos clínicos para inyección directa.</p>
-                            <textarea id="generic-bulk-case-json" class="form-input" placeholder='[{"code": "CASO-01", "title": "...", "description_text": "...", "domain": "education", "target": "ASCENSO", "topic": "Pedagogía"}]' style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
+                            <textarea id="generic-bulk-case-json" class="form-input" placeholder='[{"code": "CASO-01", "title": "CASO-01", "description_text": "...", "domain": "education", "target": "ASCENSO", "topic": "General"}]' style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
                         </div>
 
                         <!-- Card 2: Excel Upload -->
@@ -3055,14 +3055,15 @@ class AdminManager {
 
                     const rawTitle = document.getElementById('generic-title')?.value?.trim() || '';
                     const caseCode = document.getElementById('generic-code')?.value?.trim() || '';
-                    const cleanDesc = descVal.replace(/<[^>]*>/g, '').trim();
-                    const caseTitle = rawTitle && rawTitle !== '' ? rawTitle : (cleanDesc.length > 50 ? cleanDesc.substring(0, 47) + '...' : cleanDesc || caseCode);
+                    // Si el usuario no especificó título, usar el código del caso; NUNCA extraer texto del enunciado
+                    const caseTitle = rawTitle !== '' ? rawTitle : (caseCode || 'Caso General');
 
                     const caseFormData = new FormData();
                     caseFormData.append('code', caseCode);
                     caseFormData.append('title', caseTitle);
                     caseFormData.append('domain', document.getElementById('generic-domain')?.value || 'education');
                     caseFormData.append('target', document.getElementById('generic-target')?.value || '');
+                    caseFormData.append('topic', 'General');
                     caseFormData.append('description_text', descVal);
 
                     const fileInput = document.getElementById('generic-image-file');
@@ -3400,29 +3401,29 @@ class AdminManager {
             const ws_data = [
                 [
                     'CODIGO_CASO (*)', 
-                    'TITULO_CASO (*)', 
+                    'TITULO_CASO (Opcional - Si vacío toma el Código)', 
                     'ENUNCIADO_CASO / SITUACION (*)', 
                     'DOMINIO (medicine/education)', 
                     'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO)', 
-                    'AREA_ESTUDIO / EJE TEMATICO (*)', 
+                    'TOPIC / TEMA (General)', 
                     'URL_IMAGEN_CASO (Opcional)'
                 ],
                 [
                     'CASO-PED-01', 
-                    'Lactante con estridor laríngeo', 
+                    'CASO-PED-01', 
                     'Lactante de 18 meses es traído a emergencia por presentar fiebre, disfonía, estridor inspiratorio y tos perruna de 2 días de evolución que empeora por las noches.', 
                     'medicine', 
                     'ENAM', 
-                    'Pediatría', 
+                    'General', 
                     ''
                 ],
                 [
                     'CASO-EBR-01', 
-                    'Situación de aprendizaje en el aula', 
+                    'CASO-EBR-01', 
                     'En una sesión de aprendizaje de 4to de primaria, los estudiantes presentan dificultades para interpretar datos en un gráfico de barras.', 
                     'education', 
                     'ASCENSO', 
-                    'Evaluación Formativa y Retroalimentación', 
+                    'General', 
                     ''
                 ]
             ];
@@ -3434,7 +3435,7 @@ class AdminManager {
                 { wch: 60 }, // ENUNCIADO_CASO
                 { wch: 15 }, // DOMINIO
                 { wch: 15 }, // TARGET
-                { wch: 25 }, // AREA_ESTUDIO
+                { wch: 25 }, // TOPIC / TEMA
                 { wch: 25 }  // URL_IMAGEN_CASO
             ];
 

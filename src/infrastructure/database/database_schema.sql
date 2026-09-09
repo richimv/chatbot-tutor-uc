@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS public.case_scenarios (
     image_url TEXT,
     domain VARCHAR(50) DEFAULT 'education'::character varying,
     target VARCHAR(100),
-    topic VARCHAR(100),
+    topic VARCHAR(100) DEFAULT 'General'::character varying,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT case_scenarios_pkey PRIMARY KEY (id)

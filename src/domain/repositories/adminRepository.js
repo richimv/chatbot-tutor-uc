@@ -473,7 +473,7 @@ class AdminRepository {
                             img: img,
                             domain: q.domain,
                             target: q.target,
-                            topic: q.topic
+                            topic: 'General'
                         });
                     } else {
                         const def = caseDefinitions.get(normKey);
@@ -507,7 +507,7 @@ class AdminRepository {
                     const title = def.title || def.code;
                     const domain = canonicalDomain(def.domain);
                     const target = def.target || 'N/A';
-                    const topic = def.topic || 'General';
+                    const topic = 'General';
 
                     const insertCaseRes = await client.query(
                         `INSERT INTO case_scenarios (code, title, description_text, image_url, domain, target, topic, created_at, updated_at)

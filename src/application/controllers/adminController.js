@@ -250,8 +250,8 @@ class AdminController {
             const description_text = typeof rawDescription === 'string' ? rawDescription.trim() : '';
 
             const rawCode = body.code && body.code.trim() !== '' ? body.code.trim() : `CASO-${Date.now().toString().slice(-4)}`;
-            const cleanDesc = description_text ? description_text.replace(/<[^>]*>/g, '').trim() : '';
-            const rawTitle = body.title && body.title.trim() !== '' ? body.title.trim() : (cleanDesc.length > 60 ? cleanDesc.substring(0, 57) + '...' : cleanDesc || rawCode);
+            // Si el usuario no especificó título, usar directamente el código del caso; nunca un extracto del texto/enunciado
+            const rawTitle = body.title && body.title.trim() !== '' ? body.title.trim() : rawCode;
 
             let image_url = body.image_url && body.image_url.trim() !== '' ? body.image_url.trim() : null;
             if (req.file) {

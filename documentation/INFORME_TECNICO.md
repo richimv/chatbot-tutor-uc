@@ -1,6 +1,26 @@
 # Informe Técnico y Historial de Mejoras Continuas
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
+### 🟢 [2026-09-08] - Estandarización de Casuísticas: Topic 'General', Fallback al Código en Títulos y Plantilla Excel de Casos
+
+- **📚 Desacoplamiento de Topic en Casuísticas Agrupadas (`case_scenarios`) ([adminRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/adminRepository.js), [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js), [database_schema.sql](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql)):**
+  - **Diagnóstico:** Al importar preguntas con Excel (`saveBulkQuestionBankAdmin`), el backend asignaba a los casos creados el `topic` específico de la pregunta individual (por ejemplo, "Constructivismo y socioconstructivismo" o "Pediatría"). Como una sola casuística agrupa preguntas correspondientes a múltiples áreas y tópicos del examen, asignar un tópico particular al caso distorsionaba la semántica del banco.
+  - **Estandarización a 'General':** 
+    - Se actualizó `saveBulkQuestionBankAdmin` en `adminRepository.js` para que el `topic` de toda casuística consolidada o generada desde preguntas sea siempre `'General'`.
+    - Se ejecutó la migración atómica en base de datos PostgreSQL (`UPDATE case_scenarios SET topic = 'General' WHERE topic != 'General'`) actualizando los 83 registros existentes. Se fijó además `DEFAULT 'General'` en la columna `topic` de la tabla `case_scenarios`.
+    - En `bulkInjectCases` y `createCase`, se aseguró el fallback `'General'`.
+- **🏷️ Fallback al Código del Caso en Registro Individual ([adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js), [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - **Diagnóstico:** Al crear una casuística individualmente en el panel con código pero sin título digitado, el sistema recortaba los primeros 50 caracteres del texto/enunciado (`cleanDesc.substring(0, 47) + '...'`) como título, generando títulos extensos y no deseados.
+  - **Solución Estricta:** Se eliminó por completo la extracción de texto del enunciado. Si el usuario no ingresa un título, el sistema asigna directamente el **código del caso** (`caseCode`) como título (`const caseTitle = rawTitle !== '' ? rawTitle : (caseCode || 'Caso General')`), tanto en frontend (`admin.js`) como en backend (`adminController.js`).
+- **📊 Actualización de Plantilla Excel y Carga Masiva de Casos ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - En `downloadCaseExcelTemplate()`, el encabezado de la columna temática se actualizó a `TOPIC / TEMA (General)` y las filas de ejemplo ahora indican explícitamente `'General'`.
+  - El placeholder del modal de inyección directa JSON refleja `topic: "General"` y el código como título por defecto.
+- **🧪 Cobertura de Pruebas Unitarias ([caseScenarios.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/caseScenarios.test.js)):**
+  - Incorporadas pruebas unitarias que verifican la creación de casuísticas con `topic = 'General'` desde preguntas masivas y el uso exclusivo del código como título cuando se omite el título individual.
+  - 100% de la suite de pruebas superada exitosamente (**52 suites, 409 pruebas en verde**).
+
+---
+
 ### 🟢 [2026-09-06] - Resolución Jerárquica de Tiers (Admin/Basic), Carga Masiva y Ordenación Cronológica Reciente en Repaso
 
 - **👑 Desacoplamiento de Rol Admin y Gating por Tiers en Carga Masiva ([sessionManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/sessionManager.js) & [repaso.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/repaso.js)):**
