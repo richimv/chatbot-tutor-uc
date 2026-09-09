@@ -404,6 +404,10 @@ body.quiz-body {
     margin-bottom: 2.5rem;
     font-weight: 500;
     color: var(--quiz-text);
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .question-layout-grid {
@@ -418,7 +422,6 @@ body.quiz-body {
     grid-template-columns: 1fr 1.5fr;
     gap: 3rem;
     align-items: center;
-    text-align: left;
 }
 
 .question-layout-grid.has-image #questionImageContainer {
@@ -427,7 +430,10 @@ body.quiz-body {
 
 .question-layout-grid.has-image .question-text {
     margin-bottom: 0;
-    text-align: left;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
     font-size: 1.4rem;
 }
 
@@ -508,11 +514,15 @@ body.quiz-body {
 }
 
 /* Ajuste de párrafos dentro del texto de pregunta y explicaciones */
-.question-text p, #explanationText p, .review-q-text p, .review-explanation p {
+.question-text p, #explanationText p, .review-q-text p, .review-explanation p, .feedback-explanation-text p, .review-explanation-body p {
     margin-bottom: 1.2rem;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
-.question-text p:last-child, #explanationText p:last-child {
+.question-text p:last-child, #explanationText p:last-child, .feedback-explanation-text p:last-child, .review-explanation-body p:last-child {
     margin-bottom: 0;
 }
 
@@ -647,7 +657,10 @@ body.quiz-body {
     }
 
     .question-layout-grid.has-image .question-text {
-        text-align: center;
+        text-align: justify;
+        text-justify: inter-word;
+        hyphens: auto;
+        -webkit-hyphens: auto;
         font-size: 1.25rem;
     }
 }
@@ -695,6 +708,18 @@ body.quiz-body {
 .option-text {
     flex: 1;
     line-height: 1.5;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+.option-text p {
+    margin: 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .option-btn:hover:not(:disabled) {
@@ -876,6 +901,10 @@ body.module-educacion .feedback-badge {
     color: var(--quiz-text-secondary, #cbd5e1);
     font-family: var(--font-main);
     margin: 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 [data-theme="light"] .feedback-explanation-text,
@@ -883,9 +912,14 @@ body.module-educacion .feedback-badge {
     color: #334155;
 }
 
-#explanationText p {
+#explanationText p,
+.feedback-explanation-text p {
     margin: 0.6rem 0;
     line-height: 1.65;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 #explanationText p:first-child {
@@ -1279,6 +1313,10 @@ body.module-educacion .feedback-badge {
     line-height: 1.6;
     font-weight: 600;
     font-family: var(--font-main);
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .review-options {
@@ -1323,6 +1361,18 @@ body.module-educacion .feedback-badge {
     flex: 1;
     min-width: 0;
     word-break: break-word;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+.review-opt-text p {
+    margin: 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .review-opt-status-badge {
@@ -1460,11 +1510,19 @@ body.module-educacion .review-opt-status-badge.correct {
     color: var(--text-secondary);
     font-size: 0.95rem;
     line-height: 1.65;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .review-explanation-body p {
     margin-bottom: 0.75rem;
     color: var(--text-secondary);
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .review-explanation-body p:last-child {
@@ -2072,6 +2130,10 @@ body.module-educacion .review-opt-status-badge.correct {
     line-height: 1.7;
     font-weight: 450;
     word-break: break-word;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 [data-theme="light"] .case-description-body {
@@ -2080,6 +2142,10 @@ body.module-educacion .review-opt-status-badge.correct {
 
 .case-description-body p {
     margin: 0 0 0.55rem 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .case-description-body p:last-child {
@@ -2316,6 +2382,10 @@ body.module-educacion .review-case-pill {
     font-size: 0.92rem;
     line-height: 1.6;
     word-break: break-word;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 [data-theme="light"] .review-case-body {
@@ -2324,6 +2394,10 @@ body.module-educacion .review-case-pill {
 
 .review-case-body p {
     margin: 0 0 0.5rem 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .review-case-body p:last-child {

@@ -632,3 +632,30 @@ La modal universal de confirmación implementa una jerarquía accesible de alta 
   * **Backend Atómico (`adminService.js`):**
     * Red de seguridad de negocio (`resolveSubscriptionConsistency`): fuerza consistencia de tiers y calcula expiración (+2m basic, +4m advanced) si no fue enviada.
     * **Fidelización Automática:** Al activar un usuario (`subscriptionStatus: 'active'`), se restablecen a cero (`0`) todos los contadores de consumo (`usageCount = 0`, `dailyAiUsage = 0`, `dailyRagUsage = 0`, `dailySimulatorUsage = 0`, `monthlyFlashcardsUsage = 0`) para garantizar un ciclo de membresía limpio e íntegro.
+
+### 13.10. Estándar de Tipografía Justificada Profesional en Simuladores de Exámenes (Web y Móvil)
+Para maximizar la sobriedad, legibilidad y estética profesional durante la resolución y análisis de exámenes pedagógicos y médicos:
+* **Regla Tipográfica Universal en Web:**
+  * Todos los bloques de texto de examen aplican justificación con separación silábica balanceada:
+    ```css
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    ```
+  * **Elementos alcanzados en Toma Activa (`quiz.html` / `quiz.css`):**
+    * Casuísticas anidadas y viñetas clínicas (`.case-description-body`, `.case-description-body p`).
+    * Enunciados de preguntas (`.question-text`, `.question-text p`, y cuadrículas con imagen `.question-layout-grid.has-image .question-text`).
+    * Opciones de respuesta (`.option-text`, `.option-text p`).
+    * Explicación y sustento oficial en tiempo real (`.feedback-explanation-text`, `#explanationText`, `#explanationText p`).
+  * **Elementos alcanzados en Revisión de Examen (`showExamReview`):**
+    * Casuísticas anidadas en feed (`.review-case-body`, `.review-case-body p`).
+    * Enunciados de preguntas en feed (`.review-q-text`, `.review-q-text p`).
+    * Opciones en tarjetas de corrección (`.review-opt-text`, `.review-opt-text p`).
+    * Explicaciones y sustentos técnicos en tarjetas de corrección (`.review-explanation-body`, `.review-explanation-body p`).
+* **Regla en Aplicaciones Móviles (`HubDocenteApp` y `HubSaludApp`):**
+  * Aplicación estricta de `textAlign: 'justify'` en:
+    * Componentes de renderizado Markdown (`RichMarkdown.tsx` en `paragraphLine` y `bulletContent`).
+    * Tarjetas de preguntas en vivo (`QuestionCard.tsx` y `ClinicalQuestionCard.tsx` en `caseDescriptionMarkdown`, `questionMarkdown`, `optionMarkdown`, `explanationMarkdown`).
+    * Pantalla de revisión de simulacro (`app/quiz/results.tsx` en `reviewCaseDescription`, `reviewQuestionText`, `reviewOptionText`, `reviewExplanationText`).
+* **Preservación de Excepciones:** Las tablas de datos (`th`, `td`), los códigos fuente monospaciados y los encabezados semánticos conservan su alineación natural (`left` o `center` según aplique) para evitar distorsiones de espaciado.

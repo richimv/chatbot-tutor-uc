@@ -1,6 +1,30 @@
 # Informe Técnico y Historial de Mejoras Continuas
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
+
+### 🟢 [2026-09-09] - Formato Tipográfico Justificado Profesional en Simuladores de Exámenes (Web y Apps Móviles)
+
+- **📖 Tipografía Justificada y Separación Silábica en Simulador Web ([quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - **Diagnóstico:** Los textos extensos de casuísticas pedagógicas y viñetas clínicas compartidas, así como enunciados, alternativas y explicaciones técnicas, se mostraban alineados a la izquierda con saltos de línea desparejos ("trapos" irregulares), lo que restaba sobriedad y profesionalismo a la lectura de estudio intensivo.
+  - **Estandarización Tipográfica:**
+    - Se aplicó justificación con separación silábica balanceada (`text-align: justify; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto;`).
+    - **Toma Activa del Examen:** Casuística anidada (`.case-description-body`, `.case-description-body p`), enunciado de pregunta (`.question-text`, `.question-text p`, y cuadrícula con imagen `.question-layout-grid.has-image .question-text`), texto de alternativas (`.option-text`, `.option-text p`) y caja de retroalimentación/sustento oficial (`.feedback-explanation-text`, `#explanationText`, `#explanationText p`).
+    - **Revisión del Examen (`showExamReview`):** Casuística anidada en feed (`.review-case-body`, `.review-case-body p`), enunciados de preguntas (`.review-q-text`, `.review-q-text p`), alternativas de respuesta (`.review-opt-text`, `.review-opt-text p`) y cuerpo de sustentación técnica (`.review-explanation-body`, `.review-explanation-body p`).
+    - **Preservación de Excepciones:** Las tablas comparativas (`th`, `td`) conservan su alineación a la izquierda (`text-align: left`) para evitar distorsiones de datos tabulares.
+- **📱 Réplica Nativa en Aplicaciones Móviles (`HubDocenteApp` y `HubSaludApp`):**
+  - **Componente Central Markdown (`RichMarkdown.tsx`):** Actualizados `styles.paragraphLine` y `styles.bulletContent` con `textAlign: 'justify'` en ambas aplicaciones.
+  - **Tarjetas de Preguntas en Vivo (`QuestionCard.tsx` y `ClinicalQuestionCard.tsx`):**
+    - Justificación de casuística anidada (`caseDescriptionMarkdown`), enunciado de la pregunta (`questionMarkdown`), alternativas de respuesta (`optionMarkdown`) y sustento pedagógico/clínico (`explanationMarkdown`).
+  - **Pantalla de Revisión de Simulacro (`app/quiz/results.tsx`):**
+    - Justificación de casuística en feed (`reviewCaseDescription`), enunciado (`reviewQuestionText`), alternativas (`reviewOptionText`) y sustento oficial (`reviewExplanationText`).
+  - **Verificación Estricta TypeScript:** Verificación exitosa sin errores de tipado (`npx.cmd tsc --noEmit`) en `HubDocenteApp` y `HubSaludApp`.
+- **🔄 Sincronización Determinista de Caché y CI ([update-cache.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/update-cache.js)):**
+  - Actualización del hash determinista de activos en los 17 archivos HTML del proyecto para garantizar integridad de caché y satisfacción de la suite de pruebas `cacheBustIntegrity.test.js`.
+- **🧪 Cobertura de Pruebas Unitarias:**
+  - 100% de la suite de pruebas de `hubacademia` superada exitosamente (**52 suites, 409 pruebas en verde**).
+
+---
+
 ### 🟢 [2026-09-08] - Estandarización de Casuísticas: Topic 'General', Fallback al Código en Títulos y Plantilla Excel de Casos
 
 - **📚 Desacoplamiento de Topic en Casuísticas Agrupadas (`case_scenarios`) ([adminRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/adminRepository.js), [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js), [database_schema.sql](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql)):**
